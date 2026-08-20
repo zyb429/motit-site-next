@@ -20,6 +20,7 @@ export default function WhyChooseUs() {
   const sectionRef = useRef<HTMLElement>(null);
   const contentRefs = useRef<(HTMLDivElement | null)[]>([]);
   const innerRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const isFirstRender = useRef(true);
   useReveal(sectionRef);
 
   useEffect(() => {
@@ -29,12 +30,59 @@ export default function WhyChooseUs() {
       if (!inner) return;
 
       if (i === openIndex) {
-        gsap.set(content, { height: 'auto', opacity: 1 });
-        gsap.from(inner, { opacity: 0, y: 12, duration: 0.35, ease: 'power2.out' });
+        if (isFirstRender.current) {
+          gsap.set(content, { height: 'auto', opacity: 1 });
+          gsap.set(inner, { opacity: 1, y: 0 });
+          const img = inner.querySelector('img');
+          if (img) gsap.set(img, { opacity: 1 });
+        } else {
+          // Открытие с задержкой
+          gsap.to(content, { 
+            height: 'auto', 
+            opacity: 1, 
+            duration: 0.4, 
+            ease: 'power2.out',
+            delay: 0.2 // Задержка перед открытием
+          });
+          
+          gsap.fromTo(inner, 
+            { opacity: 0, y: 20 }, 
+            { 
+              opacity: 1, 
+              y: 0, 
+              duration: 0.35, 
+              ease: 'power2.out',
+              delay: 0.3,
+              clearProps: 'transform'
+            }
+          );
+
+          const img = inner.querySelector('img');
+          if (img) {
+            gsap.fromTo(img, 
+              { opacity: 0 }, 
+              { 
+                opacity: 1, 
+                duration: 0.25, 
+                ease: 'power1.out',
+                delay: 0.25,
+                clearProps: 'opacity'
+              }
+            );
+          }
+        }
       } else {
-        gsap.to(content, { height: 0, opacity: 0, duration: 0.25, ease: 'power2.in' });
+        // Плавное закрытие
+        gsap.to(content, { 
+          height: 0, 
+          opacity: 0, 
+          duration: 0.45, 
+          ease: 'power3.inOut'
+        });
       }
     });
+
+    isFirstRender.current = false;
   }, [openIndex]);
 
   return (
