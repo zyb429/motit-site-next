@@ -12,11 +12,6 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
   },
-  
-  // Кэширование
-  experimental: {
-    optimizeCss: true,
-  },
 };
 
 export default nextConfig;
