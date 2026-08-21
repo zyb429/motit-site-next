@@ -1,14 +1,8 @@
-"use client"
-
+// Серверный компонент — рендерится на сервере (SSR)
 import { Link as Linkedin, Send, Mail, Headphones, Phone, MapPin } from 'lucide-react';
+import FooterClient from './FooterClient';
 
 export default function Footer() {
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    e.preventDefault();
-    const el = document.getElementById(targetId);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <footer className="border-t" style={{ backgroundColor: '#0d2029', borderColor: 'rgba(45, 212, 191, 0.08)' }}>
       <div className="content-container py-12 md:py-16">
@@ -40,28 +34,8 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: '#e0f7fa' }}>Навигация</h4>
-            <div className="flex flex-col gap-3">
-              {[
-                { label: 'Направления', target: 'directions' },
-                { label: 'О нас', target: 'about' },
-                { label: 'Контакты', target: 'contact' },
-                { label: 'FAQ', target: 'faq' },
-              ].map((link) => (
-                <a
-                  key={link.target}
-                  href={`#${link.target}`}
-                  onClick={(e) => handleNavClick(e, link.target)}
-                  className="text-sm transition-colors duration-100 hover:text-[#2dd4bf]"
-                  style={{ color: 'rgba(128, 222, 234, 0.6)' }}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
+          {/* Quick Links (клиентский для плавной прокрутки) */}
+          <FooterClient />
 
           {/* Contacts */}
           <div>
