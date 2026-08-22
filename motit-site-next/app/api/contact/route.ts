@@ -1,21 +1,42 @@
-import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { NextResponse } from "next/server";
+import nodemailer from "nodemailer";
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const { name, email, phone, message } = data;
+    const {
+      name,
+      job_title,
+      company_name,
+      email,
+      phone,
+      message,
+      privacyAgreed,
+      privacyAgreedAt,
+    } = data;
+
+    // Проверка согласия на сервере
+    if (!privacyAgreed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Необходимо согласие на обработку персональных данных",
+          field: "privacyAgreed",
+        },
+        { status: 400 },
+      );
+    }
 
     // Проверка наличия SMTP настроек
     if (!process.env.SMTP_HOST) {
-      console.warn('⚠️ SMTP не настроен! Письмо не отправлено.');
+      console.warn("⚠️ SMTP не настроен! Письмо не отправлено.");
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'SMTP не настроен',
-          testMode: true
+        {
+          success: false,
+          message: "SMTP не настроен",
+          testMode: true,
         },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -23,7 +44,7 @@ export async function POST(request: Request) {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
+      secure: process.env.SMTP_SECURE === "true",
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -87,22 +108,55 @@ export async function POST(request: Request) {
               <div class="label">👤 Имя</div>
               <div class="value">${name}</div>
             </div>
+            ${job_title
+        ? `
+            <div class="field">
+              <div class="label">Должность</div>
+              <div class="value">${job_title}</div>
+            </div>
+          `
+        : ""
+      }
+            ${company_name
+        ? `
+            <div class="field">
+              <div class="label">🏢 Компания</div>
+              <div class="value">${company_name}</div>
+            </div>
+          `
+        : ""
+      }
             <div class="field">
               <div class="label">📧 Email</div>
               <div class="value">${email}</div>
             </div>
-            ${phone ? `
+            ${phone
+        ? `
               <div class="field">
                 <div class="label">📱 Телефон</div>
                 <div class="value">${phone}</div>
               </div>
-            ` : ''}
+            `
+        : ""
+      }
             <div class="field">
               <div class="label">💬 Сообщение</div>
-              <div class="value">${message.replace(/\n/g, '<br>')}</div>
+              <div class="value">${message.replace(/\n/g, "<br>")}</div>
             </div>
+
+            <div class="field">
+              <div class="label">📋 Согласие на обработку ПД</div>
+              <div class="value">
+                ✅ Да (согласен)
+                <div class="privacy-badge">Согласие получено</div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                  Время согласия: ${privacyAgreedAt ? new Date(privacyAgreedAt).toLocaleString("ru-RU") : new Date().toLocaleString("ru-RU")}
+                </div>
+              </div>
+            </div>
+
             <div class="footer">
-              Отправлено: ${new Date().toLocaleString('ru-RU')}
+              Отправлено: ${new Date().toLocaleString("ru-RU")}
             </div>
           </div>
         </div>
@@ -111,7 +165,7 @@ export async function POST(request: Request) {
     `;
 
     const mailOptions = {
-      from: `"${process.env.SMTP_FROM_NAME || 'Сайт'}" <${process.env.SMTP_FROM_EMAIL}>`,
+      from: `"${process.env.SMTP_FROM_NAME || "Сайт"}" <${process.env.SMTP_FROM_EMAIL}>`,
       to: process.env.CONTACT_EMAIL,
       subject: `Новая заявка от ${name}`,
       html: htmlContent,
@@ -120,34 +174,41 @@ export async function POST(request: Request) {
         
         Имя: ${name}
         Email: ${email}
-        ${phone ? `Телефон: ${phone}` : ''}
+        ${phone ? `Телефон: ${phone}` : ""}
         Сообщение: ${message}
 
         ---
-        Отправлено: ${new Date().toLocaleString('ru-RU')}
+        Согласие на обработку ПД: ДА ✅
+        Время согласия: ${privacyAgreedAt ? new Date(privacyAgreedAt).toLocaleString("ru-RU") : new Date().toLocaleString("ru-RU")}
+
+        ---
+        Отправлено: ${new Date().toLocaleString("ru-RU")}
       `,
       replyTo: email,
     };
 
     const info = await transporter.sendMail(mailOptions);
-    
-    console.log('✅ Письмо отправлено:', process.env.CONTACT_EMAIL);
-    console.log('📧 ID письма:', info.messageId);
-    
+
+    console.log("✅ Письмо отправлено:", process.env.CONTACT_EMAIL);
+    console.log("📧 ID письма:", info.messageId);
+    console.log(
+      "📋 Согласие получено в:",
+      privacyAgreedAt || new Date().toISOString(),
+    );
+
     return NextResponse.json({
       success: true,
       messageId: info.messageId,
-      message: `Письмо отправлено на ${process.env.CONTACT_EMAIL}`
+      message: `Письмо отправлено на ${process.env.CONTACT_EMAIL}`,
     });
-
   } catch (error: any) {
-    console.error('❌ Ошибка отправки письма:', error.message);
+    console.error("❌ Ошибка отправки письма:", error.message);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error.message 
+      {
+        success: false,
+        error: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
