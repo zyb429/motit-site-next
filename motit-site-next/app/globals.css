@@ -240,3 +240,8 @@ textarea:focus::placeholder {
     padding-right: 16px;
   }
 }
+
+.hero-animate {
+  opacity: 0;
+  transform: translateY(30px);
+}
