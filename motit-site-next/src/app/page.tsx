@@ -1,42 +1,42 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 
-import Navigation from './sections/Navigation';
-import About from './sections/About';
-import Advantages from './sections/Advantages';
-import QualityManagement from './sections/QualityManagement';
-import Footer from './sections/Footer';
+import Navigation from '@/components/sections/Navigation';
+import About from '@/components/sections/About';
+import Advantages from '@/components/sections/Advantages';
+import QualityManagement from '@/components/sections/QualityManagement';
+import Footer from '@/components/sections/Footer';
 
-const Hero = dynamic(() => import('./sections/Hero'), {
+const Hero = dynamic(() => import('@/components/sections/Hero'), {
   ssr: true,
   loading: () => <div className="min-h-[60vh]" />,
 });
 
-const Directions = dynamic(() => import('./sections/Directions'), {
+const Directions = dynamic(() => import('@/components/sections/Directions'), {
   ssr: true,
 });
 
-const CallToAction = dynamic(() => import('./sections/CallToAction'), {
+const CallToAction = dynamic(() => import('@/components/sections/CallToAction'), {
   ssr: true,
 });
 
-const WhyChooseUs = dynamic(() => import('./sections/WhyChooseUs'), {
+const WhyChooseUs = dynamic(() => import('@/components/sections/WhyChooseUs'), {
   ssr: true,
 });
 
-const KeyServices = dynamic(() => import('./sections/KeyServices'), {
+const KeyServices = dynamic(() => import('@/components/sections/KeyServices'), {
   ssr: true,
 });
 
-const Partners = dynamic(() => import('./sections/Partners'), {
+const Partners = dynamic(() => import('@/components/sections/Partners'), {
   ssr: true,
 });
 
-const FAQ = dynamic(() => import('./sections/FAQ'), {
+const FAQ = dynamic(() => import('@/components/sections/FAQ'), {
   ssr: true,
 });
 
-const Contact = dynamic(() => import('./sections/Contact'), {
+const Contact = dynamic(() => import('@/components/sections/Contact'), {
   ssr: true,
 });
 
