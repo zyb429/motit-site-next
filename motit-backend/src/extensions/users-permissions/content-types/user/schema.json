@@ -1,0 +1,89 @@
+{
+  "kind": "collectionType",
+  "collectionName": "users",
+  "info": {
+    "singularName": "user",
+    "pluralName": "users",
+    "displayName": "Users",
+    "description": "Users of the application"
+  },
+  "options": {
+    "draftAndPublish": false,
+    "timestamps": true
+  },
+  "attributes": {
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "unique": true,
+      "required": true,
+      "maxLength": 100,
+      "configurable": false
+    },
+    "email": {
+      "type": "email",
+      "minLength": 6,
+      "required": true,
+      "maxLength": 255,
+      "configurable": false
+    },
+    "provider": {
+      "type": "string",
+      "configurable": false
+    },
+    "password": {
+      "type": "password",
+      "minLength": 6,
+      "configurable": false,
+      "private": true
+    },
+    "resetPasswordToken": {
+      "type": "string",
+      "configurable": false,
+      "private": true
+    },
+    "confirmationToken": {
+      "type": "string",
+      "configurable": false,
+      "private": true
+    },
+    "confirmed": {
+      "type": "boolean",
+      "default": false,
+      "configurable": false
+    },
+    "blocked": {
+      "type": "boolean",
+      "default": false,
+      "configurable": false
+    },
+    "role": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.role",
+      "inversedBy": "users",
+      "configurable": false
+    },
+    "full_name": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "phone": {
+      "type": "string",
+      "required": true,
+      "maxLength": 50
+    },
+    "avatar_url": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_login": {
+      "type": "datetime"
+    }
+  }
+}

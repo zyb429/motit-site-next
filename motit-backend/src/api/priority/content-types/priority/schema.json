@@ -4,7 +4,8 @@
   "info": {
     "singularName": "priority",
     "pluralName": "priorities",
-    "displayName": "Priorities"
+    "displayName": "Priorities",
+    "description": "Ticket priorities"
   },
   "options": {
     "draftAndPublish": false
@@ -19,20 +20,13 @@
     "color": {
       "type": "enumeration",
       "enum": ["gray", "blue", "orange", "red"],
-      "default": "gray",
-      "required": true
+      "default": "gray"
     },
     "level": {
       "type": "integer",
       "default": 0,
       "min": 0,
       "max": 10
-    },
-    "tickets": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::ticket.ticket",
-      "mappedBy": "priority"
     }
   }
 }

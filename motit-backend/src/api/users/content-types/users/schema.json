@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "users",
+  "info": {
+    "singularName": "user",
+    "pluralName": "users",
+    "displayName": "Users",
+    "description": "Users of the application"
+  },
+  "options": {
+    "draftAndPublish": false,
+    "timestamps": true
+  },
+  "attributes": {
+    "username": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 100
+    },
+    "email": {
+      "type": "email",
+      "required": true,
+      "unique": true,
+      "maxLength": 255
+    },
+    "password_hash": {
+      "type": "password",
+      "private": true,
+      "minLength": 6
+    },
+    "full_name": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "phone": {
+      "type": "string",
+      "required": true,
+      "maxLength": 50
+    },
+    "avatar_url": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_login": {
+      "type": "datetime"
+    }
+  }
+}

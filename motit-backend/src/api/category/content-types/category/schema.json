@@ -4,7 +4,8 @@
   "info": {
     "singularName": "category",
     "pluralName": "categories",
-    "displayName": "Categories"
+    "displayName": "Categories",
+    "description": "Categories for tickets and posts"
   },
   "options": {
     "draftAndPublish": true
@@ -13,7 +14,6 @@
     "name": {
       "type": "string",
       "required": true,
-      "unique": true,
       "maxLength": 255
     },
     "slug": {
@@ -27,12 +27,6 @@
     },
     "icon": {
       "type": "string"
-    },
-    "tickets": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::ticket.ticket",
-      "mappedBy": "category"
     }
   }
 }

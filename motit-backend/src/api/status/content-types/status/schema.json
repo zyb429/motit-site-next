@@ -4,7 +4,8 @@
   "info": {
     "singularName": "status",
     "pluralName": "statuses",
-    "displayName": "Statuses"
+    "displayName": "Statuses",
+    "description": "Ticket statuses"
   },
   "options": {
     "draftAndPublish": false
@@ -19,18 +20,11 @@
     "color": {
       "type": "enumeration",
       "enum": ["blue", "purple", "yellow", "green", "orange", "gray", "red"],
-      "default": "blue",
-      "required": true
+      "default": "blue"
     },
     "description": {
       "type": "string",
       "maxLength": 255
-    },
-    "tickets": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::ticket.ticket",
-      "mappedBy": "ticket_status"
     }
   }
 }

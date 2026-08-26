@@ -4,7 +4,8 @@
   "info": {
     "singularName": "ticket",
     "pluralName": "tickets",
-    "displayName": "Tickets"
+    "displayName": "Tickets",
+    "description": "Support tickets"
   },
   "options": {
     "draftAndPublish": true
@@ -18,24 +19,6 @@
     "description": {
       "type": "text"
     },
-    "ticket_status": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::status.status",
-      "inversedBy": "tickets"
-    },
-    "priority": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::priority.priority",
-      "inversedBy": "tickets"
-    },
-    "category": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::category.category",
-      "inversedBy": "tickets"
-    },
     "client": {
       "type": "relation",
       "relation": "manyToOne",
@@ -46,17 +29,26 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
     },
+    "ticket_status": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::status.status"
+    },
+    "priority": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::priority.priority"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category"
+    },
     "deadline_at": {
       "type": "datetime"
     },
     "resolved_at": {
       "type": "datetime"
-    },
-    "comments": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::ticket-comment.ticket-comment",
-      "mappedBy": "ticket"
     }
   }
 }

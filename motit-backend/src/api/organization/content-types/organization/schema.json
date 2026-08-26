@@ -4,7 +4,8 @@
   "info": {
     "singularName": "organization",
     "pluralName": "organizations",
-    "displayName": "Organizations"
+    "displayName": "Organizations",
+    "description": "Companies and organizations"
   },
   "options": {
     "draftAndPublish": true
@@ -17,14 +18,15 @@
     },
     "inn": {
       "type": "string",
-      "unique": true,
-      "maxLength": 20
+      "maxLength": 20,
+      "unique": true
     },
     "address": {
       "type": "text"
     },
     "email": {
-      "type": "email"
+      "type": "email",
+      "maxLength": 255
     },
     "phone": {
       "type": "string",

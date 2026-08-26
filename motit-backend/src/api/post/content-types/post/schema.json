@@ -4,22 +4,23 @@
   "info": {
     "singularName": "post",
     "pluralName": "posts",
-    "displayName": "Posts"
+    "displayName": "Posts",
+    "description": "Blog posts and articles"
   },
   "options": {
     "draftAndPublish": true
   },
   "attributes": {
-    "title": {
-      "type": "string",
-      "required": true,
-      "maxLength": 255
-    },
     "slug": {
       "type": "uid",
       "targetField": "title",
       "required": true,
       "unique": true
+    },
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
     },
     "content": {
       "type": "richtext"
@@ -36,6 +37,11 @@
       "enum": ["draft", "published", "archived"],
       "default": "draft"
     },
+    "author": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
     "meta_title": {
       "type": "string",
       "maxLength": 255
@@ -46,11 +52,6 @@
     },
     "seo_data": {
       "type": "json"
-    },
-    "author": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
     }
   }
 }

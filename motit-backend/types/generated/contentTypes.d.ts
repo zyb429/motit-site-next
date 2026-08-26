@@ -1462,11 +1462,10 @@ export interface PluginUsersPermissionsRole
 
 export interface PluginUsersPermissionsUser
   extends Struct.CollectionTypeSchema {
-  collectionName: 'up_users';
+  collectionName: 'users';
   info: {
-    description: '';
-    displayName: 'User';
-    name: 'user';
+    description: 'Users of the application';
+    displayName: 'Users';
     pluralName: 'users';
     singularName: 'user';
   };
@@ -1475,6 +1474,10 @@ export interface PluginUsersPermissionsUser
     timestamps: true;
   };
   attributes: {
+    avatar_url: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
     confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
@@ -1484,8 +1487,16 @@ export interface PluginUsersPermissionsUser
     email: Schema.Attribute.Email &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
         minLength: 6;
       }>;
+    full_name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    last_login: Schema.Attribute.DateTime;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1496,6 +1507,11 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.Private &
       Schema.Attribute.SetMinMaxLength<{
         minLength: 6;
+      }>;
+    phone: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
       }>;
     provider: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
@@ -1511,6 +1527,7 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.Required &
       Schema.Attribute.Unique &
       Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
         minLength: 3;
       }>;
   };

@@ -4,24 +4,28 @@
   "info": {
     "singularName": "page",
     "pluralName": "pages",
-    "displayName": "Pages"
+    "displayName": "Pages",
+    "description": "Custom pages"
   },
   "options": {
     "draftAndPublish": true
   },
   "attributes": {
-    "title": {
-      "type": "string",
-      "required": true,
-      "maxLength": 255
-    },
     "slug": {
       "type": "uid",
       "targetField": "title",
       "required": true,
       "unique": true
     },
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
     "sections": {
+      "type": "json"
+    },
+    "seo_data": {
       "type": "json"
     },
     "meta_title": {
@@ -31,9 +35,6 @@
     "meta_description": {
       "type": "string",
       "maxLength": 300
-    },
-    "seo_data": {
-      "type": "json"
     }
   }
 }

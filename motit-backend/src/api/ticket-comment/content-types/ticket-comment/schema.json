@@ -4,7 +4,8 @@
   "info": {
     "singularName": "ticket-comment",
     "pluralName": "ticket-comments",
-    "displayName": "Ticket Comments"
+    "displayName": "Ticket Comments",
+    "description": "Comments on tickets"
   },
   "options": {
     "draftAndPublish": false
@@ -22,7 +23,6 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::ticket.ticket",
-      "inversedBy": "comments",
       "required": true
     },
     "user": {
