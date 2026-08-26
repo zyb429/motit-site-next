@@ -446,6 +446,7 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
 export interface ApiAboutPageAboutPage extends Struct.SingleTypeSchema {
   collectionName: 'about_pages';
   info: {
+    description: 'About us page';
     displayName: 'About Page';
     pluralName: 'about-pages';
     singularName: 'about-page';
@@ -478,6 +479,7 @@ export interface ApiAboutPageAboutPage extends Struct.SingleTypeSchema {
 export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   collectionName: 'categories';
   info: {
+    description: 'Categories for tickets and posts';
     displayName: 'Categories';
     pluralName: 'categories';
     singularName: 'category';
@@ -499,7 +501,6 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     name: Schema.Attribute.String &
       Schema.Attribute.Required &
-      Schema.Attribute.Unique &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
       }>;
@@ -507,7 +508,6 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
     slug: Schema.Attribute.UID<'name'> &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
-    tickets: Schema.Attribute.Relation<'oneToMany', 'api::ticket.ticket'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -517,6 +517,7 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
 export interface ApiCertificateCertificate extends Struct.CollectionTypeSchema {
   collectionName: 'certificates';
   info: {
+    description: 'Certificates and awards';
     displayName: 'Certificates';
     pluralName: 'certificates';
     singularName: 'certificate';
@@ -535,10 +536,7 @@ export interface ApiCertificateCertificate extends Struct.CollectionTypeSchema {
       }>;
     is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     issue_date: Schema.Attribute.Date;
-    issuer_name: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 255;
-      }>;
+    issuer: Schema.Attribute.Relation<'manyToOne', 'api::issuer.issuer'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -561,6 +559,7 @@ export interface ApiCertificateCertificate extends Struct.CollectionTypeSchema {
 export interface ApiContactPageContactPage extends Struct.SingleTypeSchema {
   collectionName: 'contact_pages';
   info: {
+    description: 'Contact page';
     displayName: 'Contact Page';
     pluralName: 'contact-pages';
     singularName: 'contact-page';
@@ -593,6 +592,7 @@ export interface ApiContactPageContactPage extends Struct.SingleTypeSchema {
 export interface ApiHomePageHomePage extends Struct.SingleTypeSchema {
   collectionName: 'home_pages';
   info: {
+    description: 'Home page content';
     displayName: 'Home Page';
     pluralName: 'home-pages';
     singularName: 'home-page';
@@ -626,6 +626,7 @@ export interface ApiHomePageHomePage extends Struct.SingleTypeSchema {
 export interface ApiIssuerIssuer extends Struct.CollectionTypeSchema {
   collectionName: 'issuers';
   info: {
+    description: 'Certificate issuers';
     displayName: 'Issuers';
     pluralName: 'issuers';
     singularName: 'issuer';
@@ -664,6 +665,7 @@ export interface ApiOrganizationOrganization
   extends Struct.CollectionTypeSchema {
   collectionName: 'organizations';
   info: {
+    description: 'Companies and organizations';
     displayName: 'Organizations';
     pluralName: 'organizations';
     singularName: 'organization';
@@ -676,7 +678,10 @@ export interface ApiOrganizationOrganization
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    email: Schema.Attribute.Email;
+    email: Schema.Attribute.Email &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
     inn: Schema.Attribute.String &
       Schema.Attribute.Unique &
       Schema.Attribute.SetMinMaxLength<{
@@ -708,6 +713,7 @@ export interface ApiOrganizationOrganization
 export interface ApiPagePage extends Struct.CollectionTypeSchema {
   collectionName: 'pages';
   info: {
+    description: 'Custom pages';
     displayName: 'Pages';
     pluralName: 'pages';
     singularName: 'page';
@@ -750,6 +756,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
 export interface ApiPartnerPartner extends Struct.CollectionTypeSchema {
   collectionName: 'partners';
   info: {
+    description: 'Partner companies';
     displayName: 'Partners';
     pluralName: 'partners';
     singularName: 'partner';
@@ -791,6 +798,7 @@ export interface ApiPartnerPartner extends Struct.CollectionTypeSchema {
 export interface ApiPostPost extends Struct.CollectionTypeSchema {
   collectionName: 'posts';
   info: {
+    description: 'Blog posts and articles';
     displayName: 'Posts';
     pluralName: 'posts';
     singularName: 'post';
@@ -843,6 +851,7 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
 export interface ApiPriorityPriority extends Struct.CollectionTypeSchema {
   collectionName: 'priorities';
   info: {
+    description: 'Ticket priorities';
     displayName: 'Priorities';
     pluralName: 'priorities';
     singularName: 'priority';
@@ -852,7 +861,6 @@ export interface ApiPriorityPriority extends Struct.CollectionTypeSchema {
   };
   attributes: {
     color: Schema.Attribute.Enumeration<['gray', 'blue', 'orange', 'red']> &
-      Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'gray'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -879,16 +887,51 @@ export interface ApiPriorityPriority extends Struct.CollectionTypeSchema {
         maxLength: 100;
       }>;
     publishedAt: Schema.Attribute.DateTime;
-    tickets: Schema.Attribute.Relation<'oneToMany', 'api::ticket.ticket'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
   };
 }
 
+export interface ApiRoleRole extends Struct.CollectionTypeSchema {
+  collectionName: 'roles';
+  info: {
+    description: 'User roles';
+    displayName: 'Roles';
+    pluralName: 'roles';
+    singularName: 'role';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::role.role'> &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    users: Schema.Attribute.Relation<
+      'oneToMany',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiStatusStatus extends Struct.CollectionTypeSchema {
   collectionName: 'statuses';
   info: {
+    description: 'Ticket statuses';
     displayName: 'Statuses';
     pluralName: 'statuses';
     singularName: 'status';
@@ -900,7 +943,6 @@ export interface ApiStatusStatus extends Struct.CollectionTypeSchema {
     color: Schema.Attribute.Enumeration<
       ['blue', 'purple', 'yellow', 'green', 'orange', 'gray', 'red']
     > &
-      Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'blue'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -922,7 +964,6 @@ export interface ApiStatusStatus extends Struct.CollectionTypeSchema {
         maxLength: 100;
       }>;
     publishedAt: Schema.Attribute.DateTime;
-    tickets: Schema.Attribute.Relation<'oneToMany', 'api::ticket.ticket'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -933,6 +974,7 @@ export interface ApiTicketCommentTicketComment
   extends Struct.CollectionTypeSchema {
   collectionName: 'ticket_comments';
   info: {
+    description: 'Comments on tickets';
     displayName: 'Ticket Comments';
     pluralName: 'ticket-comments';
     singularName: 'ticket-comment';
@@ -969,6 +1011,7 @@ export interface ApiTicketCommentTicketComment
 export interface ApiTicketTicket extends Struct.CollectionTypeSchema {
   collectionName: 'tickets';
   info: {
+    description: 'Support tickets';
     displayName: 'Tickets';
     pluralName: 'tickets';
     singularName: 'ticket';
@@ -985,10 +1028,6 @@ export interface ApiTicketTicket extends Struct.CollectionTypeSchema {
     client: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.user'
-    >;
-    comments: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::ticket-comment.ticket-comment'
     >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -1555,6 +1594,7 @@ declare module '@strapi/strapi' {
       'api::partner.partner': ApiPartnerPartner;
       'api::post.post': ApiPostPost;
       'api::priority.priority': ApiPriorityPriority;
+      'api::role.role': ApiRoleRole;
       'api::status.status': ApiStatusStatus;
       'api::ticket-comment.ticket-comment': ApiTicketCommentTicketComment;
       'api::ticket.ticket': ApiTicketTicket;
