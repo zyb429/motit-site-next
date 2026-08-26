@@ -1,4 +1,4 @@
-{
+﻿{
   "kind": "collectionType",
   "collectionName": "ticket_comments",
   "info": {
@@ -10,9 +10,26 @@
     "draftAndPublish": false
   },
   "attributes": {
-    "ticket": { "type": "relation", "relation": "manyToOne", "target": "api::ticket.ticket", "required": true },
-    "user": { "type": "relation", "relation": "manyToOne", "target": "plugin::users-permissions.user", "required": true },
-    "content": { "type": "text", "required": true },
-    "is_internal": { "type": "boolean", "default": false }
+    "content": {
+      "type": "text",
+      "required": true
+    },
+    "is_internal": {
+      "type": "boolean",
+      "default": false
+    },
+    "ticket": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::ticket.ticket",
+      "inversedBy": "comments",
+      "required": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    }
   }
 }

@@ -10,10 +10,20 @@
     "draftAndPublish": true
   },
   "attributes": {
-    "address": { "type": "text" },
-    "phones": { "type": "json" },
-    "emails": { "type": "json" },
-    "social_links": { "type": "json" },
-    "map_embed": { "type": "text" }
+    "address": {
+      "type": "text"
+    },
+    "phones": {
+      "type": "json"
+    },
+    "emails": {
+      "type": "json"
+    },
+    "social_links": {
+      "type": "json"
+    },
+    "map_embed": {
+      "type": "text"
+    }
   }
 }

@@ -10,10 +10,20 @@
     "draftAndPublish": true
   },
   "attributes": {
-    "content": { "type": "richtext" },
-    "mission": { "type": "text" },
-    "vision": { "type": "text" },
-    "team_members": { "type": "json" },
-    "history": { "type": "text" }
+    "content": {
+      "type": "richtext"
+    },
+    "mission": {
+      "type": "text"
+    },
+    "vision": {
+      "type": "text"
+    },
+    "team_members": {
+      "type": "json"
+    },
+    "history": {
+      "type": "text"
+    }
   }
 }

@@ -1,4 +1,4 @@
-{
+﻿{
   "kind": "collectionType",
   "collectionName": "categories",
   "info": {
@@ -10,9 +10,29 @@
     "draftAndPublish": true
   },
   "attributes": {
-    "name": { "type": "string", "required": true, "unique": true, "maxLength": 255 },
-    "slug": { "type": "uid", "targetField": "name", "required": true, "unique": true },
-    "description": { "type": "text" },
-    "icon": { "type": "string" }
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 255
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true,
+      "unique": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "tickets": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::ticket.ticket",
+      "mappedBy": "category"
+    }
   }
 }

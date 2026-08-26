@@ -1,0 +1,31 @@
+{
+  "kind": "collectionType",
+  "collectionName": "partners",
+  "info": {
+    "singularName": "partner",
+    "pluralName": "partners",
+    "displayName": "Partners"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "website_url": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "image_url": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "order": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

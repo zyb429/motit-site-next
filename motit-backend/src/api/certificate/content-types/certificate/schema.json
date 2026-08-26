@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "certificates",
+  "info": {
+    "singularName": "certificate",
+    "pluralName": "certificates",
+    "displayName": "Certificates"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "issuer_name": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "image_url": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "issue_date": {
+      "type": "date"
+    },
+    "expiry_date": {
+      "type": "date"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "order": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

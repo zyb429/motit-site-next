@@ -1,4 +1,4 @@
-{
+﻿{
   "kind": "collectionType",
   "collectionName": "pages",
   "info": {
@@ -10,11 +10,30 @@
     "draftAndPublish": true
   },
   "attributes": {
-    "slug": { "type": "uid", "targetField": "title", "required": true, "unique": true },
-    "title": { "type": "string", "required": true, "maxLength": 255 },
-    "sections": { "type": "json" },
-    "seo_data": { "type": "json" },
-    "meta_title": { "type": "string", "maxLength": 255 },
-    "meta_description": { "type": "string", "maxLength": 300 }
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true,
+      "unique": true
+    },
+    "sections": {
+      "type": "json"
+    },
+    "meta_title": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "meta_description": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "seo_data": {
+      "type": "json"
+    }
   }
 }

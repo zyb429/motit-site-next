@@ -1,4 +1,4 @@
-{
+﻿{
   "kind": "collectionType",
   "collectionName": "priorities",
   "info": {
@@ -10,6 +10,29 @@
     "draftAndPublish": false
   },
   "attributes": {
-    "name": { "type": "string", "required": true, "unique": true, "maxLength": 100 }
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 100
+    },
+    "color": {
+      "type": "enumeration",
+      "enum": ["gray", "blue", "orange", "red"],
+      "default": "gray",
+      "required": true
+    },
+    "level": {
+      "type": "integer",
+      "default": 0,
+      "min": 0,
+      "max": 10
+    },
+    "tickets": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::ticket.ticket",
+      "mappedBy": "priority"
+    }
   }
 }

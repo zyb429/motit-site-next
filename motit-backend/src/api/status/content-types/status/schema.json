@@ -1,4 +1,4 @@
-{
+﻿{
   "kind": "collectionType",
   "collectionName": "statuses",
   "info": {
@@ -10,6 +10,27 @@
     "draftAndPublish": false
   },
   "attributes": {
-    "name": { "type": "string", "required": true, "unique": true, "maxLength": 100 }
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 100
+    },
+    "color": {
+      "type": "enumeration",
+      "enum": ["blue", "purple", "yellow", "green", "orange", "gray", "red"],
+      "default": "blue",
+      "required": true
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "tickets": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::ticket.ticket",
+      "mappedBy": "ticket_status"
+    }
   }
 }

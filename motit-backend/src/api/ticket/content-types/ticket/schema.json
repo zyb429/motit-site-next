@@ -1,4 +1,4 @@
-{
+﻿{
   "kind": "collectionType",
   "collectionName": "tickets",
   "info": {
@@ -10,14 +10,53 @@
     "draftAndPublish": true
   },
   "attributes": {
-    "title": { "type": "string", "required": true, "maxLength": 255 },
-    "description": { "type": "text" },
-    "client": { "type": "relation", "relation": "manyToOne", "target": "plugin::users-permissions.user" },
-    "assigned_to": { "type": "relation", "relation": "manyToOne", "target": "plugin::users-permissions.user" },
-    "ticket_status": { "type": "relation", "relation": "manyToOne", "target": "api::status.status" },
-    "priority": { "type": "relation", "relation": "manyToOne", "target": "api::priority.priority" },
-    "category": { "type": "relation", "relation": "manyToOne", "target": "api::category.category" },
-    "deadline_at": { "type": "datetime" },
-    "resolved_at": { "type": "datetime" }
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "description": {
+      "type": "text"
+    },
+    "ticket_status": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::status.status",
+      "inversedBy": "tickets"
+    },
+    "priority": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::priority.priority",
+      "inversedBy": "tickets"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "tickets"
+    },
+    "client": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "assigned_to": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "deadline_at": {
+      "type": "datetime"
+    },
+    "resolved_at": {
+      "type": "datetime"
+    },
+    "comments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::ticket-comment.ticket-comment",
+      "mappedBy": "ticket"
+    }
   }
 }
