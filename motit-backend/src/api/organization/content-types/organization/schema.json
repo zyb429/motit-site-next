@@ -1,0 +1,20 @@
+{
+  "kind": "collectionType",
+  "collectionName": "organizations",
+  "info": {
+    "singularName": "organization",
+    "pluralName": "organizations",
+    "displayName": "Organizations"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": { "type": "string", "required": true, "maxLength": 255 },
+    "inn": { "type": "string", "maxLength": 20, "unique": true },
+    "address": { "type": "text" },
+    "email": { "type": "email" },
+    "phone": { "type": "string", "maxLength": 50 },
+    "is_active": { "type": "boolean", "default": true }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "singleType",
+  "collectionName": "home_pages",
+  "info": {
+    "singularName": "home-page",
+    "pluralName": "home-pages",
+    "displayName": "Home Page"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "hero_title": { "type": "string" },
+    "hero_subtitle": { "type": "text" },
+    "hero_background": { "type": "media", "allowedTypes": ["images"] },
+    "stats": { "type": "json" },
+    "services_section": { "type": "json" },
+    "testimonials_section": { "type": "json" }
+  }
+}

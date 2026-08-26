@@ -1,0 +1,322 @@
+db login
+motit_user
+db pass
+MotitSecure2024!
+db root pass
+MotitSecure2024!
+
+db name
+motit_site
+db charset
+utf8mb4
+db collation
+utf8mb4_unicode_520_ci (первый из двух в перечне)
+
+____________________________________________________________________________________________________________________________________
+
+Скрипт разворачивания БД сохранить как schema.sql. Развернуть через команду mysql -u root -p < schema.sql
+Или
+1) Откройте MySQL Workbench
+2) Подключитесь к серверу
+3) Нажмите File → Open SQL Script
+4) Выберите файл schema.sql
+5) Нажмите Execute (Молния) или Ctrl + Enter
+
+schema.sql
+
+-- ============================================
+-- 0. Удаление старой БД (если существует)
+-- ============================================
+DROP DATABASE IF EXISTS `motit_site`;
+
+-- ============================================
+-- 1. Создание БД
+-- ============================================
+CREATE DATABASE `motit_site` 
+    DEFAULT CHARACTER SET utf8mb4 
+    COLLATE utf8mb4_unicode_520_ci;
+
+USE `motit_site`;
+
+-- ============================================
+-- 2. Таблица: users
+-- ============================================
+CREATE TABLE `users` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `username` VARCHAR(100) NOT NULL,
+    `email` VARCHAR(255) NOT NULL,
+    `password_hash` VARCHAR(255) NOT NULL,
+    `full_name` VARCHAR(255) NOT NULL,
+    `phone` VARCHAR(50) NOT NULL,
+    `avatar_url` VARCHAR(500) NULL,
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `last_login` TIMESTAMP NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_users_uuid` (`uuid`),
+    UNIQUE KEY `idx_users_username` (`username`),
+    UNIQUE KEY `idx_users_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 3. Таблица: roles
+-- ============================================
+CREATE TABLE `roles` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `name` VARCHAR(100) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_roles_uuid` (`uuid`),
+    UNIQUE KEY `idx_roles_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- Добавляем внешний ключ role_id в users
+ALTER TABLE `users` 
+ADD COLUMN `role_id` BIGINT UNSIGNED NULL,
+ADD CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE SET NULL;
+
+-- ============================================
+-- 4. Таблица: organizations
+-- ============================================
+CREATE TABLE `organizations` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `name` VARCHAR(255) NOT NULL,
+    `inn` VARCHAR(20) NULL,
+    `address` TEXT NULL,
+    `email` VARCHAR(255) NULL,
+    `phone` VARCHAR(50) NULL,
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_organizations_uuid` (`uuid`),
+    KEY `idx_organizations_inn` (`inn`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 5. Таблица: clients (ПК — user_uuid)
+-- ============================================
+CREATE TABLE `clients` (
+    `user_uuid` CHAR(36) NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`user_uuid`),
+    CONSTRAINT `fk_clients_user` FOREIGN KEY (`user_uuid`) REFERENCES `users` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 6. Таблица: client_organizations (Многие-ко-многим)
+-- ============================================
+CREATE TABLE `client_organizations` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `client_user_uuid` CHAR(36) NOT NULL,
+    `organization_uuid` CHAR(36) NOT NULL,
+    `role_in_company` VARCHAR(50) DEFAULT 'member',
+    `is_primary` BOOLEAN DEFAULT FALSE,
+    `joined_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_client_org_unique` (`client_user_uuid`, `organization_uuid`),
+    KEY `idx_client_org_client` (`client_user_uuid`),
+    KEY `idx_client_org_org` (`organization_uuid`),
+    CONSTRAINT `fk_client_org_client` FOREIGN KEY (`client_user_uuid`) REFERENCES `users` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_client_org_org` FOREIGN KEY (`organization_uuid`) REFERENCES `organizations` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 7. Таблица: workers (ПК — user_uuid)
+-- ============================================
+CREATE TABLE `workers` (
+    `user_uuid` CHAR(36) NOT NULL,
+    `position` VARCHAR(255) NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`user_uuid`),
+    CONSTRAINT `fk_workers_user` FOREIGN KEY (`user_uuid`) REFERENCES `users` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 8. Таблица: categories
+-- ============================================
+CREATE TABLE `categories` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `name` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_categories_uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 9. Таблица: statuses
+-- ============================================
+CREATE TABLE `statuses` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `name` VARCHAR(100) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_statuses_uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 10. Таблица: priorities
+-- ============================================
+CREATE TABLE `priorities` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `name` VARCHAR(100) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_priorities_uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 11. Таблица: tickets
+-- ============================================
+CREATE TABLE `tickets` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `title` VARCHAR(255) NOT NULL,
+    `description` TEXT NULL,
+    `client_uuid` CHAR(36) NULL,
+    `assigned_to_uuid` CHAR(36) NULL,
+    `status_uuid` CHAR(36) NULL,
+    `priority_uuid` CHAR(36) NULL,
+    `category_uuid` CHAR(36) NULL,
+    `deadline_at` TIMESTAMP NULL,
+    `resolved_at` TIMESTAMP NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_tickets_uuid` (`uuid`),
+    KEY `idx_tickets_client` (`client_uuid`),
+    KEY `idx_tickets_assigned` (`assigned_to_uuid`),
+    KEY `idx_tickets_status` (`status_uuid`),
+    KEY `idx_tickets_priority` (`priority_uuid`),
+    KEY `idx_tickets_category` (`category_uuid`),
+    KEY `idx_tickets_created_at` (`created_at`),
+    KEY `idx_tickets_deadline_at` (`deadline_at`),
+    CONSTRAINT `fk_tickets_client` FOREIGN KEY (`client_uuid`) REFERENCES `users` (`uuid`) ON DELETE SET NULL,
+    CONSTRAINT `fk_tickets_assigned` FOREIGN KEY (`assigned_to_uuid`) REFERENCES `users` (`uuid`) ON DELETE SET NULL,
+    CONSTRAINT `fk_tickets_status` FOREIGN KEY (`status_uuid`) REFERENCES `statuses` (`uuid`) ON DELETE SET NULL,
+    CONSTRAINT `fk_tickets_priority` FOREIGN KEY (`priority_uuid`) REFERENCES `priorities` (`uuid`) ON DELETE SET NULL,
+    CONSTRAINT `fk_tickets_category` FOREIGN KEY (`category_uuid`) REFERENCES `categories` (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 12. Таблица: ticket_comments
+-- ============================================
+CREATE TABLE `ticket_comments` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `ticket_uuid` CHAR(36) NOT NULL,
+    `user_uuid` CHAR(36) NOT NULL,
+    `content` TEXT NOT NULL,
+    `is_internal` BOOLEAN DEFAULT FALSE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_ticket_comments_uuid` (`uuid`),
+    KEY `idx_ticket_comments_ticket` (`ticket_uuid`),
+    KEY `idx_ticket_comments_user` (`user_uuid`),
+    CONSTRAINT `fk_ticket_comments_ticket` FOREIGN KEY (`ticket_uuid`) REFERENCES `tickets` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_ticket_comments_user` FOREIGN KEY (`user_uuid`) REFERENCES `users` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 13. Таблица: posts
+-- ============================================
+CREATE TABLE `posts` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `slug` VARCHAR(255) NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `content` LONGTEXT NULL,
+    `excerpt` TEXT NULL,
+    `featured_image` VARCHAR(500) NULL,
+    `status` VARCHAR(50) DEFAULT 'draft',
+    `author_uuid` CHAR(36) NULL,
+    `meta_title` VARCHAR(255) NULL,
+    `meta_description` VARCHAR(300) NULL,
+    `seo_data` JSON NULL,
+    `published_at` TIMESTAMP NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_posts_uuid` (`uuid`),
+    UNIQUE KEY `idx_posts_slug` (`slug`),
+    KEY `idx_posts_author` (`author_uuid`),
+    KEY `idx_posts_status` (`status`),
+    KEY `idx_posts_published_at` (`published_at`),
+    CONSTRAINT `fk_posts_author` FOREIGN KEY (`author_uuid`) REFERENCES `users` (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 14. Таблица: pages
+-- ============================================
+CREATE TABLE `pages` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `slug` VARCHAR(255) NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `sections` JSON NULL,
+    `seo_data` JSON NULL,
+    `meta_title` VARCHAR(255) NULL,
+    `meta_description` VARCHAR(300) NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_pages_uuid` (`uuid`),
+    UNIQUE KEY `idx_pages_slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 15. Таблица: issuers
+-- ============================================
+CREATE TABLE `issuers` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `name` VARCHAR(255) NOT NULL,
+    `website_url` VARCHAR(255) NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_issuers_uuid` (`uuid`),
+    UNIQUE KEY `idx_issuers_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 16. Таблица: certificates
+-- ============================================
+CREATE TABLE `certificates` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `title` VARCHAR(255) NOT NULL,
+    `issuer_id` BIGINT UNSIGNED NULL,
+    `image_url` VARCHAR(500) NULL,
+    `issue_date` DATE NULL,
+    `expiry_date` DATE NULL,
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `order` INT DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_certificates_uuid` (`uuid`),
+    KEY `idx_certificates_issuer` (`issuer_id`),
+    CONSTRAINT `fk_certificates_issuer` FOREIGN KEY (`issuer_id`) REFERENCES `issuers` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+-- ============================================
+-- 17. Таблица: partners
+-- ============================================
+CREATE TABLE `partners` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
+    `name` VARCHAR(255) NOT NULL,
+    `website_url` VARCHAR(255) NULL,
+    `image_url` VARCHAR(500) NULL,
+    `order` INT DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_partners_uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;

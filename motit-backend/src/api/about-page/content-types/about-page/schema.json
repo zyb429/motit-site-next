@@ -1,0 +1,19 @@
+{
+  "kind": "singleType",
+  "collectionName": "about_pages",
+  "info": {
+    "singularName": "about-page",
+    "pluralName": "about-pages",
+    "displayName": "About Page"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "content": { "type": "richtext" },
+    "mission": { "type": "text" },
+    "vision": { "type": "text" },
+    "team_members": { "type": "json" },
+    "history": { "type": "text" }
+  }
+}

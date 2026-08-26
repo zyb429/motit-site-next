@@ -1,0 +1,18 @@
+{
+  "kind": "collectionType",
+  "collectionName": "ticket_comments",
+  "info": {
+    "singularName": "ticket-comment",
+    "pluralName": "ticket-comments",
+    "displayName": "Ticket Comments"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "ticket": { "type": "relation", "relation": "manyToOne", "target": "api::ticket.ticket", "required": true },
+    "user": { "type": "relation", "relation": "manyToOne", "target": "plugin::users-permissions.user", "required": true },
+    "content": { "type": "text", "required": true },
+    "is_internal": { "type": "boolean", "default": false }
+  }
+}
