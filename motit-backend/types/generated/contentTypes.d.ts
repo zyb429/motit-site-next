@@ -480,7 +480,7 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   collectionName: 'categories';
   info: {
     description: 'Categories for tickets and posts';
-    displayName: 'Categories';
+    displayName: 'Category';
     pluralName: 'categories';
     singularName: 'category';
   };
@@ -666,7 +666,7 @@ export interface ApiOrganizationOrganization
   collectionName: 'organizations';
   info: {
     description: 'Companies and organizations';
-    displayName: 'Organizations';
+    displayName: 'Organization';
     pluralName: 'organizations';
     singularName: 'organization';
   };
@@ -795,64 +795,11 @@ export interface ApiPartnerPartner extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiPostPost extends Struct.CollectionTypeSchema {
-  collectionName: 'posts';
-  info: {
-    description: 'Blog posts and articles';
-    displayName: 'Posts';
-    pluralName: 'posts';
-    singularName: 'post';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    author: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-    content: Schema.Attribute.RichText;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    excerpt: Schema.Attribute.Text;
-    featured_image: Schema.Attribute.Media<'images'>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::post.post'> &
-      Schema.Attribute.Private;
-    meta_description: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 300;
-      }>;
-    meta_title: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 255;
-      }>;
-    post_status: Schema.Attribute.Enumeration<
-      ['draft', 'published', 'archived']
-    > &
-      Schema.Attribute.DefaultTo<'draft'>;
-    publishedAt: Schema.Attribute.DateTime;
-    seo_data: Schema.Attribute.JSON;
-    slug: Schema.Attribute.UID<'title'> &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
-    title: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 255;
-      }>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiPriorityPriority extends Struct.CollectionTypeSchema {
   collectionName: 'priorities';
   info: {
     description: 'Ticket priorities';
-    displayName: 'Priorities';
+    displayName: 'Priority';
     pluralName: 'priorities';
     singularName: 'priority';
   };
@@ -932,7 +879,7 @@ export interface ApiStatusStatus extends Struct.CollectionTypeSchema {
   collectionName: 'statuses';
   info: {
     description: 'Ticket statuses';
-    displayName: 'Statuses';
+    displayName: 'Status';
     pluralName: 'statuses';
     singularName: 'status';
   };
@@ -1592,7 +1539,6 @@ declare module '@strapi/strapi' {
       'api::organization.organization': ApiOrganizationOrganization;
       'api::page.page': ApiPagePage;
       'api::partner.partner': ApiPartnerPartner;
-      'api::post.post': ApiPostPost;
       'api::priority.priority': ApiPriorityPriority;
       'api::role.role': ApiRoleRole;
       'api::status.status': ApiStatusStatus;

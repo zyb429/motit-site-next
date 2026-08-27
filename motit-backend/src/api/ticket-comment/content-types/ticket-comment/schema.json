@@ -4,7 +4,7 @@
   "info": {
     "singularName": "ticket-comment",
     "pluralName": "ticket-comments",
-    "displayName": "Ticket Comments",
+    "displayName": "Ticket Comment",
     "description": "Comments on tickets"
   },
   "options": {

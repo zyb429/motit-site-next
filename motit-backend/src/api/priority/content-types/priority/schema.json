@@ -4,7 +4,7 @@
   "info": {
     "singularName": "priority",
     "pluralName": "priorities",
-    "displayName": "Priorities",
+    "displayName": "Priority",
     "description": "Ticket priorities"
   },
   "options": {

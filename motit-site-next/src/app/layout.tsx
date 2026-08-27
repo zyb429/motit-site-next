@@ -1,27 +1,26 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-// Удалите import "./App.css"; — он не нужен
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { Providers } from './providers';
 
-const inter = Inter({
-  subsets: ["latin", "cyrillic"],
-  display: "swap",
-});
+const inter = Inter({ subsets: ['latin', 'cyrillic'] });
 
 export const metadata: Metadata = {
-  title: "МОТИТ - IT-решения для бизнеса",
-  description: "Комплексные IT-решения для бизнеса",
+  title: 'Motit Site',
+  description: 'Motit official website',
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="ru">
       <body className={inter.className}>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

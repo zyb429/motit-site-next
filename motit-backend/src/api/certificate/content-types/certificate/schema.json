@@ -4,7 +4,7 @@
   "info": {
     "singularName": "certificate",
     "pluralName": "certificates",
-    "displayName": "Certificates",
+    "displayName": "Certificate",
     "description": "Certificates and awards"
   },
   "options": {
@@ -15,11 +15,6 @@
       "type": "string",
       "required": true,
       "maxLength": 255
-    },
-    "issuer": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::issuer.issuer"
     },
     "image_url": {
       "type": "string",
@@ -38,6 +33,11 @@
     "order": {
       "type": "integer",
       "default": 0
+    },
+    "issuer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::issuer.issuer"
     }
   }
 }
