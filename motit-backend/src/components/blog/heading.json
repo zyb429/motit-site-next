@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_blog_headings",
+  "info": {
+    "displayName": "heading"
+  },
+  "options": {},
+  "attributes": {
+    "heading_level": {
+      "type": "enumeration",
+      "required": true,
+      "default": "h2",
+      "enum": [
+        "h2",
+        "h3",
+        "h4"
+      ]
+    },
+    "text": {
+      "type": "string"
+    }
+  },
+  "config": {}
+}

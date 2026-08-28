@@ -1,3 +1,4 @@
+// src/components/blog/BlogList.tsx
 'use client';
 
 import { usePublishedPosts, usePostsByCategory } from '@/hooks/usePosts';
@@ -7,20 +8,49 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
-function BlogListContent({ categorySlug, pageSize = 9 }: { categorySlug?: string; pageSize?: number }) {
+interface BlogListProps {
+  initialPosts?: any;
+  categorySlug?: string;
+  pageSize?: number;
+}
+
+function BlogListContent({ 
+  initialPosts, 
+  categorySlug, 
+  pageSize = 9 
+}: BlogListProps) {
   const searchParams = useSearchParams();
-  const categoryFromUrl = searchParams.get('category') || categorySlug;
   
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(categoryFromUrl);
+  // ✅ БЕЗОПАСНОЕ получение category из URL
+  let categoryFromUrl = '';
+  try {
+    const raw = searchParams.get('category');
+    if (raw && typeof raw === 'string') {
+      categoryFromUrl = raw;
+    }
+  } catch (e) {
+    console.warn('Error getting category from URL:', e);
+  }
+  
+  // ✅ Используем category из URL или из пропсов
+  const initialCategory = categoryFromUrl || categorySlug || '';
+  
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    initialCategory || undefined
+  );
 
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
-  const { data: postsData, isLoading: postsLoading, error } = selectedCategory
+  
+  // ✅ Передаем только если selectedCategory - строка
+  const shouldFilter = selectedCategory && typeof selectedCategory === 'string' && selectedCategory.length > 0;
+  
+  const { data: postsData, isLoading: postsLoading, error } = shouldFilter
     ? usePostsByCategory(selectedCategory, { pagination: { page: 1, pageSize } })
     : usePublishedPosts({ pagination: { page: 1, pageSize } });
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (selectedCategory) {
+    if (selectedCategory && typeof selectedCategory === 'string' && selectedCategory.length > 0) {
       url.searchParams.set('category', selectedCategory);
     } else {
       url.searchParams.delete('category');
@@ -28,7 +58,9 @@ function BlogListContent({ categorySlug, pageSize = 9 }: { categorySlug?: string
     window.history.replaceState({}, '', url.toString());
   }, [selectedCategory]);
 
-  if (postsLoading) {
+  const displayPosts = initialPosts || postsData?.data || [];
+
+  if (!initialPosts && postsLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
@@ -44,7 +76,7 @@ function BlogListContent({ categorySlug, pageSize = 9 }: { categorySlug?: string
     );
   }
 
-  if (error) {
+  if (error && !initialPosts) {
     return (
       <div className="text-center py-12">
         <p className="text-red-500">Ошибка загрузки: {error.message}</p>
@@ -52,7 +84,7 @@ function BlogListContent({ categorySlug, pageSize = 9 }: { categorySlug?: string
     );
   }
 
-  if (!postsData?.data || postsData.data.length === 0) {
+  if (!displayPosts || displayPosts.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">
@@ -61,6 +93,10 @@ function BlogListContent({ categorySlug, pageSize = 9 }: { categorySlug?: string
       </div>
     );
   }
+
+  const hasDrafts = displayPosts.some(
+    (post: any) => post?.attributes?.post_status === 'draft'
+  );
 
   return (
     <div>
@@ -92,16 +128,24 @@ function BlogListContent({ categorySlug, pageSize = 9 }: { categorySlug?: string
         </div>
       )}
 
+      {hasDrafts && (
+        <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <p className="text-sm text-yellow-700 dark:text-yellow-400">
+            🔧 Режим превью: показаны черновики
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {postsData.data.map((post) => (
-          <BlogCard key={post.id} post={post} />
+        {displayPosts.map((post: any) => (
+          <BlogCard key={post.id || post.documentId} post={post} />
         ))}
       </div>
     </div>
   );
 }
 
-export function BlogList(props: { categorySlug?: string; pageSize?: number }) {
+export function BlogList(props: BlogListProps) {
   return (
     <Suspense fallback={
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

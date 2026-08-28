@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Menu, X, Headphones, Phone, Mail } from 'lucide-react';
+import Link from 'next/link';
 
 const navLinks = [
   { label: 'Направления', target: 'directions' },
   { label: 'О нас', target: 'about' },
   { label: 'Контакты', target: 'contact' },
+  { label: 'Блог', href: '/blog' }, // ✅ Для страниц используем href
 ];
 
 export default function NavigationClient() {
@@ -105,17 +107,34 @@ export default function NavigationClient() {
 
           <nav className="flex-1 overflow-y-auto py-6 px-5">
             <div className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <a
-                  key={link.target}
-                  href={`#${link.target}`}
-                  onClick={(e) => handleNavClick(e, link.target)}
-                  className="px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 hover:bg-white/5 hover:text-[#2dd4bf]"
-                  style={{ color: '#e0f7fa' }}
-                >
-                  {link.label}
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                // Если есть href - используем Link для страниц
+                if (link.href) {
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setIsOpen(false)}
+                      className="px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 hover:bg-white/5 hover:text-[#2dd4bf]"
+                      style={{ color: '#e0f7fa' }}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                }
+                // Иначе используем якорь для секций
+                return (
+                  <a
+                    key={link.target}
+                    href={`#${link.target}`}
+                    onClick={(e) => handleNavClick(e, link.target)}
+                    className="px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200 hover:bg-white/5 hover:text-[#2dd4bf]"
+                    style={{ color: '#e0f7fa' }}
+                  >
+                    {link.label}
+                  </a>
+                );
+              })}
               <a
                 href="https://help.motit.by"
                 target="_blank"

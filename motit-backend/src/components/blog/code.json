@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_blog_codes",
+  "info": {
+    "displayName": "code"
+  },
+  "options": {},
+  "attributes": {
+    "code_language": {
+      "type": "string"
+    },
+    "code_content": {
+      "type": "text"
+    }
+  },
+  "config": {}
+}

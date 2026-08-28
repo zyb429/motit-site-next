@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 
-import Navigation from '@/components/sections/Navigation';
 import About from '@/components/sections/About';
 import Advantages from '@/components/sections/Advantages';
 import QualityManagement from '@/components/sections/QualityManagement';
@@ -48,7 +47,6 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
-      <Navigation />
       <main className="flex-1">
         <Hero />
         <Directions />

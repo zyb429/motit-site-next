@@ -4,59 +4,66 @@
   "info": {
     "singularName": "post",
     "pluralName": "posts",
-    "displayName": "Post",
-    "description": "Blog posts and articles"
+    "displayName": "Post"
   },
   "options": {
     "draftAndPublish": true
   },
+  "pluginOptions": {},
   "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
     "slug": {
       "type": "uid",
       "targetField": "title",
-      "required": true,
-      "unique": true
-    },
-    "title": {
-      "type": "string",
-      "required": true,
-      "maxLength": 255
-    },
-    "content": {
-      "type": "richtext"
-    },
-    "excerpt": {
-      "type": "text"
-    },
-    "featured_image": {
-      "type": "media",
-      "allowedTypes": ["images"]
+      "required": true
     },
     "post_status": {
       "type": "enumeration",
-      "enum": ["draft", "published", "archived"],
-      "default": "draft"
-    },
-    "meta_title": {
-      "type": "string",
-      "maxLength": 255
-    },
-    "meta_description": {
-      "type": "string",
-      "maxLength": 300
-    },
-    "seo_data": {
-      "type": "json"
-    },
-    "author": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
+      "default": "draft",
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ]
     },
     "category": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::category.category"
+      "target": "api::category.category",
+      "inversedBy": "posts"
+    },
+    "admin_user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "admin::user"
+    },
+    "content_blocks": {
+      "type": "dynamiczone",
+      "components": [
+        "blog.block",
+        "blog.video",
+        "blog.text",
+        "blog.quote",
+        "blog.image",
+        "blog.heading",
+        "blog.gallery",
+        "blog.code",
+        "blog.button"
+      ]
+    },
+    "excerpt": {
+      "type": "text",
+      "maxLength": 300
+    },
+    "featured_image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
     }
   }
 }

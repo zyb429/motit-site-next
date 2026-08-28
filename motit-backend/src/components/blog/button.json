@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_blog_buttons",
+  "info": {
+    "displayName": "button"
+  },
+  "options": {},
+  "attributes": {
+    "button_text": {
+      "type": "string"
+    },
+    "button_url": {
+      "type": "string"
+    },
+    "button_style": {
+      "type": "enumeration",
+      "default": "primary",
+      "enum": [
+        "primary",
+        "secondary",
+        "outline"
+      ]
+    }
+  },
+  "config": {}
+}

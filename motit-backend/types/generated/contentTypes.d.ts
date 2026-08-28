@@ -504,10 +504,9 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
       }>;
+    posts: Schema.Attribute.Relation<'oneToMany', 'api::post.post'>;
     publishedAt: Schema.Attribute.DateTime;
-    slug: Schema.Attribute.UID<'name'> &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
+    slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -518,7 +517,7 @@ export interface ApiCertificateCertificate extends Struct.CollectionTypeSchema {
   collectionName: 'certificates';
   info: {
     description: 'Certificates and awards';
-    displayName: 'Certificates';
+    displayName: 'Certificate';
     pluralName: 'certificates';
     singularName: 'certificate';
   };
@@ -553,6 +552,37 @@ export interface ApiCertificateCertificate extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiClientClient extends Struct.CollectionTypeSchema {
+  collectionName: 'clients';
+  info: {
+    displayName: 'Client';
+    pluralName: 'clients';
+    singularName: 'client';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::client.client'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 }
 
@@ -627,7 +657,7 @@ export interface ApiIssuerIssuer extends Struct.CollectionTypeSchema {
   collectionName: 'issuers';
   info: {
     description: 'Certificate issuers';
-    displayName: 'Issuers';
+    displayName: 'Issuer';
     pluralName: 'issuers';
     singularName: 'issuer';
   };
@@ -714,7 +744,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
   collectionName: 'pages';
   info: {
     description: 'Custom pages';
-    displayName: 'Pages';
+    displayName: 'Page';
     pluralName: 'pages';
     singularName: 'page';
   };
@@ -757,7 +787,7 @@ export interface ApiPartnerPartner extends Struct.CollectionTypeSchema {
   collectionName: 'partners';
   info: {
     description: 'Partner companies';
-    displayName: 'Partners';
+    displayName: 'Partner';
     pluralName: 'partners';
     singularName: 'partner';
   };
@@ -792,6 +822,56 @@ export interface ApiPartnerPartner extends Struct.CollectionTypeSchema {
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
       }>;
+  };
+}
+
+export interface ApiPostPost extends Struct.CollectionTypeSchema {
+  collectionName: 'posts';
+  info: {
+    displayName: 'Post';
+    pluralName: 'posts';
+    singularName: 'post';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    admin_user: Schema.Attribute.Relation<'oneToOne', 'admin::user'>;
+    category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
+    content_blocks: Schema.Attribute.DynamicZone<
+      [
+        'blog.block',
+        'blog.video',
+        'blog.text',
+        'blog.quote',
+        'blog.image',
+        'blog.heading',
+        'blog.gallery',
+        'blog.code',
+        'blog.button',
+      ]
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    excerpt: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 300;
+      }>;
+    featured_image: Schema.Attribute.Media<'images'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::post.post'> &
+      Schema.Attribute.Private;
+    post_status: Schema.Attribute.Enumeration<
+      ['draft', 'published', 'archived']
+    > &
+      Schema.Attribute.DefaultTo<'draft'>;
+    publishedAt: Schema.Attribute.DateTime;
+    slug: Schema.Attribute.UID<'title'> & Schema.Attribute.Required;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -922,7 +1002,7 @@ export interface ApiTicketCommentTicketComment
   collectionName: 'ticket_comments';
   info: {
     description: 'Comments on tickets';
-    displayName: 'Ticket Comments';
+    displayName: 'Ticket Comment';
     pluralName: 'ticket-comments';
     singularName: 'ticket-comment';
   };
@@ -959,7 +1039,7 @@ export interface ApiTicketTicket extends Struct.CollectionTypeSchema {
   collectionName: 'tickets';
   info: {
     description: 'Support tickets';
-    displayName: 'Tickets';
+    displayName: 'Ticket';
     pluralName: 'tickets';
     singularName: 'ticket';
   };
@@ -1533,12 +1613,14 @@ declare module '@strapi/strapi' {
       'api::about-page.about-page': ApiAboutPageAboutPage;
       'api::category.category': ApiCategoryCategory;
       'api::certificate.certificate': ApiCertificateCertificate;
+      'api::client.client': ApiClientClient;
       'api::contact-page.contact-page': ApiContactPageContactPage;
       'api::home-page.home-page': ApiHomePageHomePage;
       'api::issuer.issuer': ApiIssuerIssuer;
       'api::organization.organization': ApiOrganizationOrganization;
       'api::page.page': ApiPagePage;
       'api::partner.partner': ApiPartnerPartner;
+      'api::post.post': ApiPostPost;
       'api::priority.priority': ApiPriorityPriority;
       'api::role.role': ApiRoleRole;
       'api::status.status': ApiStatusStatus;

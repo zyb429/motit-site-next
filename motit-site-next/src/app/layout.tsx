@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import DraftModeIndicator from '@/components/DraftModeIndicator';
+import Navigation from '@/components/sections/Navigation'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] });
 
@@ -19,7 +21,11 @@ export default function RootLayout({
     <html lang="ru">
       <body className={inter.className}>
         <Providers>
-          {children}
+          <Navigation />
+            <main className="min-h-screen">
+              {children}
+            </main>
+          <DraftModeIndicator />
         </Providers>
       </body>
     </html>
