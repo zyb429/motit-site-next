@@ -1,49 +1,193 @@
 'use client';
 
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, User } from 'lucide-react';
+import { Calendar, User, Clock } from 'lucide-react';
 
 interface BlogCardProps {
   post: any;
   className?: string;
+  variant?: 'grid' | 'list';
 }
 
-export function BlogCard({ post, className = '' }: BlogCardProps) {
-  const attrs = post || {};
+export function BlogCard({ post, className = '', variant = 'list' }: BlogCardProps) {
+  // Нормализация данных
+  const attrs = post?.attributes || post || {};
   
   const isDraft = attrs.post_status === 'draft';
   const title = attrs.title || 'Без названия';
   const slug = attrs.slug || '';
   const excerpt = attrs.excerpt || '';
-  const publishedAt = attrs.publishedAt || null;
-  const category = attrs.category?.data?.attributes;
-  const author = attrs.admin_user?.data?.attributes;
+  const publishedAt = attrs.publishedAt || attrs.createdAt || null;
+  const category = attrs.category?.data?.attributes || attrs.category;
 
-  // ✅ Просто берем url из объекта
-  let imageUrl = null;
-  if (attrs.featured_image) {
-    if (typeof attrs.featured_image === 'string') {
-      imageUrl = attrs.featured_image;
-    } else if (attrs.featured_image.url) {
-      const url = attrs.featured_image.url;
-      imageUrl = url.startsWith('/uploads') 
-        ? `http://localhost:1337${url}`
+  // 🔥 Улучшенная функция для получения имени автора
+  const getAuthorName = () => {
+    // Пробуем разные варианты структуры данных
+    const authorData = attrs.admin_user || attrs.author;
+    
+    if (!authorData) return null;
+    
+    // Если authorData - объект с data (популярная структура Strapi)
+    if (authorData.data) {
+      const user = authorData.data.attributes || authorData.data;
+      return user.firstname || user.username || user.name || null;
+    }
+    
+    // Если authorData - сам объект пользователя с attributes
+    if (authorData.attributes) {
+      return authorData.attributes.firstname || 
+             authorData.attributes.username || 
+             authorData.attributes.name || 
+             null;
+    }
+    
+    // Прямые поля
+    return authorData.firstname || 
+           authorData.username || 
+           authorData.name || 
+           null;
+  };
+
+  const authorName = getAuthorName();
+
+  // Получение URL изображения
+  const getImageUrl = () => {
+    const image = attrs.featured_image;
+    if (!image) return null;
+    if (typeof image === 'string') {
+      return image.startsWith('/uploads') 
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image}`
+        : image;
+    }
+    if (image.url) {
+      const url = image.url;
+      return url.startsWith('/uploads')
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`
         : url;
     }
-  }
+    if (image.data?.attributes?.url) {
+      const url = image.data.attributes.url;
+      return url.startsWith('/uploads')
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`
+        : url;
+    }
+    return null;
+  };
+
+  const imageUrl = getImageUrl();
+  const imageAlt = attrs.featured_image?.alternativeText || title;
 
   const formatDate = (dateString: string) => {
     if (!dateString) return null;
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  // Расчет времени чтения
+  const getReadingTime = () => {
+    const contentBlocks = attrs.content_blocks || [];
+    const text = contentBlocks
+      ?.filter((b: any) => b.__component === 'blog.text')
+      ?.reduce((acc: string, b: any) => acc + (b.text || ''), '') || attrs.content || '';
+    const wordsPerMinute = 200;
+    const words = text.replace(/<[^>]*>/g, '').split(/\s+/).length;
+    const minutes = Math.ceil(words / wordsPerMinute);
+    return minutes > 0 ? minutes : 1;
   };
 
   if (!slug) return null;
 
+  // Вариант списка (новостная лента)
+  if (variant === 'list') {
+    return (
+      <Link
+        href={`/blog/${slug}`}
+        className={`group block bg-[#0f2832] rounded-xl overflow-hidden border border-[rgba(45,212,191,0.06)] hover:border-[#2dd4bf]/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${className}`}
+      >
+        <div className="flex flex-col sm:flex-row gap-4 p-4">
+          {/* Изображение */}
+          <div className="relative w-full sm:w-48 h-40 sm:h-32 flex-shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={imageAlt}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-3xl opacity-20">📄</span>
+              </div>
+            )}
+            {isDraft && (
+              <span className="absolute top-2 right-2 bg-yellow-500/90 text-black text-[10px] font-medium px-2 py-0.5 rounded-full">
+                Черновик
+              </span>
+            )}
+            {category && (
+              <span className="absolute bottom-2 left-2 bg-[#2dd4bf]/20 backdrop-blur-sm text-[#2dd4bf] text-[10px] font-medium px-2 py-0.5 rounded-full">
+                {typeof category === 'string' ? category : category.name}
+              </span>
+            )}
+          </div>
+
+          {/* Контент */}
+          <div className="flex-1 min-w-0 flex flex-col">
+            {/* Метаданные */}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-1">
+              {authorName && (
+                <span className="flex items-center gap-1">
+                  <User size={12} className="text-[#2dd4bf]" />
+                  {authorName}
+                </span>
+              )}
+              {publishedAt && (
+                <>
+                  {authorName && <span className="text-gray-600">•</span>}
+                  <span className="flex items-center gap-1">
+                    <Calendar size={12} className="text-[#2dd4bf]" />
+                    {formatDate(publishedAt)}
+                  </span>
+                </>
+              )}
+              <span className="text-gray-600">•</span>
+              <span className="flex items-center gap-1">
+                <Clock size={12} className="text-[#2dd4bf]" />
+                {getReadingTime()} мин
+              </span>
+            </div>
+
+            {/* Заголовок */}
+            <h2 className="text-lg font-bold text-[#e0f7fa] group-hover:text-[#2dd4bf] transition-colors line-clamp-2 leading-tight">
+              {title}
+            </h2>
+
+            {/* Отрывок */}
+            {excerpt && (
+              <p className="text-sm text-gray-400 line-clamp-2 mt-1 leading-relaxed">
+                {excerpt}
+              </p>
+            )}
+
+            {/* Кнопка "Читать далее" */}
+            <div className="flex items-center gap-1 text-[#2dd4bf] text-sm font-medium mt-2 group-hover:gap-2 transition-all duration-200">
+              Читать далее
+              <span className="transition-transform group-hover:translate-x-1">→</span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // Вариант сетки (3 колонки) - оригинальный
   return (
     <Link
       href={`/blog/${slug}`}
@@ -53,7 +197,7 @@ export function BlogCard({ post, className = '' }: BlogCardProps) {
         {imageUrl ? (
           <img
             src={imageUrl}
-            alt={title}
+            alt={imageAlt}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
@@ -69,7 +213,7 @@ export function BlogCard({ post, className = '' }: BlogCardProps) {
         )}
         {category && (
           <span className="absolute bottom-3 left-3 bg-[#2dd4bf]/20 backdrop-blur-sm text-[#2dd4bf] text-xs font-medium px-3 py-1 rounded-full">
-            {category.name}
+            {typeof category === 'string' ? category : category.name}
           </span>
         )}
       </div>
@@ -85,14 +229,18 @@ export function BlogCard({ post, className = '' }: BlogCardProps) {
           </p>
         )}
 
-        <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">
-          <div className="flex items-center gap-3">
-            {author && (
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">
+          <div className="flex flex-wrap items-center gap-3">
+            {authorName && (
               <span className="flex items-center gap-1">
                 <User size={12} className="text-[#2dd4bf]" />
-                {author.firstname || author.username}
+                {authorName}
               </span>
             )}
+            <span className="flex items-center gap-1">
+              <Clock size={12} className="text-[#2dd4bf]" />
+              {getReadingTime()} мин
+            </span>
           </div>
           {publishedAt && (
             <span className="flex items-center gap-1">

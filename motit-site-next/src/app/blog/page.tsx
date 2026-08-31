@@ -50,6 +50,12 @@ export default async function BlogPage({
         ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image.url}`
         : image.url;
     }
+    if (image.data?.attributes?.url) {
+      const url = image.data.attributes.url;
+      return url.startsWith('/uploads')
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`
+        : url;
+    }
     return null;
   };
 
@@ -58,6 +64,68 @@ export default async function BlogPage({
     const words = content.split(/\s+/).length;
     const minutes = Math.ceil(words / 200);
     return minutes > 0 ? minutes : 1;
+  };
+
+  // ✅ Новая функция для получения имени автора
+  const getAuthorName = (post: any) => {
+    // Сначала проверяем текстовое поле author_name
+    if (post.author_name) {
+      return post.author_name;
+    }
+    
+    // Проверяем admin_user (Strapi v5)
+    const authorData = post.admin_user;
+    
+    if (authorData) {
+      // В Strapi v5 данные могут быть в разных форматах
+      
+      // Если это массив (для множественных отношений)
+      if (Array.isArray(authorData) && authorData.length > 0) {
+        const user = authorData[0];
+        return user.firstname || user.username || user.name || "Motit Team";
+      }
+      
+      // Если это объект с data (одиночное отношение)
+      if (authorData.data) {
+        const user = authorData.data.attributes || authorData.data;
+        return user.firstname || user.username || user.name || "Motit Team";
+      }
+      
+      // Если это прямой объект пользователя
+      if (authorData.id) {
+        return authorData.firstname || authorData.username || authorData.name || "Motit Team";
+      }
+      
+      // Если есть attributes
+      if (authorData.attributes) {
+        return authorData.attributes.firstname || 
+              authorData.attributes.username || 
+              authorData.attributes.name || 
+              "Motit Team";
+      }
+      
+      // Прямые поля
+      return authorData.firstname || 
+            authorData.username || 
+            authorData.name || 
+            "Motit Team";
+    }
+    
+    // Проверяем поле author (если используется)
+    const authorDataAlt = post.author;
+    if (authorDataAlt) {
+      if (authorDataAlt.data) {
+        const user = authorDataAlt.data.attributes || authorDataAlt.data;
+        return user.firstname || user.username || user.name || "Motit Team";
+      }
+      return authorDataAlt.firstname || 
+            authorDataAlt.username || 
+            authorDataAlt.name || 
+            "Motit Team";
+    }
+    
+    // Если ничего не найдено, возвращаем значение по умолчанию
+    return "Motit Team";
   };
 
   return (
@@ -112,7 +180,7 @@ export default async function BlogPage({
               const imageUrl = getImageUrl(post);
               const isDraft = post.post_status === 'draft';
               const category = post.category?.data?.attributes;
-              const author = post.admin_user?.data?.attributes;
+              const authorName = getAuthorName(post);
               const readingTime = getReadingTime(post);
 
               return (
@@ -153,12 +221,11 @@ export default async function BlogPage({
                     {/* Контент */}
                     <div className="flex-1 min-w-0 flex flex-col">
                       <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-1">
-                        {author && (
-                          <span className="flex items-center gap-1">
-                            <User size={12} className="text-[#2dd4bf]" />
-                            {author.firstname || author.username}
-                          </span>
-                        )}
+                        {/* ✅ Автор теперь всегда будет отображаться */}
+                        <span className="flex items-center gap-1">
+                          <User size={12} className="text-[#2dd4bf]" />
+                          {authorName}
+                        </span>
                         {post.publishedAt && (
                           <>
                             <span className="text-gray-600">•</span>
