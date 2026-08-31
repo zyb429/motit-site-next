@@ -1,184 +1,177 @@
 'use client';
 
-import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface BlogPostProps {
-  slug: string | any;
   initialPost?: any;
 }
 
-export function BlogPost({ slug, initialPost }: BlogPostProps) {
-  // ✅ Используем только initialPost, без хуков
-  const currentPost = initialPost;
-  
-  // ✅ Безопасное преобразование slug
-  const safeSlug = typeof slug === 'string' ? slug : String(slug || '');
+export function BlogPost({ initialPost }: BlogPostProps) {
+  const post = initialPost;
+  if (!post) return null;
 
-  if (!currentPost) {
+  const contentBlocks = post.content_blocks || [];
+
+  // Функция для безопасного получения URL изображения
+  const getSafeUrl = (input: any): string | null => {
+    if (!input) return null;
+    if (typeof input === 'string') {
+      return input.startsWith('/uploads') ? `http://localhost:1337${input}` : input;
+    }
+    if (typeof input === 'object' && input.url) {
+      return input.url.startsWith('/uploads') ? `http://localhost:1337${input.url}` : input.url;
+    }
+    return null;
+  };
+
+  if (contentBlocks.length === 0 && post.content) {
     return (
-      <div className="text-center py-12">
-        <h1 className="text-2xl font-bold mb-4">Пост не найден</h1>
-        <Link href="/blog" className="text-blue-600 hover:underline">
-          Вернуться к списку
-        </Link>
-      </div>
+      <div 
+        className="prose prose-invert max-w-none prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-p:text-gray-300 prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:text-gray-400 prose-blockquote:border-[#2dd4bf]"
+        dangerouslySetInnerHTML={{ __html: post.content }}
+      />
     );
   }
 
-  // ✅ Безопасное получение атрибутов
-  const attributes = currentPost?.attributes || currentPost || {};
-  
-  const isDraft = attributes.post_status === 'draft';
-  const title = attributes.title || 'Без названия';
-  const excerpt = attributes.excerpt || '';
-  const publishedAt = attributes.publishedAt || null;
-  const category = attributes.category;
-  const adminUser = attributes.admin_user;
-
-  // ✅ Безопасное получение изображения
-  let imageUrl = attributes.featured_image || null;
-  if (imageUrl && typeof imageUrl === 'object') {
-    try {
-      imageUrl = imageUrl?.url || 
-                 imageUrl?.data?.attributes?.url || 
-                 imageUrl?.attributes?.url ||
-                 null;
-      if (imageUrl && typeof imageUrl === 'object') {
-        imageUrl = String(imageUrl);
-      }
-    } catch (e) {
-      imageUrl = null;
-    }
-  }
-  
-  if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('/uploads')) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
-    imageUrl = `${baseUrl}${imageUrl}`;
-  }
-
-  // ✅ Безопасное получение контента
-  const contentBlocks = attributes.content_blocks || [];
-
   return (
-    <article className="max-w-4xl mx-auto">
-      {isDraft && (
-        <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 rounded">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">⏳</span>
-            <div>
-              <p className="font-bold text-yellow-800 dark:text-yellow-300">Черновик</p>
-              <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                Этот пост еще не опубликован и виден только в режиме превью
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="space-y-8 max-w-none">
+      {contentBlocks.map((block: any, index: number) => {
+        const component = block.__component || '';
 
-      <nav className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        <Link href="/" className="hover:text-blue-600">Главная</Link>
-        {' / '}
-        <Link href="/blog" className="hover:text-blue-600">Блог</Link>
-        {' / '}
-        <span className="text-gray-700 dark:text-gray-300">{title}</span>
-      </nav>
+        switch (component) {
+          case 'blog.heading': {
+            const HeadingTag = block.heading_level || 'h2';
+            const className = {
+              h2: 'text-2xl md:text-3xl font-bold text-[#e0f7fa] mt-8 mb-4',
+              h3: 'text-xl md:text-2xl font-bold text-[#e0f7fa] mt-6 mb-3',
+              h4: 'text-lg md:text-xl font-bold text-[#e0f7fa] mt-4 mb-2',
+            }[block.heading_level || 'h2'];
+            return (
+              <HeadingTag key={index} className={className}>
+                {block.text}
+              </HeadingTag>
+            );
+          }
 
-      <header className="mb-8">
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          {category?.data?.attributes && (
-            <Link
-              href={`/blog?category=${category.data.attributes.slug || category.data.attributes.name}`}
-              className="text-blue-600 hover:underline text-sm font-medium"
-            >
-              {category.data.attributes.name}
-            </Link>
-          )}
-          {!isDraft && attributes.post_status === 'published' && (
-            <Badge variant="default">Опубликовано</Badge>
-          )}
-          {isDraft && (
-            <Badge variant="outline" className="border-yellow-500 text-yellow-700 dark:text-yellow-400">
-              ⏳ Черновик
-            </Badge>
-          )}
-        </div>
+          case 'blog.text':
+            return (
+              <div key={index} className="prose prose-invert max-w-none prose-p:text-gray-300 prose-strong:text-[#e0f7fa] prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6]">
+                <ReactMarkdown>{block.text}</ReactMarkdown>
+              </div>
+            );
 
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mt-2 mb-4">
-          {title}
-          {isDraft && (
-            <span className="ml-2 text-sm font-normal text-yellow-600 dark:text-yellow-400">
-              (черновик)
-            </span>
-          )}
-        </h1>
+          case 'blog.image': {
+            const imageUrl = getSafeUrl(block.image);
+            if (!imageUrl) return null;
+            return (
+              <figure key={index} className="my-6">
+                <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#0a1920]">
+                  <img
+                    src={imageUrl}
+                    alt={block.caption || 'Изображение'}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                {block.caption && (
+                  <figcaption className="text-sm text-gray-500 mt-2 text-center">
+                    {block.caption}
+                  </figcaption>
+                )}
+              </figure>
+            );
+          }
 
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-          {publishedAt && (
-            <time dateTime={publishedAt}>
-              📅 {new Date(publishedAt).toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </time>
-          )}
-          {adminUser?.data?.attributes && (
-            <span className="flex items-center gap-1">
-              ✍️ {adminUser.data.attributes.firstname || 
-                   adminUser.data.attributes.username}
-            </span>
-          )}
-          {isDraft && (
-            <span className="text-yellow-600 dark:text-yellow-400">
-              🔒 Не опубликован
-            </span>
-          )}
-        </div>
-      </header>
+          case 'blog.quote':
+            return (
+              <blockquote key={index} className="border-l-4 border-[#2dd4bf] pl-5 py-2 my-6 bg-[#0d2029]/50 rounded-r-xl pr-4">
+                <p className="text-lg italic text-gray-300 leading-relaxed">
+                  {block.quote_text}
+                </p>
+                {block.quote_author && (
+                  <footer className="text-sm text-gray-500 mt-2">
+                    — {block.quote_author}
+                  </footer>
+                )}
+              </blockquote>
+            );
 
-      {imageUrl && typeof imageUrl === 'string' && (
-        <div className="relative h-[400px] w-full mb-8 rounded-xl overflow-hidden bg-gray-100">
-          <img
-            src={imageUrl}
-            alt={title}
-            className="object-cover w-full h-full"
-          />
-        </div>
-      )}
+          case 'blog.code':
+            return (
+              <div key={index} className="my-6 rounded-xl overflow-hidden">
+                <SyntaxHighlighter
+                  language={block.code_language || 'javascript'}
+                  style={vscDarkPlus}
+                  className="rounded-xl"
+                  showLineNumbers
+                >
+                  {block.code_content || ''}
+                </SyntaxHighlighter>
+              </div>
+            );
 
-      {excerpt && (
-        <div className="text-lg text-gray-600 dark:text-gray-400 mb-8 border-l-4 border-blue-500 pl-4 italic">
-          {excerpt}
-        </div>
-      )}
+          case 'blog.button':
+            if (!block.button_url) return null;
+            return (
+              <div key={index} className="my-6">
+                <a
+                  href={block.button_url}
+                  className="inline-flex items-center gap-2 bg-[#2dd4bf] text-[#0a1920] px-6 py-3 rounded-xl font-medium hover:bg-[#14b8a6] transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {block.button_text || 'Подробнее'}
+                  <span>→</span>
+                </a>
+              </div>
+            );
 
-      {/* ✅ Отображаем контент без ContentBlocks */}
-      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg my-4">
-        <h3 className="font-bold text-blue-700 dark:text-blue-300 mb-2">
-          📦 Content Blocks ({contentBlocks.length}):
-        </h3>
-        <pre className="text-xs overflow-auto max-h-96 bg-white dark:bg-gray-800 p-2 rounded">
-          {JSON.stringify(contentBlocks, null, 2)}
-        </pre>
-      </div>
-    </article>
-  );
-}
+          case 'blog.video':
+            if (!block.video_url) return null;
+            return (
+              <div key={index} className="aspect-video my-6 rounded-xl overflow-hidden">
+                <iframe
+                  src={block.video_url}
+                  className="w-full h-full"
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </div>
+            );
 
-export function BlogPostSkeleton() {
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <Skeleton className="h-4 w-1/4" />
-      <Skeleton className="h-8 w-3/4" />
-      <Skeleton className="h-4 w-1/3" />
-      <Skeleton className="h-[400px] w-full rounded-xl" />
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-      </div>
+          case 'blog.gallery': {
+            const images = block.gallery_images?.data || [];
+            if (!images.length) return null;
+            return (
+              <div key={index} className="grid grid-cols-2 md:grid-cols-3 gap-4 my-6">
+                {images.map((img: any, i: number) => {
+                  const url = img?.attributes?.url || '';
+                  if (!url) return null;
+                  const fullUrl = url.startsWith('/uploads') 
+                    ? `http://localhost:1337${url}`
+                    : url;
+                  return (
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#0a1920]">
+                      <img
+                        src={fullUrl}
+                        alt={img?.attributes?.alternativeText || `Изображение ${i + 1}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }
+
+          default:
+            return null;
+        }
+      })}
     </div>
   );
 }

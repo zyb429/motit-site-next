@@ -2,146 +2,106 @@
 
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import type { StrapiData, PostAttributes } from '@/types/strapi';
+import { Calendar, User } from 'lucide-react';
 
 interface BlogCardProps {
-  post: StrapiData<PostAttributes> | any;
+  post: any;
   className?: string;
 }
 
 export function BlogCard({ post, className = '' }: BlogCardProps) {
-  const attributes = post?.attributes || post;
+  const attrs = post || {};
   
-  let imageUrl = attributes?.featured_image || attributes?.image || null;
-  const isDraft = attributes?.post_status === 'draft';
-  const title = attributes?.title || 'Без названия';
-  const slug = attributes?.slug || '';
-  const excerpt = attributes?.excerpt || '';
-  const category = attributes?.category;
-  const publishedAt = attributes?.publishedAt || attributes?.published_at;
-  const adminUser = attributes?.admin_user;
+  const isDraft = attrs.post_status === 'draft';
+  const title = attrs.title || 'Без названия';
+  const slug = attrs.slug || '';
+  const excerpt = attrs.excerpt || '';
+  const publishedAt = attrs.publishedAt || null;
+  const category = attrs.category?.data?.attributes;
+  const author = attrs.admin_user?.data?.attributes;
 
-  if (!slug) {
-    return null;
-  }
-
-  // ✅ Формируем правильный URL для изображения
-  let fullImageUrl = null;
-  if (imageUrl) {
-    // Если imageUrl - объект, пытаемся извлечь строку
-    if (typeof imageUrl === 'object' && imageUrl !== null) {
-      try {
-        // Пробуем разные пути
-        fullImageUrl = imageUrl?.url || 
-                      imageUrl?.data?.attributes?.url || 
-                      imageUrl?.attributes?.url ||
-                      null;
-        if (fullImageUrl && typeof fullImageUrl === 'object') {
-          fullImageUrl = String(fullImageUrl);
-        }
-      } catch (e) {
-        console.warn('Error extracting image URL:', e);
-        fullImageUrl = null;
-      }
-    } else if (typeof imageUrl === 'string') {
-      fullImageUrl = imageUrl;
+  // ✅ Просто берем url из объекта
+  let imageUrl = null;
+  if (attrs.featured_image) {
+    if (typeof attrs.featured_image === 'string') {
+      imageUrl = attrs.featured_image;
+    } else if (attrs.featured_image.url) {
+      const url = attrs.featured_image.url;
+      imageUrl = url.startsWith('/uploads') 
+        ? `http://localhost:1337${url}`
+        : url;
     }
   }
 
-  // ✅ Добавляем базовый URL если нужно
-  if (fullImageUrl && typeof fullImageUrl === 'string' && fullImageUrl.startsWith('/uploads')) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
-    fullImageUrl = `${baseUrl}${fullImageUrl}`;
-  }
+  const formatDate = (dateString: string) => {
+    if (!dateString) return null;
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  if (!slug) return null;
 
   return (
-    <article className={`group bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all duration-300 ${className} ${
-      isDraft ? 'border-yellow-300 dark:border-yellow-700' : ''
-    }`}>
-      {fullImageUrl && typeof fullImageUrl === 'string' && (
-        <div className="relative h-48 w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
-          {/* ✅ Используем обычный тег img */}
+    <Link
+      href={`/blog/${slug}`}
+      className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${className}`}
+    >
+      <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#0a1920]">
+        {imageUrl ? (
           <img
-            src={fullImageUrl}
+            src={imageUrl}
             alt={title}
-            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
           />
-          {isDraft && (
-            <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">
-              ⏳ Черновик
-            </div>
-          )}
-        </div>
-      )}
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-4xl opacity-20">📄</span>
+          </div>
+        )}
+        {isDraft && (
+          <span className="absolute top-3 right-3 bg-yellow-500 text-black text-xs font-medium px-3 py-1 rounded-full">
+            Черновик
+          </span>
+        )}
+        {category && (
+          <span className="absolute bottom-3 left-3 bg-[#2dd4bf]/20 backdrop-blur-sm text-[#2dd4bf] text-xs font-medium px-3 py-1 rounded-full">
+            {category.name}
+          </span>
+        )}
+      </div>
 
-      <div className="p-5">
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          {category?.data?.attributes && (
-            <Link
-              href={`/blog?category=${category.data.attributes.slug || category.data.attributes.name}`}
-              className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {category.data.attributes.name}
-            </Link>
-          )}
-          {!isDraft && attributes?.post_status === 'published' && (
-            <Badge variant="default" className="text-xs">Опубликовано</Badge>
-          )}
-          {isDraft && (
-            <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700 dark:text-yellow-400">
-              Черновик
-            </Badge>
-          )}
-        </div>
-
-        <h3 className="text-xl font-semibold line-clamp-2">
-          <Link
-            href={`/blog/${slug}`}
-            className={`hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
-              isDraft ? 'text-yellow-700 dark:text-yellow-400' : ''
-            }`}
-          >
-            {title}
-            {isDraft && (
-              <span className="ml-1 text-sm font-normal text-yellow-600 dark:text-yellow-400">
-                (черновик)
-              </span>
-            )}
-          </Link>
-        </h3>
+      <div className="p-5 space-y-3">
+        <h2 className="text-lg font-bold text-[#e0f7fa] line-clamp-2 group-hover:text-[#2dd4bf] transition-colors">
+          {title}
+        </h2>
 
         {excerpt && (
-          <p className="mt-2 text-gray-600 dark:text-gray-400 text-sm line-clamp-3">
+          <p className="text-sm text-gray-400 line-clamp-2">
             {excerpt}
           </p>
         )}
 
-        <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-          <div className="flex items-center gap-2">
-            {adminUser?.data?.attributes && (
+        <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">
+          <div className="flex items-center gap-3">
+            {author && (
               <span className="flex items-center gap-1">
-                <span className="text-xs">👤</span>
-                {adminUser.data.attributes.firstname ||
-                 adminUser.data.attributes.username}
+                <User size={12} className="text-[#2dd4bf]" />
+                {author.firstname || author.username}
               </span>
             )}
           </div>
           {publishedAt && (
-            <time dateTime={publishedAt}>
-              {new Date(publishedAt).toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </time>
-          )}
-          {!publishedAt && isDraft && (
-            <span className="text-yellow-600 dark:text-yellow-400 text-xs">
-              Не опубликован
+            <span className="flex items-center gap-1">
+              <Calendar size={12} className="text-[#2dd4bf]" />
+              {formatDate(publishedAt)}
             </span>
           )}
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
