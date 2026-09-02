@@ -1,31 +1,27 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCategories } from '@/hooks/useCategories';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 interface BlogCategoriesProps {
-  currentCategory?: string;
+  currentCategories?: string[];
 }
 
-export function BlogCategories({ currentCategory }: BlogCategoriesProps) {
+export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories({
     sort: ['name:asc'],
     populate: ['posts'],
   });
 
-  // ✅ Добавляем отладку
-  console.log('🔍 BlogCategories - data:', categoriesData);
-  console.log('🔍 BlogCategories - loading:', categoriesLoading);
-
-  // ✅ Нормализуем данные категорий
   const categories = categoriesData?.data || [];
   const [showAll, setShowAll] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Проверяем, помещаются ли категории в одну строку
   useEffect(() => {
     const checkOverflow = () => {
       if (containerRef.current) {
@@ -44,20 +40,62 @@ export function BlogCategories({ currentCategory }: BlogCategoriesProps) {
 
   const displayCategories = showAll ? categories : categories.slice(0, 8);
 
-  // ✅ Логируем категории для проверки
-  console.log('📊 Display categories:', displayCategories.map((cat: any) => {
-    const category = cat.attributes || cat;
-    return {
-      name: category.name,
-      slug: category.slug,
-      postsCount: category.posts?.length || 0,
-      postsData: category.posts,
-    };
-  }));
+  // Переключаем категорию с сохранением всех параметров
+  const toggleCategory = (slug: string) => {
+    const params = new URLSearchParams(window.location.search);
+    const current = params.getAll('category');
+    const search = params.get('search');
+    
+    if (current.includes(slug)) {
+      params.delete('category');
+      current.filter(c => c !== slug).forEach(c => params.append('category', c));
+    } else {
+      params.append('category', slug);
+    }
+    
+    // Сохраняем search, если он был
+    if (search) {
+      params.set('search', search);
+    }
+    
+    params.delete('page');
+    
+    const queryString = params.toString();
+    const url = `/blog${queryString ? `?${queryString}` : ''}`;
+    router.push(url, { scroll: false });
+  };
+
+  // Очищаем все категории, но сохраняем поиск
+  const clearCategories = () => {
+    const params = new URLSearchParams(window.location.search);
+    const search = params.get('search');
+    
+    params.delete('category');
+    params.delete('page');
+    
+    if (search) {
+      params.set('search', search);
+    }
+    
+    const queryString = params.toString();
+    const url = `/blog${queryString ? `?${queryString}` : ''}`;
+    router.push(url, { scroll: false });
+  };
+
+  const isCategorySelected = (slug: string) => {
+    return currentCategories.includes(slug);
+  };
+
+  const getCategoryName = (slug: string) => {
+    const category = categories.find((cat: any) => {
+      const c = cat.attributes || cat;
+      return c.slug === slug;
+    });
+    return category ? (category.attributes || category).name : slug;
+  };
 
   return (
     <div className="mb-8">
-      {/* Заголовок */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
           Категории
@@ -76,39 +114,58 @@ export function BlogCategories({ currentCategory }: BlogCategoriesProps) {
         )}
       </div>
 
+      {/* Выбранные категории */}
+      {currentCategories.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {currentCategories.map((slug) => (
+            <span
+              key={slug}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-[#2dd4bf]/20 text-[#2dd4bf] rounded-full"
+            >
+              {getCategoryName(slug)}
+              <button
+                onClick={() => toggleCategory(slug)}
+                className="hover:text-[#14b8a6] transition-colors"
+                aria-label={`Убрать категорию ${getCategoryName(slug)}`}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+          <button
+            onClick={clearCategories}
+            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            Очистить все
+          </button>
+        </div>
+      )}
+
       {/* Категории */}
       <div 
         ref={containerRef}
         className="flex flex-wrap gap-2"
       >
-        {/* Кнопка "Все" */}
-        <Link
-          href="/blog"
+        <button
+          onClick={clearCategories}
           className={`px-3 py-1.5 rounded-full text-sm transition-colors whitespace-nowrap ${
-            !currentCategory
+            currentCategories.length === 0
               ? 'bg-[#2dd4bf] text-[#0a1920] font-medium'
               : 'bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30'
           }`}
         >
           Все
-        </Link>
+        </button>
 
-        {/* Категории */}
         {displayCategories.map((cat: any) => {
-          // ✅ Нормализация данных категории
           const category = cat.attributes || cat;
-          const isActive = currentCategory === category.slug;
-          
-          // ✅ Считаем количество постов в категории (проверяем оба варианта)
+          const isActive = isCategorySelected(category.slug);
           const count = category.posts?.data?.length || category.posts?.length || 0;
 
-          // ✅ Логируем каждую категорию
-          console.log(`📊 Category ${category.name}: posts count = ${count}, posts =`, category.posts);
-
           return (
-            <Link
+            <button
               key={category.slug || cat.id}
-              href={`/blog?category=${category.slug}`}
+              onClick={() => toggleCategory(category.slug)}
               className={`px-3 py-1.5 rounded-full text-sm transition-colors whitespace-nowrap flex items-center gap-1.5 ${
                 isActive
                   ? 'bg-[#2dd4bf] text-[#0a1920] font-medium'
@@ -120,7 +177,8 @@ export function BlogCategories({ currentCategory }: BlogCategoriesProps) {
               <span className={`text-[10px] ${isActive ? 'text-[#0a1920]/60' : 'text-gray-500'}`}>
                 {count}
               </span>
-            </Link>
+              {isActive && <X size={12} className="ml-0.5" />}
+            </button>
           );
         })}
       </div>

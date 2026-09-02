@@ -1,5 +1,6 @@
 // motit-site-next/src/lib/strapi.ts
 import axios from 'axios';
+import qs from 'qs';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN || '';
@@ -179,7 +180,8 @@ export async function fetchAPI<T>(
   options: FetchOptions = {},
   isDraftMode: boolean = false
 ): Promise<T> {
-  const url = new URL(`${API_URL}/api${endpoint}`);
+  // Создаем объект параметров для qs
+  const queryParams: any = {};
   
   // В Strapi v5 используем post_status для фильтрации
   if (isDraftMode) {
@@ -193,78 +195,47 @@ export async function fetchAPI<T>(
   
   // Добавляем populate
   if (options.populate) {
-    if (typeof options.populate === 'string') {
-      url.searchParams.append('populate', options.populate);
-    } else if (Array.isArray(options.populate)) {
-      options.populate.forEach((field) => {
-        url.searchParams.append('populate', field);
-      });
-    } else {
-      url.searchParams.append('populate', JSON.stringify(options.populate));
-    }
+    queryParams.populate = options.populate;
   }
   
-  // ИСПРАВЛЕННЫЙ блок фильтров
+  // Добавляем filters
   if (options.filters) {
-    console.log('🔍 [fetchAPI] processing filters:', JSON.stringify(options.filters, null, 2));
-    
-    Object.entries(options.filters).forEach(([key, value]) => {
-      if (typeof value === 'object' && value !== null) {
-        // Правильно обрабатываем вложенные объекты
-        Object.entries(value as Record<string, unknown>).forEach(([subKey, subValue]) => {
-          // Если subValue - объект с оператором (например, $eq, $containsi)
-          if (typeof subValue === 'object' && subValue !== null) {
-            Object.entries(subValue as Record<string, unknown>).forEach(([operator, operatorValue]) => {
-              url.searchParams.append(
-                `filters[${key}][${subKey}][${operator}]`,
-                String(operatorValue)
-              );
-            });
-          } else {
-            // Если subValue - простое значение
-            url.searchParams.append(
-              `filters[${key}][${subKey}]`,
-              String(subValue)
-            );
-          }
-        });
-      } else {
-        url.searchParams.append(`filters[${key}]`, String(value));
-      }
-    });
+    queryParams.filters = options.filters;
   }
   
-  // Добавляем сортировку
+  // Добавляем sort
   if (options.sort) {
-    if (Array.isArray(options.sort)) {
-      options.sort.forEach((s) => url.searchParams.append('sort', s));
-    } else {
-      url.searchParams.append('sort', options.sort);
-    }
+    queryParams.sort = options.sort;
   }
   
-  // Добавляем пагинацию
+  // Добавляем pagination
   if (options.pagination) {
-    Object.entries(options.pagination).forEach(([key, value]) => {
-      url.searchParams.append(`pagination[${key}]`, String(value));
-    });
+    queryParams.pagination = options.pagination;
   }
   
-  // Добавляем выбор полей
+  // Добавляем fields
   if (options.fields) {
-    options.fields.forEach((field) => {
-      url.searchParams.append('fields', field);
-    });
+    queryParams.fields = options.fields;
   }
   
-  // Добавляем локаль
+  // Добавляем locale
   if (options.locale) {
-    url.searchParams.append('locale', options.locale);
+    queryParams.locale = options.locale;
   }
+  
+  // Сериализуем с помощью qs
+  const queryString = qs.stringify(queryParams, {
+    encodeValuesOnly: true,
+    arrayFormat: 'brackets',
+    skipNulls: true,
+  });
+  
+  const url = `${API_URL}/api${endpoint}${queryString ? `?${queryString}` : ''}`;
+  
+  console.log('🔍 [fetchAPI] final URL:', url);
   
   try {
-    console.log('🔍 [fetchAPI] final URL:', url.toString());
-    const response = await strapiApi.get(url.toString());
+    const response = await strapiApi.get(url);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -273,14 +244,8 @@ export async function fetchAPI<T>(
         status: error.response?.status,
         statusText: error.response?.statusText,
         message: error.response?.data?.error?.message || error.message,
-        url: url.toString(),
+        url: url,
         data: error.response?.data,
-        headers: error.response?.headers,
-        config: {
-          url: error.config?.url,
-          method: error.config?.method,
-          headers: error.config?.headers,
-        },
       });
       const errorMessage = error.response?.data?.error?.message || error.message;
       throw new Error(`API Error (${error.response?.status || 'unknown'}): ${errorMessage}`);
