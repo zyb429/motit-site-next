@@ -1,3 +1,4 @@
+// src/components/blog/BlogCard.tsx
 'use client';
 
 import Link from 'next/link';
@@ -98,7 +99,10 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
 
   if (!slug) return null;
 
-  // Вариант списка (как на странице блога)
+  // Сортируем категории по имени
+  const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+
+  // Вариант списка
   if (variant === 'list') {
     return (
       <Link
@@ -106,7 +110,7 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
         className={`group block bg-[#0f2832] rounded-xl overflow-hidden border border-[rgba(45,212,191,0.06)] hover:border-[#2dd4bf]/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${className}`}
       >
         <div className="flex flex-col md:flex-row gap-4 p-4">
-          {/* Изображение */}
+          {/* Изображение - убрали категорию с превью */}
           <div className="relative w-full md:w-48 h-40 md:h-32 flex-shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
             {imageUrl ? (
               <Image
@@ -125,11 +129,6 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
             {isDraft && (
               <span className="absolute top-2 right-2 bg-yellow-500/90 text-black text-[10px] font-medium px-2 py-0.5 rounded-full">
                 Черновик
-              </span>
-            )}
-            {firstCategory  && (
-              <span className="absolute bottom-2 left-2 bg-[#2dd4bf]/20 backdrop-blur-sm text-[#2dd4bf] text-[10px] font-medium px-2 py-0.5 rounded-full">
-                {firstCategory.name}
               </span>
             )}
           </div>
@@ -169,9 +168,10 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
               </p>
             )}
 
-            {categories.length > 1 && (
+            {/* ✅ Категории под текстом - отсортированные */}
+            {sortedCategories.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
-                {categories.map((cat) => (
+                {sortedCategories.map((cat) => (
                   <span key={cat.slug} className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full">
                     {cat.name}
                   </span>
@@ -213,11 +213,6 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
             Черновик
           </span>
         )}
-        {firstCategory && (
-          <span className="absolute bottom-3 left-3 bg-[#2dd4bf]/20 backdrop-blur-sm text-[#2dd4bf] text-xs font-medium px-3 py-1 rounded-full">
-            {firstCategory.name}
-          </span>
-        )}
       </div>
 
       <div className="p-5 space-y-3">
@@ -231,9 +226,10 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
           </p>
         )}
 
-        {categories.length > 1 && (
+        {/* ✅ Категории под текстом - отсортированные */}
+        {sortedCategories.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {categories.map((cat) => (
+            {sortedCategories.map((cat) => (
               <span key={cat.slug} className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full">
                 {cat.name}
               </span>
