@@ -12,6 +12,8 @@ export function useStrapiData<T>(
   options: FetchOptions = {},
   queryOptions: Omit<UseQueryOptions<StrapiListResponse<T>, Error>, 'queryKey' | 'queryFn'> = {}
 ) {
+  console.log(`🔍 [useStrapiData] ${endpoint}:`, JSON.stringify(options, null, 2));
+
   const queryKey = [endpoint, JSON.stringify(options)];
 
   return useQuery<StrapiListResponse<T>, Error>({
@@ -93,6 +95,8 @@ export function useStrapiLive<T>(
   options: FetchOptions = {},
   queryOptions: Omit<UseQueryOptions<StrapiListResponse<T>, Error>, 'queryKey' | 'queryFn'> = {}
 ) {
+  console.log(`🔍 [useStrapiLive] ${endpoint}:`, JSON.stringify(options, null, 2));
+
   const queryKey = [endpoint, 'live', JSON.stringify(options)];
 
   return useQuery<StrapiListResponse<T>, Error>({

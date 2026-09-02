@@ -23,7 +23,7 @@ export default function BlogLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Container className="py-8 md:py-12">
+    <Container>
       {children}
     </Container>
   );

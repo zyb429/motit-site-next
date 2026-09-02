@@ -4,8 +4,7 @@
   "info": {
     "singularName": "category",
     "pluralName": "categories",
-    "displayName": "Category",
-    "description": "Categories for tickets and posts"
+    "displayName": "Category"
   },
   "options": {
     "draftAndPublish": true
@@ -14,25 +13,33 @@
   "attributes": {
     "name": {
       "type": "string",
+      "minLength": 1,
       "maxLength": 255,
-      "required": true
+      "required": true,
+      "regex": "^[a-zA-Zа-яА-Я0-9\\s\\-]+$"
     },
     "slug": {
       "type": "uid",
       "targetField": "name",
-      "required": true
+      "required": true,
+      "minLength": 1,
+      "maxLength": 255,
+      "regex": "^[a-z0-9\\-]+$"
     },
     "description": {
-      "type": "text"
+      "type": "text",
+      "maxLength": 500,
+      "required": false
     },
     "icon": {
-      "type": "string"
+      "type": "string",
+      "maxLength": 10
     },
     "posts": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::post.post",
-      "mappedBy": "category"
+      "inversedBy": "categories"
     }
   }
 }

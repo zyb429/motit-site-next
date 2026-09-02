@@ -1,4 +1,4 @@
-﻿{
+{
   "kind": "collectionType",
   "collectionName": "tickets",
   "info": {
@@ -10,11 +10,12 @@
   "options": {
     "draftAndPublish": true
   },
+  "pluginOptions": {},
   "attributes": {
     "title": {
       "type": "string",
-      "required": true,
-      "maxLength": 255
+      "maxLength": 255,
+      "required": true
     },
     "description": {
       "type": "text"
@@ -44,11 +45,6 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::priority.priority"
-    },
-    "category": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::category.category"
     }
   }
 }

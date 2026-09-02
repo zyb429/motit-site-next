@@ -66,7 +66,6 @@ export default function Home() {
         <Contact />
         <QualityManagement />
       </main>
-      <Footer />
     </>
   );
 }

@@ -9,29 +9,43 @@ interface BlogPostProps {
   initialPost?: any;
 }
 
+type HeadingLevel = 'h2' | 'h3' | 'h4';
+
+const headingClasses: Record<HeadingLevel, string> = {
+  h2: 'text-2xl md:text-3xl font-bold text-[#e0f7fa] mt-8 mb-4',
+  h3: 'text-xl md:text-2xl font-bold text-[#e0f7fa] mt-6 mb-3',
+  h4: 'text-lg md:text-xl font-bold text-[#e0f7fa] mt-4 mb-2',
+};
+
 export function BlogPost({ initialPost }: BlogPostProps) {
   const post = initialPost;
   if (!post) return null;
 
-  const contentBlocks = post.content_blocks || [];
+  // ✅ Нормализация данных для Strapi v5
+  const attrs = post.attributes || post;
+  const contentBlocks = attrs.content_blocks || [];
 
   // Функция для безопасного получения URL изображения
   const getSafeUrl = (input: any): string | null => {
     if (!input) return null;
     if (typeof input === 'string') {
-      return input.startsWith('/uploads') ? `http://localhost:1337${input}` : input;
+      return input.startsWith('/uploads') 
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${input}`
+        : input;
     }
     if (typeof input === 'object' && input.url) {
-      return input.url.startsWith('/uploads') ? `http://localhost:1337${input.url}` : input.url;
+      return input.url.startsWith('/uploads') 
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${input.url}`
+        : input.url;
     }
     return null;
   };
 
-  if (contentBlocks.length === 0 && post.content) {
+  if (contentBlocks.length === 0 && attrs.content) {
     return (
       <div 
         className="prose prose-invert max-w-none prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-p:text-gray-300 prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:text-gray-400 prose-blockquote:border-[#2dd4bf]"
-        dangerouslySetInnerHTML={{ __html: post.content }}
+        dangerouslySetInnerHTML={{ __html: attrs.content }}
       />
     );
   }
@@ -43,12 +57,9 @@ export function BlogPost({ initialPost }: BlogPostProps) {
 
         switch (component) {
           case 'blog.heading': {
-            const HeadingTag = block.heading_level || 'h2';
-            const className = {
-              h2: 'text-2xl md:text-3xl font-bold text-[#e0f7fa] mt-8 mb-4',
-              h3: 'text-xl md:text-2xl font-bold text-[#e0f7fa] mt-6 mb-3',
-              h4: 'text-lg md:text-xl font-bold text-[#e0f7fa] mt-4 mb-2',
-            }[block.heading_level || 'h2'];
+            const level = block.heading_level || 'h2';
+            const HeadingTag = level;
+            const className = headingClasses[level as HeadingLevel] || headingClasses.h2;
             return (
               <HeadingTag key={index} className={className}>
                 {block.text}
@@ -124,7 +135,6 @@ export function BlogPost({ initialPost }: BlogPostProps) {
                   rel="noopener noreferrer"
                 >
                   {block.button_text || 'Подробнее'}
-                  <span>→</span>
                 </a>
               </div>
             );
@@ -151,7 +161,7 @@ export function BlogPost({ initialPost }: BlogPostProps) {
                   const url = img?.attributes?.url || '';
                   if (!url) return null;
                   const fullUrl = url.startsWith('/uploads') 
-                    ? `http://localhost:1337${url}`
+                    ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`
                     : url;
                   return (
                     <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-[#0a1920]">

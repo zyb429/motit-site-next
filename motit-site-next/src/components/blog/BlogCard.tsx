@@ -1,7 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Calendar, User, Clock } from 'lucide-react';
+import { 
+  getPostCategories, 
+  getFirstCategory,
+} from '@/lib/strapi';
 
 interface BlogCardProps {
   post: any;
@@ -10,7 +15,7 @@ interface BlogCardProps {
 }
 
 export function BlogCard({ post, className = '', variant = 'list' }: BlogCardProps) {
-  // Нормализация данных
+  // Нормализация данных для Strapi v5
   const attrs = post?.attributes || post || {};
   
   const isDraft = attrs.post_status === 'draft';
@@ -18,34 +23,27 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
   const slug = attrs.slug || '';
   const excerpt = attrs.excerpt || '';
   const publishedAt = attrs.publishedAt || attrs.createdAt || null;
-  const category = attrs.category?.data?.attributes || attrs.category;
+  
+  // Используем универсальную функцию
+  const categories = getPostCategories(post);
+  const firstCategory = getFirstCategory(post);
 
-  // 🔥 Улучшенная функция для получения имени автора
+  // Исправлено: получение автора
   const getAuthorName = () => {
-    // Пробуем разные варианты структуры данных
     const authorData = attrs.admin_user || attrs.author;
-    
     if (!authorData) return null;
     
-    // Если authorData - объект с data (популярная структура Strapi)
     if (authorData.data) {
       const user = authorData.data.attributes || authorData.data;
       return user.firstname || user.username || user.name || null;
     }
-    
-    // Если authorData - сам объект пользователя с attributes
     if (authorData.attributes) {
       return authorData.attributes.firstname || 
              authorData.attributes.username || 
              authorData.attributes.name || 
              null;
     }
-    
-    // Прямые поля
-    return authorData.firstname || 
-           authorData.username || 
-           authorData.name || 
-           null;
+    return authorData.firstname || authorData.username || authorData.name || null;
   };
 
   const authorName = getAuthorName();
@@ -55,21 +53,23 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
     const image = attrs.featured_image;
     if (!image) return null;
     if (typeof image === 'string') {
-      return image.startsWith('/uploads') 
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image}`
-        : image;
+      if (image.startsWith('/uploads')) {
+        return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image}`;
+      }
+      return image;
     }
     if (image.url) {
-      const url = image.url;
-      return url.startsWith('/uploads')
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`
-        : url;
+      if (image.url.startsWith('/uploads')) {
+        return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image.url}`;
+      }
+      return image.url;
     }
     if (image.data?.attributes?.url) {
       const url = image.data.attributes.url;
-      return url.startsWith('/uploads')
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`
-        : url;
+      if (url.startsWith('/uploads')) {
+        return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`;
+      }
+      return url;
     }
     return null;
   };
@@ -90,36 +90,32 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
     }
   };
 
-  // Расчет времени чтения
   const getReadingTime = () => {
-    const contentBlocks = attrs.content_blocks || [];
-    const text = contentBlocks
-      ?.filter((b: any) => b.__component === 'blog.text')
-      ?.reduce((acc: string, b: any) => acc + (b.text || ''), '') || attrs.content || '';
-    const wordsPerMinute = 200;
-    const words = text.replace(/<[^>]*>/g, '').split(/\s+/).length;
-    const minutes = Math.ceil(words / wordsPerMinute);
-    return minutes > 0 ? minutes : 1;
+    const content = attrs.content || '';
+    const words = content.replace(/<[^>]*>/g, '').split(/\s+/).length;
+    return Math.max(1, Math.ceil(words / 200));
   };
 
   if (!slug) return null;
 
-  // Вариант списка (новостная лента)
+  // Вариант списка (как на странице блога)
   if (variant === 'list') {
     return (
       <Link
         href={`/blog/${slug}`}
         className={`group block bg-[#0f2832] rounded-xl overflow-hidden border border-[rgba(45,212,191,0.06)] hover:border-[#2dd4bf]/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${className}`}
       >
-        <div className="flex flex-col sm:flex-row gap-4 p-4">
+        <div className="flex flex-col md:flex-row gap-4 p-4">
           {/* Изображение */}
-          <div className="relative w-full sm:w-48 h-40 sm:h-32 flex-shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
+          <div className="relative w-full md:w-48 h-40 md:h-32 flex-shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
             {imageUrl ? (
-              <img
+              <Image
                 src={imageUrl}
                 alt={imageAlt}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
+                sizes="(max-width: 768px) 100vw, 192px"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -131,16 +127,15 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
                 Черновик
               </span>
             )}
-            {category && (
+            {firstCategory  && (
               <span className="absolute bottom-2 left-2 bg-[#2dd4bf]/20 backdrop-blur-sm text-[#2dd4bf] text-[10px] font-medium px-2 py-0.5 rounded-full">
-                {typeof category === 'string' ? category : category.name}
+                {firstCategory.name}
               </span>
             )}
           </div>
 
           {/* Контент */}
           <div className="flex-1 min-w-0 flex flex-col">
-            {/* Метаданные */}
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-1">
               {authorName && (
                 <span className="flex items-center gap-1">
@@ -150,7 +145,7 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
               )}
               {publishedAt && (
                 <>
-                  {authorName && <span className="text-gray-600">•</span>}
+                  <span className="text-gray-600">•</span>
                   <span className="flex items-center gap-1">
                     <Calendar size={12} className="text-[#2dd4bf]" />
                     {formatDate(publishedAt)}
@@ -164,22 +159,28 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
               </span>
             </div>
 
-            {/* Заголовок */}
             <h2 className="text-lg font-bold text-[#e0f7fa] group-hover:text-[#2dd4bf] transition-colors line-clamp-2 leading-tight">
               {title}
             </h2>
 
-            {/* Отрывок */}
             {excerpt && (
               <p className="text-sm text-gray-400 line-clamp-2 mt-1 leading-relaxed">
                 {excerpt}
               </p>
             )}
 
-            {/* Кнопка "Читать далее" */}
+            {categories.length > 1 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {categories.map((cat) => (
+                  <span key={cat.slug} className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full">
+                    {cat.name}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-center gap-1 text-[#2dd4bf] text-sm font-medium mt-2 group-hover:gap-2 transition-all duration-200">
               Читать далее
-              <span className="transition-transform group-hover:translate-x-1">→</span>
             </div>
           </div>
         </div>
@@ -187,7 +188,7 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
     );
   }
 
-  // Вариант сетки (3 колонки) - оригинальный
+  // Вариант сетки (3 колонки)
   return (
     <Link
       href={`/blog/${slug}`}
@@ -195,10 +196,11 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
     >
       <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#0a1920]">
         {imageUrl ? (
-          <img
+          <Image
             src={imageUrl}
             alt={imageAlt}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
         ) : (
@@ -211,9 +213,9 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
             Черновик
           </span>
         )}
-        {category && (
+        {firstCategory && (
           <span className="absolute bottom-3 left-3 bg-[#2dd4bf]/20 backdrop-blur-sm text-[#2dd4bf] text-xs font-medium px-3 py-1 rounded-full">
-            {typeof category === 'string' ? category : category.name}
+            {firstCategory.name}
           </span>
         )}
       </div>
@@ -227,6 +229,16 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
           <p className="text-sm text-gray-400 line-clamp-2">
             {excerpt}
           </p>
+        )}
+
+        {categories.length > 1 && (
+          <div className="flex flex-wrap gap-1">
+            {categories.map((cat) => (
+              <span key={cat.slug} className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full">
+                {cat.name}
+              </span>
+            ))}
+          </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">

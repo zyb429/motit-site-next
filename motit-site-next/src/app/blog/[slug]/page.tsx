@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getPostBySlug, getPublishedPosts } from '@/lib/strapi';
+import { getPostBySlug, getPublishedPosts, getFirstCategory } from '@/lib/strapi';
 import { getDraftModeStatus } from '@/lib/server/strapi';
 import { BlogPost } from '@/components/blog/BlogPost';
 import { BlogPostActions } from '@/components/blog/BlogPostActions';
@@ -43,21 +43,24 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       return { title: 'Пост не найден' };
     }
 
-    const imageUrl = post.featured_image?.url || null;
+    const attrs = post.attributes || post;
+    const imageUrl = attrs.featured_image?.url || null;
     const fullImageUrl = imageUrl?.startsWith('/uploads') 
       ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${imageUrl}`
       : imageUrl;
-
+    
+    const images = fullImageUrl ? [{ url: fullImageUrl }] : [];
+    
     return {
-      title: post.meta_title || post.title || 'Пост',
-      description: post.meta_description || post.excerpt || '',
-      robots: post.post_status === 'draft' ? 'noindex, nofollow' : 'index, follow',
+      title: attrs.meta_title || attrs.title || 'Пост',
+      description: attrs.meta_description || attrs.excerpt || '',
+      robots: attrs.post_status === 'draft' ? 'noindex, nofollow' : 'index, follow',
       openGraph: {
-        title: post.meta_title || post.title || 'Пост',
-        description: post.meta_description || post.excerpt || '',
-        images: imageUrl ? [{ url: fullImageUrl }] : [],
+        title: attrs.meta_title || attrs.title || 'Пост',
+        description: attrs.meta_description || attrs.excerpt || '',
+        images: images,
         type: 'article',
-        publishedTime: post.publishedAt || undefined,
+        publishedTime: attrs.publishedAt || undefined,
       },
     };
   } catch (error) {
@@ -73,22 +76,24 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   
   const isDraftMode = await getDraftModeStatus();
   const post = await getPostBySlug(safeSlug, {
-    populate: ['category', 'admin_user', 'featured_image', 'content_blocks', 'content_blocks.image'],
+    populate: ['categories', 'admin_user', 'featured_image', 'content_blocks', 'content_blocks.image'],
   }, isDraftMode);
 
   if (!post) {
     notFound();
   }
 
-  const category = post.category?.data?.attributes;
-  const author = post.admin_user?.data?.attributes;
+  const attrs = post.attributes || post;
+
+  const category = getFirstCategory(post);
+  const author = attrs.admin_user?.data?.attributes;
 
   // Расчет времени чтения
   const getReadingTime = () => {
-    const contentBlocks = post.content_blocks || [];
+    const contentBlocks = attrs.content_blocks || [];
     const text = contentBlocks
       ?.filter((b: any) => b.__component === 'blog.text')
-      ?.reduce((acc: string, b: any) => acc + (b.text || ''), '') || post.content || '';
+      ?.reduce((acc: string, b: any) => acc + (b.text || ''), '') || attrs.content || '';
     const wordsPerMinute = 200;
     const words = text.replace(/<[^>]*>/g, '').split(/\s+/).length;
     const minutes = Math.ceil(words / wordsPerMinute);
@@ -113,7 +118,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   // Получение URL изображения
   const getImageUrl = () => {
-    const image = post.featured_image;
+    const image = attrs.featured_image;
     if (!image) return null;
     if (typeof image === 'string') return image;
     if (image.url) {
@@ -156,7 +161,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           )}
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#e0f7fa] leading-tight tracking-tight mb-4">
-            {post.title}
+            {attrs.title}
           </h1>
 
           {/* Метаданные */}
@@ -169,17 +174,17 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <span className="text-gray-300">{author.firstname || author.username}</span>
               </div>
             )}
-            {post.publishedAt && (
+            {attrs.publishedAt && (
               <span className="flex items-center gap-1.5">
                 <Calendar size={14} className="text-[#2dd4bf]" />
-                {formatDate(post.publishedAt)}
+                {formatDate(attrs.publishedAt)}
               </span>
             )}
             <span className="flex items-center gap-1.5">
               <Clock size={14} className="text-[#2dd4bf]" />
               {readingTime} мин чтения
             </span>
-            {post.post_status === 'draft' && (
+            {attrs.post_status === 'draft' && (
               <span className="text-yellow-400 text-xs font-medium bg-yellow-400/10 px-2 py-0.5 rounded-full">
                 ⏳ Черновик
               </span>
@@ -192,7 +197,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden bg-[#0f2832] mb-8">
             <Image
               src={imageUrl}
-              alt={post.title}
+              alt={attrs.title}
               fill
               className="object-cover"
               priority
@@ -226,8 +231,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </span>
             </div>
             <BlogPostActions 
-              title={post.title} 
-              excerpt={post.excerpt} 
+              title={attrs.title} 
+              excerpt={attrs.excerpt} 
               url={`/blog/${safeSlug}`} 
             />
           </div>

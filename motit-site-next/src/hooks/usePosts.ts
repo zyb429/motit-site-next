@@ -5,7 +5,7 @@ import type { PostAttributes, FetchOptions } from '@/types/strapi';
 
 export function usePosts(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    populate: ['category', 'admin_user'],
+    populate: ['categories', 'admin_user'],
     sort: ['publishedAt:desc'],
     ...options,
   };
@@ -20,7 +20,7 @@ export function usePublishedPosts(options: FetchOptions = {}) {
   };
   
   return useStrapiLive<PostAttributes>('/posts', {
-    populate: ['category', 'admin_user'],
+    populate: ['categories', 'admin_user'],
     sort: ['publishedAt:desc'],
     ...options,
     ...filters,
@@ -32,7 +32,7 @@ export function usePostBySlug(slug: string, options: FetchOptions = {}) {
   const safeSlug = typeof slug === 'string' ? slug : '';
   
   const defaultOptions: FetchOptions = {
-    populate: ['category', 'admin_user'],
+    populate: ['categories', 'admin_user'],
     ...options,
   };
   
@@ -71,7 +71,7 @@ export function usePostsByCategory(categorySlug: any, options: FetchOptions = {}
   if (!slug || typeof slug !== 'string' || slug.length === 0) {
     console.warn('usePostsByCategory: invalid categorySlug:', categorySlug);
     return useStrapiData<PostAttributes>('/posts', {
-      populate: ['category', 'admin_user'],
+      populate: ['categories', 'admin_user'],
       sort: ['publishedAt:desc'],
       ...options,
       filters: { id: { $eq: -1 } },
@@ -80,14 +80,14 @@ export function usePostsByCategory(categorySlug: any, options: FetchOptions = {}
   
   const filters = { 
     filters: { 
-      category: { 
+      categories: { 
         slug: { $eq: slug } 
       } 
     } 
   };
   
   return useStrapiData<PostAttributes>('/posts', {
-    populate: ['category', 'admin_user'],
+    populate: ['categories', 'admin_user'],
     sort: ['publishedAt:desc'],
     ...options,
     ...filters,
@@ -96,7 +96,7 @@ export function usePostsByCategory(categorySlug: any, options: FetchOptions = {}
 
 export function useAllPostsWithDrafts(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    populate: ['category', 'admin_user'],
+    populate: ['categories', 'admin_user'],
     sort: ['publishedAt:desc'],
     publicationState: 'preview',
     ...options,
@@ -113,7 +113,7 @@ export function useDraftPosts(options: FetchOptions = {}) {
   };
   
   return useStrapiData<PostAttributes>('/posts', {
-    populate: ['category', 'admin_user'],
+    populate: ['categories', 'admin_user'],
     sort: ['createdAt:desc'],
     publicationState: 'preview',
     ...options,
@@ -133,7 +133,7 @@ export function usePublishedPostsPaginated(
   };
   
   return useStrapiLive<PostAttributes>('/posts', {
-    populate: ['category', 'admin_user'],
+    populate: ['categories', 'admin_user'],
     sort: ['publishedAt:desc'],
     pagination: { page, pageSize },
     ...options,

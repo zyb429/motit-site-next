@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { usePublishedPosts } from '@/hooks/usePosts';
 import { Calendar } from 'lucide-react';
+import type { PostAttributes } from '@/lib/strapi';
 
 export function BlogSidebar() {
   const { data: postsData, isLoading: postsLoading } = usePublishedPosts({
     pagination: { pageSize: 4 },
     sort: ['publishedAt:desc'],
+    populate: ['featured_image'],
   });
 
   const posts = Array.isArray(postsData?.data) ? postsData.data : [];

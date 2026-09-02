@@ -2,19 +2,17 @@
 import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
+const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN || '';
 
 export const strapiApi = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
+    ...(STRAPI_API_TOKEN && { 
+      Authorization: `Bearer ${STRAPI_API_TOKEN}` 
+    }),
   },
 });
-
-// Если есть API токен
-const token = process.env.NEXT_PUBLIC_API_TOKEN;
-if (token) {
-  strapiApi.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
 
 // ==================== TYPES ====================
 export interface FetchOptions {
@@ -55,6 +53,125 @@ export interface StrapiSingleResponse<T> {
   meta: Record<string, unknown>;
 }
 
+// ДОБАВЛЯЕМ ТИПЫ ДЛЯ КАТЕГОРИЙ
+export interface CategoryAttributes {
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
+}
+
+export interface CategoryData {
+  id: number;
+  documentId?: string;
+  attributes: CategoryAttributes;
+}
+
+export interface CategoryListResponse {
+  data: CategoryData[];
+  meta: {
+    pagination?: {
+      page: number;
+      pageSize: number;
+      pageCount: number;
+      total: number;
+    };
+  };
+}
+
+// ДОБАВЛЯЕМ ТИПЫ ДЛЯ ПОСТОВ С КАТЕГОРИЯМИ
+export interface PostCategoryRelation {
+  data: StrapiData<CategoryAttributes>;
+}
+
+export interface PostCategoriesRelation {
+  data: StrapiData<CategoryAttributes>[];
+}
+
+export interface PostAttributes {
+  title: string;
+  slug: string;
+  content?: string;
+  excerpt?: string;
+  post_status: 'draft' | 'published' | 'archived';
+  meta_title?: string;
+  meta_description?: string;
+  seo_data?: Record<string, unknown>;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  admin_user?: {
+    data: StrapiData<{
+      id: number;
+      username: string;
+      email: string;
+      firstname?: string;
+      lastname?: string;
+    }>;
+  };
+  categories?: PostCategoriesRelation;
+  featured_image?: {
+    url?: string;
+    data?: {
+      attributes?: {
+        url?: string;
+        alternativeText?: string;
+        width?: number;
+        height?: number;
+        formats?: {
+          thumbnail?: { url: string };
+          small?: { url: string };
+          medium?: { url: string };
+          large?: { url: string };
+        };
+      };
+    };
+  };
+  content_blocks?: Array<{
+    __component: string;
+    text?: string;
+    heading_level?: string;
+    image?: {
+      url?: string;
+      data?: {
+        attributes?: { url?: string };
+      };
+    };
+    caption?: string;
+    quote_text?: string;
+    quote_author?: string;
+    code_language?: string;
+    code_content?: string;
+    button_text?: string;
+    button_url?: string;
+    video_url?: string;
+    gallery_images?: {
+      data?: Array<{
+        attributes?: {
+          url?: string;
+          alternativeText?: string;
+        };
+      }>;
+    };
+  }>;
+}
+
+export interface PostResponse {
+  data: StrapiData<PostAttributes>[];
+  meta: {
+    pagination?: {
+      page: number;
+      pageSize: number;
+      pageCount: number;
+      total: number;
+    };
+  };
+}
+
 // ==================== API FUNCTIONS ====================
 
 export async function fetchAPI<T>(
@@ -64,7 +181,7 @@ export async function fetchAPI<T>(
 ): Promise<T> {
   const url = new URL(`${API_URL}/api${endpoint}`);
   
-  // 🔥 В Strapi v5 используем post_status для фильтрации
+  // В Strapi v5 используем post_status для фильтрации
   if (isDraftMode) {
     if (!options.filters) {
       options.filters = {};
@@ -87,12 +204,29 @@ export async function fetchAPI<T>(
     }
   }
   
-  // Добавляем фильтры
+  // ИСПРАВЛЕННЫЙ блок фильтров
   if (options.filters) {
+    console.log('🔍 [fetchAPI] processing filters:', JSON.stringify(options.filters, null, 2));
+    
     Object.entries(options.filters).forEach(([key, value]) => {
       if (typeof value === 'object' && value !== null) {
+        // Правильно обрабатываем вложенные объекты
         Object.entries(value as Record<string, unknown>).forEach(([subKey, subValue]) => {
-          url.searchParams.append(`filters[${key}][${subKey}]`, String(subValue));
+          // Если subValue - объект с оператором (например, $eq, $containsi)
+          if (typeof subValue === 'object' && subValue !== null) {
+            Object.entries(subValue as Record<string, unknown>).forEach(([operator, operatorValue]) => {
+              url.searchParams.append(
+                `filters[${key}][${subKey}][${operator}]`,
+                String(operatorValue)
+              );
+            });
+          } else {
+            // Если subValue - простое значение
+            url.searchParams.append(
+              `filters[${key}][${subKey}]`,
+              String(subValue)
+            );
+          }
         });
       } else {
         url.searchParams.append(`filters[${key}]`, String(value));
@@ -129,70 +263,131 @@ export async function fetchAPI<T>(
   }
   
   try {
+    console.log('🔍 [fetchAPI] final URL:', url.toString());
     const response = await strapiApi.get(url.toString());
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new Error(error.response?.data?.error?.message || error.message);
+      console.error('❌ API Error:', {
+        endpoint,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        message: error.response?.data?.error?.message || error.message,
+        url: url.toString(),
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+        },
+      });
+      const errorMessage = error.response?.data?.error?.message || error.message;
+      throw new Error(`API Error (${error.response?.status || 'unknown'}): ${errorMessage}`);
     }
     throw error;
   }
 }
 
+// ==================== УНИВЕРСАЛЬНЫЕ ФУНКЦИИ ДЛЯ КАТЕГОРИЙ ====================
+
+/**
+ * 🔥 Универсальная функция для получения категорий из поста
+ * Работает и с category (одиночная) и с categories (множественная)
+ */
+export function getPostCategories(post: any): CategoryAttributes[] {
+  const attrs = post?.attributes || post || {};
+  const result: CategoryAttributes[] = [];
+
+  // Пробуем получить из categories (множественная)
+  if (attrs.categories) {
+    const categories = attrs.categories.data || attrs.categories;
+    if (Array.isArray(categories)) {
+      categories.forEach((cat: any) => {
+        const category = cat.attributes || cat;
+        if (category && category.name) {
+          result.push(category);
+        }
+      });
+    }
+    // Если categories - это объект с data
+    if (categories?.data && Array.isArray(categories.data)) {
+      categories.data.forEach((cat: any) => {
+        const category = cat.attributes || cat;
+        if (category && category.name) {
+          result.push(category);
+        }
+      });
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * 🔥 Универсальная функция для получения первой категории поста
+ */
+export function getFirstCategory(post: any): CategoryAttributes | null {
+  const categories = getPostCategories(post);
+  return categories.length > 0 ? categories[0] : null;
+}
+
+/**
+ * 🔥 Универсальная функция для получения populate полей
+ * Включает и category, и categories для совместимости
+ */
+export function getDefaultPopulate(): string[] {
+  return [
+    'categories',
+    'admin_user', 
+    'featured_image', 
+    'content_blocks', 
+    'content_blocks.image', 
+    'content_blocks.gallery_images'
+  ];
+}
+
 // ==================== SERVER CONVENIENCE FUNCTIONS ====================
 
 /**
- * 🔥 Серверная функция для получения постов
+ * Серверная функция для получения постов
+ * Поддерживает оба варианта: category (одиночная) и categories (множественная)
  */
-export async function getPosts(options: FetchOptions = {}, isDraftMode: boolean = false) {
+export async function getPosts(options: FetchOptions = {}, isDraftMode: boolean = false): Promise<PostResponse> {
+  // ✅ Создаем базовые опции
   const defaultOptions: FetchOptions = {
-    populate: ['category', 'admin_user', 'featured_image', 'content_blocks', 'content_blocks.image', 'content_blocks.gallery_images'],
+    populate: getDefaultPopulate(),
     sort: ['publishedAt:desc'],
-    ...options,
   };
   
+  // ✅ Объединяем с переданными опциями
+  const mergedOptions: FetchOptions = {
+    ...defaultOptions,
+    ...options,
+    // ✅ Если передан filters, объединяем с существующими
+    ...(options.filters && { filters: options.filters }),
+  };
+  
+  // ✅ Логируем для отладки
+  console.log('🔍 [getPosts] options:', JSON.stringify(options, null, 2));
+  console.log('🔍 [getPosts] mergedOptions:', JSON.stringify(mergedOptions, null, 2));
+  
   if (isDraftMode) {
-    if (!defaultOptions.filters) {
-      defaultOptions.filters = {};
+    if (!mergedOptions.filters) {
+      mergedOptions.filters = {};
     }
-    (defaultOptions.filters as Record<string, unknown>)['post_status'] = {
+    (mergedOptions.filters as Record<string, unknown>)['post_status'] = {
       $eq: 'draft' 
     };
   }
   
-  return fetchAPI<StrapiListResponse<{
-    title: string;
-    slug: string;
-    content?: string;
-    excerpt?: string;
-    post_status: 'draft' | 'published' | 'archived';
-    meta_title?: string;
-    meta_description?: string;
-    seo_data?: Record<string, unknown>;
-    publishedAt?: string;
-    admin_user?: {
-      data: StrapiData<{
-        id: number;
-        username: string;
-        email: string;
-        firstname?: string;
-        lastname?: string;
-      }>;
-    };
-    category?: {
-      data: StrapiData<{
-        name: string;
-        slug: string;
-        description?: string;
-      }>;
-    };
-  }>>('/posts', defaultOptions, isDraftMode);
+  return fetchAPI<PostResponse>('/posts', mergedOptions, isDraftMode);
 }
 
 /**
  * 🔥 Серверная функция для получения опубликованных постов
  */
-export async function getPublishedPosts(options: FetchOptions = {}) {
+export async function getPublishedPosts(options: FetchOptions = {}): Promise<PostResponse> {
   const filters = { 
     filters: { 
       post_status: { $eq: 'published' } 
@@ -200,47 +395,21 @@ export async function getPublishedPosts(options: FetchOptions = {}) {
   };
   
   const defaultOptions: FetchOptions = {
-    populate: ['category', 'admin_user'],
+    populate: ['categories', 'admin_user'],
     sort: ['publishedAt:desc'],
     ...options,
     ...filters,
   };
   
-  return fetchAPI<StrapiListResponse<{
-    title: string;
-    slug: string;
-    content?: string;
-    excerpt?: string;
-    post_status: 'published';
-    meta_title?: string;
-    meta_description?: string;
-    seo_data?: Record<string, unknown>;
-    publishedAt?: string;
-    admin_user?: {
-      data: StrapiData<{
-        id: number;
-        username: string;
-        email: string;
-        firstname?: string;
-        lastname?: string;
-      }>;
-    };
-    category?: {
-      data: StrapiData<{
-        name: string;
-        slug: string;
-        description?: string;
-      }>;
-    };
-  }>>('/posts', defaultOptions, false);
+  return fetchAPI<PostResponse>('/posts', defaultOptions, false);
 }
 
 /**
  * 🔥 Серверная функция для получения поста по slug
  */
-export async function getPostBySlug(slug: string, options: FetchOptions = {}, isDraftMode: boolean = false) {
+export async function getPostBySlug(slug: string, options: FetchOptions = {}, isDraftMode: boolean = false): Promise<StrapiData<PostAttributes> | null> {
   const defaultOptions: FetchOptions = {
-    populate: ['category', 'admin_user', 'featured_image', 'content_blocks', 'content_blocks.image', 'content_blocks.gallery_images'],
+    populate: getDefaultPopulate(),
     filters: { slug: { $eq: slug } },
     ...options,
   };
@@ -254,35 +423,118 @@ export async function getPostBySlug(slug: string, options: FetchOptions = {}, is
     };
   }
   
-  const response = await fetchAPI<StrapiListResponse<{
-    title: string;
-    slug: string;
-    content?: string;
-    excerpt?: string;
-    post_status: 'draft' | 'published' | 'archived';
-    meta_title?: string;
-    meta_description?: string;
-    seo_data?: Record<string, unknown>;
-    publishedAt?: string;
-    admin_user?: {
-      data: StrapiData<{
-        id: number;
-        username: string;
-        email: string;
-        firstname?: string;
-        lastname?: string;
-      }>;
-    };
-    category?: {
-      data: StrapiData<{
-        name: string;
-        slug: string;
-        description?: string;
-      }>;
-    };
-  }>>('/posts', defaultOptions, isDraftMode);
+  const response = await fetchAPI<PostResponse>('/posts', defaultOptions, isDraftMode);
   
   return response.data?.[0] || null;
+}
+
+/**
+ * 🔥 Получение постов по категории (универсально)
+ * Поддерживает оба варианта: и category, и categories
+ */
+export async function getPostsByCategory(
+  categorySlug: string,
+  options: FetchOptions = {},
+  isDraftMode: boolean = false
+): Promise<PostResponse> {
+  const defaultOptions: FetchOptions = {
+    populate: getDefaultPopulate(),
+    filters: {
+      categories: {
+        slug: { $eq: categorySlug }
+      }
+    },
+    sort: ['publishedAt:desc'],
+    ...options,
+  };
+  
+  if (isDraftMode) {
+    if (!defaultOptions.filters) {
+      defaultOptions.filters = {};
+    }
+    (defaultOptions.filters as Record<string, unknown>)['post_status'] = {
+      $eq: 'draft' 
+    };
+  }
+  
+  return fetchAPI<PostResponse>('/posts', defaultOptions, isDraftMode);
+}
+
+/**
+ * 🔥 Получение всех категорий
+ */
+export async function getAllCategories(options: FetchOptions = {}): Promise<CategoryListResponse> {
+  const defaultOptions: FetchOptions = {
+    sort: ['name:asc'],
+    ...options,
+  };
+  
+  return fetchAPI<CategoryListResponse>('/categories', defaultOptions, false);
+}
+
+/**
+ * 🔥 Получение категории по slug
+ */
+export async function getCategoryBySlug(slug: string): Promise<CategoryData | null> {
+  const response = await fetchAPI<CategoryListResponse>('/categories', {
+    filters: { slug: { $eq: slug } },
+  }, false);
+  
+  return response.data?.[0] || null;
+}
+
+/**
+ * 🔥 Получение настройки по ключу
+ */
+export async function getSetting(key: string): Promise<string | null> {
+  try {
+    const response = await fetchAPI<StrapiListResponse<{
+      key: string;
+      value: string;
+      description?: string;
+    }>>('/settings', {
+      filters: { key: { $eq: key } },
+    }, false);
+    
+    const setting = response.data?.[0];
+    return setting?.attributes?.value || null;
+  } catch (error) {
+    console.error(`Error getting setting "${key}":`, error);
+    return null;
+  }
+}
+
+/**
+ * 🔥 Получение количества постов на странице
+ */
+export async function getPostsPerPage(): Promise<number> {
+  const value = await getSetting('posts_per_page');
+  const parsed = parseInt(value || '6', 10);
+  return isNaN(parsed) || parsed < 1 ? 6 : parsed;
+}
+
+/**
+ * 🔥 Получение всех настроек
+ */
+export async function getAllSettings(): Promise<Record<string, string>> {
+  try {
+    const response = await fetchAPI<StrapiListResponse<{
+      key: string;
+      value: string;
+      description?: string;
+    }>>('/settings', {}, false);
+    
+    const settings: Record<string, string> = {};
+    response.data?.forEach((item) => {
+      if (item.attributes) {
+        settings[item.attributes.key] = item.attributes.value;
+      }
+    });
+    return settings;
+  } catch (error) {
+    console.error('Error getting all settings:', error);
+    return {};
+  }
 }
 
 // ==================== CLIENT CONVENIENCE FUNCTIONS ====================
@@ -331,7 +583,7 @@ export function getTickets(options: FetchOptions = {}) {
 
 export function getPostsClient(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    populate: ['category', 'admin_user'],
+    populate: ['categories', 'admin_user'],
     sort: ['publishedAt:desc'],
     ...options,
   };
@@ -458,12 +710,16 @@ export function getPostStatusFilter(status: 'draft' | 'published' | 'archived') 
   };
 }
 
+/**
+ * Универсальная функция фильтрации по категории
+ * Поддерживает оба варианта: category и categories
+ */
 export function getCategoryFilter(slug: string) {
   return {
     filters: {
-      category: {
-        slug: { $eq: slug }
-      }
+      $or: [
+        { categories: { slug: { $eq: slug } } }
+      ]
     }
   };
 }

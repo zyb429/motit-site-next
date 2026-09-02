@@ -7,6 +7,7 @@ import { BlogCard } from './BlogCard';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { CategoryAttributes, CategoryData } from '@/lib/strapi';
 
 interface BlogListProps {
   initialPosts?: any;
@@ -21,7 +22,7 @@ function BlogListContent({
 }: BlogListProps) {
   const searchParams = useSearchParams();
   
-  // ✅ БЕЗОПАСНОЕ получение category из URL
+  // БЕЗОПАСНОЕ получение category из URL
   let categoryFromUrl = '';
   try {
     const raw = searchParams.get('category');
@@ -32,7 +33,7 @@ function BlogListContent({
     console.warn('Error getting category from URL:', e);
   }
   
-  // ✅ Используем category из URL или из пропсов
+  // Используем category из URL или из пропсов
   const initialCategory = categoryFromUrl || categorySlug || '';
   
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
@@ -41,7 +42,7 @@ function BlogListContent({
 
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
   
-  // ✅ Передаем только если selectedCategory - строка
+  // Передаем только если selectedCategory - строка
   const shouldFilter = selectedCategory && typeof selectedCategory === 'string' && selectedCategory.length > 0;
   
   const { data: postsData, isLoading: postsLoading, error } = shouldFilter
@@ -112,19 +113,22 @@ function BlogListContent({
           >
             Все
           </button>
-          {categoriesData.data.map((category) => (
+          {categoriesData.data.map((cat) => {
+            const category = cat.attributes || cat;
+            return (
             <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.attributes.slug)}
+              key={category.slug || cat.id}
+              onClick={() => setSelectedCategory(category.slug)}
               className={`px-4 py-2 rounded-full text-sm transition ${
-                selectedCategory === category.attributes.slug
+                selectedCategory === category.slug
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700'
               }`}
             >
-              {category.attributes.name}
+              {category.name}
             </button>
-          ))}
+          );
+          })}
         </div>
       )}
 

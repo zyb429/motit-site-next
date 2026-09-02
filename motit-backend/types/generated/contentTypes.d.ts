@@ -479,7 +479,6 @@ export interface ApiAboutPageAboutPage extends Struct.SingleTypeSchema {
 export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   collectionName: 'categories';
   info: {
-    description: 'Categories for tickets and posts';
     displayName: 'Category';
     pluralName: 'categories';
     singularName: 'category';
@@ -491,8 +490,14 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    description: Schema.Attribute.Text;
-    icon: Schema.Attribute.String;
+    description: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    icon: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 10;
+      }>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -503,10 +508,16 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
+        minLength: 1;
       }>;
-    posts: Schema.Attribute.Relation<'oneToMany', 'api::post.post'>;
+    posts: Schema.Attribute.Relation<'manyToMany', 'api::post.post'>;
     publishedAt: Schema.Attribute.DateTime;
-    slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
+    slug: Schema.Attribute.UID<'name'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+        minLength: 1;
+      }>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -837,7 +848,10 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
   };
   attributes: {
     admin_user: Schema.Attribute.Relation<'oneToOne', 'admin::user'>;
-    category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
+    categories: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::category.category'
+    >;
     content_blocks: Schema.Attribute.DynamicZone<
       [
         'blog.block',
@@ -955,6 +969,39 @@ export interface ApiRoleRole extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiSettingSetting extends Struct.CollectionTypeSchema {
+  collectionName: 'settings';
+  info: {
+    description: 'Site settings';
+    displayName: 'Settings';
+    pluralName: 'settings';
+    singularName: 'setting';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.String;
+    key: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::setting.setting'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    value: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface ApiStatusStatus extends Struct.CollectionTypeSchema {
   collectionName: 'statuses';
   info: {
@@ -1051,7 +1098,6 @@ export interface ApiTicketTicket extends Struct.CollectionTypeSchema {
       'manyToOne',
       'plugin::users-permissions.user'
     >;
-    category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
     client: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.user'
@@ -1623,6 +1669,7 @@ declare module '@strapi/strapi' {
       'api::post.post': ApiPostPost;
       'api::priority.priority': ApiPriorityPriority;
       'api::role.role': ApiRoleRole;
+      'api::setting.setting': ApiSettingSetting;
       'api::status.status': ApiStatusStatus;
       'api::ticket-comment.ticket-comment': ApiTicketCommentTicketComment;
       'api::ticket.ticket': ApiTicketTicket;

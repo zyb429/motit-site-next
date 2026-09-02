@@ -29,12 +29,6 @@
         "archived"
       ]
     },
-    "category": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::category.category",
-      "inversedBy": "posts"
-    },
     "admin_user": {
       "type": "relation",
       "relation": "oneToOne",
@@ -64,6 +58,12 @@
       "allowedTypes": [
         "images"
       ]
+    },
+    "categories": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::category.category",
+      "mappedBy": "posts"
     }
   }
 }

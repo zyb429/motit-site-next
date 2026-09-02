@@ -9,6 +9,14 @@ interface ContentBlocksProps {
   blocks: any[];
 }
 
+type HeadingLevel = 'h2' | 'h3' | 'h4';
+
+const headingClasses: Record<HeadingLevel, string> = {
+  h2: 'text-2xl md:text-3xl font-bold text-[#e0f7fa] mt-8 mb-4',
+  h3: 'text-xl md:text-2xl font-bold text-[#e0f7fa] mt-6 mb-3',
+  h4: 'text-lg md:text-xl font-bold text-[#e0f7fa] mt-4 mb-2',
+};
+
 export default function ContentBlocks({ blocks }: ContentBlocksProps) {
   if (!blocks?.length) return null;
 
@@ -33,12 +41,9 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
 
         switch (component) {
           case 'blog.heading': {
+            const level = block?.heading_level || 'h2';
             const HeadingTag = block?.heading_level || 'h2';
-            const className = {
-              h2: 'text-2xl md:text-3xl font-bold text-[#e0f7fa] mt-8 mb-4',
-              h3: 'text-xl md:text-2xl font-bold text-[#e0f7fa] mt-6 mb-3',
-              h4: 'text-lg md:text-xl font-bold text-[#e0f7fa] mt-4 mb-2',
-            }[block?.heading_level || 'h2'] || 'text-2xl md:text-3xl font-bold text-[#e0f7fa] mt-8 mb-4';
+            const className = headingClasses[level as HeadingLevel] || headingClasses.h2;
             
             return (
               <HeadingTag key={index} className={className}>
