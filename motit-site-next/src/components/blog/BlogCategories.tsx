@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCategories } from '@/hooks/useCategories';
 import { ChevronRight, X } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 interface BlogCategoriesProps {
   currentCategories?: string[];
@@ -22,6 +22,10 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
   const [isOverflowing, setIsOverflowing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Храним позицию скролла
+  const scrollPositionRef = useRef<number>(0);
+  const isNavigatingRef = useRef<boolean>(false);
+
   useEffect(() => {
     const checkOverflow = () => {
       if (containerRef.current) {
@@ -36,12 +40,30 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
     return () => window.removeEventListener('resize', checkOverflow);
   }, [categories]);
 
-  if (categoriesLoading || categories.length === 0) return null;
+  // Сохраняем позицию скролла
+  const saveScrollPosition = useCallback(() => {
+    scrollPositionRef.current = window.scrollY;
+  }, []);
 
-  const displayCategories = showAll ? categories : categories.slice(0, 8);
+  // Восстанавливаем позицию скролла
+  const restoreScrollPosition = useCallback(() => {
+    // Используем requestAnimationFrame для точного восстановления
+    requestAnimationFrame(() => {
+      window.scrollTo({ 
+        top: scrollPositionRef.current, 
+        behavior: 'instant' 
+      });
+      isNavigatingRef.current = false;
+    });
+  }, []);
 
   // Переключаем категорию с сохранением всех параметров
-  const toggleCategory = (slug: string) => {
+  const toggleCategory = useCallback((slug: string) => {
+    if (isNavigatingRef.current) return;
+    
+    isNavigatingRef.current = true;
+    saveScrollPosition();
+
     const params = new URLSearchParams(window.location.search);
     const current = params.getAll('category');
     const search = params.get('search');
@@ -62,11 +84,19 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
     
     const queryString = params.toString();
     const url = `/blog${queryString ? `?${queryString}` : ''}`;
-    router.push(url, { scroll: false });
-  };
+    router.replace(url, { scroll: false });
+
+    // Восстанавливаем позицию после навигации
+    setTimeout(restoreScrollPosition, 100);
+  }, [router, saveScrollPosition, restoreScrollPosition]);
 
   // Очищаем все категории, но сохраняем поиск
-  const clearCategories = () => {
+  const clearCategories = useCallback(() => {
+    if (isNavigatingRef.current) return;
+    
+    isNavigatingRef.current = true;
+    saveScrollPosition();
+    
     const params = new URLSearchParams(window.location.search);
     const search = params.get('search');
     
@@ -79,8 +109,11 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
     
     const queryString = params.toString();
     const url = `/blog${queryString ? `?${queryString}` : ''}`;
-    router.push(url, { scroll: false });
-  };
+    
+    router.replace(url, { scroll: false });
+    
+    setTimeout(restoreScrollPosition, 100);
+  }, [router, saveScrollPosition, restoreScrollPosition]);
 
   const isCategorySelected = (slug: string) => {
     return currentCategories.includes(slug);
@@ -93,6 +126,18 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
     });
     return category ? (category.attributes || category).name : slug;
   };
+
+  // Восстанавливаем позицию при монтировании (если была навигация)
+  useEffect(() => {
+    if (isNavigatingRef.current) {
+      restoreScrollPosition();
+    }
+  }, [restoreScrollPosition]);
+
+  if (categoriesLoading || categories.length === 0) return null;
+
+  const displayCategories = showAll ? categories : categories.slice(0, 8);
+
 
   return (
     <div className="mb-8">
