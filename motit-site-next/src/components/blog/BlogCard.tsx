@@ -27,7 +27,6 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
   
   // Используем универсальную функцию
   const categories = getPostCategories(post);
-  const firstCategory = getFirstCategory(post);
 
   // Исправлено: получение автора
   const getAuthorName = () => {
