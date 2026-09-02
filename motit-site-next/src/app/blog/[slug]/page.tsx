@@ -12,6 +12,7 @@ interface BlogPostPageProps {
   params: Promise<{
     slug: string;
   }>;
+  searchParams?: Promise<{ search?: string; category?: string | string[]; page?: string }> | { search?: string; category?: string | string[]; page?: string };
 }
 
 // Генерация статических путей для SSG
@@ -70,10 +71,25 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 // Основной компонент страницы
-export default async function BlogPostPage({ params }: BlogPostPageProps) {
+export default async function BlogPostPage({ params, searchParams }: BlogPostPageProps) {
   const { slug } = await params;
   const safeSlug = typeof slug === 'string' ? slug : String(slug || '');
   
+  // Получаем параметры из URL
+  const sp = await searchParams;
+  const searchQuery = sp?.search || '';
+  
+  // Поддержка нескольких категорий
+  let categorySlugs: string[] = [];
+  if (sp?.category) {
+    if (Array.isArray(sp.category)) {
+      categorySlugs = sp.category;
+    } else {
+      categorySlugs = [sp.category];
+    }
+  }
+  const categorySlug = categorySlugs.length > 0 ? categorySlugs[0] : '';
+
   const isDraftMode = await getDraftModeStatus();
   const post = await getPostBySlug(safeSlug, {
     populate: ['categories', 'admin_user', 'featured_image', 'content_blocks', 'content_blocks.image'],
@@ -137,12 +153,24 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const imageUrl = getImageUrl();
 
+  // Функция для возврата на блог с сохранением параметров
+  const getBackUrl = () => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (categorySlugs.length > 0) {
+      categorySlugs.forEach(slug => params.append('category', slug));
+    }
+    // Добавляем параметр page только если он был
+    if (sp?.page) params.set('page', sp.page);
+    return `/blog${params.toString() ? `?${params.toString()}` : ''}`;
+  };
+
   return (
     <main className="min-h-screen bg-[#0a1920] py-8 md:py-12">
       <article className="container mx-auto px-4 max-w-3xl">
         {/* Навигация назад */}
         <Link
-          href="/blog"
+          href={getBackUrl()}
           className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#2dd4bf] transition-colors mb-6"
         >
           <ArrowLeft size={16} />

@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Calendar, User, Clock } from 'lucide-react';
 import { 
@@ -16,6 +17,8 @@ interface BlogCardProps {
 }
 
 export function BlogCard({ post, className = '', variant = 'list' }: BlogCardProps) {
+  const searchParams = useSearchParams();
+  
   // Нормализация данных для Strapi v5
   const attrs = post?.attributes || post || {};
   
@@ -27,6 +30,22 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
   
   // Используем универсальную функцию
   const categories = getPostCategories(post);
+  const firstCategory = getFirstCategory(post);
+
+  // Сохраняем параметры поиска при переходе на статью
+  const getPostUrl = () => {
+    const params = new URLSearchParams();
+    
+    // Сохраняем все параметры из текущего URL
+    searchParams.forEach((value, key) => {
+      if (key !== 'page') { // page не нужен на странице статьи
+        params.append(key, value);
+      }
+    });
+    
+    const queryString = params.toString();
+    return `/blog/${slug}${queryString ? `?${queryString}` : ''}`;
+  };
 
   // Исправлено: получение автора
   const getAuthorName = () => {
@@ -100,12 +119,13 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
 
   // Сортируем категории по имени
   const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+  const postUrl = getPostUrl();
 
   // Вариант списка
   if (variant === 'list') {
     return (
       <Link
-        href={`/blog/${slug}`}
+        href={postUrl}
         className={`group block bg-[#0f2832] rounded-xl overflow-hidden border border-[rgba(45,212,191,0.06)] hover:border-[#2dd4bf]/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${className}`}
       >
         <div className="flex flex-col md:flex-row gap-4 p-4">
@@ -190,7 +210,7 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
   // Вариант сетки (3 колонки)
   return (
     <Link
-      href={`/blog/${slug}`}
+      href={postUrl}
       className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${className}`}
     >
       <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#0a1920]">
