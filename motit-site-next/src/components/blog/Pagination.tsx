@@ -13,7 +13,7 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
   const getPageNumbers = () => {
     const rangeWithDots: (number | string)[] = [];
     const delta = 2;
-    let l: number | string = 0;
+    let lastAdded: number | string = 0;
 
     for (let i = 1; i <= totalPages; i++) {
       if (
@@ -22,10 +22,11 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
         (i >= currentPage - delta && i <= currentPage + delta)
       ) {
         rangeWithDots.push(i);
-      } else if (l !== '...') {
+        lastAdded = i;
+      } else if (lastAdded !== '...') {
         rangeWithDots.push('...');
+        lastAdded = '...';
       }
-      l = i;
     }
 
     return rangeWithDots;
@@ -53,16 +54,16 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
       {currentPage > 1 ? (
         <Link
           href={buildUrl(currentPage - 1)}
-          className="flex items-center justify-center min-w-[28px] h-7 sm:min-w-[36px] sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30 active:scale-95 transition-colors"
+          className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30 active:scale-95 transition-colors"
           aria-label="Предыдущая страница"
           prefetch={true}
           scroll={false}
         >
-          <ChevronLeft size={14} className="sm:w-[18px] sm:h-[18px]" />
+          <ChevronLeft size={14} className="sm:w-4.5 sm:h-4.5" />
         </Link>
       ) : (
-        <span className="flex items-center justify-center min-w-[28px] h-7 sm:min-w-[36px] sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.04)] text-gray-600 cursor-not-allowed pointer-events-none">
-          <ChevronLeft size={14} className="sm:w-[18px] sm:h-[18px]" />
+        <span className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.04)] text-gray-600 cursor-not-allowed pointer-events-none">
+          <ChevronLeft size={14} className="sm:w-4.5 sm:h-4.5" />
         </span>
       )}
 
@@ -72,7 +73,7 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
           return (
             <span
               key={`ellipsis-${index}`}
-              className="flex items-center justify-center min-w-[28px] h-7 sm:min-w-[36px] sm:h-9 text-gray-500 select-none text-xs sm:text-sm"
+              className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 text-gray-500 select-none text-xs sm:text-sm"
             >
               …
             </span>
@@ -86,7 +87,7 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
           return (
             <span
               key={pageNum}
-              className="flex items-center justify-center min-w-[28px] h-7 sm:min-w-[36px] sm:h-9 rounded-lg text-xs sm:text-sm bg-[#2dd4bf] text-[#0a1920] font-medium cursor-default pointer-events-none"
+              className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg text-xs sm:text-sm bg-[#2dd4bf] text-[#0a1920] font-medium cursor-default pointer-events-none"
               aria-current="page"
             >
               {pageNum}
@@ -98,7 +99,7 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
           <Link
             key={pageNum}
             href={buildUrl(pageNum)}
-            className="flex items-center justify-center min-w-[28px] h-7 sm:min-w-[36px] sm:h-9 rounded-lg text-xs sm:text-sm bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30 active:scale-95 transition-colors"
+            className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg text-xs sm:text-sm bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30 active:scale-95 transition-colors"
             prefetch={true}
             scroll={false}
           >
@@ -111,16 +112,16 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
       {currentPage < totalPages ? (
         <Link
           href={buildUrl(currentPage + 1)}
-          className="flex items-center justify-center min-w-[28px] h-7 sm:min-w-[36px] sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30 active:scale-95 transition-colors"
+          className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30 active:scale-95 transition-colors"
           aria-label="Следующая страница"
           prefetch={true}
           scroll={false}
         >
-          <ChevronRight size={14} className="sm:w-[18px] sm:h-[18px]" />
+          <ChevronRight size={14} className="sm:w-4.5 sm:h-4.5" />
         </Link>
       ) : (
-        <span className="flex items-center justify-center min-w-[28px] h-7 sm:min-w-[36px] sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.04)] text-gray-600 cursor-not-allowed pointer-events-none">
-          <ChevronRight size={14} className="sm:w-[18px] sm:h-[18px]" />
+        <span className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.04)] text-gray-600 cursor-not-allowed pointer-events-none">
+          <ChevronRight size={14} className="sm:w-4.5 sm:h-4.5" />
         </span>
       )}
     </nav>

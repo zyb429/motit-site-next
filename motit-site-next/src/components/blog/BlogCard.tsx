@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import Image from 'next/image';
 import { Calendar, User, Clock } from 'lucide-react';
 import { 
@@ -18,7 +19,8 @@ interface BlogCardProps {
 
 export function BlogCard({ post, className = '', variant = 'list' }: BlogCardProps) {
   const searchParams = useSearchParams();
-  
+  const { saveScrollPosition } = useScrollRestoration();
+
   // Нормализация данных для Strapi v5
   const attrs = post?.attributes || post || {};
   
@@ -34,6 +36,9 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
 
   // Сохраняем параметры поиска при переходе на статью
   const getPostUrl = () => {
+    // Сохраняем позицию скролла перед переходом
+    saveScrollPosition();
+
     const params = new URLSearchParams();
     
     // Сохраняем все параметры из текущего URL
@@ -130,7 +135,7 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
       >
         <div className="flex flex-col md:flex-row gap-4 p-4">
           {/* Изображение - убрали категорию с превью */}
-          <div className="relative w-full md:w-48 h-40 md:h-32 flex-shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
+          <div className="relative w-full md:w-48 h-40 md:h-32 shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
             {imageUrl ? (
               <Image
                 src={imageUrl}
@@ -213,7 +218,7 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
       href={postUrl}
       className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${className}`}
     >
-      <div className="relative w-full aspect-[16/10] overflow-hidden bg-[#0a1920]">
+      <div className="relative w-full aspect-16/10 overflow-hidden bg-[#0a1920]">
         {imageUrl ? (
           <Image
             src={imageUrl}

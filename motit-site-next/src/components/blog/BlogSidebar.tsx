@@ -59,7 +59,7 @@ export function BlogSidebar() {
                   href={`/blog/${slug}`}
                   className="group flex gap-3 items-start hover:bg-[#0d2029] p-2 -mx-2 rounded-lg transition-colors"
                 >
-                  <div className="w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
+                  <div className="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
                     {imageUrl ? (
                       <img
                         src={imageUrl}

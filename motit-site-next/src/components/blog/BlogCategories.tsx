@@ -1,17 +1,26 @@
+// src/components/blog/BlogCategories.tsx
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCategories } from '@/hooks/useCategories';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { ChevronRight, X } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 interface BlogCategoriesProps {
   currentCategories?: string[];
+  onToggle?: (slug: string) => void;
+  onClear?: () => void;
 }
 
-export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) {
+export function BlogCategories({ 
+  currentCategories = [],
+  onToggle,
+  onClear 
+}: BlogCategoriesProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration();
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories({
     sort: ['name:asc'],
     populate: ['posts'],
@@ -41,13 +50,12 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
   }, [categories]);
 
   // Сохраняем позицию скролла
-  const saveScrollPosition = useCallback(() => {
+  const saveScrollPositionFn = useCallback(() => {
     scrollPositionRef.current = window.scrollY;
   }, []);
 
   // Восстанавливаем позицию скролла
-  const restoreScrollPosition = useCallback(() => {
-    // Используем requestAnimationFrame для точного восстановления
+  const restoreScrollPositionFn = useCallback(() => {
     requestAnimationFrame(() => {
       window.scrollTo({ 
         top: scrollPositionRef.current, 
@@ -57,12 +65,12 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
     });
   }, []);
 
-  // Переключаем категорию с сохранением всех параметров
+  // Переключаем категорию
   const toggleCategory = useCallback((slug: string) => {
     if (isNavigatingRef.current) return;
     
     isNavigatingRef.current = true;
-    saveScrollPosition();
+    saveScrollPositionFn();
 
     const params = new URLSearchParams(window.location.search);
     const current = params.getAll('category');
@@ -75,7 +83,6 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
       params.append('category', slug);
     }
     
-    // Сохраняем search, если он был
     if (search) {
       params.set('search', search);
     }
@@ -86,16 +93,20 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
     const url = `/blog${queryString ? `?${queryString}` : ''}`;
     router.replace(url, { scroll: false });
 
-    // Восстанавливаем позицию после навигации
-    setTimeout(restoreScrollPosition, 100);
-  }, [router, saveScrollPosition, restoreScrollPosition]);
+    setTimeout(restoreScrollPositionFn, 100);
 
-  // Очищаем все категории, но сохраняем поиск
+    // Вызываем колбэк если передан
+    if (onToggle) {
+      onToggle(slug);
+    }
+  }, [router, saveScrollPositionFn, restoreScrollPositionFn, onToggle]);
+
+  // Очищаем все категории
   const clearCategories = useCallback(() => {
     if (isNavigatingRef.current) return;
     
     isNavigatingRef.current = true;
-    saveScrollPosition();
+    saveScrollPositionFn();
     
     const params = new URLSearchParams(window.location.search);
     const search = params.get('search');
@@ -112,8 +123,13 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
     
     router.replace(url, { scroll: false });
     
-    setTimeout(restoreScrollPosition, 100);
-  }, [router, saveScrollPosition, restoreScrollPosition]);
+    setTimeout(restoreScrollPositionFn, 100);
+
+    // Вызываем колбэк если передан
+    if (onClear) {
+      onClear();
+    }
+  }, [router, saveScrollPositionFn, restoreScrollPositionFn, onClear]);
 
   const isCategorySelected = (slug: string) => {
     return currentCategories.includes(slug);
@@ -127,17 +143,16 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
     return category ? (category.attributes || category).name : slug;
   };
 
-  // Восстанавливаем позицию при монтировании (если была навигация)
+  // Восстанавливаем позицию при монтировании
   useEffect(() => {
     if (isNavigatingRef.current) {
-      restoreScrollPosition();
+      restoreScrollPositionFn();
     }
-  }, [restoreScrollPosition]);
+  }, [restoreScrollPositionFn]);
 
   if (categoriesLoading || categories.length === 0) return null;
 
   const displayCategories = showAll ? categories : categories.slice(0, 8);
-
 
   return (
     <div className="mb-8">
@@ -159,7 +174,7 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
         )}
       </div>
 
-      {/* Выбранные категории */}
+      {/* Выбранные категории
       {currentCategories.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-3">
           {currentCategories.map((slug) => (
@@ -184,7 +199,7 @@ export function BlogCategories({ currentCategories = [] }: BlogCategoriesProps) 
             Очистить все
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Категории */}
       <div 

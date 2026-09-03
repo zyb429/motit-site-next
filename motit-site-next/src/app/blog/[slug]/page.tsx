@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getPostBySlug, getPublishedPosts, getFirstCategory } from '@/lib/strapi';
+import { getPostBySlug, getPublishedPosts, getPostCategories } from '@/lib/strapi';
 import { getDraftModeStatus } from '@/lib/server/strapi';
 import { BlogPost } from '@/components/blog/BlogPost';
 import { BlogPostActions } from '@/components/blog/BlogPostActions';
@@ -12,7 +12,7 @@ interface BlogPostPageProps {
   params: Promise<{
     slug: string;
   }>;
-  searchParams?: Promise<{ search?: string; category?: string | string[]; page?: string }> | { search?: string; category?: string | string[]; page?: string };
+  searchParams?: Promise<{ search?: string; category?: string | string[]; page?: string }> | undefined;
 }
 
 // Генерация статических путей для SSG
@@ -46,9 +46,12 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
     const attrs = post.attributes || post;
     const imageUrl = attrs.featured_image?.url || null;
-    const fullImageUrl = imageUrl?.startsWith('/uploads') 
-      ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${imageUrl}`
-      : imageUrl;
+    let fullImageUrl: string | null = null;
+    if (imageUrl && typeof imageUrl === 'string') {
+      fullImageUrl = imageUrl.startsWith('/uploads') 
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${imageUrl}`
+        : imageUrl;
+    }
     
     const images = fullImageUrl ? [{ url: fullImageUrl }] : [];
     
@@ -71,24 +74,35 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 // Основной компонент страницы
-export default async function BlogPostPage({ params, searchParams }: BlogPostPageProps) {
+export default async function BlogPostPage({ params, searchParams = Promise.resolve({}) }: BlogPostPageProps) {
   const { slug } = await params;
   const safeSlug = typeof slug === 'string' ? slug : String(slug || '');
   
   // Получаем параметры из URL
-  const sp = await searchParams;
-  const searchQuery = sp?.search || '';
-  
-  // Поддержка нескольких категорий
+  let searchQuery = '';
   let categorySlugs: string[] = [];
-  if (sp?.category) {
-    if (Array.isArray(sp.category)) {
-      categorySlugs = sp.category;
-    } else {
-      categorySlugs = [sp.category];
+  let pageParam = '';
+
+  try {
+    const sp = (await searchParams) as { search?: string; category?: string | string[]; page?: string } | undefined;
+    if (sp && typeof sp === 'object') {
+      searchQuery = sp.search || '';
+      
+      if (sp.category) {
+        if (Array.isArray(sp.category)) {
+          categorySlugs = sp.category;
+        } else if (typeof sp.category === 'string') {
+          categorySlugs = [sp.category];
+        }
+      }
+      
+      if (sp.page) {
+        pageParam = String(sp.page);
+      }
     }
+  } catch {
+    // Игнорируем ошибки
   }
-  const categorySlug = categorySlugs.length > 0 ? categorySlugs[0] : '';
 
   const isDraftMode = await getDraftModeStatus();
   const post = await getPostBySlug(safeSlug, {
@@ -101,7 +115,8 @@ export default async function BlogPostPage({ params, searchParams }: BlogPostPag
 
   const attrs = post.attributes || post;
 
-  const category = getFirstCategory(post);
+  // Получаем все категории поста (переменная `categories`)
+  const categories = getPostCategories(post);
   const author = attrs.admin_user?.data?.attributes;
 
   // Расчет времени чтения
@@ -133,21 +148,32 @@ export default async function BlogPostPage({ params, searchParams }: BlogPostPag
   };
 
   // Получение URL изображения
-  const getImageUrl = () => {
-    const image = attrs.featured_image;
+  const getImageUrl = (): string | null => {
+    const image = attrs.featured_image as any;
     if (!image) return null;
-    if (typeof image === 'string') return image;
-    if (image.url) {
-      return image.url.startsWith('/uploads') 
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image.url}`
-        : image.url;
+
+    if (typeof image === 'string') {
+      if (image.startsWith('/uploads')) {
+        return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image}`;
+      }
+      return image;
     }
-    if (image.data?.attributes?.url) {
+
+    if (image.url && typeof image.url === 'string') {
+      if (image.url.startsWith('/uploads')) {
+        return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image.url}`;
+      }
+      return image.url;
+    }
+
+    if (image.data?.attributes?.url && typeof image.data.attributes.url === 'string') {
       const url = image.data.attributes.url;
-      return url.startsWith('/uploads')
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`
-        : url;
+      if (url.startsWith('/uploads')) {
+        return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`;
+      }
+      return url;
     }
+
     return null;
   };
 
@@ -156,13 +182,17 @@ export default async function BlogPostPage({ params, searchParams }: BlogPostPag
   // Функция для возврата на блог с сохранением параметров
   const getBackUrl = () => {
     const params = new URLSearchParams();
-    if (searchQuery) params.set('search', searchQuery);
+    if (searchQuery) {
+      params.set('search', searchQuery);
+    }
     if (categorySlugs.length > 0) {
       categorySlugs.forEach(slug => params.append('category', slug));
     }
-    // Добавляем параметр page только если он был
-    if (sp?.page) params.set('page', sp.page);
-    return `/blog${params.toString() ? `?${params.toString()}` : ''}`;
+    if (pageParam) {
+      params.set('page', pageParam);
+    }
+    const queryString = params.toString();
+    return `/blog${queryString ? `?${queryString}` : ''}`;
   };
 
   return (
@@ -179,12 +209,19 @@ export default async function BlogPostPage({ params, searchParams }: BlogPostPag
 
         {/* Заголовок */}
         <header className="mb-8">
-          {/* Категория */}
-          {category && (
-            <div className="mb-2">
-              <span className="text-xs font-medium text-[#2dd4bf] bg-[#2dd4bf]/10 px-3 py-1 rounded-full">
-                {category.name}
-              </span>
+          {/* Все категории поста - используем переменную `categories` */}
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {categories.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  href={`/blog?category=${cat.slug}`}
+                  className="text-xs font-medium text-[#2dd4bf] bg-[#2dd4bf]/10 px-3 py-1 rounded-full hover:bg-[#2dd4bf]/20 transition-colors"
+                >
+                  {cat.icon && <span className="mr-1">{cat.icon}</span>}
+                  {cat.name}
+                </Link>
+              ))}
             </div>
           )}
 
@@ -222,7 +259,7 @@ export default async function BlogPostPage({ params, searchParams }: BlogPostPag
 
         {/* Изображение */}
         {imageUrl && (
-          <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden bg-[#0f2832] mb-8">
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#0f2832] mb-8">
             <Image
               src={imageUrl}
               alt={attrs.title}
@@ -239,20 +276,27 @@ export default async function BlogPostPage({ params, searchParams }: BlogPostPag
           <BlogPost initialPost={post} />
         </div>
 
-        {/* Футер */}
+        {/* Футер со всеми категориями */}
         <footer className="mt-12 pt-6 border-t border-[rgba(45,212,191,0.06)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
               <span>
                 Опубликовано в{' '}
-                {category ? (
-                  <Link
-                    href={`/blog?category=${category.slug}`}
-                    className="text-[#2dd4bf] hover:text-[#14b8a6] transition-colors inline-flex items-center gap-1"
-                  >
-                    <Tag size={14} />
-                    {category.name}
-                  </Link>
+                {categories.length > 0 ? (
+                  <span className="inline-flex flex-wrap gap-1">
+                    {categories.map((cat, index) => (
+                      <span key={cat.slug}>
+                        <Link
+                          href={`/blog?category=${cat.slug}`}
+                          className="text-[#2dd4bf] hover:text-[#14b8a6] transition-colors inline-flex items-center gap-1"
+                        >
+                          <Tag size={14} />
+                          {cat.name}
+                        </Link>
+                        {index < categories.length - 1 && <span className="text-gray-500">, </span>}
+                      </span>
+                    ))}
+                  </span>
                 ) : (
                   'общем разделе'
                 )}
