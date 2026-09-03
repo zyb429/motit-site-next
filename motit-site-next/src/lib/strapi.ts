@@ -105,7 +105,7 @@ export interface PostAttributes {
   publishedAt?: string;
   createdAt?: string;
   updatedAt?: string;
-  admin_user?: {
+  author?: {
     data: StrapiData<{
       id: number;
       username: string;
@@ -304,10 +304,10 @@ export function getFirstCategory(post: any): CategoryAttributes | null {
 export function getDefaultPopulate(): string[] {
   return [
     'categories',
-    'admin_user', 
-    'featured_image', 
-    'content_blocks', 
-    'content_blocks.image', 
+    'author',  // ← createdBy → author
+    'featured_image',
+    'content_blocks',
+    'content_blocks.image',
     'content_blocks.gallery_images'
   ];
 }
@@ -360,7 +360,7 @@ export async function getPublishedPosts(options: FetchOptions = {}): Promise<Pos
   };
   
   const defaultOptions: FetchOptions = {
-    populate: ['categories', 'admin_user'],
+    populate: ['categories', 'author'],
     sort: ['publishedAt:desc'],
     ...options,
     ...filters,
@@ -521,9 +521,13 @@ export function getPriorities(options: FetchOptions = {}) {
 }
 
 export function getCategories(options: FetchOptions = {}) {
+  const defaultOptions: FetchOptions = {
+    sort: ['name:asc'],
+    ...options,
+  };
   return fetchAPI<StrapiListResponse<{ name: string; slug: string; description?: string; icon?: string }>>(
     '/categories',
-    options,
+    defaultOptions,
     false
   );
 }
@@ -548,7 +552,7 @@ export function getTickets(options: FetchOptions = {}) {
 
 export function getPostsClient(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    populate: ['categories', 'admin_user'],
+    populate: ['categories', 'author'],
     sort: ['publishedAt:desc'],
     ...options,
   };

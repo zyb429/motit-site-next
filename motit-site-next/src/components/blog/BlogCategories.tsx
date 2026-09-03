@@ -23,7 +23,6 @@ export function BlogCategories({
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration();
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories({
     sort: ['name:asc'],
-    populate: ['posts'],
   });
 
   const categories = categoriesData?.data || [];

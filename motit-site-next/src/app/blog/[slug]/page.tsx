@@ -1,12 +1,60 @@
+// src/app/blog/[slug]/page.tsx
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getPostBySlug, getPublishedPosts, getPostCategories } from '@/lib/strapi';
 import { getDraftModeStatus } from '@/lib/server/strapi';
-import { BlogPost } from '@/components/blog/BlogPost';
+import RenderSlate from '@/components/editor/RenderSlate';
 import { BlogPostActions } from '@/components/blog/BlogPostActions';
 import { Calendar, User, Clock, ArrowLeft, Tag } from 'lucide-react';
+import type { Post } from '@/types/slate';
+
+// Тип для поста из Strapi с новым полем content
+type StrapiPost = {
+  id: number;
+  attributes: {
+    title: string;
+    slug: string;
+    content: any[]; // Slate JSON
+    excerpt?: string;
+    content_blocks?: any[]; // Для обратной совместимости (если есть старые посты)
+    featured_image?: {
+      data?: {
+        attributes: {
+          url: string;
+          alternativeText?: string;
+        };
+      };
+    };
+    categories?: {
+      data: Array<{
+        id: number;
+        attributes: {
+          name: string;
+          slug: string;
+          icon?: string;
+        };
+      }>;
+    };
+    // ===== ИЗМЕНЕНО: createdBy → author =====
+    author?: {
+      data?: {
+        attributes: {
+          username?: string;
+          firstname?: string;
+          lastname?: string;
+        };
+      };
+    };
+    post_status?: 'draft' | 'published' | 'archived';
+    publishedAt?: string;
+    meta_title?: string;
+    meta_description?: string;
+    views?: number;
+    is_featured?: boolean;
+  };
+};
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -23,8 +71,8 @@ export async function generateStaticParams() {
       return [];
     }
     return posts.data
-      .filter((post) => post?.attributes?.slug)
-      .map((post) => ({
+      .filter((post: StrapiPost) => post?.attributes?.slug)
+      .map((post: StrapiPost) => ({
         slug: post.attributes.slug,
       }));
   } catch (error) {
@@ -38,14 +86,16 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   try {
     const { slug } = await params;
     const isDraftMode = await getDraftModeStatus();
-    const post = await getPostBySlug(slug, {}, isDraftMode);
+    const post = await getPostBySlug(slug, {
+      populate: ['categories', 'author', 'featured_image'], // ← ИЗМЕНЕНО
+    }, isDraftMode);
 
     if (!post) {
       return { title: 'Пост не найден' };
     }
 
     const attrs = post.attributes || post;
-    const imageUrl = attrs.featured_image?.url || null;
+    const imageUrl = attrs.featured_image?.data?.attributes?.url || attrs.featured_image?.url || null;
     let fullImageUrl: string | null = null;
     if (imageUrl && typeof imageUrl === 'string') {
       fullImageUrl = imageUrl.startsWith('/uploads') 
@@ -73,7 +123,9 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   }
 }
 
-// Основной компонент страницы
+// ============================================================
+// ОСНОВНОЙ КОМПОНЕНТ СТРАНИЦЫ
+// ============================================================
 export default async function BlogPostPage({ params, searchParams = Promise.resolve({}) }: BlogPostPageProps) {
   const { slug } = await params;
   const safeSlug = typeof slug === 'string' ? slug : String(slug || '');
@@ -105,9 +157,11 @@ export default async function BlogPostPage({ params, searchParams = Promise.reso
   }
 
   const isDraftMode = await getDraftModeStatus();
+  
+  // Получаем пост с новым полем content
   const post = await getPostBySlug(safeSlug, {
-    populate: ['categories', 'admin_user', 'featured_image', 'content_blocks', 'content_blocks.image'],
-  }, isDraftMode);
+    populate: ['categories', 'author', 'featured_image'], // ← ИЗМЕНЕНО
+  }, isDraftMode) as StrapiPost | null;
 
   if (!post) {
     notFound();
@@ -115,16 +169,43 @@ export default async function BlogPostPage({ params, searchParams = Promise.reso
 
   const attrs = post.attributes || post;
 
-  // Получаем все категории поста (переменная `categories`)
+  // Получаем категории
   const categories = getPostCategories(post);
-  const author = attrs.admin_user?.data?.attributes;
+  const author = attrs.author?.data?.attributes; // ← ИЗМЕНЕНО
 
-  // Расчет времени чтения
+  // Определяем, какой контент использовать: Slate или старые блоки
+  const hasSlateContent = attrs.content && Array.isArray(attrs.content) && attrs.content.length > 0;
+  const hasBlocksContent = attrs.content_blocks && Array.isArray(attrs.content_blocks) && attrs.content_blocks.length > 0;
+
+  // Расчет времени чтения (на основе Slate-контента или старых блоков)
   const getReadingTime = () => {
-    const contentBlocks = attrs.content_blocks || [];
-    const text = contentBlocks
-      ?.filter((b: any) => b.__component === 'blog.text')
-      ?.reduce((acc: string, b: any) => acc + (b.text || ''), '') || attrs.content || '';
+    let text = '';
+    
+    // Если есть Slate-контент
+    if (hasSlateContent) {
+      const extractText = (nodes: any[]): string => {
+        let result = '';
+        for (const node of nodes) {
+          if (node.children) {
+            result += extractText(node.children);
+          }
+          if (node.text) {
+            result += node.text + ' ';
+          }
+        }
+        return result;
+      };
+      text = extractText(attrs.content);
+    }
+    else if (hasBlocksContent) {
+      text = attrs.content_blocks
+        ?.filter((b: any) => b.__component === 'blog.text')
+        ?.reduce((acc: string, b: any) => acc + (b.text || ''), '') || '';
+    }
+    else if (attrs.excerpt) {
+      text = attrs.excerpt;
+    }
+
     const wordsPerMinute = 200;
     const words = text.replace(/<[^>]*>/g, '').split(/\s+/).length;
     const minutes = Math.ceil(words / wordsPerMinute);
@@ -209,10 +290,9 @@ export default async function BlogPostPage({ params, searchParams = Promise.reso
 
         {/* Заголовок */}
         <header className="mb-8">
-          {/* Все категории поста - используем переменную `categories` */}
           {categories.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {categories.map((cat) => (
+              {categories.map((cat: any) => (
                 <Link
                   key={cat.slug}
                   href={`/blog?category=${cat.slug}`}
@@ -273,10 +353,45 @@ export default async function BlogPostPage({ params, searchParams = Promise.reso
 
         {/* Содержание */}
         <div className="prose prose-invert max-w-none prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-p:text-gray-300 prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:border-[#2dd4bf] prose-blockquote:text-gray-400">
-          <BlogPost initialPost={post} />
+          {hasSlateContent && (
+            <RenderSlate nodes={attrs.content} />
+          )}
+
+          {!hasSlateContent && hasBlocksContent && (
+            <div>
+              {attrs.content_blocks?.map((block: any, index: number) => {
+                switch (block.__component) {
+                  case 'blog.text':
+                    return <p key={index} className="text-gray-300">{block.text}</p>;
+                  case 'blog.heading':
+                    return <h2 key={index} className="text-[#e0f7fa]">{block.heading}</h2>;
+                  case 'blog.quote':
+                    return <blockquote key={index} className="border-l-4 border-[#2dd4bf] pl-4 italic text-gray-400">{block.quote}</blockquote>;
+                  case 'blog.image':
+                    return (
+                      <div key={index} className="my-4">
+                        <Image
+                          src={block.image?.url || ''}
+                          alt={block.image?.alternativeText || ''}
+                          width={800}
+                          height={400}
+                          className="rounded-lg"
+                        />
+                      </div>
+                    );
+                  default:
+                    return null;
+                }
+              })}
+            </div>
+          )}
+
+          {!hasSlateContent && !hasBlocksContent && (
+            <p className="text-gray-500">Нет содержимого</p>
+          )}
         </div>
 
-        {/* Футер со всеми категориями */}
+        {/* Футер */}
         <footer className="mt-12 pt-6 border-t border-[rgba(45,212,191,0.06)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
@@ -284,7 +399,7 @@ export default async function BlogPostPage({ params, searchParams = Promise.reso
                 Опубликовано в{' '}
                 {categories.length > 0 ? (
                   <span className="inline-flex flex-wrap gap-1">
-                    {categories.map((cat, index) => (
+                    {categories.map((cat: any, index: number) => (
                       <span key={cat.slug}>
                         <Link
                           href={`/blog?category=${cat.slug}`}

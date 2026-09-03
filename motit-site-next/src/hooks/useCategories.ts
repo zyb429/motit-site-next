@@ -6,14 +6,16 @@ import type { CategoryAttributes, FetchOptions } from '@/types/strapi';
 export function useCategories(options: FetchOptions = {}) {
   console.log('🔍 [useCategories] options:', JSON.stringify(options, null, 2));
   
+  // Убираем populate, чтобы избежать ошибки 500
+  const { populate, ...restOptions } = options;
+  
   const defaultOptions: FetchOptions = {
     sort: ['name:asc'],
-    ...options,
+    ...restOptions,
   };
   
   console.log('🔍 [useCategories] defaultOptions:', JSON.stringify(defaultOptions, null, 2));
   
-  // ✅ ИСПРАВЛЕНО: передаем defaultOptions, а не options
   return useStrapiData<CategoryAttributes>('/categories', defaultOptions);
 }
 

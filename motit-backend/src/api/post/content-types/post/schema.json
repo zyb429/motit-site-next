@@ -4,7 +4,8 @@
   "info": {
     "singularName": "post",
     "pluralName": "posts",
-    "displayName": "Post"
+    "displayName": "Post",
+    "description": "Посты блога с Slate редактором"
   },
   "options": {
     "draftAndPublish": true
@@ -20,33 +21,10 @@
       "targetField": "title",
       "required": true
     },
-    "post_status": {
-      "type": "enumeration",
-      "default": "draft",
-      "enum": [
-        "draft",
-        "published",
-        "archived"
-      ]
-    },
-    "admin_user": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "admin::user"
-    },
-    "content_blocks": {
-      "type": "dynamiczone",
-      "components": [
-        "blog.block",
-        "blog.video",
-        "blog.text",
-        "blog.quote",
-        "blog.image",
-        "blog.heading",
-        "blog.gallery",
-        "blog.code",
-        "blog.button"
-      ]
+    "content": {
+      "type": "json",
+      "required": true,
+      "description": "Содержание поста в формате Slate JSON"
     },
     "excerpt": {
       "type": "text",
@@ -55,15 +33,39 @@
     "featured_image": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": [
-        "images"
-      ]
+      "allowedTypes": ["images"]
     },
     "categories": {
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::category.category",
       "mappedBy": "posts"
+    },
+    "author": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "admin::user"
+    },
+    "post_status": {
+      "type": "enumeration",
+      "default": "draft",
+      "enum": ["draft", "published", "archived"]
+    },
+    "views": {
+      "type": "integer",
+      "default": 0
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "meta_title": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "meta_description": {
+      "type": "string",
+      "maxLength": 300
     }
   }
 }

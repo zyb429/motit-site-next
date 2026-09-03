@@ -4,8 +4,8 @@
   "info": {
     "singularName": "setting",
     "pluralName": "settings",
-    "displayName": "Settings",
-    "description": "Site settings"
+    "displayName": "Setting",
+    "description": "Настройки сайта"
   },
   "options": {
     "draftAndPublish": false
@@ -18,7 +18,7 @@
       "unique": true
     },
     "value": {
-      "type": "string",
+      "type": "text",
       "required": true
     },
     "description": {

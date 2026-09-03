@@ -21,7 +21,7 @@ export async function generateStaticParams() {
     const postsPerPage = await getPostsPerPage();
     const postsResponse = await getPosts({
       pagination: { page: 1, pageSize: postsPerPage },
-      populate: ['categories', 'admin_user', 'featured_image'],
+      populate: ['categories', 'author', 'featured_image'],
     }, false);
     
     const total = postsResponse?.meta?.pagination?.total || 0;
@@ -63,7 +63,7 @@ export default async function BlogPage({
   const postsResponse = await getPosts(
     {
       pagination: { page: 1, pageSize: 100 },
-      populate: ['categories', 'admin_user', 'featured_image'],
+      populate: ['categories', 'author', 'featured_image'],
       filters: searchQuery ? { title: { $containsi: searchQuery } } : undefined,
     },
     isDraftMode
