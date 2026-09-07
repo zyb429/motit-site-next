@@ -39,35 +39,44 @@ CREATE DATABASE `motit_site`
 USE `motit_site`;
 
 -- ============================================
--- 2. Таблица: users
+-- 2. Таблица: users (исправленная для Strapi)
 -- ============================================
 CREATE TABLE `users` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
-    `username` VARCHAR(100) NOT NULL,
-    `email` VARCHAR(255) NOT NULL,
-    `password_hash` VARCHAR(255) NOT NULL,
-    `full_name` VARCHAR(255) NOT NULL,
-    `phone` VARCHAR(50) NOT NULL,
+    `document_id` VARCHAR(255) NULL,
+    `username` VARCHAR(255) NULL,
+    `email` VARCHAR(255) NULL,
+    `password` VARCHAR(255) NULL,
+    `password_hash` VARCHAR(255) NULL,
+    `full_name` VARCHAR(255) NULL,
+    `phone` VARCHAR(255) NULL,
     `avatar_url` VARCHAR(500) NULL,
-    `is_active` BOOLEAN DEFAULT TRUE,
-    `last_login` TIMESTAMP NULL,
+    `is_active` TINYINT(1) DEFAULT 1,
+    `last_login` DATETIME(6) NULL,
+    `provider` VARCHAR(255) NULL,
+    `confirmed` TINYINT(1) DEFAULT 0,
+    `blocked` TINYINT(1) DEFAULT 0,
+    `resetPasswordToken` VARCHAR(255) NULL,
+    `confirmationToken` VARCHAR(255) NULL,
+    `created_at` DATETIME(6) NULL,
+    `updated_at` DATETIME(6) NULL,
+    `published_at` DATETIME(6) NULL,
     `created_by_id` INT UNSIGNED NULL,
     `updated_by_id` INT UNSIGNED NULL,
     `locale` VARCHAR(255) NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_users_uuid` (`uuid`),
     UNIQUE KEY `idx_users_username` (`username`),
-    UNIQUE KEY `idx_users_email` (`email`)
+    UNIQUE KEY `idx_users_email` (`email`),
+    KEY `idx_users_document_id` (`document_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 3. Таблица: roles
+-- 3. Таблица: roles (исправленная)
 -- ============================================
 CREATE TABLE `roles` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,  -- ← INT, не BIGINT
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `name` VARCHAR(100) NOT NULL,
     `created_by_id` INT UNSIGNED NULL,
@@ -81,12 +90,12 @@ CREATE TABLE `roles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 3b. Таблица: users_role_lnk (СВЯЗЬ ПОЛЬЗОВАТЕЛЕЙ И РОЛЕЙ)
+-- 3b. Таблица: users_role_lnk (ИСПРАВЛЕНА)
 -- ============================================
 CREATE TABLE `users_role_lnk` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `user_id` BIGINT UNSIGNED NOT NULL,
-    `role_id` BIGINT UNSIGNED NOT NULL,
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id` INT UNSIGNED NOT NULL,
+    `role_id` INT UNSIGNED NOT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
@@ -174,76 +183,74 @@ CREATE TABLE `workers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 8. Таблица: categories
+-- 8. Таблица: categories (исправленная с uuid)
 -- ============================================
 CREATE TABLE `categories` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
-    `name` VARCHAR(255) NOT NULL,
-    `slug` VARCHAR(255) NOT NULL,
-    `description` TEXT NULL,
-    `icon` VARCHAR(10) NULL,
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),  -- ← ДОБАВЛЕНО!
+    `document_id` VARCHAR(255) NULL,
+    `name` VARCHAR(255) NULL,
+    `slug` VARCHAR(255) NULL,
+    `description` LONGTEXT NULL,
+    `icon` VARCHAR(255) NULL,
+    `created_at` DATETIME(6) NULL,
+    `updated_at` DATETIME(6) NULL,
+    `published_at` DATETIME(6) NULL,
     `created_by_id` INT UNSIGNED NULL,
     `updated_by_id` INT UNSIGNED NULL,
     `locale` VARCHAR(255) NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_categories_uuid` (`uuid`),
-    UNIQUE KEY `idx_categories_slug` (`slug`)
+    UNIQUE KEY `idx_categories_uuid` (`uuid`),   -- ← ДОБАВЛЕНО!
+    UNIQUE KEY `idx_categories_slug` (`slug`),
+    KEY `idx_categories_document_id` (`document_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 9. Таблица: posts
+-- 9. Таблица: posts (исправленная)
 -- ============================================
 CREATE TABLE `posts` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
-    `slug` VARCHAR(255) NOT NULL,
-    `title` VARCHAR(255) NOT NULL,
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `document_id` VARCHAR(255) NULL,
+    `title` VARCHAR(255) NULL,
+    `slug` VARCHAR(255) NULL,
     `content` JSON NULL,
-    `excerpt` TEXT NULL,
-    `featured_image` VARCHAR(500) NULL,
-    `post_status` VARCHAR(50) DEFAULT 'draft',
-    `author_uuid` CHAR(36) NULL,
-    `meta_title` VARCHAR(255) NULL,
-    `meta_description` VARCHAR(300) NULL,
-    `seo_data` JSON NULL,
+    `excerpt` LONGTEXT NULL,
+    `post_status` VARCHAR(255) NULL DEFAULT 'draft',
     `views` INT DEFAULT 0,
-    `is_featured` BOOLEAN DEFAULT FALSE,
+    `is_featured` TINYINT(1) DEFAULT 0,
+    `meta_title` VARCHAR(255) NULL,
+    `meta_description` LONGTEXT NULL,
+    `author_uuid` CHAR(36) NULL,  -- ← ДОБАВЛЕНО для связи с пользователем
+    `created_at` DATETIME(6) NULL,
+    `updated_at` DATETIME(6) NULL,
+    `published_at` DATETIME(6) NULL,
     `created_by_id` INT UNSIGNED NULL,
     `updated_by_id` INT UNSIGNED NULL,
     `locale` VARCHAR(255) NULL,
-    `published_at` TIMESTAMP NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_posts_uuid` (`uuid`),
     UNIQUE KEY `idx_posts_slug` (`slug`),
-    KEY `idx_posts_author` (`author_uuid`),
-    KEY `idx_posts_post_status` (`post_status`),
-    KEY `idx_posts_published_at` (`published_at`),
-    CONSTRAINT `fk_posts_author` FOREIGN KEY (`author_uuid`) REFERENCES `users` (`uuid`) ON DELETE SET NULL
+    KEY `idx_posts_document_id` (`document_id`),
+    KEY `idx_posts_author_uuid` (`author_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 10. Таблица: posts_categories
+-- 10. Таблица: posts_categories_links (исправленная)
 -- ============================================
-CREATE TABLE `posts_categories` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `post_uuid` CHAR(36) NOT NULL,
-    `category_uuid` CHAR(36) NOT NULL,
+CREATE TABLE `posts_categories_links` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `post_id` INT UNSIGNED NOT NULL,
+    `category_id` INT UNSIGNED NOT NULL,
+    `created_at` DATETIME(6) NULL,
+    `updated_at` DATETIME(6) NULL,
     `created_by_id` INT UNSIGNED NULL,
     `updated_by_id` INT UNSIGNED NULL,
     `locale` VARCHAR(255) NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_post_category_unique` (`post_uuid`, `category_uuid`),
-    KEY `idx_posts_categories_post` (`post_uuid`),
-    KEY `idx_posts_categories_category` (`category_uuid`),
-    CONSTRAINT `fk_posts_categories_post` FOREIGN KEY (`post_uuid`) REFERENCES `posts` (`uuid`) ON DELETE CASCADE,
-    CONSTRAINT `fk_posts_categories_category` FOREIGN KEY (`category_uuid`) REFERENCES `categories` (`uuid`) ON DELETE CASCADE
+    UNIQUE KEY `idx_posts_categories_links_unique` (`post_id`, `category_id`),
+    KEY `idx_posts_categories_links_post` (`post_id`),
+    KEY `idx_posts_categories_links_category` (`category_id`),
+    CONSTRAINT `fk_posts_categories_links_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_posts_categories_links_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
@@ -419,3 +426,98 @@ CREATE TABLE `partners` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_partners_uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- ============================================
+-- Добавление прав для роли Administrator
+-- ============================================
+
+-- 1. Получить ID роли Administrator
+SET @role_id = (SELECT id FROM roles WHERE name = 'Administrator');
+
+-- 2. Добавить права для Category
+INSERT INTO `up_permissions` (`document_id`, `action`, `created_at`, `updated_at`) VALUES
+(UUID(), 'api::category.category.find', NOW(), NOW()),
+(UUID(), 'api::category.category.findOne', NOW(), NOW()),
+(UUID(), 'api::category.category.create', NOW(), NOW()),
+(UUID(), 'api::category.category.update', NOW(), NOW()),
+(UUID(), 'api::category.category.delete', NOW(), NOW()),
+(UUID(), 'api::category.category.publish', NOW(), NOW()),
+(UUID(), 'api::category.category.unpublish', NOW(), NOW());
+
+-- 3. Добавить права для Post
+INSERT INTO `up_permissions` (`document_id`, `action`, `created_at`, `updated_at`) VALUES
+(UUID(), 'api::post.post.find', NOW(), NOW()),
+(UUID(), 'api::post.post.findOne', NOW(), NOW()),
+(UUID(), 'api::post.post.create', NOW(), NOW()),
+(UUID(), 'api::post.post.update', NOW(), NOW()),
+(UUID(), 'api::post.post.delete', NOW(), NOW()),
+(UUID(), 'api::post.post.publish', NOW(), NOW()),
+(UUID(), 'api::post.post.unpublish', NOW(), NOW());
+
+-- 4. Добавить права для User
+INSERT INTO `up_permissions` (`document_id`, `action`, `created_at`, `updated_at`) VALUES
+(UUID(), 'plugin::users-permissions.user.find', NOW(), NOW()),
+(UUID(), 'plugin::users-permissions.user.findOne', NOW(), NOW()),
+(UUID(), 'plugin::users-permissions.user.create', NOW(), NOW()),
+(UUID(), 'plugin::users-permissions.user.update', NOW(), NOW()),
+(UUID(), 'plugin::users-permissions.user.delete', NOW(), NOW());
+
+-- 5. Связать все права с ролью Administrator
+INSERT INTO `up_permissions_role_lnk` (`permission_id`, `role_id`)
+SELECT p.id, @role_id
+FROM `up_permissions` p
+WHERE p.action LIKE 'api::category.category%'
+   OR p.action LIKE 'api::post.post%'
+   OR p.action LIKE 'plugin::users-permissions.user%'
+   AND NOT EXISTS (
+       SELECT 1 FROM `up_permissions_role_lnk` prl 
+       WHERE prl.permission_id = p.id AND prl.role_id = @role_id
+   );

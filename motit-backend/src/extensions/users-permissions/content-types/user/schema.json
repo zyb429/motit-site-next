@@ -37,6 +37,11 @@
       "configurable": false,
       "private": true
     },
+    "password_hash": {
+      "type": "string",
+      "configurable": false,
+      "private": true
+    },
     "resetPasswordToken": {
       "type": "string",
       "configurable": false,
@@ -84,6 +89,12 @@
     },
     "last_login": {
       "type": "datetime"
+    },
+    "posts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::post.post",
+      "mappedBy": "author"
     }
   }
 }
