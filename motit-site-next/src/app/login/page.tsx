@@ -96,7 +96,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="identifier"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-black mb-1"
             >
               Email или Имя пользователя
             </label>
@@ -107,7 +107,7 @@ export default function LoginPage() {
               onChange={(e) => setIdentifier(e.target.value)}
               required
               disabled={loading}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100"
+              className="w-full px-4 py-2.5 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100"
               placeholder="admin@example.com"
               autoComplete="username"
             />
@@ -116,7 +116,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-black mb-1"
             >
               Пароль
             </label>
@@ -127,7 +127,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100"
+              className="w-full px-4 py-2.5 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100"
               placeholder="••••••••"
               autoComplete="current-password"
             />
