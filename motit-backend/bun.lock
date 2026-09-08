@@ -6,7 +6,7 @@
       "name": "motit-backend",
       "dependencies": {
         "@strapi/core": "^5.52.3",
-        "@strapi/database": "^5.52.2",
+        "@strapi/database": "5.52.2",
         "@strapi/plugin-cloud": "5.52.2",
         "@strapi/plugin-documentation": "^5.52.3",
         "@strapi/plugin-graphql": "^5.52.3",

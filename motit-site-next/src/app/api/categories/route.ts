@@ -5,6 +5,11 @@ const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
 
 export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const sort = searchParams.get("sort") || "name:asc";
+    const page = searchParams.get("page") || "1";
+    const pageSize = searchParams.get("pageSize") || "100";
+
     // Получаем токен из cookies
     const cookieStore = await cookies();
     const token =
@@ -20,10 +25,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Запрашиваем категории из Strapi
-    const response = await fetch(`${STRAPI_URL}/api/categories?sort=name:asc`, {
-      headers,
-      cache: "no-store", // Отключаем кеш для разработки
-    });
+    const response = await fetch(
+      `${STRAPI_URL}/api/categories?sort=${sort}&pagination[page]=${page}&pagination[pageSize]=${pageSize}`,
+      {
+        headers,
+        cache: "no-store", // Отключаем кеш для разработки
+      },
+    );
 
     const data = await response.json();
 

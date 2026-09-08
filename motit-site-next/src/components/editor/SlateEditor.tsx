@@ -53,9 +53,10 @@ const Toolbar = ({ editor }: { editor: CustomEditor }) => {
   };
 
   const btnClass = (active: boolean) =>
-    `px-2.5 py-1.5 rounded text-sm font-medium transition-colors ${active
-      ? "bg-blue-600 text-white"
-      : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+    `px-2.5 py-1.5 rounded text-sm font-medium transition-colors ${
+      active
+        ? "bg-blue-600 text-white"
+        : "bg-gray-200 hover:bg-gray-300 text-gray-700"
     }`;
 
   return (
@@ -361,8 +362,9 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
       {!readOnly && <Toolbar editor={editor} />}
       <Slate editor={editor} initialValue={value} onChange={handleChange}>
         <Editable
-          className={`min-h-[300px] p-4 focus:outline-none text-black placeholder-gray-700 ${readOnly ? "cursor-default" : ""
-            }`}
+          className={`min-h-75 p-4 focus:outline-none text-black placeholder-gray-700 ${
+            readOnly ? "cursor-default" : ""
+          }`}
           placeholder={placeholder}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
