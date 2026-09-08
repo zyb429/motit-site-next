@@ -1,48 +1,53 @@
 // config/plugins.ts
-import type { Core } from '@strapi/strapi';
+import type { Core } from "@strapi/strapi";
 
 // Разрешенные типы файлов
 const allowedMediaTypes = [
-  'image/*',
-  'video/*',
-  'audio/*',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.*',
-  'text/plain',
-  'text/csv',
-  'application/zip',
-  'application/x-zip-compressed',
-  'application/x-rar-compressed',
-  'application/x-7z-compressed',
+  "image/*",
+  "video/*",
+  "audio/*",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.*",
+  "text/plain",
+  "text/csv",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/x-rar-compressed",
+  "application/x-7z-compressed",
 ];
 
 // Запрещенные типы файлов (исполняемые файлы)
 const deniedTypes = [
-  'image/svg+xml',
-  'application/vnd.microsoft.portable-executable', // .exe
-  'application/x-msdownload',
-  'application/x-msdos-program',
-  'application/x-executable',
-  'application/x-dosexec',
-  'application/x-sh',
-  'text/x-shellscript',
-  'application/x-mach-binary',
-  'application/java-archive', // .jar
-  'application/x-java-jnlp-file',
+  "image/svg+xml",
+  "application/vnd.microsoft.portable-executable", // .exe
+  "application/x-msdownload",
+  "application/x-msdos-program",
+  "application/x-executable",
+  "application/x-dosexec",
+  "application/x-sh",
+  "text/x-shellscript",
+  "application/x-mach-binary",
+  "application/java-archive", // .jar
+  "application/x-java-jnlp-file",
 ];
 
-const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin => ({
+const config = ({
+  env,
+}: Core.Config.Shared.ConfigParams): Core.Config.Plugin => ({
   // ============================================
   // Users & Permissions (JWT + аутентификация)
   // ============================================
-  'users-permissions': {
+  "users-permissions": {
     config: {
-      jwtManagement: 'refresh',
+      jwtSecret: env("JWT_SECRET"),
+      jwt: {
+        expiresIn: "7d",
+      },
       sessions: {
         httpOnly: true,
-        secure: env.bool('JWT_SECURE', false), // true для HTTPS
-        maxAge: env.int('JWT_MAX_AGE', 7 * 24 * 60 * 60), // 7 дней
+        secure: env.bool("JWT_SECURE", false), // true для HTTPS
+        maxAge: env.int("JWT_MAX_AGE", 7 * 24 * 60 * 60), // 7 дней
       },
     },
   },

@@ -5,23 +5,18 @@ import {
   PlusCircle,
   FileText,
   FolderOpen,
-  Users,
   Settings,
   LogOut,
   Home,
   PenSquare,
 } from "lucide-react";
 
-// Типы для пользователя
 type User = {
   id: number;
   username: string;
   email: string;
   firstname?: string;
   lastname?: string;
-  role?: {
-    name: string;
-  };
 };
 
 async function getCurrentUser(): Promise<User | null> {
@@ -29,26 +24,48 @@ async function getCurrentUser(): Promise<User | null> {
     const cookieStore = await cookies();
     const token = cookieStore.get("strapi_jwt")?.value;
 
+    console.log(`[Admin] JWT token: ${token ? "✅" : "❌"}`);
+
     if (!token) {
       return null;
     }
 
-    const response = await fetch(
-      `${process.env.STRAPI_URL || "http://localhost:1337"}/api/users/me`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
+    const STRAPI_URL =
+      process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+
+    // ✅ Запрашиваем пользователя через Strapi с API Token
+    const response = await fetch(`${STRAPI_URL}/api/users/me?populate=*`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-    );
+      cache: "no-store",
+    });
+
+    console.log(`[Admin] Strapi status: ${response.status}`);
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Admin] Strapi error: ${response.status} - ${errorText}`);
+
+      // Если токен недействителен - удаляем куку
+      if (response.status === 401) {
+        cookieStore.delete("strapi_jwt");
+      }
+
       return null;
     }
 
-    return await response.json();
+    const user = await response.json();
+    console.log(`[Admin] User found: ${user.username || user.email}`);
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstname: user.firstname || user.username,
+      lastname: user.lastname || "",
+    };
   } catch (error) {
     console.error("Error getting user:", error);
     return null;
@@ -59,65 +76,12 @@ export default async function AdminPage() {
   const user = await getCurrentUser();
 
   if (!user) {
+    console.log("[Admin] No user, redirecting to login");
     redirect("/login");
-  }
-
-  const stats = {
-    posts: 0,
-    categories: 0,
-    users: 0,
-  };
-
-  // Попытка получить реальные данные
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("strapi_jwt")?.value;
-    const baseUrl = process.env.STRAPI_URL || "http://localhost:1337";
-
-    if (token) {
-      // Получаем количество постов
-      const postsRes = await fetch(
-        `${baseUrl}/api/posts?pagination[pageSize]=1`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      if (postsRes.ok) {
-        const postsData = await postsRes.json();
-        stats.posts = postsData.meta?.pagination?.total || 0;
-      }
-
-      // Получаем количество категорий
-      const categoriesRes = await fetch(
-        `${baseUrl}/api/categories?pagination[pageSize]=1`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      if (categoriesRes.ok) {
-        const categoriesData = await categoriesRes.json();
-        stats.categories = categoriesData.meta?.pagination?.total || 0;
-      }
-
-      // Получаем количество пользователей
-      const usersRes = await fetch(
-        `${baseUrl}/api/users?pagination[pageSize]=1`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      if (usersRes.ok) {
-        const usersData = await usersRes.json();
-        stats.users = usersData.meta?.pagination?.total || 0;
-      }
-    }
-  } catch (error) {
-    console.error("Error fetching stats:", error);
   }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -157,19 +121,15 @@ export default async function AdminPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">
                   Всего постов
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
-                  {stats.posts}
-                </p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
               </div>
               <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
                 <FileText className="w-6 h-6 text-blue-600" />
@@ -181,34 +141,15 @@ export default async function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Категории</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
-                  {stats.categories}
-                </p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
               </div>
               <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
                 <FolderOpen className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">
-                  Пользователи
-                </p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
-                  {stats.users}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Quick Actions */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Быстрые действия
@@ -231,7 +172,7 @@ export default async function AdminPage() {
 
             <Link
               href="/admin/posts"
-              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-blue-200"
+              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-green-200"
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors">
@@ -246,7 +187,7 @@ export default async function AdminPage() {
 
             <Link
               href="/admin/categories"
-              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-blue-200"
+              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-purple-200"
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
@@ -263,7 +204,7 @@ export default async function AdminPage() {
 
             <Link
               href="/admin/settings"
-              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-blue-200"
+              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-gray-300"
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center group-hover:bg-gray-100 transition-colors">
@@ -278,7 +219,6 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        {/* Recent Activity (Placeholder) */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Последняя активность

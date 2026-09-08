@@ -2,31 +2,34 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  // Проверяем наличие токена в куках
   const token = request.cookies.get("strapi_jwt")?.value;
   const pathname = request.nextUrl.pathname;
 
-  // Защищенные маршруты
-  const protectedPaths = ["/admin", "/dashboard", "/profile"];
-  const isProtectedPath = protectedPaths.some((path) =>
-    pathname.startsWith(path),
-  );
+  console.log(`[Middleware] ${pathname} - Token: ${token ? "✅" : "❌"}`);
 
-  // Если пользователь не авторизован и пытается зайти на защищенный маршрут
-  if (!token && isProtectedPath) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+  // ✅ Если на главной и есть токен - редирект на /admin
+  if (pathname === "/" && token) {
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
-  // Если пользователь авторизован и пытается зайти на /login
-  if (token && request.nextUrl.pathname === "/login") {
+  // ✅ Если на /login и есть токен - редирект на /admin
+  if (pathname === "/login" && token) {
     return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
+  // ✅ Защищаем /admin
+  if (pathname.startsWith("/admin")) {
+    if (!token) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dashboard/:path*", "/profile/:path*", "/login"],
+  matcher: ["/", "/admin/:path*", "/login"],
 };

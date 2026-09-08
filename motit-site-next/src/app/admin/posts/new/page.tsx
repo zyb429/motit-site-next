@@ -24,7 +24,6 @@ export type Category = {
   publishedAt?: string;
 };
 
-// Функции для получения данных
 function getApiUrl(): string {
   const baseUrl =
     process.env.NEXT_PUBLIC_API_URL ||
@@ -34,12 +33,11 @@ function getApiUrl(): string {
   return baseUrl.replace(/\/$/, "");
 }
 
-async function getCurrentUser() {
+async function getCurrentUser(): Promise<User | null> {
   try {
     const cookieStore = await cookies();
-
-    // Получаем токен из кук
-    const token = cookieStore.get("token")?.value;
+    const token =
+      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
 
     if (!token) {
       return null;
@@ -70,7 +68,7 @@ async function getCategories(): Promise<Category[]> {
   try {
     const baseUrl = getApiUrl();
     const response = await fetch(`${baseUrl}/api/categories`, {
-      cache: "no-store", // или используйте revalidate
+      cache: "no-store",
     });
 
     if (!response.ok) {
@@ -87,23 +85,15 @@ async function getCategories(): Promise<Category[]> {
 }
 
 export default async function CreatePostPage() {
-  try {
-    // Загружаем данные на сервере
-    const [user, categories] = await Promise.all([
-      getCurrentUser(),
-      getCategories(),
-    ]);
+  const [user, categories] = await Promise.all([
+    getCurrentUser(),
+    getCategories(),
+  ]);
 
-    // Если пользователь не авторизован - редирект
-    if (!user) {
-      redirect("/login");
-    }
-
-    return (
-      <CreatePostClient initialUser={user} initialCategories={categories} />
-    );
-  } catch (error) {
-    console.error("Error in CreatePostPage:", error);
-    return <CreatePostClient initialUser={null} initialCategories={[]} />;
+  // ✅ Редирект без try-catch - это правильный подход
+  if (!user) {
+    redirect("/login");
   }
+
+  return <CreatePostClient initialUser={user} initialCategories={categories} />;
 }

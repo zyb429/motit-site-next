@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
 
@@ -7,14 +6,6 @@ export async function POST(request: Request) {
   try {
     const { identifier, password } = await request.json();
 
-    if (!identifier || !password) {
-      return NextResponse.json(
-        { message: "Email и пароль обязательны" },
-        { status: 400 },
-      );
-    }
-
-    // Отправляем запрос к Strapi
     const response = await fetch(`${STRAPI_URL}/api/auth/local`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -30,17 +21,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Устанавливаем JWT в cookie
-    const cookieStore = await cookies();
-    cookieStore.set("strapi_jwt", data.jwt, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 дней
-      path: "/",
-    });
-
-    return NextResponse.json({
+    // ✅ Создаем ответ
+    const res = NextResponse.json({
       success: true,
       user: {
         id: data.user.id,
@@ -49,6 +31,19 @@ export async function POST(request: Request) {
         full_name: data.user.full_name,
       },
     });
+
+    // ✅ Устанавливаем куку
+    res.cookies.set("strapi_jwt", data.jwt, {
+      httpOnly: true,
+      secure: false, // ⚠️ Для localhost ставим false
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+
+    console.log("[Login] Cookie set:", data.jwt ? "✅" : "❌");
+
+    return res;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json({ message: "Ошибка сервера" }, { status: 500 });
