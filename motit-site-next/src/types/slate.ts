@@ -1,5 +1,6 @@
-import { BaseEditor } from 'slate';
-import { ReactEditor } from 'slate-react';
+import { BaseEditor, BaseElement, BaseText, Descendant } from "slate";
+import { ReactEditor } from "slate-react";
+import { HistoryEditor } from "slate-history";
 
 // ===== ТИПЫ ДЛЯ ТЕКСТОВЫХ УЗЛОВ =====
 export type CustomText = {
@@ -13,17 +14,17 @@ export type CustomText = {
 
 // ===== ТИПЫ ДЛЯ ЭЛЕМЕНТОВ (БЛОКОВ) =====
 export type CustomElementType =
-  | 'paragraph'
-  | 'heading-one'
-  | 'heading-two'
-  | 'heading-three'
-  | 'bulleted-list'
-  | 'numbered-list'
-  | 'list-item'
-  | 'block-quote'
-  | 'code-block'
-  | 'image'
-  | 'link';
+  | "paragraph"
+  | "heading-one"
+  | "heading-two"
+  | "heading-three"
+  | "bulleted-list"
+  | "numbered-list"
+  | "list-item"
+  | "block-quote"
+  | "code-block"
+  | "image"
+  | "link";
 
 export type CustomElement = {
   type: CustomElementType;
@@ -31,11 +32,11 @@ export type CustomElement = {
   url?: string;
   href?: string;
   alt?: string;
-  target?: '_blank' | '_self';
+  target?: "_blank" | "_self";
 };
 
 // ===== РАСШИРЕННЫЙ ТИП РЕДАКТОРА =====
-export type CustomEditor = BaseEditor & ReactEditor;
+export type CustomEditor = BaseEditor & ReactEditor & HistoryEditor;
 
 // ===== ТИП ПОСТА ИЗ STRAPI =====
 export type Post = {
@@ -73,7 +74,7 @@ export type Post = {
         };
       };
     };
-    post_status?: 'draft' | 'published' | 'archived';
+    post_status?: "draft" | "published" | "archived";
     views?: number;
     is_featured?: boolean;
     publishedAt?: string;
@@ -88,9 +89,9 @@ export type CreatePostData = {
   content: CustomElement[];
   excerpt?: string;
   categories?: number[];
-  author?: number;  // ← ДОБАВЛЕНО
+  author?: number; // ← ДОБАВЛЕНО
   featured_image?: number;
-  post_status?: 'draft' | 'published' | 'archived';
+  post_status?: "draft" | "published" | "archived";
   publishedAt?: string;
   is_featured?: boolean;
 };
@@ -102,4 +103,13 @@ export interface SlateEditorProps {
   placeholder?: string;
   className?: string;
   readOnly?: boolean;
+}
+
+// ===== РАСШИРЯЕМ ГЛОБАЛЬНЫЕ ТИПЫ SLATE =====
+declare module "slate" {
+  interface CustomTypes {
+    Editor: CustomEditor;
+    Element: CustomElement;
+    Text: CustomText;
+  }
 }

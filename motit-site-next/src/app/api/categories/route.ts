@@ -1,22 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
-const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
 
 export async function GET(request: NextRequest) {
   try {
-    const response = await fetch(`${STRAPI_URL}/api/categories`, {
-      headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
-      cache: 'force-cache',
+    // Получаем токен из cookies
+    const cookieStore = await cookies();
+    const token =
+      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
+
+    // Формируем заголовки
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    // Запрашиваем категории из Strapi
+    const response = await fetch(`${STRAPI_URL}/api/categories?sort=name:asc`, {
+      headers,
+      cache: "no-store", // Отключаем кеш для разработки
     });
 
     const data = await response.json();
-    return NextResponse.json(data);
+
+    if (!response.ok) {
+      console.error("Strapi error:", data);
+      return NextResponse.json(
+        { error: data.error?.message || "Ошибка получения категорий" },
+        { status: response.status },
+      );
+    }
+
+    // Возвращаем данные в формате, который ожидает фронтенд
+    return NextResponse.json({
+      data: data.data || [],
+      meta: data.meta || {},
+    });
   } catch (error) {
-    console.error('API Error:', error);
+    console.error("API Error:", error);
     return NextResponse.json(
-      { error: 'Ошибка получения категорий' },
-      { status: 500 }
+      { error: "Внутренняя ошибка сервера" },
+      { status: 500 },
     );
   }
 }

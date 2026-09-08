@@ -39,7 +39,7 @@ CREATE DATABASE `motit_site`
 USE `motit_site`;
 
 -- ============================================
--- 2. Таблица: users (исправленная для Strapi)
+-- 2. Таблица: users
 -- ============================================
 CREATE TABLE `users` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -73,10 +73,10 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 3. Таблица: roles (исправленная)
+-- 3. Таблица: roles
 -- ============================================
 CREATE TABLE `roles` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,  -- ← INT, не BIGINT
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `name` VARCHAR(100) NOT NULL,
     `created_by_id` INT UNSIGNED NULL,
@@ -90,7 +90,7 @@ CREATE TABLE `roles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 3b. Таблица: users_role_lnk (ИСПРАВЛЕНА)
+-- 3b. Таблица: users_role_lnk
 -- ============================================
 CREATE TABLE `users_role_lnk` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -127,7 +127,7 @@ CREATE TABLE `organizations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 5. Таблица: clients (ИСПРАВЛЕНО — добавлен id)
+-- 5. Таблица: clients
 -- ============================================
 CREATE TABLE `clients` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -183,11 +183,11 @@ CREATE TABLE `workers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 8. Таблица: categories (исправленная с uuid)
+-- 8. Таблица: categories
 -- ============================================
 CREATE TABLE `categories` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),  -- ← ДОБАВЛЕНО!
+    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `document_id` VARCHAR(255) NULL,
     `name` VARCHAR(255) NULL,
     `slug` VARCHAR(255) NULL,
@@ -200,13 +200,13 @@ CREATE TABLE `categories` (
     `updated_by_id` INT UNSIGNED NULL,
     `locale` VARCHAR(255) NULL,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_categories_uuid` (`uuid`),   -- ← ДОБАВЛЕНО!
+    UNIQUE KEY `idx_categories_uuid` (`uuid`),
     UNIQUE KEY `idx_categories_slug` (`slug`),
     KEY `idx_categories_document_id` (`document_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 9. Таблица: posts (исправленная)
+-- 9. Таблица: posts (ИСПРАВЛЕНА - добавлен created_by_id, убран author_uuid)
 -- ============================================
 CREATE TABLE `posts` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -220,7 +220,6 @@ CREATE TABLE `posts` (
     `is_featured` TINYINT(1) DEFAULT 0,
     `meta_title` VARCHAR(255) NULL,
     `meta_description` LONGTEXT NULL,
-    `author_uuid` CHAR(36) NULL,  -- ← ДОБАВЛЕНО для связи с пользователем
     `created_at` DATETIME(6) NULL,
     `updated_at` DATETIME(6) NULL,
     `published_at` DATETIME(6) NULL,
@@ -230,11 +229,12 @@ CREATE TABLE `posts` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_posts_slug` (`slug`),
     KEY `idx_posts_document_id` (`document_id`),
-    KEY `idx_posts_author_uuid` (`author_uuid`)
+    KEY `idx_posts_created_by_id` (`created_by_id`),
+    CONSTRAINT `fk_posts_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 10. Таблица: posts_categories_links (исправленная)
+-- 10. Таблица: posts_categories_links
 -- ============================================
 CREATE TABLE `posts_categories_links` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -426,9 +426,6 @@ CREATE TABLE `partners` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_partners_uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
-
-
 
 
 
