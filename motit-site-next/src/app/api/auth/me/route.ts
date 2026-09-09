@@ -54,7 +54,16 @@ export async function GET(request: NextRequest) {
     const user = await response.json();
     console.log(`[API Auth] User found: ${user.username || user.email}`);
 
-    return NextResponse.json({ user });
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        full_name: user.full_name || user.username, // Используем full_name
+        firstname: user.firstname || user.username,
+        lastname: user.lastname || "",
+      },
+    });
   } catch (error) {
     console.error("Auth error:", error);
     return NextResponse.json(

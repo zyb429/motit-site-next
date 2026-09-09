@@ -17,6 +17,7 @@ type User = {
   email: string;
   firstname?: string;
   lastname?: string;
+  full_name?: string;
 };
 
 async function getCurrentUser(): Promise<User | null> {
@@ -49,8 +50,15 @@ async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    const user = await response.json();
-    console.log(`[Admin] User found: ${user.username || user.email}`);
+    const data = await response.json();
+    console.log(`[Admin] Full API response:`, JSON.stringify(data, null, 2));
+
+    const user = data.user;
+    console.log(`[Admin] User found: ${user?.username || user?.email}`);
+
+    if (!user) {
+      return null;
+    }
 
     return {
       id: user.id,
@@ -58,6 +66,10 @@ async function getCurrentUser(): Promise<User | null> {
       email: user.email,
       firstname: user.firstname || user.username,
       lastname: user.lastname || "",
+      full_name:
+        user.full_name ||
+        `${user.firstname || ""} ${user.lastname || ""}`.trim() ||
+        user.username,
     };
   } catch (error) {
     console.error("Error getting user:", error);
@@ -87,7 +99,8 @@ export default async function AdminPage() {
                   Админ панель
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Добро пожаловать, {user.firstname || user.username}!
+                  Добро пожаловать,{" "}
+                  {user.full_name || user.firstname || user.username}!
                 </p>
               </div>
             </div>
