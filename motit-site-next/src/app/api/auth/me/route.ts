@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +15,6 @@ export async function GET(request: NextRequest) {
 
     const token = cookieStore.get("strapi_jwt")?.value;
     console.log(`[API Auth] User token: ${token ? "✅" : "❌"}`);
-    console.log(`[API Auth] API Token: ${STRAPI_API_TOKEN ? "✅" : "❌"}`);
 
     if (!token) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
@@ -29,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const response = await fetch(`${STRAPI_URL}/api/users/me?populate=*`, {
       headers: {
-        Authorization: `Bearer ${STRAPI_API_TOKEN}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       cache: "no-cache",

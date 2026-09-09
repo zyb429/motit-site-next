@@ -30,14 +30,12 @@ async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    const STRAPI_URL =
-      process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     // ✅ Запрашиваем пользователя через Strapi с API Token
-    const response = await fetch(`${STRAPI_URL}/api/users/me?populate=*`, {
+    const response = await fetch(`${baseUrl}/api/auth/me`, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        Cookie: `strapi_jwt=${token}`,
       },
       cache: "no-store",
     });
@@ -47,11 +45,6 @@ async function getCurrentUser(): Promise<User | null> {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[Admin] Strapi error: ${response.status} - ${errorText}`);
-
-      // Если токен недействителен - удаляем куку
-      if (response.status === 401) {
-        cookieStore.delete("strapi_jwt");
-      }
 
       return null;
     }
