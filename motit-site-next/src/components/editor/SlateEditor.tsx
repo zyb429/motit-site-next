@@ -168,7 +168,7 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
   const editor = useMemo(() => withHistory(withReact(createEditor())), []);
 
   // Безопасное создание значения
-  const getSafeValue = useCallback((value?: CustomElement[]) => {
+  const getSafeValue = useCallback((value?: CustomElement[] | null) => {
     if (!value || !Array.isArray(value) || value.length === 0) {
       console.log("Нет значения, используем INITIAL_VALUE");
       return INITIAL_VALUE;

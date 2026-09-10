@@ -99,7 +99,7 @@ export type CreatePostData = {
 // ===== ТИПЫ ДЛЯ КОМПОНЕНТА РЕДАКТОРА =====
 export interface SlateEditorProps {
   onChange?: (value: CustomElement[]) => void;
-  initialValue?: CustomElement[];
+  initialValue?: CustomElement[] | null;
   placeholder?: string;
   className?: string;
   readOnly?: boolean;

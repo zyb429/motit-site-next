@@ -8,7 +8,7 @@
     "description": "Посты блога с Slate редактором"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

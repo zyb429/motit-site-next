@@ -1,39 +1,47 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { getPosts, getPostsPerPage } from '@/lib/strapi';
-import { getDraftModeStatus } from '@/lib/server/strapi';
-import { BlogCard } from '@/components/blog/BlogCard';
-import { BlogCategories } from '@/components/blog/BlogCategories';
-import { PaginationClient } from '@/components/blog/PaginationClient';
-import { SearchInput } from '@/components/blog/SearchInput';
+import type { Metadata } from "next";
+import Link from "next/link";
+import {
+  getPosts,
+  getPostsPerPage,
+  getCategoriesForPost,
+  getPostCategories,
+} from "@/lib/strapi";
+import { getDraftModeStatus } from "@/lib/server/strapi";
+import { BlogCard } from "@/components/blog/BlogCard";
+import { BlogCategories } from "@/components/blog/BlogCategories";
+import { PaginationClient } from "@/components/blog/PaginationClient";
+import { SearchInput } from "@/components/blog/SearchInput";
 
 // ISR - пересоздаем страницу каждый час
 export const revalidate = 3600; // 1 час
 
 export const metadata: Metadata = {
-  title: 'Блог | Motit',
-  description: 'Новости, статьи и обновления от Motit',
+  title: "Блог | Motit",
+  description: "Новости, статьи и обновления от Motit",
 };
 
 // Генерируем статические страницы для первых 10 страниц
 export async function generateStaticParams() {
   try {
     const postsPerPage = await getPostsPerPage();
-    const postsResponse = await getPosts({
-      pagination: { page: 1, pageSize: postsPerPage },
-      populate: ['categories', 'author', 'featured_image'],
-    }, false);
-    
+    const postsResponse = await getPosts(
+      {
+        pagination: { page: 1, pageSize: postsPerPage },
+        populate: ["categories", "author", "featured_image"],
+      },
+      false,
+    );
+
     const total = postsResponse?.meta?.pagination?.total || 0;
     const totalPages = Math.ceil(total / postsPerPage);
-    
+
     const pagesToGenerate = Math.min(totalPages, 10);
-    
+
     return Array.from({ length: pagesToGenerate }, (_, i) => ({
       page: String(i + 1),
     }));
   } catch (error) {
-    console.error('Error generating static params:', error);
+    console.error("Error generating static params:", error);
     return [];
   }
 }
@@ -41,11 +49,13 @@ export async function generateStaticParams() {
 export default async function BlogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; category?: string | string[]; page?: string }> | { search?: string; category?: string | string[]; page?: string };
+  searchParams:
+    | Promise<{ search?: string; category?: string | string[]; page?: string }>
+    | { search?: string; category?: string | string[]; page?: string };
 }) {
   const params = await searchParams;
-  const searchQuery = params?.search || '';
-  const currentPage = parseInt(params?.page || '1', 10);
+  const searchQuery = params?.search || "";
+  const currentPage = parseInt(params?.page || "1", 10);
 
   let categorySlugs: string[] = [];
   if (params?.category) {
@@ -63,25 +73,55 @@ export default async function BlogPage({
   const postsResponse = await getPosts(
     {
       pagination: { page: 1, pageSize: 100 },
-      populate: ['categories', 'author', 'featured_image'],
+      populate: ["categories", "author", "featured_image"],
       filters: searchQuery ? { title: { $containsi: searchQuery } } : undefined,
     },
-    isDraftMode
+    isDraftMode,
   );
 
   let allPosts = postsResponse?.data || [];
 
-  // ✅ Фильтруем по категориям на клиенте (AND - все категории должны быть)
+  allPosts = await Promise.all(
+    allPosts.map(async (post: any) => {
+      const postDocId = post.documentId || post.attributes?.documentId;
+      if (!postDocId) return post;
+
+      const cats = await getCategoriesForPost(postDocId);
+
+      return {
+        ...post,
+        attributes: {
+          ...(post.attributes || post),
+          categories: cats,
+        },
+      };
+    }),
+  );
+
+  // Считаем количество постов на категорию (по уже загруженным данным)
+  const categoryCounts: Record<string, number> = {};
+  for (const post of allPosts) {
+    const cats = getPostCategories(post);
+    for (const cat of cats) {
+      categoryCounts[cat.slug] = (categoryCounts[cat.slug] || 0) + 1;
+    }
+  }
+
+  // Фильтруем по категориям на клиенте (AND - все категории должны быть)
   if (categorySlugs.length > 0) {
     allPosts = allPosts.filter((post: any) => {
-      const attrs = post.attributes || post;
-      const categories = attrs.categories?.data || attrs.categories || [];
-      const postCategorySlugs = categories.map((cat: any) => 
-        (cat.attributes || cat).slug
+      // Используем общую функцию — она уже умеет v4 и v5
+      const postCategories = getPostCategories(post);
+      const postCategorySlugs = postCategories.map((c: any) => c.slug);
+
+      console.log(
+        "📦 post:",
+        post.slug || post.title,
+        "cats:",
+        postCategorySlugs,
       );
-      
-      // Проверяем, что все выбранные категории есть в посте
-      return categorySlugs.every(slug => postCategorySlugs.includes(slug));
+
+      return categorySlugs.every((slug) => postCategorySlugs.includes(slug));
     });
   }
 
@@ -95,19 +135,19 @@ export default async function BlogPage({
   const paginationStart = total > 0 ? startIndex + 1 : 0;
   const paginationEnd = endIndex;
 
-  console.log('🔍 [BlogPage] categorySlugs:', categorySlugs);
-  console.log('🔍 [BlogPage] searchQuery:', searchQuery);
-  console.log('🔍 [BlogPage] total posts after filter:', total);
-  console.log('🔍 [BlogPage] displayed posts:', posts.length);
+  console.log("🔍 [BlogPage] categorySlugs:", categorySlugs);
+  console.log("🔍 [BlogPage] searchQuery:", searchQuery);
+  console.log("🔍 [BlogPage] total posts after filter:", total);
+  console.log("🔍 [BlogPage] displayed posts:", posts.length);
 
   // Формируем baseUrl без hostname
   const buildBaseUrl = () => {
     const params = new URLSearchParams();
-    if (searchQuery) params.set('search', searchQuery);
+    if (searchQuery) params.set("search", searchQuery);
     if (categorySlugs.length > 0) {
-      categorySlugs.forEach(slug => params.append('category', slug));
+      categorySlugs.forEach((slug) => params.append("category", slug));
     }
-    return `/blog${params.toString() ? `?${params.toString()}` : ''}`;
+    return `/blog${params.toString() ? `?${params.toString()}` : ""}`;
   };
 
   const baseUrl = buildBaseUrl();
@@ -126,20 +166,27 @@ export default async function BlogPage({
             </p>
           </div>
 
-          <SearchInput 
-            defaultValue={searchQuery} 
-            className="w-full md:w-72"
-          />
+          <SearchInput defaultValue={searchQuery} className="w-full md:w-72" />
         </div>
 
         {/* Категории - над постами */}
-        <BlogCategories currentCategories={categorySlugs} />
+        <BlogCategories
+          currentCategories={categorySlugs}
+          counts={categoryCounts}
+        />
 
         {/* Статусы */}
         {searchQuery && (
           <div className="mb-4 p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg text-sm text-blue-400 flex items-center justify-between">
-            <span>Результаты поиска: «{searchQuery}» ({total} постов)</span>
-            <Link href="/blog" className="hover:underline hover:text-blue-300 transition-colors">✕</Link>
+            <span>
+              Результаты поиска: «{searchQuery}» ({total} постов)
+            </span>
+            <Link
+              href="/blog"
+              className="hover:underline hover:text-blue-300 transition-colors"
+            >
+              ✕
+            </Link>
           </div>
         )}
         {isDraftMode && (
@@ -153,13 +200,13 @@ export default async function BlogPage({
           {posts.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-gray-400 text-sm">
-                {searchQuery && categorySlugs.length > 0 
-                  ? 'Нет постов, соответствующих вашему запросу и всем выбранным категориям'
-                  : searchQuery 
-                    ? 'Ничего не найдено по вашему запросу'
-                    : categorySlugs.length > 0 
-                      ? 'Нет постов, содержащих все выбранные категории'
-                      : 'Постов пока нет'}
+                {searchQuery && categorySlugs.length > 0
+                  ? "Нет постов, соответствующих вашему запросу и всем выбранным категориям"
+                  : searchQuery
+                    ? "Ничего не найдено по вашему запросу"
+                    : categorySlugs.length > 0
+                      ? "Нет постов, содержащих все выбранные категории"
+                      : "Постов пока нет"}
               </p>
             </div>
           ) : (
@@ -171,9 +218,9 @@ export default async function BlogPage({
                     attributes: post.attributes || post,
                   };
                   return (
-                    <BlogCard 
-                      key={post.id || post.documentId} 
-                      post={normalizedPost} 
+                    <BlogCard
+                      key={post.id || post.documentId}
+                      post={normalizedPost}
                       variant="list"
                     />
                   );
@@ -186,19 +233,27 @@ export default async function BlogPage({
                   <div className="text-xs sm:text-sm text-gray-400 text-center sm:text-left">
                     {total > 0 ? (
                       <>
-                        <span className="hidden sm:inline">Показаны посты </span>
-                        <span className="text-[#e0f7fa] font-medium">{paginationStart}</span>
+                        <span className="hidden sm:inline">
+                          Показаны посты{" "}
+                        </span>
+                        <span className="text-[#e0f7fa] font-medium">
+                          {paginationStart}
+                        </span>
                         <span className="text-gray-500"> – </span>
-                        <span className="text-[#e0f7fa] font-medium">{paginationEnd}</span>
+                        <span className="text-[#e0f7fa] font-medium">
+                          {paginationEnd}
+                        </span>
                         <span className="hidden sm:inline"> из </span>
-                        <span className="text-[#e0f7fa] font-medium">{total}</span>
+                        <span className="text-[#e0f7fa] font-medium">
+                          {total}
+                        </span>
                       </>
                     ) : (
                       <>Нет постов</>
                     )}
                   </div>
                   <div className="flex items-center gap-1 overflow-x-auto max-w-full pb-1 px-0.5 sm:px-0">
-                    <PaginationClient 
+                    <PaginationClient
                       currentPage={currentPage}
                       totalPages={totalPages}
                       baseUrl={baseUrl}

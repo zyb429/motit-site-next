@@ -1,99 +1,138 @@
 // src/components/blog/BlogCard.tsx
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { useScrollRestoration } from '@/hooks/useScrollRestoration';
-import Image from 'next/image';
-import { Calendar, User, Clock } from 'lucide-react';
-import { 
-  getPostCategories, 
-  getFirstCategory,
-} from '@/lib/strapi';
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useScrollRestoration } from "@/hooks/useScrollRestoration";
+import Image from "next/image";
+import { Calendar, User, Clock } from "lucide-react";
+import { getPostCategories } from "@/lib/strapi";
 
 interface BlogCardProps {
   post: any;
   className?: string;
-  variant?: 'grid' | 'list';
+  variant?: "grid" | "list";
 }
 
-export function BlogCard({ post, className = '', variant = 'list' }: BlogCardProps) {
+// Универсальная функция для извлечения текста из любого формата контента
+const getTextFromContent = (content: any): string => {
+  if (!content) return "";
+
+  if (typeof content === "string") {
+    try {
+      const parsed = JSON.parse(content);
+      return getTextFromContent(parsed);
+    } catch {
+      return content.replace(/<[^>]*>/g, " ");
+    }
+  }
+
+  if (Array.isArray(content)) {
+    return content.map((item) => getTextFromContent(item)).join(" ");
+  }
+
+  if (typeof content === "object") {
+    if (content.text) return content.text;
+    if (content.data?.text) return content.data.text;
+    if (content.children) return getTextFromContent(content.children);
+    if (content.data?.items) {
+      return content.data.items
+        .map((item: any) => item.content || item.text || "")
+        .join(" ");
+    }
+    if (content.data?.code) return content.data.code;
+  }
+
+  return "";
+};
+
+export function BlogCard({
+  post,
+  className = "",
+  variant = "list",
+}: BlogCardProps) {
   const searchParams = useSearchParams();
   const { saveScrollPosition } = useScrollRestoration();
 
   // Нормализация данных для Strapi v5
   const attrs = post?.attributes || post || {};
-  
-  const isDraft = attrs.post_status === 'draft';
-  const title = attrs.title || 'Без названия';
-  const slug = attrs.slug || '';
-  const excerpt = attrs.excerpt || '';
+
+  const isDraft = attrs.post_status === "draft";
+  const title = attrs.title || "Без названия";
+  const slug = attrs.slug || "";
+  const excerpt = attrs.excerpt || "";
   const publishedAt = attrs.publishedAt || attrs.createdAt || null;
-  
-  // Используем универсальную функцию
+
+  // ✅ Получаем ВСЕ категории
   const categories = getPostCategories(post);
-  const firstCategory = getFirstCategory(post);
 
   // Сохраняем параметры поиска при переходе на статью
   const getPostUrl = () => {
-    // Сохраняем позицию скролла перед переходом
     saveScrollPosition();
 
     const params = new URLSearchParams();
-    
-    // Сохраняем все параметры из текущего URL
+
     searchParams.forEach((value, key) => {
-      if (key !== 'page') { // page не нужен на странице статьи
+      if (key !== "page") {
         params.append(key, value);
       }
     });
-    
+
     const queryString = params.toString();
-    return `/blog/${slug}${queryString ? `?${queryString}` : ''}`;
+    return `/blog/${slug}${queryString ? `?${queryString}` : ""}`;
   };
 
-  // Исправлено: получение автора
   const getAuthorName = () => {
     const authorData = attrs.admin_user || attrs.author;
     if (!authorData) return null;
-    
+
     if (authorData.data) {
       const user = authorData.data.attributes || authorData.data;
       return user.firstname || user.username || user.name || null;
     }
     if (authorData.attributes) {
-      return authorData.attributes.firstname || 
-             authorData.attributes.username || 
-             authorData.attributes.name || 
-             null;
+      return (
+        authorData.attributes.firstname ||
+        authorData.attributes.username ||
+        authorData.attributes.name ||
+        null
+      );
     }
-    return authorData.firstname || authorData.username || authorData.name || null;
+    return (
+      authorData.firstname || authorData.username || authorData.name || null
+    );
   };
 
   const authorName = getAuthorName();
 
-  // Получение URL изображения
   const getImageUrl = () => {
     const image = attrs.featured_image;
     if (!image) return null;
-    if (typeof image === 'string') {
-      if (image.startsWith('/uploads')) {
-        return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image}`;
+    if (typeof image === "string") {
+      if (image.startsWith("/uploads")) {
+        return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${image}`;
       }
       return image;
     }
-    if (image.url) {
-      if (image.url.startsWith('/uploads')) {
-        return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${image.url}`;
+    if (typeof image === "object") {
+      // Проверяем, что url - строка
+      if (image.url && typeof image.url === "string") {
+        if (image.url.startsWith("/uploads")) {
+          return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${image.url}`;
+        }
+        return image.url;
       }
-      return image.url;
-    }
-    if (image.data?.attributes?.url) {
-      const url = image.data.attributes.url;
-      if (url.startsWith('/uploads')) {
-        return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${url}`;
+
+      if (
+        image.data?.attributes?.url &&
+        typeof image.data.attributes.url === "string"
+      ) {
+        const url = image.data.attributes.url;
+        if (url.startsWith("/uploads")) {
+          return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${url}`;
+        }
+        return url;
       }
-      return url;
     }
     return null;
   };
@@ -104,37 +143,40 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
   const formatDate = (dateString: string) => {
     if (!dateString) return null;
     try {
-      return new Date(dateString).toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
+      return new Date(dateString).toLocaleDateString("ru-RU", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
       });
     } catch {
       return null;
     }
   };
 
+  // ✅ ИСПРАВЛЕНО: используем getTextFromContent
   const getReadingTime = () => {
-    const content = attrs.content || '';
-    const words = content.replace(/<[^>]*>/g, '').split(/\s+/).length;
+    const content = attrs.content || "";
+    const text = getTextFromContent(content);
+    const words = text.trim().split(/\s+/).filter(Boolean).length;
     return Math.max(1, Math.ceil(words / 200));
   };
 
   if (!slug) return null;
 
-  // Сортируем категории по имени
-  const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+  // ✅ Сортируем категории по имени
+  const sortedCategories = [...categories].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
   const postUrl = getPostUrl();
 
   // Вариант списка
-  if (variant === 'list') {
+  if (variant === "list") {
     return (
       <Link
         href={postUrl}
         className={`group block bg-[#0f2832] rounded-xl overflow-hidden border border-[rgba(45,212,191,0.06)] hover:border-[#2dd4bf]/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${className}`}
       >
         <div className="flex flex-col md:flex-row gap-4 p-4">
-          {/* Изображение - убрали категорию с превью */}
           <div className="relative w-full md:w-48 h-40 md:h-32 shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
             {imageUrl ? (
               <Image
@@ -157,7 +199,6 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
             )}
           </div>
 
-          {/* Контент */}
           <div className="flex-1 min-w-0 flex flex-col">
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-1">
               {authorName && (
@@ -192,11 +233,14 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
               </p>
             )}
 
-            {/* ✅ Категории под текстом - отсортированные */}
+            {/* ✅ Все категории, отсортированные */}
             {sortedCategories.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {sortedCategories.map((cat) => (
-                  <span key={cat.slug} className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full">
+                  <span
+                    key={cat.slug}
+                    className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full"
+                  >
                     {cat.name}
                   </span>
                 ))}
@@ -245,16 +289,17 @@ export function BlogCard({ post, className = '', variant = 'list' }: BlogCardPro
         </h2>
 
         {excerpt && (
-          <p className="text-sm text-gray-400 line-clamp-2">
-            {excerpt}
-          </p>
+          <p className="text-sm text-gray-400 line-clamp-2">{excerpt}</p>
         )}
 
-        {/* ✅ Категории под текстом - отсортированные */}
+        {/* ✅ Все категории, отсортированные */}
         {sortedCategories.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {sortedCategories.map((cat) => (
-              <span key={cat.slug} className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full">
+              <span
+                key={cat.slug}
+                className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full"
+              >
                 {cat.name}
               </span>
             ))}

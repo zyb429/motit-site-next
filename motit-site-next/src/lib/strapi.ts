@@ -1,16 +1,16 @@
 // motit-site-next/src/lib/strapi.ts
-import axios from 'axios';
-import qs from 'qs';
+import axios from "axios";
+import qs from "qs";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
-const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN || '';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337";
+const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
 export const strapiApi = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
-    ...(STRAPI_API_TOKEN && { 
-      Authorization: `Bearer ${STRAPI_API_TOKEN}` 
+    "Content-Type": "application/json",
+    ...(STRAPI_API_TOKEN && {
+      Authorization: `Bearer ${STRAPI_API_TOKEN}`,
     }),
   },
 });
@@ -28,7 +28,7 @@ export interface FetchOptions {
   };
   fields?: string[];
   locale?: string;
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
 }
 
 export interface StrapiData<T> {
@@ -98,7 +98,7 @@ export interface PostAttributes {
   slug: string;
   content?: string;
   excerpt?: string;
-  post_status: 'draft' | 'published' | 'archived';
+  post_status: "draft" | "published" | "archived";
   meta_title?: string;
   meta_description?: string;
   seo_data?: Record<string, unknown>;
@@ -178,68 +178,68 @@ export interface PostResponse {
 export async function fetchAPI<T>(
   endpoint: string,
   options: FetchOptions = {},
-  isDraftMode: boolean = false
+  isDraftMode: boolean = false,
 ): Promise<T> {
   // Создаем объект параметров для qs
   const queryParams: any = {};
-  
+
   // В Strapi v5 используем post_status для фильтрации
   if (isDraftMode) {
     if (!options.filters) {
       options.filters = {};
     }
-    (options.filters as Record<string, unknown>)['post_status'] = { 
-      $eq: 'draft' 
+    (options.filters as Record<string, unknown>)["post_status"] = {
+      $eq: "draft",
     };
   }
-  
+
   // Добавляем populate
   if (options.populate) {
     queryParams.populate = options.populate;
   }
-  
+
   // Добавляем filters
   if (options.filters) {
     queryParams.filters = options.filters;
   }
-  
+
   // Добавляем sort
   if (options.sort) {
     queryParams.sort = options.sort;
   }
-  
+
   // Добавляем pagination
   if (options.pagination) {
     queryParams.pagination = options.pagination;
   }
-  
+
   // Добавляем fields
   if (options.fields) {
     queryParams.fields = options.fields;
   }
-  
+
   // Добавляем locale
   if (options.locale) {
     queryParams.locale = options.locale;
   }
-  
+
   // Сериализуем с помощью qs
   const queryString = qs.stringify(queryParams, {
     encodeValuesOnly: true,
-    arrayFormat: 'brackets',
+    arrayFormat: "brackets",
     skipNulls: true,
   });
-  
-  const url = `${API_URL}/api${endpoint}${queryString ? `?${queryString}` : ''}`;
-  
-  console.log('🔍 [fetchAPI] final URL:', url);
-  
+
+  const url = `${API_URL}/api${endpoint}${queryString ? `?${queryString}` : ""}`;
+
+  console.log("🔍 [fetchAPI] final URL:", url);
+
   try {
     const response = await strapiApi.get(url);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('❌ API Error:', {
+      console.error("❌ API Error:", {
         endpoint,
         status: error.response?.status,
         statusText: error.response?.statusText,
@@ -247,8 +247,11 @@ export async function fetchAPI<T>(
         url: url,
         data: error.response?.data,
       });
-      const errorMessage = error.response?.data?.error?.message || error.message;
-      throw new Error(`API Error (${error.response?.status || 'unknown'}): ${errorMessage}`);
+      const errorMessage =
+        error.response?.data?.error?.message || error.message;
+      throw new Error(
+        `API Error (${error.response?.status || "unknown"}): ${errorMessage}`,
+      );
     }
     throw error;
   }
@@ -262,31 +265,30 @@ export async function fetchAPI<T>(
  */
 export function getPostCategories(post: any): CategoryAttributes[] {
   const attrs = post?.attributes || post || {};
-  const result: CategoryAttributes[] = [];
+  const raw = attrs.categories;
 
-  // Пробуем получить из categories (множественная)
-  if (attrs.categories) {
-    const categories = attrs.categories.data || attrs.categories;
-    if (Array.isArray(categories)) {
-      categories.forEach((cat: any) => {
-        const category = cat.attributes || cat;
-        if (category && category.name) {
-          result.push(category);
-        }
-      });
-    }
-    // Если categories - это объект с data
-    if (categories?.data && Array.isArray(categories.data)) {
-      categories.data.forEach((cat: any) => {
-        const category = cat.attributes || cat;
-        if (category && category.name) {
-          result.push(category);
-        }
-      });
-    }
+  if (!raw) return [];
+
+  // Strapi v5: categories — прямой массив объектов
+  if (Array.isArray(raw)) {
+    return raw
+      .map((cat: any) => cat?.attributes || cat)
+      .filter((cat: any) => cat && cat.name);
   }
-  
-  return result;
+
+  // Strapi v4: categories = { data: [...] }
+  if (Array.isArray(raw?.data)) {
+    return raw.data
+      .map((cat: any) => cat?.attributes || cat)
+      .filter((cat: any) => cat && cat.name);
+  }
+
+  // На всякий случай — одиночный объект
+  if (typeof raw === "object" && raw.name) {
+    return [raw];
+  }
+
+  return [];
 }
 
 /**
@@ -303,12 +305,12 @@ export function getFirstCategory(post: any): CategoryAttributes | null {
  */
 export function getDefaultPopulate(): string[] {
   return [
-    'categories',
-    'author',  // ← createdBy → author
-    'featured_image',
-    'content_blocks',
-    'content_blocks.image',
-    'content_blocks.gallery_images'
+    "categories",
+    "author", // ← createdBy → author
+    "featured_image",
+    "content_blocks",
+    "content_blocks.image",
+    "content_blocks.gallery_images",
   ];
 }
 
@@ -318,13 +320,16 @@ export function getDefaultPopulate(): string[] {
  * Серверная функция для получения постов
  * Поддерживает оба варианта: category (одиночная) и categories (множественная)
  */
-export async function getPosts(options: FetchOptions = {}, isDraftMode: boolean = false): Promise<PostResponse> {
+export async function getPosts(
+  options: FetchOptions = {},
+  isDraftMode: boolean = false,
+): Promise<PostResponse> {
   // ✅ Создаем базовые опции
   const defaultOptions: FetchOptions = {
     populate: getDefaultPopulate(),
-    sort: ['publishedAt:desc'],
+    sort: ["publishedAt:desc"],
   };
-  
+
   // ✅ Объединяем с переданными опциями
   const mergedOptions: FetchOptions = {
     ...defaultOptions,
@@ -332,64 +337,77 @@ export async function getPosts(options: FetchOptions = {}, isDraftMode: boolean 
     // ✅ Если передан filters, объединяем с существующими
     ...(options.filters && { filters: options.filters }),
   };
-  
+
   // ✅ Логируем для отладки
-  console.log('🔍 [getPosts] options:', JSON.stringify(options, null, 2));
-  console.log('🔍 [getPosts] mergedOptions:', JSON.stringify(mergedOptions, null, 2));
-  
+  console.log("🔍 [getPosts] options:", JSON.stringify(options, null, 2));
+  console.log(
+    "🔍 [getPosts] mergedOptions:",
+    JSON.stringify(mergedOptions, null, 2),
+  );
+
   if (isDraftMode) {
     if (!mergedOptions.filters) {
       mergedOptions.filters = {};
     }
-    (mergedOptions.filters as Record<string, unknown>)['post_status'] = {
-      $eq: 'draft' 
+    (mergedOptions.filters as Record<string, unknown>)["post_status"] = {
+      $eq: "draft",
     };
   }
-  
-  return fetchAPI<PostResponse>('/posts', mergedOptions, isDraftMode);
+
+  return fetchAPI<PostResponse>("/posts", mergedOptions, isDraftMode);
 }
 
 /**
  * 🔥 Серверная функция для получения опубликованных постов
  */
-export async function getPublishedPosts(options: FetchOptions = {}): Promise<PostResponse> {
-  const filters = { 
-    filters: { 
-      post_status: { $eq: 'published' } 
-    } 
+export async function getPublishedPosts(
+  options: FetchOptions = {},
+): Promise<PostResponse> {
+  const filters = {
+    filters: {
+      post_status: { $eq: "published" },
+    },
   };
-  
+
   const defaultOptions: FetchOptions = {
-    populate: ['categories', 'author'],
-    sort: ['publishedAt:desc'],
+    populate: ["categories", "author"],
+    sort: ["publishedAt:desc"],
     ...options,
     ...filters,
   };
-  
-  return fetchAPI<PostResponse>('/posts', defaultOptions, false);
+
+  return fetchAPI<PostResponse>("/posts", defaultOptions, false);
 }
 
 /**
  * 🔥 Серверная функция для получения поста по slug
  */
-export async function getPostBySlug(slug: string, options: FetchOptions = {}, isDraftMode: boolean = false): Promise<StrapiData<PostAttributes> | null> {
+export async function getPostBySlug(
+  slug: string,
+  options: FetchOptions = {},
+  isDraftMode: boolean = false,
+): Promise<StrapiData<PostAttributes> | null> {
   const defaultOptions: FetchOptions = {
     populate: getDefaultPopulate(),
     filters: { slug: { $eq: slug } },
     ...options,
   };
-  
+
   if (isDraftMode) {
     if (!defaultOptions.filters) {
       defaultOptions.filters = {};
     }
-    (defaultOptions.filters as Record<string, unknown>)['post_status'] = {
-      $eq: 'draft' 
+    (defaultOptions.filters as Record<string, unknown>)["post_status"] = {
+      $eq: "draft",
     };
   }
-  
-  const response = await fetchAPI<PostResponse>('/posts', defaultOptions, isDraftMode);
-  
+
+  const response = await fetchAPI<PostResponse>(
+    "/posts",
+    defaultOptions,
+    isDraftMode,
+  );
+
   return response.data?.[0] || null;
 }
 
@@ -400,51 +418,59 @@ export async function getPostBySlug(slug: string, options: FetchOptions = {}, is
 export async function getPostsByCategory(
   categorySlug: string,
   options: FetchOptions = {},
-  isDraftMode: boolean = false
+  isDraftMode: boolean = false,
 ): Promise<PostResponse> {
   const defaultOptions: FetchOptions = {
     populate: getDefaultPopulate(),
     filters: {
       categories: {
-        slug: { $eq: categorySlug }
-      }
+        slug: { $eq: categorySlug },
+      },
     },
-    sort: ['publishedAt:desc'],
+    sort: ["publishedAt:desc"],
     ...options,
   };
-  
+
   if (isDraftMode) {
     if (!defaultOptions.filters) {
       defaultOptions.filters = {};
     }
-    (defaultOptions.filters as Record<string, unknown>)['post_status'] = {
-      $eq: 'draft' 
+    (defaultOptions.filters as Record<string, unknown>)["post_status"] = {
+      $eq: "draft",
     };
   }
-  
-  return fetchAPI<PostResponse>('/posts', defaultOptions, isDraftMode);
+
+  return fetchAPI<PostResponse>("/posts", defaultOptions, isDraftMode);
 }
 
 /**
  * 🔥 Получение всех категорий
  */
-export async function getAllCategories(options: FetchOptions = {}): Promise<CategoryListResponse> {
+export async function getAllCategories(
+  options: FetchOptions = {},
+): Promise<CategoryListResponse> {
   const defaultOptions: FetchOptions = {
-    sort: ['name:asc'],
+    sort: ["name:asc"],
     ...options,
   };
-  
-  return fetchAPI<CategoryListResponse>('/categories', defaultOptions, false);
+
+  return fetchAPI<CategoryListResponse>("/categories", defaultOptions, false);
 }
 
 /**
  * 🔥 Получение категории по slug
  */
-export async function getCategoryBySlug(slug: string): Promise<CategoryData | null> {
-  const response = await fetchAPI<CategoryListResponse>('/categories', {
-    filters: { slug: { $eq: slug } },
-  }, false);
-  
+export async function getCategoryBySlug(
+  slug: string,
+): Promise<CategoryData | null> {
+  const response = await fetchAPI<CategoryListResponse>(
+    "/categories",
+    {
+      filters: { slug: { $eq: slug } },
+    },
+    false,
+  );
+
   return response.data?.[0] || null;
 }
 
@@ -453,14 +479,20 @@ export async function getCategoryBySlug(slug: string): Promise<CategoryData | nu
  */
 export async function getSetting(key: string): Promise<string | null> {
   try {
-    const response = await fetchAPI<StrapiListResponse<{
-      key: string;
-      value: string;
-      description?: string;
-    }>>('/settings', {
-      filters: { key: { $eq: key } },
-    }, false);
-    
+    const response = await fetchAPI<
+      StrapiListResponse<{
+        key: string;
+        value: string;
+        description?: string;
+      }>
+    >(
+      "/settings",
+      {
+        filters: { key: { $eq: key } },
+      },
+      false,
+    );
+
     const setting = response.data?.[0];
     return setting?.attributes?.value || null;
   } catch (error) {
@@ -473,8 +505,8 @@ export async function getSetting(key: string): Promise<string | null> {
  * 🔥 Получение количества постов на странице
  */
 export async function getPostsPerPage(): Promise<number> {
-  const value = await getSetting('posts_per_page');
-  const parsed = parseInt(value || '6', 10);
+  const value = await getSetting("posts_per_page");
+  const parsed = parseInt(value || "6", 10);
   return isNaN(parsed) || parsed < 1 ? 6 : parsed;
 }
 
@@ -483,12 +515,14 @@ export async function getPostsPerPage(): Promise<number> {
  */
 export async function getAllSettings(): Promise<Record<string, string>> {
   try {
-    const response = await fetchAPI<StrapiListResponse<{
-      key: string;
-      value: string;
-      description?: string;
-    }>>('/settings', {}, false);
-    
+    const response = await fetchAPI<
+      StrapiListResponse<{
+        key: string;
+        value: string;
+        description?: string;
+      }>
+    >("/settings", {}, false);
+
     const settings: Record<string, string> = {};
     response.data?.forEach((item) => {
       if (item.attributes) {
@@ -497,161 +531,240 @@ export async function getAllSettings(): Promise<Record<string, string>> {
     });
     return settings;
   } catch (error) {
-    console.error('Error getting all settings:', error);
+    console.error("Error getting all settings:", error);
     return {};
   }
 }
 
+export async function getCategoriesForPost(
+  postDocumentId: string,
+): Promise<CategoryAttributes[]> {
+  if (!postDocumentId) return [];
+
+  try {
+    const response = await fetchAPI<{ data: any[] }>(
+      `/categories/by-post/${postDocumentId}`,
+      {},
+      false,
+    );
+
+    return (response.data || []).map((cat: any) => ({
+      name: cat.name,
+      slug: cat.slug,
+      description: cat.description,
+      icon: cat.icon,
+      documentId: cat.document_id,
+      publishedAt: cat.published_at,
+      createdAt: cat.created_at,
+      updatedAt: cat.updated_at,
+    }));
+  } catch (error) {
+    console.error(`getCategoriesForPost(${postDocumentId}) error:`, error);
+    return [];
+  }
+}
 // ==================== CLIENT CONVENIENCE FUNCTIONS ====================
 
 export function getStatuses(options: FetchOptions = {}) {
-  return fetchAPI<StrapiListResponse<{ name: string; color: string; description?: string }>>(
-    '/statuses',
-    options,
-    false
-  );
+  return fetchAPI<
+    StrapiListResponse<{ name: string; color: string; description?: string }>
+  >("/statuses", options, false);
 }
 
 export function getPriorities(options: FetchOptions = {}) {
-  return fetchAPI<StrapiListResponse<{ name: string; color: string; level: number }>>(
-    '/priorities',
-    options,
-    false
-  );
+  return fetchAPI<
+    StrapiListResponse<{ name: string; color: string; level: number }>
+  >("/priorities", options, false);
 }
 
 export function getCategories(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    sort: ['name:asc'],
+    sort: ["name:asc"],
     ...options,
   };
-  return fetchAPI<StrapiListResponse<{ name: string; slug: string; description?: string; icon?: string }>>(
-    '/categories',
-    defaultOptions,
-    false
-  );
+  return fetchAPI<
+    StrapiListResponse<{
+      name: string;
+      slug: string;
+      description?: string;
+      icon?: string;
+    }>
+  >("/categories", defaultOptions, false);
 }
 
 export function getTickets(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    populate: ['client', 'assigned_to', 'status', 'priority', 'category'],
+    populate: ["client", "assigned_to", "status", "priority", "category"],
     ...options,
   };
-  return fetchAPI<StrapiListResponse<{
-    title: string;
-    description?: string;
-    deadline_at?: string;
-    resolved_at?: string;
-    client?: { data: StrapiData<{ username: string; full_name: string; email: string }> };
-    assigned_to?: { data: StrapiData<{ username: string; full_name: string; email: string }> };
-    status?: { data: StrapiData<{ name: string; color: string }> };
-    priority?: { data: StrapiData<{ name: string; color: string; level: number }> };
-    category?: { data: StrapiData<{ name: string; slug: string }> };
-  }>>('/tickets', defaultOptions, false);
+  return fetchAPI<
+    StrapiListResponse<{
+      title: string;
+      description?: string;
+      deadline_at?: string;
+      resolved_at?: string;
+      client?: {
+        data: StrapiData<{
+          username: string;
+          full_name: string;
+          email: string;
+        }>;
+      };
+      assigned_to?: {
+        data: StrapiData<{
+          username: string;
+          full_name: string;
+          email: string;
+        }>;
+      };
+      status?: { data: StrapiData<{ name: string; color: string }> };
+      priority?: {
+        data: StrapiData<{ name: string; color: string; level: number }>;
+      };
+      category?: { data: StrapiData<{ name: string; slug: string }> };
+    }>
+  >("/tickets", defaultOptions, false);
 }
 
 export function getPostsClient(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    populate: ['categories', 'author'],
-    sort: ['publishedAt:desc'],
+    populate: ["categories", "author"],
+    sort: ["publishedAt:desc"],
     ...options,
   };
-  return fetchAPI<StrapiListResponse<any>>('/posts', defaultOptions, false);
+  return fetchAPI<StrapiListResponse<any>>("/posts", defaultOptions, false);
 }
 
 export function getHomePage(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    populate: ['hero_background'],
+    populate: ["hero_background"],
     ...options,
   };
-  return fetchAPI<StrapiSingleResponse<{
-    hero_title?: string;
-    hero_subtitle?: string;
-    hero_background?: { data: StrapiData<{ url: string; width: number; height: number }> };
-    stats?: Record<string, unknown>;
-    services_section?: Record<string, unknown>;
-    testimonials_section?: Record<string, unknown>;
-  }>>('/home-page', defaultOptions, false);
+  return fetchAPI<
+    StrapiSingleResponse<{
+      hero_title?: string;
+      hero_subtitle?: string;
+      hero_background?: {
+        data: StrapiData<{ url: string; width: number; height: number }>;
+      };
+      stats?: Record<string, unknown>;
+      services_section?: Record<string, unknown>;
+      testimonials_section?: Record<string, unknown>;
+    }>
+  >("/home-page", defaultOptions, false);
 }
 
 export function getAboutPage(options: FetchOptions = {}) {
-  return fetchAPI<StrapiSingleResponse<{
-    content?: string;
-    mission?: string;
-    vision?: string;
-    team_members?: Record<string, unknown>;
-    history?: string;
-  }>>('/about-page', options, false);
+  return fetchAPI<
+    StrapiSingleResponse<{
+      content?: string;
+      mission?: string;
+      vision?: string;
+      team_members?: Record<string, unknown>;
+      history?: string;
+    }>
+  >("/about-page", options, false);
 }
 
 export function getContactPage(options: FetchOptions = {}) {
-  return fetchAPI<StrapiSingleResponse<{
-    address?: string;
-    phones?: string[];
-    emails?: string[];
-    social_links?: Record<string, string>;
-    map_embed?: string;
-  }>>('/contact-page', options, false);
+  return fetchAPI<
+    StrapiSingleResponse<{
+      address?: string;
+      phones?: string[];
+      emails?: string[];
+      social_links?: Record<string, string>;
+      map_embed?: string;
+    }>
+  >("/contact-page", options, false);
 }
 
 export function getPartners(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    sort: ['order:asc'],
+    sort: ["order:asc"],
     ...options,
   };
-  return fetchAPI<StrapiListResponse<{
-    name: string;
-    website_url?: string;
-    image_url?: string;
-    order: number;
-  }>>('/partners', defaultOptions, false);
+  return fetchAPI<
+    StrapiListResponse<{
+      name: string;
+      website_url?: string;
+      image_url?: string;
+      order: number;
+    }>
+  >("/partners", defaultOptions, false);
 }
 
 export function getCertificates(options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    populate: ['issuer'],
-    sort: ['order:asc'],
+    populate: ["issuer"],
+    sort: ["order:asc"],
     ...options,
   };
-  return fetchAPI<StrapiListResponse<{
-    title: string;
-    issuer_name?: string;
-    image_url?: string;
-    issue_date?: string;
-    expiry_date?: string;
-    is_active: boolean;
-    order: number;
-    issuer?: { data: StrapiData<{ name: string; website_url?: string }> };
-  }>>('/certificates', defaultOptions, false);
+  return fetchAPI<
+    StrapiListResponse<{
+      title: string;
+      issuer_name?: string;
+      image_url?: string;
+      issue_date?: string;
+      expiry_date?: string;
+      is_active: boolean;
+      order: number;
+      issuer?: { data: StrapiData<{ name: string; website_url?: string }> };
+    }>
+  >("/certificates", defaultOptions, false);
 }
 
 export function getOrganizations(options: FetchOptions = {}) {
-  return fetchAPI<StrapiListResponse<{
-    name: string;
-    inn?: string;
-    address?: string;
-    email?: string;
-    phone?: string;
-    is_active: boolean;
-  }>>('/organizations', options, false);
+  return fetchAPI<
+    StrapiListResponse<{
+      name: string;
+      inn?: string;
+      address?: string;
+      email?: string;
+      phone?: string;
+      is_active: boolean;
+    }>
+  >("/organizations", options, false);
 }
 
 export function getTicket(id: string | number, options: FetchOptions = {}) {
   const defaultOptions: FetchOptions = {
-    populate: ['client', 'assigned_to', 'status', 'priority', 'category', 'comments'],
+    populate: [
+      "client",
+      "assigned_to",
+      "status",
+      "priority",
+      "category",
+      "comments",
+    ],
     ...options,
   };
-  return fetchAPI<StrapiSingleResponse<{
-    title: string;
-    description?: string;
-    deadline_at?: string;
-    resolved_at?: string;
-    client?: { data: StrapiData<{ username: string; full_name: string; email: string }> };
-    assigned_to?: { data: StrapiData<{ username: string; full_name: string; email: string }> };
-    status?: { data: StrapiData<{ name: string; color: string }> };
-    priority?: { data: StrapiData<{ name: string; color: string; level: number }> };
-    category?: { data: StrapiData<{ name: string; slug: string }> };
-  }>>(`/tickets/${id}`, defaultOptions, false);
+  return fetchAPI<
+    StrapiSingleResponse<{
+      title: string;
+      description?: string;
+      deadline_at?: string;
+      resolved_at?: string;
+      client?: {
+        data: StrapiData<{
+          username: string;
+          full_name: string;
+          email: string;
+        }>;
+      };
+      assigned_to?: {
+        data: StrapiData<{
+          username: string;
+          full_name: string;
+          email: string;
+        }>;
+      };
+      status?: { data: StrapiData<{ name: string; color: string }> };
+      priority?: {
+        data: StrapiData<{ name: string; color: string; level: number }>;
+      };
+      category?: { data: StrapiData<{ name: string; slug: string }> };
+    }>
+  >(`/tickets/${id}`, defaultOptions, false);
 }
 
 export function getPageBySlug(slug: string, options: FetchOptions = {}) {
@@ -659,23 +772,27 @@ export function getPageBySlug(slug: string, options: FetchOptions = {}) {
     filters: { slug: { $eq: slug } },
     ...options,
   };
-  return fetchAPI<StrapiListResponse<{
-    slug: string;
-    title: string;
-    sections?: Record<string, unknown>;
-    meta_title?: string;
-    meta_description?: string;
-    seo_data?: Record<string, unknown>;
-  }>>('/pages', defaultOptions, false);
+  return fetchAPI<
+    StrapiListResponse<{
+      slug: string;
+      title: string;
+      sections?: Record<string, unknown>;
+      meta_title?: string;
+      meta_description?: string;
+      seo_data?: Record<string, unknown>;
+    }>
+  >("/pages", defaultOptions, false);
 }
 
 // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 
-export function getPostStatusFilter(status: 'draft' | 'published' | 'archived') {
+export function getPostStatusFilter(
+  status: "draft" | "published" | "archived",
+) {
   return {
     filters: {
-      post_status: { $eq: status }
-    }
+      post_status: { $eq: status },
+    },
   };
 }
 
@@ -686,9 +803,7 @@ export function getPostStatusFilter(status: 'draft' | 'published' | 'archived') 
 export function getCategoryFilter(slug: string) {
   return {
     filters: {
-      $or: [
-        { categories: { slug: { $eq: slug } } }
-      ]
-    }
+      $or: [{ categories: { slug: { $eq: slug } } }],
+    },
   };
 }
