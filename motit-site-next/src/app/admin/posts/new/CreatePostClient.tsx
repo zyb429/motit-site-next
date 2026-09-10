@@ -53,6 +53,7 @@ type User = {
   email: string;
   firstname?: string;
   lastname?: string;
+  full_name?: string;
 };
 
 // Схема валидации
@@ -240,7 +241,7 @@ export default memo(function CreatePostClient({
                     Создать пост
                   </h1>
                   <p className="text-sm text-gray-500">
-                    Автор: {user.firstname || user.username}
+                    Автор: {user.full_name || user.firstname || user.username}
                   </p>
                 </div>
               </div>
@@ -307,9 +308,8 @@ export default memo(function CreatePostClient({
                   id="title"
                   type="text"
                   {...register("title")}
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.title ? "border-red-500" : "border-gray-300"
-                  }`}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${errors.title ? "border-red-500" : "border-gray-300"
+                    }`}
                   disabled={isDisabled}
                   placeholder="Введите заголовок поста..."
                 />

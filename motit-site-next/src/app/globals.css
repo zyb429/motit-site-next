@@ -25,7 +25,7 @@ html {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
@@ -189,21 +189,41 @@ body {
 .reveal {
   opacity: 0;
   transform: translateY(30px);
-  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  transition:
+    opacity 0.7s ease-out,
+    transform 0.7s ease-out;
 }
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
 }
-.reveal-d1 { transition-delay: 0.08s; }
-.reveal-d2 { transition-delay: 0.16s; }
-.reveal-d3 { transition-delay: 0.24s; }
-.reveal-d4 { transition-delay: 0.32s; }
-.reveal-d5 { transition-delay: 0.40s; }
-.reveal-d6 { transition-delay: 0.48s; }
-.reveal-d7 { transition-delay: 0.56s; }
-.reveal-d8 { transition-delay: 0.64s; }
-.reveal-d9 { transition-delay: 0.72s; }
+.reveal-d1 {
+  transition-delay: 0.08s;
+}
+.reveal-d2 {
+  transition-delay: 0.16s;
+}
+.reveal-d3 {
+  transition-delay: 0.24s;
+}
+.reveal-d4 {
+  transition-delay: 0.32s;
+}
+.reveal-d5 {
+  transition-delay: 0.4s;
+}
+.reveal-d6 {
+  transition-delay: 0.48s;
+}
+.reveal-d7 {
+  transition-delay: 0.56s;
+}
+.reveal-d8 {
+  transition-delay: 0.64s;
+}
+.reveal-d9 {
+  transition-delay: 0.72s;
+}
 
 @media (max-width: 768px) {
   :root {
@@ -212,7 +232,8 @@ body {
   .section-title {
     font-size: clamp(1.5rem, 6vw, 2rem) !important;
   }
-  .btn-primary, .btn-secondary {
+  .btn-primary,
+  .btn-secondary {
     padding: 12px 20px;
     font-size: 13px;
   }
@@ -244,4 +265,50 @@ textarea:focus::placeholder {
 .hero-animate {
   opacity: 0;
   transform: translateY(30px);
+}
+
+/* ============================================
+   ✅ Стили для админки (светлая тема)
+   ============================================ */
+
+/* Плейсхолдеры в админке — серые */
+.admin-wrapper input::placeholder,
+.admin-wrapper textarea::placeholder,
+.admin-wrapper select::placeholder {
+  color: #9ca3af !important; /* Серый */
+  opacity: 1;
+}
+
+/* Текст при вводе — чёрный */
+.admin-wrapper input,
+.admin-wrapper textarea,
+.admin-wrapper select {
+  color: #000000 !important;
+}
+
+/* Фокус на полях */
+.admin-wrapper input:focus,
+.admin-wrapper textarea:focus,
+.admin-wrapper select:focus {
+  color: #000000 !important;
+}
+
+/* Плейсхолдер при фокусе — светло-серый */
+.admin-wrapper input:focus::placeholder,
+.admin-wrapper textarea:focus::placeholder {
+  color: #d1d5db !important;
+}
+
+/* Для WebKit браузеров */
+.admin-wrapper input::-webkit-input-placeholder,
+.admin-wrapper textarea::-webkit-input-placeholder {
+  color: #9ca3af !important;
+  opacity: 1;
+}
+
+/* Для Firefox */
+.admin-wrapper input::-moz-placeholder,
+.admin-wrapper textarea::-moz-placeholder {
+  color: #9ca3af !important;
+  opacity: 1;
 }

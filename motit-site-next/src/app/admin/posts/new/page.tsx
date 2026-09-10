@@ -10,6 +10,7 @@ export type User = {
   email: string;
   firstname?: string;
   lastname?: string;
+  full_name?: string;
 };
 
 export type Category = {
@@ -24,15 +25,6 @@ export type Category = {
   publishedAt?: string;
 };
 
-function getApiUrl(): string {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.API_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "http://localhost:3000";
-  return baseUrl.replace(/\/$/, "");
-}
-
 async function getCurrentUser(): Promise<User | null> {
   try {
     const cookieStore = await cookies();
@@ -43,21 +35,31 @@ async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    const baseUrl = getApiUrl();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
     const response = await fetch(`${baseUrl}/api/auth/me`, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        Cookie: `strapi_jwt=${token}`,
       },
       cache: "no-store",
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[CreatePostPage] Strapi error: ${errorText}`);
       return null;
     }
 
-    const data = await response.json();
-    return data.user || data.data || null;
+    const user = await response.json();
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstname: user.firstname || user.username,
+      lastname: user.lastname || "",
+      full_name: user.full_name || user.username,
+    };
   } catch (error) {
     console.error("Error getting user:", error);
     return null;
@@ -66,7 +68,7 @@ async function getCurrentUser(): Promise<User | null> {
 
 async function getCategories(): Promise<Category[]> {
   try {
-    const baseUrl = getApiUrl();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const response = await fetch(`${baseUrl}/api/categories`, {
       cache: "no-store",
     });
