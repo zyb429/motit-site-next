@@ -807,3 +807,17 @@ export function getCategoryFilter(slug: string) {
     },
   };
 }
+
+export async function getAuthorForPost(postDocumentId: string) {
+  if (!postDocumentId) return null;
+  try {
+    const res = await fetchAPI<{ data: any }>(
+      `/posts/author/${postDocumentId}`,
+      {},
+      false,
+    );
+    return res.data || null;
+  } catch {
+    return null;
+  }
+}

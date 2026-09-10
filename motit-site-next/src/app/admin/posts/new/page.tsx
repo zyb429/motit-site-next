@@ -50,7 +50,8 @@ async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    const user = await response.json();
+    const data = await response.json();
+    const user = data.user || data.data || data;
 
     return {
       id: user.id,

@@ -56,3 +56,42 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const userToken =
+      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
+
+    if (!userToken) {
+      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    console.log("POST category:", JSON.stringify(body, null, 2));
+
+    const response = await fetch(`${STRAPI_URL}/api/categories`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+    console.log("Strapi POST category:", response.status, result);
+
+    if (!response.ok) {
+      return NextResponse.json(result, { status: response.status });
+    }
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("POST category error:", error);
+    return NextResponse.json(
+      { error: "Внутренняя ошибка сервера" },
+      { status: 500 },
+    );
+  }
+}

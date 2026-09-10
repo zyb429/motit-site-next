@@ -11,5 +11,11 @@ export default {
       path: "/posts/:id/with-relations",
       handler: "post.updateWithRelations",
     },
+    {
+      method: "GET",
+      path: "/posts/author/:documentId",
+      handler: "post.findAuthor",
+      config: { auth: false },
+    },
   ],
 };

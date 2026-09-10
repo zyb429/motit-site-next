@@ -5,6 +5,7 @@ import {
   getPostsPerPage,
   getCategoriesForPost,
   getPostCategories,
+  getAuthorForPost,
 } from "@/lib/strapi";
 import { getDraftModeStatus } from "@/lib/server/strapi";
 import { BlogCard } from "@/components/blog/BlogCard";
@@ -86,13 +87,17 @@ export default async function BlogPage({
       const postDocId = post.documentId || post.attributes?.documentId;
       if (!postDocId) return post;
 
-      const cats = await getCategoriesForPost(postDocId);
+      const [cats, author] = await Promise.all([
+        getCategoriesForPost(postDocId),
+        getAuthorForPost(postDocId),
+      ]);
 
       return {
         ...post,
         attributes: {
           ...(post.attributes || post),
           categories: cats,
+          author: author,
         },
       };
     }),

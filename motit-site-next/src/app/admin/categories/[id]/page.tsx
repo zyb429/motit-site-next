@@ -1,6 +1,23 @@
-// src/app/admin/categories/[id]/page.tsx
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
+import CategoryEditForm from "./CategoryEditForm";
+
+const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
+
+async function getCategory(id: string) {
+  const cookieStore = await cookies();
+  const token =
+    cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
+
+  const res = await fetch(`${STRAPI_URL}/api/categories/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.data;
+}
 
 export default async function EditCategoryPage({
   params,
@@ -8,20 +25,9 @@ export default async function EditCategoryPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const category = await getCategory(id);
 
-  return (
-    <div className="container mx-auto px-6 py-8">
-      <Link
-        href="/admin/categories"
-        className="text-gray-500 hover:text-gray-700 flex items-center gap-2 mb-4"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Назад к категориям
-      </Link>
-      <h1 className="text-2xl font-bold mb-4">Редактирование категории</h1>
-      <p className="text-gray-500">
-        ID категории: <span className="font-mono">{id}</span>
-      </p>
-    </div>
-  );
+  if (!category) notFound();
+
+  return <CategoryEditForm initialCategory={category} />;
 }
