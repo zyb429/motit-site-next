@@ -1,0 +1,12 @@
+{
+  "name": "strapi-provider-upload-local-folders",
+  "version": "1.0.0",
+  "description": "Local upload provider with subfolders",
+  "main": "index.js",
+  "strapi": {
+    "provider": "local-folders"
+  },
+  "peerDependencies": {
+    "@strapi/strapi": "^5.0.0"
+  }
+}

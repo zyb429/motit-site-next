@@ -307,6 +307,7 @@ export function getDefaultPopulate(): string[] {
   return [
     "categories",
     "author", // ← createdBy → author
+    "author.avatar",
     "featured_image",
     "content_blocks",
     "content_blocks.image",
@@ -819,5 +820,146 @@ export async function getAuthorForPost(postDocumentId: string) {
     return res.data || null;
   } catch {
     return null;
+  }
+}
+
+export type StrapiAuthor = {
+  id: number;
+  documentId?: string;
+  username: string;
+  email?: string;
+  full_name?: string;
+  firstname?: string;
+  lastname?: string;
+  avatar_url?: string;
+  bio?: string;
+};
+
+/**
+ * Получить автора по username.
+ * У Strapi 5 users-permissions нет публичного эндпоинта /api/users?filters[username],
+ * поэтому пробуем разные варианты.
+ */
+export async function getAuthorByUsername(
+  username: string,
+): Promise<StrapiAuthor | null> {
+  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+  const apiToken = process.env.STRAPI_API_TOKEN;
+
+  const headers: HeadersInit = {};
+  if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
+
+  console.log("[getAuthorByUsername] start", { username, hasToken: !!apiToken });
+
+  try {
+    const url = `${baseUrl}/api/users?filters[username][$eq]=${encodeURIComponent(
+      username,
+    )}&populate[avatar]=true`;
+    console.log("[getAuthorByUsername] URL:", url);
+
+    const res = await fetch(url, { headers, cache: "no-store" });
+    console.log("[getAuthorByUsername] status:", res.status);
+
+    if (res.ok) {
+      const data = await res.json();
+      const user = Array.isArray(data) ? data[0] : data?.data?.[0];
+
+      if (user) {
+        console.log(
+          "[getAuthorByUsername] found:",
+          user.username,
+          "avatar:",
+          user.avatar?.url || "нет",
+        );
+        return normalizeAuthor(user);
+      }
+      console.log("[getAuthorByUsername] empty result");
+    } else {
+      const text = await res.text();
+      console.log("[getAuthorByUsername] error:", text.slice(0, 300));
+    }
+  } catch (e) {
+    console.warn("getAuthorByUsername failed:", e);
+  }
+
+  return null;
+}
+
+function normalizeAuthor(user: any): StrapiAuthor {
+  const a = user?.attributes || user;
+
+  const avatar = a.avatar;
+  const avatarUrl =
+    avatar?.url ||
+    avatar?.data?.attributes?.url ||
+    null;
+
+  return {
+    id: a.id,
+    documentId: a.documentId,
+    username: a.username,
+    email: a.email,
+    full_name: a.full_name,
+    firstname: a.firstname,
+    lastname: a.lastname,
+    avatar_url: avatarUrl,
+    bio: a.bio,
+  };
+}
+
+/**
+ * Получить все опубликованные посты автора.
+ */
+export async function getPostsByAuthor(
+  username: string,
+  options: { pageSize?: number; page?: number } = {},
+) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337";
+  const apiToken = process.env.STRAPI_API_TOKEN;
+
+  const headers: HeadersInit = {};
+  if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
+
+  const pageSize = options.pageSize ?? 200;
+
+  const url =
+    `${baseUrl}/api/posts` +
+    `?populate[]=categories` +
+    `&populate[]=author` +
+    `&populate[]=featured_image` +
+    `&sort[]=publishedAt:desc` +
+    `&pagination[pageSize]=${pageSize}`;
+
+  console.log("[getPostsByAuthor] URL:", url);
+
+  try {
+    const res = await fetch(url, { headers, cache: "no-store" });
+    console.log("[getPostsByAuthor] status:", res.status);
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.log("[getPostsByAuthor] error:", text.slice(0, 300));
+      return { data: [], meta: null };
+    }
+
+    const json = await res.json();
+    const all = json?.data ?? [];
+    console.log("[getPostsByAuthor] total from API:", all.length);
+
+    const posts = all.filter((p: any) => {
+      const author = p.author || p.attributes?.author;
+      const uname =
+        author?.username ||
+        author?.data?.attributes?.username ||
+        null;
+      return uname === username;
+    });
+
+    console.log("[getPostsByAuthor] filtered:", posts.length);
+
+    return { data: posts, meta: json?.meta };
+  } catch (e) {
+    console.error("getPostsByAuthor error:", e);
+    return { data: [], meta: null };
   }
 }

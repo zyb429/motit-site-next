@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "file_owners",
+  "info": {
+    "singularName": "file-owner",
+    "pluralName": "file-owners",
+    "displayName": "FileOwner",
+    "description": "Связь файла с пользователем, который его загрузил"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "file_id": {
+      "type": "integer",
+      "required": true
+    },
+    "user_id": {
+      "type": "integer",
+      "required": true
+    }
+  }
+}

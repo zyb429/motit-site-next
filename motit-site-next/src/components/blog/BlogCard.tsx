@@ -7,6 +7,7 @@ import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import Image from "next/image";
 import { Calendar, User, Clock } from "lucide-react";
 import { getPostCategories } from "@/lib/strapi";
+import { AuthorLink } from "./AuthorLink";
 
 interface BlogCardProps {
   post: any;
@@ -65,6 +66,48 @@ export function BlogCard({
 
   // ✅ Получаем ВСЕ категории
   const categories = getPostCategories(post);
+
+  const getPostAuthor = (): {
+    username: string;
+    full_name: string;
+    avatar_url: string | null;
+  } | null => {
+    const authorData = attrs.author || attrs.admin_user;
+    if (!authorData) return null;
+
+    let user: any = null;
+    if (authorData.data) {
+      user = authorData.data.attributes || authorData.data;
+    } else if (authorData.attributes) {
+      user = authorData.attributes;
+    } else {
+      user = authorData;
+    }
+
+    if (!user?.username) return null;
+
+    const full_name =
+      user.full_name ||
+      [user.firstname, user.lastname].filter(Boolean).join(" ") ||
+      user.username;
+
+    // avatar может быть media-объектом (Strapi 5)
+    const avatar = user.avatar;
+    const avatarRaw =
+      avatar?.url ||
+      avatar?.data?.attributes?.url ||
+      null;
+
+    const avatar_url = avatarRaw
+      ? avatarRaw.startsWith("/uploads")
+        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${avatarRaw}`
+        : avatarRaw
+      : null;
+
+    return { username: user.username, full_name, avatar_url };
+  };
+
+  const postAuthor = getPostAuthor();
 
   // Сохраняем параметры поиска при переходе на статью
   const getPostUrl = () => {
@@ -201,11 +244,13 @@ export function BlogCard({
 
           <div className="flex-1 min-w-0 flex flex-col">
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-1">
-              {authorName && (
-                <span className="flex items-center gap-1">
-                  <User size={12} className="text-[#2dd4bf]" />
-                  {authorName}
-                </span>
+              {postAuthor?.username && (
+                <AuthorLink
+                  username={postAuthor.username}
+                  name={postAuthor.full_name || postAuthor.username}
+                  avatarUrl={postAuthor.avatar_url}
+                  className="text-xs text-gray-400"
+                />
               )}
               {publishedAt && (
                 <>
@@ -308,11 +353,13 @@ export function BlogCard({
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">
           <div className="flex flex-wrap items-center gap-3">
-            {authorName && (
-              <span className="flex items-center gap-1">
-                <User size={12} className="text-[#2dd4bf]" />
-                {authorName}
-              </span>
+            {postAuthor?.username && (
+              <AuthorLink
+                username={postAuthor.username}
+                name={postAuthor.full_name || postAuthor.username}
+                avatarUrl={postAuthor.avatar_url}
+                className="text-xs text-gray-400"
+              />
             )}
             <span className="flex items-center gap-1">
               <Clock size={12} className="text-[#2dd4bf]" />

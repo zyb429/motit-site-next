@@ -77,6 +77,34 @@ async function getCurrentUser(): Promise<User | null> {
   }
 }
 
+async function getCounts(token: string) {
+  const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337";
+
+  const headers = {
+    Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
+    // или Cookie: `strapi_jwt=${token}` — смотря как у вас авторизован API
+  };
+
+  const [postsRes, catsRes] = await Promise.all([
+    fetch(`${strapiUrl}/api/posts?pagination[pageSize]=1`, {
+      headers,
+      cache: "no-store",
+    }),
+    fetch(`${strapiUrl}/api/categories?pagination[pageSize]=1`, {
+      headers,
+      cache: "no-store",
+    }),
+  ]);
+
+  const posts = postsRes.ok ? await postsRes.json() : null;
+  const cats = catsRes.ok ? await catsRes.json() : null;
+
+  return {
+    posts: posts?.meta?.pagination?.total ?? 0,
+    categories: cats?.meta?.pagination?.total ?? 0,
+  };
+}
+
 export default async function AdminPage() {
   const user = await getCurrentUser();
 
@@ -84,6 +112,11 @@ export default async function AdminPage() {
     console.log("[Admin] No user, redirecting to login");
     redirect("/login");
   }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("strapi_jwt")?.value ?? "";
+
+  const { posts, categories } = await getCounts(token);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
@@ -135,7 +168,7 @@ export default async function AdminPage() {
                 <p className="text-sm font-medium text-gray-500">
                   Всего постов
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{posts}</p>
               </div>
               <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
                 <FileText className="w-6 h-6 text-blue-600" />
@@ -147,7 +180,7 @@ export default async function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Категории</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{categories}</p>
               </div>
               <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
                 <FolderOpen className="w-6 h-6 text-green-600" />

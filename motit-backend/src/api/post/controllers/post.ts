@@ -22,12 +22,9 @@ export default factories.createCoreController(
           publishedAt: new Date().toISOString(),
         };
 
-        // ✅ entityService: relation через set с documentId
         if (Array.isArray(categories)) {
           updateData.categories = {
-            set: categories.map((docId: string) => ({
-              documentId: docId,
-            })),
+            set: categories.map((docId: string) => ({ documentId: docId })),
           };
         }
 
@@ -35,15 +32,16 @@ export default factories.createCoreController(
           updateData.featured_image = featured_image;
         }
 
+        const currentUser = ctx.state.user;
+        if (currentUser?.id) {
+          updateData.author = currentUser.id;
+        }
+
         const strapiAny = strapi as any;
 
-        // Находим числовой id по documentId
         const existing = await strapiAny.entityService.findMany(
           "api::post.post",
-          {
-            filters: { documentId: id } as any,
-            limit: 1,
-          },
+          { filters: { documentId: id } as any, limit: 1 }
         );
 
         if (!existing || existing.length === 0) {
@@ -52,28 +50,21 @@ export default factories.createCoreController(
 
         const numericId = existing[0].id;
 
-        await strapiAny.entityService.update("api::post.post", numericId, {
-          data: updateData,
-          populate: ["categories", "featured_image"],
-        });
-
-        // ✅ ОБХОД: entityService игнорирует author, обновляем author_id напрямую
-        const currentUser = ctx.state.user;
-        if (currentUser?.id) {
-          await strapi.db
-            .connection("posts")
-            .where({ id: numericId })
-            .update({ author_id: currentUser.id });
-        }
-
-        // Перечитываем пост с автором
-        const refreshed = await strapiAny.entityService.findOne(
+        const updated = await strapiAny.entityService.update(
           "api::post.post",
           numericId,
-          { populate: ["categories", "featured_image", "author"] },
+          {
+            data: updateData,
+            populate: [
+              "categories",
+              "featured_image",
+              "author",
+              "author.avatar",
+            ],
+          }
         );
 
-        return { data: refreshed };
+        return { data: updated };
       } catch (error: any) {
         strapi.log.error("❌ updateWithRelations error:", error);
         return ctx.badRequest(error.message || "Ошибка обновления поста");
@@ -98,9 +89,7 @@ export default factories.createCoreController(
 
         if (Array.isArray(categories) && categories.length > 0) {
           createData.categories = {
-            set: categories.map((docId: string) => ({
-              documentId: docId,
-            })),
+            set: categories.map((docId: string) => ({ documentId: docId })),
           };
         }
 
@@ -119,25 +108,15 @@ export default factories.createCoreController(
 
         const newPost = await strapiAny.entityService.create("api::post.post", {
           data: createData,
-          populate: ["categories", "featured_image"],
+          populate: [
+            "categories",
+            "featured_image",
+            "author",
+            "author.avatar",
+          ],
         });
 
-        // ✅ ОБХОД: entityService игнорирует author, обновляем author_id напрямую
-        if (currentUser?.id && newPost?.id) {
-          await strapi.db
-            .connection("posts")
-            .where({ id: newPost.id })
-            .update({ author_id: currentUser.id });
-        }
-
-        // Перечитываем пост с автором
-        const refreshed = await strapiAny.entityService.findOne(
-          "api::post.post",
-          newPost.id,
-          { populate: ["categories", "featured_image", "author"] },
-        );
-
-        return { data: refreshed };
+        return { data: newPost };
       } catch (error: any) {
         strapi.log.error("❌ createWithRelations error:", error);
         return ctx.badRequest(error.message || "Ошибка создания поста");
@@ -149,27 +128,31 @@ export default factories.createCoreController(
         const { documentId } = ctx.params;
         if (!documentId) return ctx.badRequest("Не указан documentId");
 
-        const post = await strapi.db
-          .connection("posts")
-          .where({ document_id: documentId })
-          .first();
+        const posts = await (strapi as any).entityService.findMany(
+          "api::post.post",
+          {
+            filters: { documentId } as any,
+            populate: ["author", "author.avatar"],
+            limit: 1,
+          }
+        );
 
-        if (!post || !post.author_id) return { data: null };
+        if (!posts?.length) return { data: null };
 
-        const [user] = await strapi.db
-          .connection("users")
-          .where({ id: post.author_id });
-
-        if (!user) return { data: null };
+        const author = posts[0].author;
+        if (!author) return { data: null };
 
         return {
           data: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            firstname: user.firstname,
-            lastname: user.lastname,
-            full_name: user.full_name,
+            id: author.id,
+            documentId: author.documentId,
+            username: author.username,
+            email: author.email,
+            firstname: author.firstname,
+            lastname: author.lastname,
+            full_name: author.full_name,
+            bio: author.bio,
+            avatar: author.avatar,
           },
         };
       } catch (error: any) {
@@ -177,5 +160,5 @@ export default factories.createCoreController(
         return ctx.badRequest(error.message || "Ошибка");
       }
     },
-  }),
+  })
 );

@@ -25,89 +25,26 @@ ________________________________________________________________________________
 schema.sql
 
 -- ============================================
--- 0. Удаление старой БД (если существует)
+-- schema.sql для motit_site (совместим со Strapi)
+--
+-- ВАЖНО:
+--   * Таблицы users, roles, permissions, posts, categories
+--     и все up_*/admin_*/files/strapi_* создаёт Strapi.
+--   * Этот скрипт создаёт только бизнес-таблицы.
+--   * Запускать ПОСЛЕ первого старта Strapi.
+--   * Скрипт идемпотентный: можно запускать повторно.
 -- ============================================
-DROP DATABASE IF EXISTS `motit_site`;
 
--- ============================================
--- 1. Создание БД
--- ============================================
-CREATE DATABASE `motit_site` 
-    DEFAULT CHARACTER SET utf8mb4 
+CREATE DATABASE IF NOT EXISTS `motit_site`
+    DEFAULT CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_520_ci;
 
 USE `motit_site`;
 
 -- ============================================
--- 2. Таблица: users
+-- 1. organizations
 -- ============================================
-CREATE TABLE `users` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
-    `document_id` VARCHAR(255) NULL,
-    `username` VARCHAR(255) NULL,
-    `email` VARCHAR(255) NULL,
-    `password` VARCHAR(255) NULL,
-    `password_hash` VARCHAR(255) NULL,
-    `full_name` VARCHAR(255) NULL,
-    `phone` VARCHAR(255) NULL,
-    `avatar_url` VARCHAR(500) NULL,
-    `is_active` TINYINT(1) DEFAULT 1,
-    `last_login` DATETIME(6) NULL,
-    `provider` VARCHAR(255) NULL,
-    `confirmed` TINYINT(1) DEFAULT 0,
-    `blocked` TINYINT(1) DEFAULT 0,
-    `resetPasswordToken` VARCHAR(255) NULL,
-    `confirmationToken` VARCHAR(255) NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
-    `published_at` DATETIME(6) NULL,
-    `created_by_id` INT UNSIGNED NULL,
-    `updated_by_id` INT UNSIGNED NULL,
-    `locale` VARCHAR(255) NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_users_uuid` (`uuid`),
-    UNIQUE KEY `idx_users_username` (`username`),
-    UNIQUE KEY `idx_users_email` (`email`),
-    KEY `idx_users_document_id` (`document_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- ============================================
--- 3. Таблица: roles
--- ============================================
-CREATE TABLE `roles` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
-    `name` VARCHAR(100) NOT NULL,
-    `created_by_id` INT UNSIGNED NULL,
-    `updated_by_id` INT UNSIGNED NULL,
-    `locale` VARCHAR(255) NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_roles_uuid` (`uuid`),
-    UNIQUE KEY `idx_roles_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- ============================================
--- 3b. Таблица: users_role_lnk
--- ============================================
-CREATE TABLE `users_role_lnk` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `user_id` INT UNSIGNED NOT NULL,
-    `role_id` INT UNSIGNED NOT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_users_role_lnk_unique` (`user_id`, `role_id`),
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- ============================================
--- 4. Таблица: organizations
--- ============================================
-CREATE TABLE `organizations` (
+CREATE TABLE IF NOT EXISTS `organizations` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `name` VARCHAR(255) NOT NULL,
@@ -127,9 +64,9 @@ CREATE TABLE `organizations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 5. Таблица: clients
+-- 2. clients
 -- ============================================
-CREATE TABLE `clients` (
+CREATE TABLE IF NOT EXISTS `clients` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `user_uuid` CHAR(36) NOT NULL,
@@ -140,14 +77,13 @@ CREATE TABLE `clients` (
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_clients_uuid` (`uuid`),
-    UNIQUE KEY `idx_clients_user_uuid` (`user_uuid`),
-    CONSTRAINT `fk_clients_user` FOREIGN KEY (`user_uuid`) REFERENCES `users` (`uuid`) ON DELETE CASCADE
+    UNIQUE KEY `idx_clients_user_uuid` (`user_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 6. Таблица: client_organizations
+-- 3. client_organizations
 -- ============================================
-CREATE TABLE `client_organizations` (
+CREATE TABLE IF NOT EXISTS `client_organizations` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `client_user_uuid` CHAR(36) NOT NULL,
     `organization_uuid` CHAR(36) NOT NULL,
@@ -163,14 +99,14 @@ CREATE TABLE `client_organizations` (
     UNIQUE KEY `idx_client_org_unique` (`client_user_uuid`, `organization_uuid`),
     KEY `idx_client_org_client` (`client_user_uuid`),
     KEY `idx_client_org_org` (`organization_uuid`),
-    CONSTRAINT `fk_client_org_client` FOREIGN KEY (`client_user_uuid`) REFERENCES `users` (`uuid`) ON DELETE CASCADE,
-    CONSTRAINT `fk_client_org_org` FOREIGN KEY (`organization_uuid`) REFERENCES `organizations` (`uuid`) ON DELETE CASCADE
+    CONSTRAINT `fk_client_org_org`
+      FOREIGN KEY (`organization_uuid`) REFERENCES `organizations` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 7. Таблица: workers
+-- 4. workers
 -- ============================================
-CREATE TABLE `workers` (
+CREATE TABLE IF NOT EXISTS `workers` (
     `user_uuid` CHAR(36) NOT NULL,
     `position` VARCHAR(255) NULL,
     `created_by_id` INT UNSIGNED NULL,
@@ -178,85 +114,13 @@ CREATE TABLE `workers` (
     `locale` VARCHAR(255) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`user_uuid`),
-    CONSTRAINT `fk_workers_user` FOREIGN KEY (`user_uuid`) REFERENCES `users` (`uuid`) ON DELETE CASCADE
+    PRIMARY KEY (`user_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 8. Таблица: categories
+-- 5. statuses
 -- ============================================
-CREATE TABLE `categories` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
-    `document_id` VARCHAR(255) NULL,
-    `name` VARCHAR(255) NULL,
-    `slug` VARCHAR(255) NULL,
-    `description` LONGTEXT NULL,
-    `icon` VARCHAR(255) NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
-    `published_at` DATETIME(6) NULL,
-    `created_by_id` INT UNSIGNED NULL,
-    `updated_by_id` INT UNSIGNED NULL,
-    `locale` VARCHAR(255) NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_categories_uuid` (`uuid`),
-    UNIQUE KEY `idx_categories_slug` (`slug`),
-    KEY `idx_categories_document_id` (`document_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- ============================================
--- 9. Таблица: posts (ИСПРАВЛЕНА - добавлен created_by_id, убран author_uuid)
--- ============================================
-CREATE TABLE `posts` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `document_id` VARCHAR(255) NULL,
-    `title` VARCHAR(255) NULL,
-    `slug` VARCHAR(255) NULL,
-    `content` JSON NULL,
-    `excerpt` LONGTEXT NULL,
-    `post_status` VARCHAR(255) NULL DEFAULT 'draft',
-    `views` INT DEFAULT 0,
-    `is_featured` TINYINT(1) DEFAULT 0,
-    `meta_title` VARCHAR(255) NULL,
-    `meta_description` LONGTEXT NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
-    `published_at` DATETIME(6) NULL,
-    `created_by_id` INT UNSIGNED NULL,
-    `updated_by_id` INT UNSIGNED NULL,
-    `locale` VARCHAR(255) NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_posts_slug` (`slug`),
-    KEY `idx_posts_document_id` (`document_id`),
-    KEY `idx_posts_created_by_id` (`created_by_id`),
-    CONSTRAINT `fk_posts_created_by` FOREIGN KEY (`created_by_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- ============================================
--- 10. Таблица: posts_categories_links
--- ============================================
-CREATE TABLE `posts_categories_links` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `post_id` INT UNSIGNED NOT NULL,
-    `category_id` INT UNSIGNED NOT NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
-    `created_by_id` INT UNSIGNED NULL,
-    `updated_by_id` INT UNSIGNED NULL,
-    `locale` VARCHAR(255) NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_posts_categories_links_unique` (`post_id`, `category_id`),
-    KEY `idx_posts_categories_links_post` (`post_id`),
-    KEY `idx_posts_categories_links_category` (`category_id`),
-    CONSTRAINT `fk_posts_categories_links_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_posts_categories_links_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
-
--- ============================================
--- 11. Таблица: statuses
--- ============================================
-CREATE TABLE `statuses` (
+CREATE TABLE IF NOT EXISTS `statuses` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `name` VARCHAR(100) NOT NULL,
@@ -270,9 +134,9 @@ CREATE TABLE `statuses` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 12. Таблица: priorities
+-- 6. priorities
 -- ============================================
-CREATE TABLE `priorities` (
+CREATE TABLE IF NOT EXISTS `priorities` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `name` VARCHAR(100) NOT NULL,
@@ -286,9 +150,9 @@ CREATE TABLE `priorities` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 13. Таблица: tickets
+-- 7. tickets
 -- ============================================
-CREATE TABLE `tickets` (
+CREATE TABLE IF NOT EXISTS `tickets` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `title` VARCHAR(255) NOT NULL,
@@ -314,17 +178,16 @@ CREATE TABLE `tickets` (
     KEY `idx_tickets_category` (`category_uuid`),
     KEY `idx_tickets_created_at` (`created_at`),
     KEY `idx_tickets_deadline_at` (`deadline_at`),
-    CONSTRAINT `fk_tickets_client` FOREIGN KEY (`client_uuid`) REFERENCES `users` (`uuid`) ON DELETE SET NULL,
-    CONSTRAINT `fk_tickets_assigned` FOREIGN KEY (`assigned_to_uuid`) REFERENCES `users` (`uuid`) ON DELETE SET NULL,
-    CONSTRAINT `fk_tickets_status` FOREIGN KEY (`status_uuid`) REFERENCES `statuses` (`uuid`) ON DELETE SET NULL,
-    CONSTRAINT `fk_tickets_priority` FOREIGN KEY (`priority_uuid`) REFERENCES `priorities` (`uuid`) ON DELETE SET NULL,
-    CONSTRAINT `fk_tickets_category` FOREIGN KEY (`category_uuid`) REFERENCES `categories` (`uuid`) ON DELETE SET NULL
+    CONSTRAINT `fk_tickets_status`
+      FOREIGN KEY (`status_uuid`) REFERENCES `statuses` (`uuid`) ON DELETE SET NULL,
+    CONSTRAINT `fk_tickets_priority`
+      FOREIGN KEY (`priority_uuid`) REFERENCES `priorities` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 14. Таблица: ticket_comments
+-- 8. ticket_comments
 -- ============================================
-CREATE TABLE `ticket_comments` (
+CREATE TABLE IF NOT EXISTS `ticket_comments` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `ticket_uuid` CHAR(36) NOT NULL,
@@ -340,14 +203,14 @@ CREATE TABLE `ticket_comments` (
     UNIQUE KEY `idx_ticket_comments_uuid` (`uuid`),
     KEY `idx_ticket_comments_ticket` (`ticket_uuid`),
     KEY `idx_ticket_comments_user` (`user_uuid`),
-    CONSTRAINT `fk_ticket_comments_ticket` FOREIGN KEY (`ticket_uuid`) REFERENCES `tickets` (`uuid`) ON DELETE CASCADE,
-    CONSTRAINT `fk_ticket_comments_user` FOREIGN KEY (`user_uuid`) REFERENCES `users` (`uuid`) ON DELETE CASCADE
+    CONSTRAINT `fk_ticket_comments_ticket`
+      FOREIGN KEY (`ticket_uuid`) REFERENCES `tickets` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 15. Таблица: pages
+-- 9. pages
 -- ============================================
-CREATE TABLE `pages` (
+CREATE TABLE IF NOT EXISTS `pages` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `slug` VARCHAR(255) NOT NULL,
@@ -367,9 +230,9 @@ CREATE TABLE `pages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 16. Таблица: issuers
+-- 10. issuers
 -- ============================================
-CREATE TABLE `issuers` (
+CREATE TABLE IF NOT EXISTS `issuers` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `name` VARCHAR(255) NOT NULL,
@@ -385,9 +248,9 @@ CREATE TABLE `issuers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 17. Таблица: certificates
+-- 11. certificates
 -- ============================================
-CREATE TABLE `certificates` (
+CREATE TABLE IF NOT EXISTS `certificates` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `title` VARCHAR(255) NOT NULL,
@@ -405,13 +268,14 @@ CREATE TABLE `certificates` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_certificates_uuid` (`uuid`),
     KEY `idx_certificates_issuer` (`issuer_id`),
-    CONSTRAINT `fk_certificates_issuer` FOREIGN KEY (`issuer_id`) REFERENCES `issuers` (`id`) ON DELETE SET NULL
+    CONSTRAINT `fk_certificates_issuer`
+      FOREIGN KEY (`issuer_id`) REFERENCES `issuers` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
 -- ============================================
--- 18. Таблица: partners
+-- 12. partners
 -- ============================================
-CREATE TABLE `partners` (
+CREATE TABLE IF NOT EXISTS `partners` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` CHAR(36) NOT NULL DEFAULT (UUID()),
     `name` VARCHAR(255) NOT NULL,
@@ -427,94 +291,14 @@ CREATE TABLE `partners` (
     UNIQUE KEY `idx_partners_uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 -- ============================================
--- Добавление прав для роли Administrator
+-- ГОТОВО
 -- ============================================
-
--- 1. Получить ID роли Administrator
-SET @role_id = (SELECT id FROM roles WHERE name = 'Administrator');
-
--- 2. Добавить права для Category
-INSERT INTO `up_permissions` (`document_id`, `action`, `created_at`, `updated_at`) VALUES
-(UUID(), 'api::category.category.find', NOW(), NOW()),
-(UUID(), 'api::category.category.findOne', NOW(), NOW()),
-(UUID(), 'api::category.category.create', NOW(), NOW()),
-(UUID(), 'api::category.category.update', NOW(), NOW()),
-(UUID(), 'api::category.category.delete', NOW(), NOW()),
-(UUID(), 'api::category.category.publish', NOW(), NOW()),
-(UUID(), 'api::category.category.unpublish', NOW(), NOW());
-
--- 3. Добавить права для Post
-INSERT INTO `up_permissions` (`document_id`, `action`, `created_at`, `updated_at`) VALUES
-(UUID(), 'api::post.post.find', NOW(), NOW()),
-(UUID(), 'api::post.post.findOne', NOW(), NOW()),
-(UUID(), 'api::post.post.create', NOW(), NOW()),
-(UUID(), 'api::post.post.update', NOW(), NOW()),
-(UUID(), 'api::post.post.delete', NOW(), NOW()),
-(UUID(), 'api::post.post.publish', NOW(), NOW()),
-(UUID(), 'api::post.post.unpublish', NOW(), NOW());
-
--- 4. Добавить права для User
-INSERT INTO `up_permissions` (`document_id`, `action`, `created_at`, `updated_at`) VALUES
-(UUID(), 'plugin::users-permissions.user.find', NOW(), NOW()),
-(UUID(), 'plugin::users-permissions.user.findOne', NOW(), NOW()),
-(UUID(), 'plugin::users-permissions.user.create', NOW(), NOW()),
-(UUID(), 'plugin::users-permissions.user.update', NOW(), NOW()),
-(UUID(), 'plugin::users-permissions.user.delete', NOW(), NOW());
-
--- 5. Связать все права с ролью Administrator
-INSERT INTO `up_permissions_role_lnk` (`permission_id`, `role_id`)
-SELECT p.id, @role_id
-FROM `up_permissions` p
-WHERE p.action LIKE 'api::category.category%'
-   OR p.action LIKE 'api::post.post%'
-   OR p.action LIKE 'plugin::users-permissions.user%'
-   AND NOT EXISTS (
-       SELECT 1 FROM `up_permissions_role_lnk` prl 
-       WHERE prl.permission_id = p.id AND prl.role_id = @role_id
-   );
+-- Создано: organizations, clients, client_organizations, workers,
+--          statuses, priorities, tickets, ticket_comments,
+--          pages, issuers, certificates, partners
+--
+-- Создаёт Strapi (НЕ здесь): users, roles, permissions,
+--          users_role_lnk, role_permissions_lnk, posts, categories,
+--          posts_categories_links, posts_*_lnk, up_*, admin_*, files, strapi_*
+-- ============================================

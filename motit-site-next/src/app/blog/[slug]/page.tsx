@@ -346,10 +346,31 @@ export default async function BlogPostPage({
           {/* Метаданные */}
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
             {author && (
-              <span className="flex items-center gap-1.5">
-                <User size={14} className="text-[#2dd4bf]" />
-                {author.full_name || author.username || "Автор"}
-              </span>
+              <Link
+                href={`/authors/${author.username}`}
+                className="flex items-center gap-1.5 hover:text-[#2dd4bf] transition-colors"
+              >
+                {(() => {
+                  const avatar = (author as any).avatar;
+                  const raw = avatar?.url || null;
+                  const avatarUrl = raw
+                    ? raw.startsWith("/uploads")
+                      ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${raw}`
+                      : raw
+                    : null;
+
+                  return avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={author.full_name || author.username}
+                      className="w-7 h-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User size={14} className="text-[#2dd4bf]" />
+                  );
+                })()}
+                {author.full_name || author.username}
+              </Link>
             )}
             {attrs.publishedAt && (
               <span className="flex items-center gap-1.5">

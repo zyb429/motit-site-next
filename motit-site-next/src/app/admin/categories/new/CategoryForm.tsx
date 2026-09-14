@@ -11,9 +11,22 @@ export default function CategoryForm() {
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (!slugManuallyEdited) {
+      setSlug(generateSlug(value));
+    }
+  };
+
+  const handleSlugChange = (value: string) => {
+    setSlug(value);
+    setSlugManuallyEdited(value.length > 0);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,10 +91,7 @@ export default function CategoryForm() {
           <input
             type="text"
             value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (!slug) setSlug(generateSlug(e.target.value));
-            }}
+            onChange={(e) => handleNameChange(e.target.value)}
             disabled={isPending}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="Например: Технологии"
@@ -95,10 +105,13 @@ export default function CategoryForm() {
           <input
             type="text"
             value={slug}
-            onChange={(e) => setSlug(e.target.value)}
+            onChange={(e) => handleSlugChange(e.target.value)}
             disabled={isPending}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono"
           />
+          <p className="text-xs text-gray-400 mt-1">
+            Генерируется автоматически из названия. Можно изменить вручную.
+          </p>
         </div>
 
         <div>

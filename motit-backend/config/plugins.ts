@@ -63,8 +63,12 @@ const config = ({
       },
       providerOptions: {
         localServer: {
-          maxAge: 3600000, // 1 час кеша
+          maxAge: 3600000,
         },
+      },
+      actionOptions: {
+        upload: {},
+        delete: {},
       },
     },
   },

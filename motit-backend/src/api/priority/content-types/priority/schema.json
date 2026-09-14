@@ -1,0 +1,17 @@
+{
+  "kind": "collectionType",
+  "collectionName": "priorities",
+  "info": {
+    "singularName": "priority",
+    "pluralName": "priorities",
+    "displayName": "Priority",
+    "description": "Приоритеты заявок"
+  },
+  "options": { "draftAndPublish": false },
+  "pluginOptions": {},
+  "attributes": {
+    "name": { "type": "string", "required": true },
+    "color": { "type": "string" },
+    "level": { "type": "integer", "default": 0 }
+  }
+}

@@ -1,20 +1,40 @@
-// import type { Core } from '@strapi/strapi';
+import type { Core } from "@strapi/strapi";
 
 export default {
-  /**
-   * An asynchronous register function that runs before
-   * your application is initialized.
-   *
-   * This gives you an opportunity to extend code.
-   */
-  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+  register({ strapi }: { strapi: Core.Strapi }) {
+    strapi.documents.use((context: any, next: () => Promise<any>) => {
+      const user = context.params?.state?.user;
+      if (!user) return next();
 
-  /**
-   * An asynchronous bootstrap function that runs before
-   * your application gets started.
-   *
-   * This gives you an opportunity to set up your data model,
-   * run jobs, or perform some special logic.
-   */
-  bootstrap(/* { strapi }: { strapi: Core.Strapi } */) {},
+      const roleType = user.role?.type;
+
+      if (
+        context.uid === "api::ticket.ticket" &&
+        context.action === "findMany" &&
+        roleType === "client"
+      ) {
+        context.params.filters = {
+          ...(context.params.filters || {}),
+          client: { id: user.id },
+        };
+      }
+
+      if (
+        context.uid === "api::ticket-comment.ticket-comment" &&
+        context.action === "findMany" &&
+        roleType === "client"
+      ) {
+        context.params.filters = {
+          ...(context.params.filters || {}),
+          ticket: { client: { id: user.id } },
+        };
+      }
+
+      return next();
+    });
+  },
+
+  async bootstrap({ strapi }: { strapi: Core.Strapi }) {
+    strapi.log.info("[bootstrap] Custom policies and middlewares loaded");
+  },
 };
