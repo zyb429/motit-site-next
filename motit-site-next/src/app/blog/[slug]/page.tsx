@@ -363,7 +363,7 @@ export default async function BlogPostPage({
                     <img
                       src={avatarUrl}
                       alt={author.full_name || author.username}
-                      className="w-7 h-7 rounded-full object-cover"
+                      className="w-7 h-7 rounded-full object-cover mr-1"
                     />
                   ) : (
                     <User size={14} className="text-[#2dd4bf]" />

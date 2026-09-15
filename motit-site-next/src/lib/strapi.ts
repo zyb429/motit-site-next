@@ -408,7 +408,7 @@ export async function fetchAPI<T>(
   // Сериализуем с помощью qs
   const queryString = qs.stringify(queryParams, {
     encodeValuesOnly: true,
-    arrayFormat: "brackets",
+    arrayFormat: "indices",
     skipNulls: true,
   });
 
@@ -995,16 +995,29 @@ export function getCategoryFilter(slug: string) {
   };
 }
 
-export async function getAuthorForPost(postDocumentId: string) {
+export async function getAuthorForPost(
+  postDocumentId: string,
+): Promise<StrapiAuthor | null> {
   if (!postDocumentId) return null;
   try {
-    const res = await fetchAPI<{ data: any }>(
+    const res = await fetchAPI<any>(
       `/posts/author/${postDocumentId}`,
       {},
       false,
     );
-    return res.data || null;
-  } catch {
+
+    // Кастомный эндпоинт может вернуть:
+    //   { data: { id, documentId, attributes: {...} } }  (после нормализации)
+    //   { data: { id, username, ... } }                   (v5-плоский)
+    //   { data: null }
+    //   { data: [ {...} ] }
+    const raw = Array.isArray(res?.data) ? res.data[0] : (res?.data ?? res);
+
+    if (!raw) return null;
+
+    return normalizeAuthor(raw);
+  } catch (e) {
+    console.warn("[getAuthorForPost] failed:", e);
     return null;
   }
 }
@@ -1018,6 +1031,7 @@ export type StrapiAuthor = {
   firstname?: string;
   lastname?: string;
   avatar_url?: string | null;
+  avatar: { url: string } | null;
   bio?: string;
 };
 
@@ -1061,18 +1075,24 @@ export async function getAuthorByUsername(
 }
 
 function normalizeAuthor(user: any): StrapiAuthor {
-  const a: any = getAttrs(user);
+  if (!user) return null as any;
+
+  const attrs: any = user?.attributes ?? user;
+  const id = user?.id ?? attrs?.id;
+  const documentId = user?.documentId ?? attrs?.documentId;
+  const avatarUrl = getMediaUrl(user, "avatar");
 
   return {
-    id: a.id,
-    documentId: a.documentId,
-    username: a.username,
-    email: a.email,
-    full_name: a.full_name,
-    firstname: a.firstname,
-    lastname: a.lastname,
-    avatar_url: getMediaUrl(user, "avatar"),
-    bio: a.bio,
+    id,
+    documentId,
+    username: attrs.username,
+    email: attrs.email,
+    full_name: attrs.full_name,
+    firstname: attrs.firstname,
+    lastname: attrs.lastname,
+    avatar_url: avatarUrl,
+    avatar: avatarUrl ? { url: avatarUrl } : null,
+    bio: attrs.bio,
   };
 }
 
