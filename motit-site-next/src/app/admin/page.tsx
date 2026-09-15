@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   PlusCircle,
   FileText,
-  FolderOpen,
+  FolderTree,
   Settings,
   LogOut,
   Home,
@@ -180,10 +180,12 @@ export default async function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Категории</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{categories}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
+                  {categories}
+                </p>
               </div>
-              <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <FolderOpen className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
+                <FolderTree className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </div>
@@ -196,11 +198,11 @@ export default async function AdminPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
               href="/admin/posts/new"
-              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-blue-200"
+              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-green-200"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                  <PlusCircle className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                  <PlusCircle className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900">Создать пост</h3>
@@ -211,11 +213,11 @@ export default async function AdminPage() {
 
             <Link
               href="/admin/posts"
-              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-green-200"
+              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-blue-200"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors">
-                  <FileText className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                  <FileText className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900">Все посты</h3>
@@ -230,7 +232,7 @@ export default async function AdminPage() {
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
-                  <FolderOpen className="w-6 h-6 text-purple-600" />
+                  <FolderTree className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900">Категории</h3>

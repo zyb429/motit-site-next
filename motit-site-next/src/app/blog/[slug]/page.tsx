@@ -8,6 +8,7 @@ import {
   getPublishedPosts,
   getPostCategories,
   getAuthorForPost,
+  getMediaUrl,
 } from "@/lib/strapi";
 import { getDraftModeStatus } from "@/lib/server/strapi";
 import RenderSlate from "@/components/editor/RenderSlate";
@@ -260,39 +261,7 @@ export default async function BlogPostPage({
   };
 
   // Получение URL изображения
-  const getImageUrl = (): string | null => {
-    const image = attrs.featured_image as any;
-    if (!image) return null;
-
-    if (typeof image === "string") {
-      if (image.startsWith("/uploads")) {
-        return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${image}`;
-      }
-      return image;
-    }
-
-    if (image.url && typeof image.url === "string") {
-      if (image.url.startsWith("/uploads")) {
-        return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${image.url}`;
-      }
-      return image.url;
-    }
-
-    if (
-      image.data?.attributes?.url &&
-      typeof image.data.attributes.url === "string"
-    ) {
-      const url = image.data.attributes.url;
-      if (url.startsWith("/uploads")) {
-        return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${url}`;
-      }
-      return url;
-    }
-
-    return null;
-  };
-
-  const imageUrl = getImageUrl();
+  const imageUrl = getMediaUrl(post, "featured_image");
 
   // Функция для возврата на блог с сохранением параметров
   const getBackUrl = () => {

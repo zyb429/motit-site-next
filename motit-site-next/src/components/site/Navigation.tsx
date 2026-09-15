@@ -1,15 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState } from 'react';
-import { Button } from '@/components/ui';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 const links = [
-  { href: '/', label: 'Главная' },
-  { href: '/blog', label: 'Блог' },
-  { href: '/about', label: 'О нас' },
-  { href: '/contact', label: 'Контакты' },
+  { href: "/", label: "Главная" },
+  { href: "/blog", label: "Блог" },
+  { href: "/about", label: "О нас" },
+  { href: "/contact", label: "Контакты" },
 ];
 
 export function Navigation() {
@@ -17,7 +16,7 @@ export function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
-    if (path === '/blog' && pathname?.startsWith('/blog')) {
+    if (path === "/blog" && pathname?.startsWith("/blog")) {
       return true;
     }
     return pathname === path;
@@ -33,8 +32,8 @@ export function Navigation() {
             href={link.href}
             className={`text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-400 ${
               isActive(link.href)
-                ? 'text-blue-600 dark:text-blue-400'
-                : 'text-gray-600 dark:text-gray-300'
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-gray-600 dark:text-gray-300"
             }`}
           >
             {link.label}
@@ -76,8 +75,8 @@ export function Navigation() {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`text-sm font-medium transition-colors hover:text-blue-600 ${
                   isActive(link.href)
-                    ? 'text-blue-600'
-                    : 'text-gray-600 dark:text-gray-300'
+                    ? "text-blue-600"
+                    : "text-gray-600 dark:text-gray-300"
                 }`}
               >
                 {link.label}
