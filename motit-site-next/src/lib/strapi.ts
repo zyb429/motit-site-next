@@ -5,6 +5,11 @@ import qs from "qs";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337";
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
+const MEDIA_BASE_URL =
+  process.env.NEXT_PUBLIC_MEDIA_URL || // CDN, когда появится
+  process.env.NEXT_PUBLIC_API_URL || // fallback на Strapi
+  "http://localhost:1337";
+
 export const strapiApi = axios.create({
   baseURL: API_URL,
   headers: {
@@ -228,22 +233,52 @@ export function getRelation(entity: any, key: string): any | null {
   return getRelationArray(entity, key)[0] ?? null;
 }
 
-/** Медиа-URL независимо от формы */
+/** Медиа-URL независимо от формы. Возвращает АБСОЛЮТНЫЙ URL. */
 export function getMediaUrl(entity: any, key: string): string | null {
-  const attrs: any = getAttrs(entity);
-  const raw = attrs?.[key];
-  if (!raw) return null;
+  if (!entity) return null;
 
-  if (Array.isArray(raw)) return raw[0]?.url ?? null;
-  if (raw.url) return raw.url;
+  // Пробуем разные места, где может лежать поле
+  const candidates = [
+    entity.attributes, // v4: { attributes: { avatar } }
+    entity.data?.attributes, // v4 relation: { data: { attributes: { avatar } } }
+    entity.data, // v5 relation: { data: { avatar } }
+    entity, // v5-плоский: { avatar }
+  ];
 
-  if (raw.data) {
-    const d = raw.data;
-    if (Array.isArray(d)) return d[0]?.attributes?.url ?? d[0]?.url ?? null;
-    return d?.attributes?.url ?? d?.url ?? null;
+  let raw: any = null;
+  for (const c of candidates) {
+    if (c && typeof c === "object" && key in c) {
+      raw = c[key];
+      break;
+    }
   }
 
-  return null;
+  if (!raw) return null;
+
+  let relative: string | null = null;
+
+  if (Array.isArray(raw)) {
+    relative = raw[0]?.url ?? null;
+  } else if (raw.url) {
+    relative = raw.url;
+  } else if (raw.data) {
+    const d = raw.data;
+    if (Array.isArray(d)) {
+      relative = d[0]?.attributes?.url ?? d[0]?.url ?? null;
+    } else {
+      relative = d?.attributes?.url ?? d?.url ?? null;
+    }
+  }
+
+  if (!relative) return null;
+
+  // Абсолютный URL — возвращаем как есть
+  if (relative.startsWith("http://") || relative.startsWith("https://")) {
+    return relative;
+  }
+
+  // Относительный — склеиваем с базой
+  return `${MEDIA_BASE_URL}${relative.startsWith("/") ? "" : "/"}${relative}`;
 }
 
 // ==================== V5 → V4 NORMALIZER (idempotent) ====================

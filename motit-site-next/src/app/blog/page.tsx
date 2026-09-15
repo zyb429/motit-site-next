@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  getPosts,
-  getPostsPerPage,
-  getPostCategories,
-  getAuthorForPost,
-} from "@/lib/strapi";
+import { getPosts, getPostsPerPage, getPostCategories } from "@/lib/strapi";
 import { getDraftModeStatus } from "@/lib/server/strapi";
 import { BlogCard } from "@/components/blog/BlogCard";
 import { BlogCategories } from "@/components/blog/BlogCategories";
@@ -27,7 +22,7 @@ export async function generateStaticParams() {
     const postsResponse = await getPosts(
       {
         pagination: { page: 1, pageSize: postsPerPage },
-        populate: ["categories", "author", "featured_image"],
+        populate: ["categories", "author", "author.avatar", "featured_image"],
       },
       false,
     );
@@ -73,7 +68,7 @@ export default async function BlogPage({
   const postsResponse = await getPosts(
     {
       pagination: { page: 1, pageSize: 100 },
-      populate: ["categories", "author", "featured_image"],
+      populate: ["categories", "author", "author.avatar", "featured_image"],
       filters: searchQuery ? { title: { $containsi: searchQuery } } : undefined,
     },
     isDraftMode,
@@ -81,22 +76,22 @@ export default async function BlogPage({
 
   let allPosts = postsResponse?.data || [];
 
-  allPosts = await Promise.all(
-    allPosts.map(async (post: any) => {
-      const postDocId = post.documentId || post.attributes?.documentId;
-      if (!postDocId) return post;
+  //allPosts = await Promise.all(
+  //allPosts.map(async (post: any) => {
+  //const postDocId = post.documentId || post.attributes?.documentId;
+  //if (!postDocId) return post;
 
-      const author = await getAuthorForPost(postDocId);
+  //const author = await getAuthorForPost(postDocId);
 
-      return {
-        ...post,
-        attributes: {
-          ...(post.attributes || post),
-          author: author,
-        },
-      };
-    }),
-  );
+  //return {
+  //...post,
+  //attributes: {
+  //...(post.attributes || post),
+  //author: author,
+  //},
+  //};
+  //}),
+  //);
 
   // Считаем количество постов на категорию (по уже загруженным данным)
   const categoryCounts: Record<string, number> = {};

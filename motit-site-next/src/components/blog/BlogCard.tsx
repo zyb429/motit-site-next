@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import Image from "next/image";
-import { Calendar, User, Clock } from "lucide-react";
-import { getPostCategories } from "@/lib/strapi";
+import { Calendar, Clock } from "lucide-react";
+import { getPostCategories, getMediaUrl } from "@/lib/strapi";
 import { AuthorLink } from "./AuthorLink";
 
 interface BlogCardProps {
@@ -91,18 +91,8 @@ export function BlogCard({
       [user.firstname, user.lastname].filter(Boolean).join(" ") ||
       user.username;
 
-    // avatar может быть media-объектом (Strapi 5)
-    const avatar = user.avatar;
-    const avatarRaw =
-      avatar?.url ||
-      avatar?.data?.attributes?.url ||
-      null;
-
-    const avatar_url = avatarRaw
-      ? avatarRaw.startsWith("/uploads")
-        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${avatarRaw}`
-        : avatarRaw
-      : null;
+    // getMediaUrl сам развернёт любую форму и добавит базовый URL
+    const avatar_url = getMediaUrl(authorData.data ?? authorData, "avatar");
 
     return { username: user.username, full_name, avatar_url };
   };
@@ -125,62 +115,7 @@ export function BlogCard({
     return `/blog/${slug}${queryString ? `?${queryString}` : ""}`;
   };
 
-  const getAuthorName = () => {
-    const authorData = attrs.admin_user || attrs.author;
-    if (!authorData) return null;
-
-    if (authorData.data) {
-      const user = authorData.data.attributes || authorData.data;
-      return user.firstname || user.username || user.name || null;
-    }
-    if (authorData.attributes) {
-      return (
-        authorData.attributes.firstname ||
-        authorData.attributes.username ||
-        authorData.attributes.name ||
-        null
-      );
-    }
-    return (
-      authorData.firstname || authorData.username || authorData.name || null
-    );
-  };
-
-  const authorName = getAuthorName();
-
-  const getImageUrl = () => {
-    const image = attrs.featured_image;
-    if (!image) return null;
-    if (typeof image === "string") {
-      if (image.startsWith("/uploads")) {
-        return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${image}`;
-      }
-      return image;
-    }
-    if (typeof image === "object") {
-      // Проверяем, что url - строка
-      if (image.url && typeof image.url === "string") {
-        if (image.url.startsWith("/uploads")) {
-          return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${image.url}`;
-        }
-        return image.url;
-      }
-
-      if (
-        image.data?.attributes?.url &&
-        typeof image.data.attributes.url === "string"
-      ) {
-        const url = image.data.attributes.url;
-        if (url.startsWith("/uploads")) {
-          return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${url}`;
-        }
-        return url;
-      }
-    }
-    return null;
-  };
-
-  const imageUrl = getImageUrl();
+  const imageUrl = getMediaUrl(post, "featured_image");
   const imageAlt = attrs.featured_image?.alternativeText || title;
 
   const formatDate = (dateString: string) => {
