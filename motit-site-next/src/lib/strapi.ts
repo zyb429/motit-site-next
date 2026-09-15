@@ -173,6 +173,188 @@ export interface PostResponse {
   };
 }
 
+// ==================== VERSION DETECTION ====================
+export type StrapiVersion = "v4" | "v5" | "unknown";
+
+export function detectItemVersion(item: any): StrapiVersion {
+  if (!item || typeof item !== "object") return "unknown";
+  if (item.attributes && typeof item.attributes === "object") return "v4";
+  if ("id" in item || "documentId" in item) return "v5";
+  return "unknown";
+}
+
+export function detectResponseVersion(raw: any): StrapiVersion {
+  if (!raw || typeof raw !== "object") return "unknown";
+  const first = Array.isArray(raw.data) ? raw.data[0] : raw.data;
+  return detectItemVersion(first);
+}
+
+// ==================== UNIVERSAL ACCESSORS (v4 + v5) ====================
+/** Возвращает "сырые" поля сущности независимо от версии */
+export function getAttrs<T = any>(entity: any): T {
+  if (!entity) return {} as T;
+  return (entity.attributes ?? entity) as T;
+}
+
+/** id */
+export function getId(entity: any): number | undefined {
+  return entity?.id;
+}
+
+/** documentId (v5; в v4 может отсутствовать) */
+export function getDocumentId(entity: any): string | undefined {
+  return entity?.documentId ?? entity?.attributes?.documentId;
+}
+
+/** Relation в виде массива "сырых" полей. Работает v4 и v5. */
+export function getRelationArray(entity: any, key: string): any[] {
+  const attrs: any = getAttrs(entity);
+  const raw = attrs?.[key];
+  if (!raw) return [];
+
+  if (Array.isArray(raw)) return raw.map((x) => getAttrs(x));
+
+  if (Array.isArray(raw?.data)) return raw.data.map((x: any) => getAttrs(x));
+
+  if (raw?.data && typeof raw.data === "object") return [getAttrs(raw.data)];
+
+  if (typeof raw === "object" && (raw.id || raw.name)) return [getAttrs(raw)];
+
+  return [];
+}
+
+/** Одиночный relation */
+export function getRelation(entity: any, key: string): any | null {
+  return getRelationArray(entity, key)[0] ?? null;
+}
+
+/** Медиа-URL независимо от формы */
+export function getMediaUrl(entity: any, key: string): string | null {
+  const attrs: any = getAttrs(entity);
+  const raw = attrs?.[key];
+  if (!raw) return null;
+
+  if (Array.isArray(raw)) return raw[0]?.url ?? null;
+  if (raw.url) return raw.url;
+
+  if (raw.data) {
+    const d = raw.data;
+    if (Array.isArray(d)) return d[0]?.attributes?.url ?? d[0]?.url ?? null;
+    return d?.attributes?.url ?? d?.url ?? null;
+  }
+
+  return null;
+}
+
+// ==================== V5 → V4 NORMALIZER (idempotent) ====================
+function isV4Entity(x: any): boolean {
+  return (
+    !!x &&
+    typeof x === "object" &&
+    !!x.attributes &&
+    typeof x.attributes === "object"
+  );
+}
+
+function normalizeMediaIdempotent(media: any): any {
+  if (!media) return media;
+  if (Array.isArray(media)) return media.map(normalizeMediaIdempotent);
+  if (media.url || media.formats || media.mime) return media;
+  if (media.data) {
+    const d = media.data;
+    if (Array.isArray(d)) return d.map(normalizeMediaIdempotent);
+    return d?.attributes ?? d;
+  }
+  return media;
+}
+
+function normalizeEntityIdempotent(entity: any): any {
+  if (entity == null) return entity;
+  if (Array.isArray(entity)) return entity.map(normalizeEntityIdempotent);
+
+  // Уже v4 — не трогаем
+  if (isV4Entity(entity)) return entity;
+
+  // v5 → v4
+  const { id, documentId, ...rest } = entity;
+  return {
+    id,
+    documentId,
+    attributes: normalizeAttrsIdempotent(rest),
+  };
+}
+
+function normalizeAttrsIdempotent(attrs: any): any {
+  if (!attrs || typeof attrs !== "object") return attrs;
+
+  const out: any = Array.isArray(attrs) ? [] : {};
+
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value == null) {
+      out[key] = value;
+      continue;
+    }
+
+    if (
+      key === "featured_image" ||
+      key === "avatar" ||
+      key === "image" ||
+      key === "hero_background" ||
+      key.endsWith("_image") ||
+      key.endsWith("_background")
+    ) {
+      out[key] = { data: normalizeMediaIdempotent(value) };
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      const first = value[0];
+      const looksLikeEntity =
+        first &&
+        typeof first === "object" &&
+        ("id" in first || "documentId" in first || "attributes" in first);
+      out[key] = looksLikeEntity
+        ? { data: value.map((v: any) => normalizeEntityIdempotent(v)) }
+        : value;
+      continue;
+    }
+
+    if (typeof value === "object") {
+      const v: any = value;
+      if ("data" in v && (v.data === null || typeof v.data === "object")) {
+        out[key] = { data: normalizeEntityIdempotent(v.data) };
+        continue;
+      }
+      if ("id" in v || "documentId" in v || "attributes" in v) {
+        out[key] = { data: normalizeEntityIdempotent(v) };
+        continue;
+      }
+    }
+
+    out[key] = value;
+  }
+
+  return out;
+}
+
+export function normalizeResponseIdempotent<T>(raw: any): T {
+  if (!raw || typeof raw !== "object") return raw;
+
+  if ("data" in raw && !Array.isArray(raw.data)) {
+    return {
+      ...raw,
+      data: raw.data ? normalizeEntityIdempotent(raw.data) : raw.data,
+    } as T;
+  }
+  if (Array.isArray(raw.data)) {
+    return { ...raw, data: raw.data.map(normalizeEntityIdempotent) } as T;
+  }
+  if ("id" in raw || "documentId" in raw) {
+    return normalizeEntityIdempotent(raw) as T;
+  }
+  return raw;
+}
+
 // ==================== API FUNCTIONS ====================
 
 export async function fetchAPI<T>(
@@ -236,7 +418,11 @@ export async function fetchAPI<T>(
 
   try {
     const response = await strapiApi.get(url);
-    return response.data;
+    const version = detectResponseVersion(response.data);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[fetchAPI] Strapi version detected: ${version}`);
+    }
+    return normalizeResponseIdempotent<T>(response.data);
   } catch (error) {
     if (axios.isAxiosError(error)) {
       console.error("❌ API Error:", {
@@ -831,7 +1017,7 @@ export type StrapiAuthor = {
   full_name?: string;
   firstname?: string;
   lastname?: string;
-  avatar_url?: string;
+  avatar_url?: string | null;
   bio?: string;
 };
 
@@ -843,56 +1029,39 @@ export type StrapiAuthor = {
 export async function getAuthorByUsername(
   username: string,
 ): Promise<StrapiAuthor | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
-  const apiToken = process.env.STRAPI_API_TOKEN;
-
-  const headers: HeadersInit = {};
-  if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
-
-  console.log("[getAuthorByUsername] start", { username, hasToken: !!apiToken });
+  if (!username) return null;
 
   try {
-    const url = `${baseUrl}/api/users?filters[username][$eq]=${encodeURIComponent(
-      username,
-    )}&populate[avatar]=true`;
-    console.log("[getAuthorByUsername] URL:", url);
+    const res = await fetchAPI<any>(
+      "/users",
+      {
+        filters: { username: { $eq: username } },
+        populate: ["avatar"],
+      },
+      false,
+    );
 
-    const res = await fetch(url, { headers, cache: "no-store" });
-    console.log("[getAuthorByUsername] status:", res.status);
+    // /users отдаёт массив напрямую, но подстрахуемся на { data: [...] }
+    const list: any[] = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.data)
+        ? res.data
+        : res?.data
+          ? [res.data]
+          : [];
 
-    if (res.ok) {
-      const data = await res.json();
-      const user = Array.isArray(data) ? data[0] : data?.data?.[0];
+    const user = list[0];
+    if (!user) return null;
 
-      if (user) {
-        console.log(
-          "[getAuthorByUsername] found:",
-          user.username,
-          "avatar:",
-          user.avatar?.url || "нет",
-        );
-        return normalizeAuthor(user);
-      }
-      console.log("[getAuthorByUsername] empty result");
-    } else {
-      const text = await res.text();
-      console.log("[getAuthorByUsername] error:", text.slice(0, 300));
-    }
+    return normalizeAuthor(user);
   } catch (e) {
-    console.warn("getAuthorByUsername failed:", e);
+    console.warn("[getAuthorByUsername] failed:", e);
+    return null;
   }
-
-  return null;
 }
 
 function normalizeAuthor(user: any): StrapiAuthor {
-  const a = user?.attributes || user;
-
-  const avatar = a.avatar;
-  const avatarUrl =
-    avatar?.url ||
-    avatar?.data?.attributes?.url ||
-    null;
+  const a: any = getAttrs(user);
 
   return {
     id: a.id,
@@ -902,7 +1071,7 @@ function normalizeAuthor(user: any): StrapiAuthor {
     full_name: a.full_name,
     firstname: a.firstname,
     lastname: a.lastname,
-    avatar_url: avatarUrl,
+    avatar_url: getMediaUrl(user, "avatar"),
     bio: a.bio,
   };
 }
@@ -949,9 +1118,7 @@ export async function getPostsByAuthor(
     const posts = all.filter((p: any) => {
       const author = p.author || p.attributes?.author;
       const uname =
-        author?.username ||
-        author?.data?.attributes?.username ||
-        null;
+        author?.username || author?.data?.attributes?.username || null;
       return uname === username;
     });
 
