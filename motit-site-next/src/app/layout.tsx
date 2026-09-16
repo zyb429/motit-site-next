@@ -1,10 +1,8 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import DraftModeIndicator from "@/components/DraftModeIndicator";
-import Navigation from "@/components/sections/Navigation";
-import Footer from "@/components/sections/Footer";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
@@ -55,12 +53,7 @@ export default function RootLayout({
   return (
     <html lang="ru" data-scroll-behavior="smooth" className="scroll-smooth">
       <body className={inter.className}>
-        <Providers>
-          <Navigation />
-          <main className="min-h-screen">{children}</main>
-          <DraftModeIndicator />
-          <Footer />
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

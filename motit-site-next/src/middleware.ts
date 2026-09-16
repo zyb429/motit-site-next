@@ -7,29 +7,22 @@ export function middleware(request: NextRequest) {
 
   console.log(`[Middleware] ${pathname} - Token: ${token ? "✅" : "❌"}`);
 
-  // ✅ Если на главной и есть токен - редирект на /admin
-  if (pathname === "/" && token) {
-    return NextResponse.redirect(new URL("/admin", request.url));
-  }
-
-  // ✅ Если на /login и есть токен - редирект на /admin
+  // Уже залогинен и зашёл на /login → вернуть на from или в /admin
   if (pathname === "/login" && token) {
-    return NextResponse.redirect(new URL("/admin", request.url));
+    const from = request.nextUrl.searchParams.get("from");
+    return NextResponse.redirect(new URL(from || "/admin", request.url));
   }
 
-  // ✅ Защищаем /admin
-  if (pathname.startsWith("/admin")) {
-    if (!token) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("from", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-    return NextResponse.next();
+  // Защищаем /admin
+  if (pathname.startsWith("/admin") && !token) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("from", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/", "/admin/:path*", "/login"],
+  matcher: ["/admin/:path*", "/login"],
 };
