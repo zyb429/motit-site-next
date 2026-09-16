@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { Search, X } from "lucide-react";
 import { getPosts, getPostsPerPage, getPostCategories } from "@/lib/strapi";
 import { getDraftModeStatus } from "@/lib/server/strapi";
-import { BlogCard } from "@/components/blog/BlogCard";
+import { BlogPosts } from "@/components/blog/BlogPosts";
 import { BlogCategories } from "@/components/blog/BlogCategories";
 import { PaginationClient } from "@/components/blog/PaginationClient";
 import { SearchInput } from "@/components/blog/SearchInput";
+import type { ViewMode } from "@/components/blog/ViewModeToggle";
 
 // ISR - пересоздаем страницу каждый час
 export const revalidate = 3600; // 1 час
@@ -41,16 +44,41 @@ export async function generateStaticParams() {
   }
 }
 
+function pluralizePosts(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "пост";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "поста";
+  return "постов";
+}
+
 export default async function BlogPage({
   searchParams,
 }: {
   searchParams:
-    | Promise<{ search?: string; category?: string | string[]; page?: string }>
-    | { search?: string; category?: string | string[]; page?: string };
+    | Promise<{
+        search?: string;
+        category?: string | string[];
+        page?: string;
+        view?: string;
+      }>
+    | {
+        search?: string;
+        category?: string | string[];
+        page?: string;
+        view?: string;
+      };
 }) {
   const params = await searchParams;
   const searchQuery = params?.search || "";
   const currentPage = parseInt(params?.page || "1", 10);
+
+  // ✅ Читаем режим отображения из URL (дефолт — "list")
+  const rawView = params?.view;
+  const initialViewMode: ViewMode =
+    rawView === "list" || rawView === "tiles" || rawView === "grid"
+      ? rawView
+      : "list";
 
   let categorySlugs: string[] = [];
   if (params?.category) {
@@ -76,23 +104,6 @@ export default async function BlogPage({
 
   let allPosts = postsResponse?.data || [];
 
-  //allPosts = await Promise.all(
-  //allPosts.map(async (post: any) => {
-  //const postDocId = post.documentId || post.attributes?.documentId;
-  //if (!postDocId) return post;
-
-  //const author = await getAuthorForPost(postDocId);
-
-  //return {
-  //...post,
-  //attributes: {
-  //...(post.attributes || post),
-  //author: author,
-  //},
-  //};
-  //}),
-  //);
-
   // Считаем количество постов на категорию (по уже загруженным данным)
   const categoryCounts: Record<string, number> = {};
   for (const post of allPosts) {
@@ -105,7 +116,6 @@ export default async function BlogPage({
   // Фильтруем по категориям на клиенте (AND - все категории должны быть)
   if (categorySlugs.length > 0) {
     allPosts = allPosts.filter((post: any) => {
-      // Используем общую функцию — она уже умеет v4 и v5
       const postCategories = getPostCategories(post);
       const postCategorySlugs = postCategories.map((c: any) => c.slug);
 
@@ -132,20 +142,32 @@ export default async function BlogPage({
 
   console.log("🔍 [BlogPage] categorySlugs:", categorySlugs);
   console.log("🔍 [BlogPage] searchQuery:", searchQuery);
+  console.log("🔍 [BlogPage] initialViewMode:", initialViewMode);
   console.log("🔍 [BlogPage] total posts after filter:", total);
   console.log("🔍 [BlogPage] displayed posts:", posts.length);
 
-  // Формируем baseUrl без hostname
+  // Формируем baseUrl — сохраняем search, category и view (кроме дефолтного)
   const buildBaseUrl = () => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("search", searchQuery);
     if (categorySlugs.length > 0) {
       categorySlugs.forEach((slug) => params.append("category", slug));
     }
+    if (initialViewMode !== "list") params.set("view", initialViewMode);
     return `/blog${params.toString() ? `?${params.toString()}` : ""}`;
   };
 
   const baseUrl = buildBaseUrl();
+
+  const buildSearchResetUrl = () => {
+    const params = new URLSearchParams();
+    if (categorySlugs.length > 0) {
+      categorySlugs.forEach((slug) => params.append("category", slug));
+    }
+    if (initialViewMode !== "list") params.set("view", initialViewMode);
+    const qs = params.toString();
+    return `/blog${qs ? `?${qs}` : ""}`;
+  };
 
   return (
     <div className="min-h-screen bg-[#0a1920] py-8 md:py-12">
@@ -172,15 +194,24 @@ export default async function BlogPage({
 
         {/* Статусы */}
         {searchQuery && (
-          <div className="mb-4 p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg text-sm text-blue-400 flex items-center justify-between">
-            <span>
-              Результаты поиска: «{searchQuery}» ({total} постов)
+          <div className="mb-4 flex items-center gap-3 px-4 py-2.5 bg-[#0f2832] border border-[rgba(45,212,191,0.12)] rounded-xl">
+            <Search size={16} className="text-[#2dd4bf] shrink-0" />
+            <span className="text-sm text-gray-300 flex-1 min-w-0 truncate">
+              <span className="text-gray-500">Поиск:</span>{" "}
+              <span className="text-[#e0f7fa] font-medium">
+                «{searchQuery}»
+              </span>
+              <span className="text-gray-500">
+                {" "}
+                — {total} {pluralizePosts(total)}
+              </span>
             </span>
             <Link
-              href="/blog"
-              className="hover:underline hover:text-blue-300 transition-colors"
+              href={buildSearchResetUrl()}
+              className="shrink-0 flex items-center gap-1 text-xs text-gray-400 hover:text-[#2dd4bf] transition-colors"
             >
-              ✕
+              <X size={12} />
+              Сбросить
             </Link>
           </div>
         )}
@@ -193,7 +224,7 @@ export default async function BlogPage({
         {/* Список постов */}
         <div id="blog-posts">
           {posts.length === 0 ? (
-            <div className="text-center py-16">
+            <div className="text-center py-8">
               <p className="text-gray-400 text-sm">
                 {searchQuery && categorySlugs.length > 0
                   ? "Нет постов, соответствующих вашему запросу и всем выбранным категориям"
@@ -206,21 +237,21 @@ export default async function BlogPage({
             </div>
           ) : (
             <>
-              <div className="space-y-4">
-                {posts.map((post: any) => {
-                  const normalizedPost = {
-                    ...post,
-                    attributes: post.attributes || post,
-                  };
-                  return (
-                    <BlogCard
-                      key={post.id || post.documentId}
-                      post={normalizedPost}
-                      variant="list"
-                    />
-                  );
-                })}
-              </div>
+              {/* ✅ Suspense обязателен: BlogPosts использует useSearchParams */}
+              <Suspense
+                fallback={
+                  <div className="space-y-4">
+                    {posts.slice(0, 3).map((post: any) => (
+                      <div
+                        key={post.id || post.documentId}
+                        className="h-40 bg-[#0f2832] rounded-xl border border-[rgba(45,212,191,0.06)] animate-pulse"
+                      />
+                    ))}
+                  </div>
+                }
+              >
+                <BlogPosts posts={posts} initialViewMode={initialViewMode} />
+              </Suspense>
 
               {/* Пагинация */}
               {totalPages > 1 && (

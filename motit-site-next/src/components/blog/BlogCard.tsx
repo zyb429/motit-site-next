@@ -8,11 +8,12 @@ import Image from "next/image";
 import { Calendar, Clock } from "lucide-react";
 import { getPostCategories, getMediaUrl } from "@/lib/strapi";
 import { AuthorLink } from "./AuthorLink";
+import type { View } from "@/lib/view";
 
 interface BlogCardProps {
   post: any;
   className?: string;
-  variant?: "grid" | "list";
+  variant?: View;
 }
 
 // Универсальная функция для извлечения текста из любого формата контента
@@ -92,7 +93,7 @@ export function BlogCard({
       user.username;
 
     // getMediaUrl сам развернёт любую форму и добавит базовый URL
-    const avatar_url = getMediaUrl(authorData.data ?? authorData, "avatar");
+    const avatar_url = getMediaUrl(user, "avatar");
 
     return { username: user.username, full_name, avatar_url };
   };
@@ -131,7 +132,7 @@ export function BlogCard({
     }
   };
 
-  // ✅ ИСПРАВЛЕНО: используем getTextFromContent
+  // ИСПРАВЛЕНО: используем getTextFromContent
   const getReadingTime = () => {
     const content = attrs.content || "";
     const text = getTextFromContent(content);
@@ -141,7 +142,7 @@ export function BlogCard({
 
   if (!slug) return null;
 
-  // ✅ Сортируем категории по имени
+  // Сортируем категории по имени
   const sortedCategories = [...categories].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
@@ -178,7 +179,7 @@ export function BlogCard({
           </div>
 
           <div className="flex-1 min-w-0 flex flex-col">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-1">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-2">
               {postAuthor?.username && (
                 <AuthorLink
                   username={postAuthor.username}
@@ -236,79 +237,82 @@ export function BlogCard({
     );
   }
 
-  // Вариант сетки (3 колонки)
-  return (
-    <Link
-      href={postUrl}
-      className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${className}`}
-    >
-      <div className="relative w-full aspect-16/10 overflow-hidden bg-[#0a1920]">
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={imageAlt}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-4xl opacity-20">📄</span>
-          </div>
-        )}
-        {isDraft && (
-          <span className="absolute top-3 right-3 bg-yellow-500 text-black text-xs font-medium px-3 py-1 rounded-full">
-            Черновик
-          </span>
-        )}
-      </div>
-
-      <div className="p-5 space-y-3">
-        <h2 className="text-lg font-bold text-[#e0f7fa] line-clamp-2 group-hover:text-[#2dd4bf] transition-colors">
-          {title}
-        </h2>
-
-        {excerpt && (
-          <p className="text-sm text-gray-400 line-clamp-2">{excerpt}</p>
-        )}
-
-        {/* ✅ Все категории, отсортированные */}
-        {sortedCategories.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {sortedCategories.map((cat) => (
-              <span
-                key={cat.slug}
-                className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full"
-              >
-                {cat.name}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">
-          <div className="flex flex-wrap items-center gap-3">
-            {postAuthor?.username && (
-              <AuthorLink
-                username={postAuthor.username}
-                name={postAuthor.full_name || postAuthor.username}
-                avatarUrl={postAuthor.avatar_url}
-                className="text-xs text-gray-400"
-              />
-            )}
-            <span className="flex items-center gap-1">
-              <Clock size={12} className="text-[#2dd4bf]" />
-              {getReadingTime()} мин
-            </span>
-          </div>
-          {publishedAt && (
-            <span className="flex items-center gap-1">
-              <Calendar size={12} className="text-[#2dd4bf]" />
-              {formatDate(publishedAt)}
+  // Вариант плитки (компактный, квадратное изображение)
+  if (variant === "tiles") {
+    return (
+      <Link
+        href={postUrl}
+        className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${className}`}
+      >
+        <div className="relative w-full aspect-16/10 overflow-hidden bg-[#0a1920]">
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={imageAlt}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-4xl opacity-20">📄</span>
+            </div>
+          )}
+          {isDraft && (
+            <span className="absolute top-2 right-2 bg-yellow-500 text-black text-[10px] font-medium px-2 py-0.5 rounded-full">
+              Черновик
             </span>
           )}
         </div>
-      </div>
-    </Link>
-  );
+
+        <div className="p-5 space-y-3">
+          <h2 className="text-lg font-bold text-[#e0f7fa] line-clamp-2 group-hover:text-[#2dd4bf] transition-colors">
+            {title}
+          </h2>
+
+          {/* ✅ Все категории, одна строка со скроллом */}
+          {sortedCategories.length > 0 && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 thin-scrollbar">
+              {sortedCategories.map((cat) => (
+                <span
+                  key={cat.slug}
+                  className="shrink-0 text-[10px] font-medium text-[#2dd4bf] bg-[#2dd4bf]/10 border border-[#2dd4bf]/20 px-2 py-0.5 rounded-full"
+                >
+                  {cat.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {excerpt && (
+            <p className="text-sm text-gray-400 line-clamp-2">{excerpt}</p>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">
+            <div className="flex flex-wrap items-center gap-3">
+              {postAuthor?.username && (
+                <AuthorLink
+                  username={postAuthor.username}
+                  name={postAuthor.full_name || postAuthor.username}
+                  avatarUrl={postAuthor.avatar_url}
+                  className="text-xs text-gray-400"
+                />
+              )}
+              <span className="flex items-center gap-1">
+                <Clock size={12} className="text-[#2dd4bf]" />
+                {getReadingTime()} мин
+              </span>
+            </div>
+            {publishedAt && (
+              <span className="flex items-center gap-1">
+                <Calendar size={12} className="text-[#2dd4bf]" />
+                {formatDate(publishedAt)}
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
+  }
 }

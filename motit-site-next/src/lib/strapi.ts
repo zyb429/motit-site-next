@@ -234,10 +234,38 @@ export function getRelation(entity: any, key: string): any | null {
 }
 
 /** Медиа-URL независимо от формы. Возвращает АБСОЛЮТНЫЙ URL. */
+export function getMediaItemUrl(item: any): string | null {
+  if (!item) return null;
+
+  // Разворачиваем возможные обёртки
+  let media: any = item;
+
+  // v4: { data: { attributes: {...} } }
+  if (media.data) {
+    media = Array.isArray(media.data) ? media.data[0] : media.data;
+  }
+  // v4: { attributes: {...} }
+  if (media?.attributes) {
+    media = media.attributes;
+  }
+  // На всякий случай, если всё ещё массив
+  if (Array.isArray(media)) {
+    media = media[0];
+  }
+
+  const relative = media?.url;
+  if (!relative) return null;
+
+  if (relative.startsWith("http://") || relative.startsWith("https://")) {
+    return relative;
+  }
+
+  return `${MEDIA_BASE_URL}${relative.startsWith("/") ? "" : "/"}${relative}`;
+}
+
 export function getMediaUrl(entity: any, key: string): string | null {
   if (!entity) return null;
 
-  // Пробуем разные места, где может лежать поле
   const candidates = [
     entity.attributes, // v4: { attributes: { avatar } }
     entity.data?.attributes, // v4 relation: { data: { attributes: { avatar } } }
@@ -255,30 +283,13 @@ export function getMediaUrl(entity: any, key: string): string | null {
 
   if (!raw) return null;
 
-  let relative: string | null = null;
-
+  // Массив медиа — берём первый элемент
   if (Array.isArray(raw)) {
-    relative = raw[0]?.url ?? null;
-  } else if (raw.url) {
-    relative = raw.url;
-  } else if (raw.data) {
-    const d = raw.data;
-    if (Array.isArray(d)) {
-      relative = d[0]?.attributes?.url ?? d[0]?.url ?? null;
-    } else {
-      relative = d?.attributes?.url ?? d?.url ?? null;
-    }
+    return getMediaItemUrl(raw[0]);
   }
 
-  if (!relative) return null;
-
-  // Абсолютный URL — возвращаем как есть
-  if (relative.startsWith("http://") || relative.startsWith("https://")) {
-    return relative;
-  }
-
-  // Относительный — склеиваем с базой
-  return `${MEDIA_BASE_URL}${relative.startsWith("/") ? "" : "/"}${relative}`;
+  // Плоский объект / data-обёртка / v4-attributes — всё умеет getMediaItemUrl
+  return getMediaItemUrl(raw);
 }
 
 // ==================== V5 → V4 NORMALIZER (idempotent) ====================
@@ -1115,7 +1126,8 @@ function normalizeAuthor(user: any): StrapiAuthor {
   const attrs: any = user?.attributes ?? user;
   const id = user?.id ?? attrs?.id;
   const documentId = user?.documentId ?? attrs?.documentId;
-  const avatarUrl = getMediaUrl(user, "avatar");
+  const avatarRaw = user?.avatar ?? user?.attributes?.avatar;
+  const avatarUrl = getMediaItemUrl(avatarRaw);
 
   return {
     id,
@@ -1150,6 +1162,7 @@ export async function getPostsByAuthor(
     `${baseUrl}/api/posts` +
     `?populate[]=categories` +
     `&populate[]=author` +
+    `&populate[]=author.avatar` +
     `&populate[]=featured_image` +
     `&sort[]=publishedAt:desc` +
     `&pagination[pageSize]=${pageSize}`;

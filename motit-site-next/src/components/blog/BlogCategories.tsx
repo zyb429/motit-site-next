@@ -24,7 +24,13 @@ export function BlogCategories({
     sort: ["name:asc"],
   });
 
-  const categories = categoriesData?.data || [];
+  // Фильтруем категории: оставляем только те, у которых есть посты
+  const categories = (categoriesData?.data || []).filter((cat: any) => {
+    const category = cat.attributes || cat;
+    const count = counts[category.slug] || 0;
+    return count > 0;
+  });
+
   const [showAll, setShowAll] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -133,8 +139,8 @@ export function BlogCategories({
   const displayCategories = showAll ? categories : categories.slice(0, 8);
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-3">
+    <div className="mb-2">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
           Категории
         </h3>

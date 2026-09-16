@@ -67,7 +67,12 @@ interface BlogPostPageProps {
     slug: string;
   }>;
   searchParams?:
-    | Promise<{ search?: string; category?: string | string[]; page?: string }>
+    | Promise<{
+        search?: string;
+        category?: string | string[];
+        page?: string;
+        view?: string;
+      }>
     | undefined;
 }
 
@@ -155,10 +160,16 @@ export default async function BlogPostPage({
   let searchQuery = "";
   let categorySlugs: string[] = [];
   let pageParam = "";
+  let viewParam = "";
 
   try {
     const sp = (await searchParams) as
-      | { search?: string; category?: string | string[]; page?: string }
+      | {
+          search?: string;
+          category?: string | string[];
+          page?: string;
+          view?: string;
+        }
       | undefined;
     if (sp && typeof sp === "object") {
       searchQuery = sp.search || "";
@@ -173,6 +184,10 @@ export default async function BlogPostPage({
 
       if (sp.page) {
         pageParam = String(sp.page);
+      }
+
+      if (sp.view) {
+        viewParam = String(sp.view);
       }
     }
   } catch {
@@ -274,6 +289,9 @@ export default async function BlogPostPage({
     }
     if (pageParam) {
       params.set("page", pageParam);
+    }
+    if (viewParam) {
+      params.set("view", viewParam);
     }
     const queryString = params.toString();
     return `/blog${queryString ? `?${queryString}` : ""}`;
@@ -457,7 +475,7 @@ export default async function BlogPostPage({
             <BlogPostActions
               title={attrs.title}
               excerpt={attrs.excerpt}
-              url={`/blog/${safeSlug}`}
+              url={getBackUrl().replace("/blog", `/blog/${safeSlug}`)}
             />
           </div>
         </footer>

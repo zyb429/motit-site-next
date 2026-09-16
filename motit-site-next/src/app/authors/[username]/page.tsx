@@ -1,14 +1,17 @@
 // src/app/authors/[username]/page.tsx
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, User, Calendar, FileText } from "lucide-react";
+import { User, FileText } from "lucide-react";
 import { getAuthorByUsername, getPostsByAuthor } from "@/lib/strapi";
 import { BackButton } from "@/components/blog/BackButton";
+import { Suspense } from "react";
+import { AuthorPosts } from "@/components/blog/AuthorPosts";
+import { parseView } from "@/lib/view";
 
 interface AuthorPageProps {
   params: Promise<{ username: string }>;
+  searchParams?: Promise<{ view?: string }> | { view?: string };
 }
 
 export async function generateMetadata({
@@ -34,8 +37,14 @@ export async function generateMetadata({
   };
 }
 
-export default async function AuthorPage({ params }: AuthorPageProps) {
+export default async function AuthorPage({
+  params,
+  searchParams,
+}: AuthorPageProps) {
   const { username } = await params;
+  const sp = await searchParams;
+  const initialView = parseView(sp?.view);
+
   const author = await getAuthorByUsername(username);
 
   if (!author) notFound();
@@ -72,18 +81,18 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
         <header className="bg-[#0f2832] rounded-xl p-6 md:p-8 mb-8 border border-[rgba(45,212,191,0.06)]">
           <div className="flex flex-col md:flex-row items-start gap-6">
             {avatarUrl ? (
-                <Image
-                    src={avatarUrl}
-                    alt={displayName}
-                    width={120}
-                    height={120}
-                    priority
-                    className="rounded-full object-cover border-2 border-[#2dd4bf]/20 shrink-0"
-                />
-                ) : (
-                <div className="w-30 h-30 rounded-full bg-[#2dd4bf]/10 flex items-center justify-center shrink-0">
-                    <User className="w-12 h-12 text-[#2dd4bf]" />
-                </div>
+              <Image
+                src={avatarUrl}
+                alt={displayName}
+                width={120}
+                height={120}
+                priority
+                className="rounded-full object-cover border-2 border-[#2dd4bf]/20 shrink-0"
+              />
+            ) : (
+              <div className="w-30 h-30 rounded-full bg-[#2dd4bf]/10 flex items-center justify-center shrink-0">
+                <User className="w-12 h-12 text-[#2dd4bf]" />
+              </div>
             )}
 
             <div className="flex-1 min-w-0">
@@ -91,9 +100,7 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
                 {displayName}
               </h1>
               {author.username && (
-                <p className="text-sm text-gray-500 mb-3">
-                  @{author.username}
-                </p>
+                <p className="text-sm text-gray-500 mb-3">@{author.username}</p>
               )}
               {author.bio && (
                 <p className="text-gray-300 whitespace-pre-line mb-4">
@@ -112,76 +119,30 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
 
         {/* Публикации */}
         <section>
-          <h2 className="text-xl font-bold text-[#e0f7fa] mb-4">
-            Публикации
-          </h2>
-
           {posts.length === 0 ? (
-            <p className="text-gray-500 text-center py-12">
-              У автора пока нет публикаций
-            </p>
+            <>
+              <h2 className="text-xl font-bold text-[#e0f7fa] mb-4">
+                Публикации
+              </h2>
+              <p className="text-gray-500 text-center py-12">
+                У автора пока нет публикаций
+              </p>
+            </>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {posts.map((post: any) => {
-                const attrs = post.attributes || post;
-                const slug = attrs.slug || post.slug;
-                const imageUrl = (() => {
-                  const img = attrs.featured_image;
-                  if (!img) return null;
-                  const url =
-                    img?.data?.attributes?.url ||
-                    img?.url ||
-                    (typeof img === "string" ? img : null);
-                  if (!url) return null;
-                  return url.startsWith("/uploads")
-                    ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${url}`
-                    : url;
-                })();
-
-                return (
-                  <Link
-                    key={post.id || post.documentId}
-                    href={`/blog/${slug}`}
-                    className="group bg-[#0f2832] rounded-xl overflow-hidden border border-[rgba(45,212,191,0.06)] hover:border-[#2dd4bf]/30 transition-colors"
-                  >
-                    {imageUrl && (
-                      <div className="relative w-full aspect-video bg-[#0a1920]">
-                        <Image
-                          src={imageUrl}
-                          alt={attrs.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 768px) 100vw, 400px"
-                        />
-                      </div>
-                    )}
-                    <div className="p-4">
-                      <h3 className="text-lg font-semibold text-[#e0f7fa] mb-2 line-clamp-2 group-hover:text-[#2dd4bf] transition-colors">
-                        {attrs.title}
-                      </h3>
-                      {attrs.excerpt && (
-                        <p className="text-sm text-gray-400 line-clamp-2 mb-3">
-                          {attrs.excerpt}
-                        </p>
-                      )}
-                      {attrs.publishedAt && (
-                        <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                          <Calendar size={12} className="text-[#2dd4bf]" />
-                          {new Date(attrs.publishedAt).toLocaleDateString(
-                            "ru-RU",
-                            {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            },
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+            <Suspense
+              fallback={
+                <div className="space-y-4">
+                  {posts.slice(0, 3).map((post: any) => (
+                    <div
+                      key={post.id || post.documentId}
+                      className="h-40 bg-[#0f2832] rounded-xl border border-[rgba(45,212,191,0.06)] animate-pulse"
+                    />
+                  ))}
+                </div>
+              }
+            >
+              <AuthorPosts posts={posts} initialView={initialView} />
+            </Suspense>
           )}
         </section>
       </div>
