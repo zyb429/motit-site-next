@@ -38,12 +38,12 @@ async function getPosts() {
 
   const res = await fetch(
     `${STRAPI_URL}/api/posts?${filter}` +
-    `populate[0]=categories&` +
-    `populate[1]=featured_image&` +
-    `populate[2]=author&` +
-    `populate[3]=author.avatar&` +
-    `sort[0]=publishedAt:desc&` +
-    `pagination[pageSize]=100`,
+      `populate[0]=categories&` +
+      `populate[1]=featured_image&` +
+      `populate[2]=author&` +
+      `populate[3]=author.avatar&` +
+      `sort[0]=publishedAt:desc&` +
+      `pagination[pageSize]=100`,
     {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
@@ -133,7 +133,7 @@ export default async function AdminPostsPage({
   searchParams,
 }: {
   searchParams?:
-  Promise<{ q?: string; status?: string }> | { q?: string; status?: string };
+    Promise<{ q?: string; status?: string }> | { q?: string; status?: string };
 }) {
   const params = (await searchParams) || {};
   const query = (params.q || "").toLowerCase().trim();
@@ -167,9 +167,9 @@ export default async function AdminPostsPage({
   return (
     <div className="min-h-screen bg-(--bg-primary)">
       {/* Sticky header */}
-      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4 max-w-6xl">
-          <div className="flex items-center justify-between gap-4">
+      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10 h-20">
+        <div className="container mx-auto px-6 h-full flex items-center max-w-6xl">
+          <div className="flex items-center justify-between gap-4 w-full">
             <div className="flex items-center gap-3">
               <Link
                 href="/admin"
@@ -177,7 +177,7 @@ export default async function AdminPostsPage({
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
                 <FileText className="w-6 h-6 text-(--accent)" />
               </div>
               <div>
@@ -288,17 +288,19 @@ export default async function AdminPostsPage({
                   <Link
                     key={tab.key}
                     href={href}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${isActive
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                      isActive
                         ? "bg-(--bg-card) text-(--accent) shadow-sm"
                         : "text-(--text-secondary) hover:text-(--text-primary)"
-                      }`}
+                    }`}
                   >
                     {tab.label}
                     <span
-                      className={`text-xs px-1.5 py-0.5 rounded-full ${isActive
+                      className={`text-xs px-1.5 py-0.5 rounded-full ${
+                        isActive
                           ? "bg-(--accent-dim) text-(--accent)"
                           : "bg-(--bg-card) text-(--text-muted)"
-                        }`}
+                      }`}
                     >
                       {tab.count}
                     </span>
@@ -491,12 +493,13 @@ export default async function AdminPostsPage({
 
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status === "published"
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                            status === "published"
                               ? "bg-(--accent-dim) text-(--accent)"
                               : status === "archived"
                                 ? "bg-(--bg-secondary) text-(--text-muted)"
                                 : "bg-yellow-500/10 text-yellow-500"
-                            }`}
+                          }`}
                         >
                           {status === "published" ? (
                             <CheckCircle2 className="w-3 h-3" />

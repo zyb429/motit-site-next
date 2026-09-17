@@ -1,8 +1,9 @@
+// motit-backend/src/extensions/users-permissions/strapi-server.js
 "use strict";
 
 module.exports = (plugin) => {
   // ============================================
-  // Фильтрация user.find — убираем email и敏感 поля
+  // Фильтрация user.find — убираем email и чувствительные поля
   // ============================================
   const originalFind = plugin.controllers.user.find;
 
@@ -11,7 +12,6 @@ module.exports = (plugin) => {
       return ctx.unauthorized("Не авторизован");
     }
 
-    // Ограничиваем размер страницы
     ctx.query = {
       ...ctx.query,
       pagination: {
@@ -58,7 +58,6 @@ module.exports = (plugin) => {
 
     const user = result.data || result;
 
-    // Свой профиль — полный доступ
     if (Number(user.id) === Number(ctx.state.user.id)) {
       return result;
     }
@@ -91,13 +90,99 @@ module.exports = (plugin) => {
 
     const { id } = ctx.params;
 
-    // Админ — любой профиль
     if (user.role?.type !== "admin" && Number(id) !== Number(user.id)) {
       return ctx.forbidden("Можно редактировать только свой профиль");
     }
 
     return originalUpdate(ctx);
   };
+
+  // ============================================
+  // ✅ Смена роли пользователя (только для админа)
+  // Публичный PUT /api/users/:id не пропускает поле role,
+  // поэтому делаем кастомный эндпоинт через entityService.
+  // ============================================
+  plugin.controllers.user.updateRole = async (ctx) => {
+    const { id } = ctx.params;
+    const { roleId } = ctx.request.body || {};
+
+    if (!ctx.state.user) {
+      return ctx.unauthorized("Не авторизован");
+    }
+
+    const callerRole = ctx.state.user.role;
+    const isAdmin = callerRole && callerRole.type === "admin";
+    if (!isAdmin) {
+      return ctx.forbidden("Только администратор может менять роли");
+    }
+
+    if (!id || roleId == null) {
+      return ctx.badRequest("Нужны id пользователя и roleId");
+    }
+
+    // Запрет менять свою собственную роль
+    if (String(ctx.state.user.id) === String(id)) {
+      return ctx.badRequest("Нельзя изменить свою собственную роль");
+    }
+
+    // Проверяем, что роль существует
+    let role;
+    try {
+      role = await strapi.entityService.findOne(
+        "plugin::users-permissions.role",
+        Number(roleId),
+      );
+    } catch {
+      return ctx.badRequest("Ошибка поиска роли");
+    }
+
+    if (!role) {
+      return ctx.badRequest("Роль не найдена");
+    }
+
+    try {
+      const updated = await strapi.entityService.update(
+        "plugin::users-permissions.user",
+        Number(id),
+        {
+          data: { role: Number(roleId) },
+          populate: ["role", "avatar"],
+        },
+      );
+
+      return {
+        data: {
+          id: updated.id,
+          documentId: updated.documentId,
+          username: updated.username,
+          email: updated.email,
+          full_name: updated.full_name,
+          blocked: updated.blocked,
+          role: updated.role
+            ? {
+                id: updated.role.id,
+                name: updated.role.name,
+                type: updated.role.type,
+              }
+            : null,
+        },
+      };
+    } catch (err) {
+      strapi.log.error("[updateRole] error:", err);
+      return ctx.badRequest(err.message || "Ошибка обновления роли");
+    }
+  };
+
+  // Регистрируем кастомный роут
+  plugin.routes["content-api"].routes.push({
+    method: "PUT",
+    path: "/users/:id/role",
+    handler: "user.updateRole",
+    config: {
+      prefix: "",
+      policies: [],
+    },
+  });
 
   return plugin;
 };

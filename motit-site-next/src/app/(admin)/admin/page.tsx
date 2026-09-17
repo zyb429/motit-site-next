@@ -1,6 +1,7 @@
 // src/app/(admin)/admin/page.tsx
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import {
   PlusCircle,
   FileText,
@@ -11,18 +12,19 @@ import {
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 
+const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
+
 async function getCounts() {
-  const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337";
   const headers = {
     Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
   };
 
   const [postsRes, catsRes] = await Promise.all([
-    fetch(`${strapiUrl}/api/posts?pagination[pageSize]=1`, {
+    fetch(`${STRAPI_URL}/api/posts?pagination[pageSize]=1`, {
       headers,
       cache: "no-store",
     }),
-    fetch(`${strapiUrl}/api/categories?pagination[pageSize]=1`, {
+    fetch(`${STRAPI_URL}/api/categories?pagination[pageSize]=1`, {
       headers,
       cache: "no-store",
     }),
@@ -37,19 +39,40 @@ async function getCounts() {
   };
 }
 
+async function getRecentPosts() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("strapi_jwt")?.value;
+  if (!token) return [];
+
+  const res = await fetch(
+    `${STRAPI_URL}/api/posts?sort[0]=updatedAt:desc&pagination[pageSize]=5&populate[0]=author&populate[1]=categories`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    },
+  );
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || [];
+}
+
 export default async function AdminPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?from=/admin");
 
-  const { posts, categories } = await getCounts();
+  const [{ posts, categories }, recentPosts] = await Promise.all([
+    getCounts(),
+    getRecentPosts(),
+  ]);
 
   return (
     <div className="min-h-screen bg-(--bg-primary)">
-      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
+      {/* Хедер */}
+      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10 h-20">
+        <div className="h-full px-6 flex items-center">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
                 <PenSquare className="w-5 h-5 text-(--accent)" />
               </div>
               <div>
@@ -75,6 +98,7 @@ export default async function AdminPage() {
         </div>
       </header>
 
+      {/* Контент */}
       <main className="px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-(--bg-card) rounded-xl p-6 border border-(--border)">
@@ -166,12 +190,46 @@ export default async function AdminPage() {
           <h2 className="text-lg font-semibold text-(--text-primary) mb-4">
             Последняя активность
           </h2>
-          <div className="text-center py-8 text-(--text-secondary)">
-            <p className="text-sm">
-              Здесь будет отображаться последняя активность
+          {recentPosts.length === 0 ? (
+            <p className="text-center py-8 text-(--text-secondary) text-sm">
+              Пока нет постов
             </p>
-            <p className="text-xs mt-1">Скоро появится</p>
-          </div>
+          ) : (
+            <ul className="divide-y divide-(--border)">
+              {recentPosts.map((post: any) => {
+                const author =
+                  post.author?.full_name || post.author?.username || "—";
+                const date = new Date(post.updatedAt).toLocaleDateString(
+                  "ru-RU",
+                  {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  },
+                );
+                return (
+                  <li key={post.documentId || post.id} className="py-3">
+                    <Link
+                      href={`/admin/posts/${post.documentId || post.id}`}
+                      className="flex items-center justify-between gap-4 group"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-(--text-primary) group-hover:text-(--text-accent) truncate">
+                          {post.title || "Без названия"}
+                        </p>
+                        <p className="text-xs text-(--text-muted) mt-0.5">
+                          {author}
+                        </p>
+                      </div>
+                      <span className="text-xs text-(--text-muted) shrink-0">
+                        {date}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </main>
     </div>

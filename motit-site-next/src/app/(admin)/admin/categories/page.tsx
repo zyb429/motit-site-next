@@ -93,9 +93,9 @@ export default async function AdminCategoriesPage({
 
   return (
     <div className="min-h-screen bg-(--bg-primary)">
-      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4 max-w-6xl">
-          <div className="flex items-center justify-between gap-4">
+      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10 h-20">
+        <div className="container mx-auto px-6 h-full flex items-center max-w-6xl">
+          <div className="flex items-center justify-between gap-4 w-full">
             <div className="flex items-center gap-3">
               <Link
                 href="/admin"
@@ -103,7 +103,7 @@ export default async function AdminCategoriesPage({
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
                 <FolderTree className="w-6 h-6 text-(--accent)" />
               </div>
               <div>

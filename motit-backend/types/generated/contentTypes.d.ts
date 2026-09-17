@@ -749,6 +749,34 @@ export interface ApiTicketTicket extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiUserRoleUserRole extends Struct.CollectionTypeSchema {
+  collectionName: 'user_roles_dummy';
+  info: {
+    displayName: 'UserRole';
+    pluralName: 'user-roles';
+    singularName: 'user-role';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-role.user-role'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface PluginContentReleasesRelease
   extends Struct.CollectionTypeSchema {
   collectionName: 'strapi_releases';
@@ -1285,6 +1313,7 @@ declare module '@strapi/strapi' {
       'api::status.status': ApiStatusStatus;
       'api::ticket-comment.ticket-comment': ApiTicketCommentTicketComment;
       'api::ticket.ticket': ApiTicketTicket;
+      'api::user-role.user-role': ApiUserRoleUserRole;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;
