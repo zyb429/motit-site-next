@@ -13,19 +13,29 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Получаем URL для редиректа после входа
-  const from = searchParams.get("from") || "/admin";
+  const from = searchParams.get("from");
 
-  // Проверяем, не авторизован ли уже пользователь
+  function zoneForRole(role: string | undefined): string {
+    const r = (role ?? "").toLowerCase();
+    if (r === "admin" || r === "worker") return "/admin";
+    if (r === "statistics") return "/stats";
+    if (r === "client" || r === "authenticated") return "/account";
+    return "/account";
+  }
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          router.push(from);
-        }
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const role = data?.user?.role?.name ?? data?.user?.role?.type;
+        const zone = zoneForRole(role);
+        const target = from && from.startsWith(zone) ? from : zone;
+        router.push(target);
       } catch {
-        // Игнорируем ошибки - пользователь не авторизован
+        // не авторизован — остаёмся на форме
       }
     };
     checkAuth();
@@ -39,7 +49,6 @@ export default function LoginPage() {
     setSuccessMessage("");
     setLoading(true);
 
-    // ✅ Валидация на клиенте
     if (!identifier.trim()) {
       setError("Введите email или имя пользователя");
       setLoading(false);
@@ -55,9 +64,7 @@ export default function LoginPage() {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           identifier: identifier.trim(),
@@ -71,12 +78,15 @@ export default function LoginPage() {
         throw new Error(data.message || data.error || "Ошибка входа");
       }
 
-      // ✅ Показываем успешное сообщение
       setSuccessMessage("Вход выполнен успешно!");
 
-      // ✅ Редирект с небольшой задержкой для показа сообщения
+      const role = data?.user?.role;
+      const zone = zoneForRole(role);
+      const target =
+        from && from.startsWith(zone) ? from : data?.redirectTo || zone;
+
       setTimeout(() => {
-        router.push(from);
+        router.push(target);
         router.refresh();
       }, 500);
     } catch (err) {
@@ -86,20 +96,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-gray-100 p-4">
-      <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-[#0a1920] p-4">
+      <div className="w-full max-w-md p-8 bg-[#0f2832] rounded-2xl border border-[rgba(45,212,191,0.08)] shadow-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Добро пожаловать</h1>
-          <p className="text-gray-500 mt-2">Войдите в свою учетную запись</p>
+          <h1 className="text-3xl font-bold text-[#e0f7fa]">
+            Добро пожаловать
+          </h1>
+          <p className="text-gray-400 mt-2">Войдите в свою учетную запись</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
               htmlFor="identifier"
-              className="block text-sm font-medium text-black mb-1"
+              className="block text-sm font-medium text-gray-300 mb-1.5"
             >
-              Email или Имя пользователя
+              Email или имя пользователя
             </label>
             <input
               id="identifier"
@@ -108,7 +120,7 @@ export default function LoginPage() {
               onChange={(e) => setIdentifier(e.target.value)}
               required
               disabled={loading}
-              className="w-full px-4 py-2.5 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100"
+              className="w-full px-4 py-2.5 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-[#e0f7fa] placeholder:text-gray-600 text-sm focus:border-[#2dd4bf] focus:outline-none transition-colors disabled:opacity-50"
               placeholder="admin@example.com"
               autoComplete="username"
             />
@@ -117,7 +129,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-black mb-1"
+              className="block text-sm font-medium text-gray-300 mb-1.5"
             >
               Пароль
             </label>
@@ -128,20 +140,20 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
-              className="w-full px-4 py-2.5 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:bg-gray-100"
+              className="w-full px-4 py-2.5 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-[#e0f7fa] placeholder:text-gray-600 text-sm focus:border-[#2dd4bf] focus:outline-none transition-colors disabled:opacity-50"
               placeholder="••••••••"
               autoComplete="current-password"
             />
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
               {error}
             </div>
           )}
 
           {successMessage && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
+            <div className="p-3 bg-[#2dd4bf]/10 border border-[#2dd4bf]/20 rounded-lg text-[#2dd4bf] text-sm">
               {successMessage}
             </div>
           )}
@@ -149,12 +161,12 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2.5 bg-[#2dd4bf] text-[#0a1920] rounded-lg font-medium hover:bg-[#14b8a6] focus:ring-4 focus:ring-[#2dd4bf]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg
-                  className="animate-spin h-5 w-5 text-white"
+                  className="animate-spin h-5 w-5"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -181,21 +193,21 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm text-gray-400">
           <span>Нет аккаунта? </span>
           <Link
             href="/register"
-            className="text-blue-600 hover:text-blue-700 hover:underline"
+            className="text-[#2dd4bf] hover:text-[#14b8a6] hover:underline"
           >
             Зарегистрироваться
           </Link>
         </div>
 
-        <div className="mt-4 text-center text-xs text-gray-400">
-          {process.env.NODE_ENV === "development" && (
-            <span>🔧 Режим разработки</span>
-          )}
-        </div>
+        {process.env.NODE_ENV === "development" && (
+          <div className="mt-4 text-center text-xs text-gray-600">
+            🔧 Режим разработки
+          </div>
+        )}
       </div>
     </div>
   );

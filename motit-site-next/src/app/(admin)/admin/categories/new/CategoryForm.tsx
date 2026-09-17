@@ -1,5 +1,7 @@
+// src/app/(admin)/admin/categories/new/CategoryForm.tsx
 "use client";
 
+import type { SyntheticEvent } from "react";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save } from "lucide-react";
@@ -28,7 +30,9 @@ export default function CategoryForm() {
     setSlugManuallyEdited(value.length > 0);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     setError(null);
 
@@ -68,24 +72,29 @@ export default function CategoryForm() {
     });
   };
 
+  const inputClass =
+    "w-full px-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none transition-colors";
+
   return (
     <div className="container mx-auto px-6 py-8 max-w-2xl">
       <Link
         href="/admin/categories"
-        className="text-gray-500 hover:text-gray-700 flex items-center gap-2 mb-4"
+        className="text-(--text-muted) hover:text-(--text-primary) flex items-center gap-2 mb-4 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Назад
       </Link>
 
-      <h1 className="text-2xl font-bold mb-6">Новая категория</h1>
+      <h1 className="text-2xl font-bold text-(--text-primary) mb-6">
+        Новая категория
+      </h1>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4"
+        className="bg-(--bg-card) rounded-xl shadow-sm border border-(--border) p-6 space-y-4"
       >
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-(--text-primary) mb-1">
             Название <span className="text-red-500">*</span>
           </label>
           <input
@@ -93,13 +102,13 @@ export default function CategoryForm() {
             value={name}
             onChange={(e) => handleNameChange(e.target.value)}
             disabled={isPending}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className={inputClass}
             placeholder="Например: Технологии"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-(--text-primary) mb-1">
             Slug
           </label>
           <input
@@ -107,28 +116,28 @@ export default function CategoryForm() {
             value={slug}
             onChange={(e) => handleSlugChange(e.target.value)}
             disabled={isPending}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono"
+            className={`${inputClass} font-mono`}
           />
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-(--text-muted) mt-1">
             Генерируется автоматически из названия. Можно изменить вручную.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-(--text-primary) mb-1">
             Описание
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={isPending}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className={inputClass}
             rows={3}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-(--text-primary) mb-1">
             Иконка (эмодзи)
           </label>
           <input
@@ -136,14 +145,14 @@ export default function CategoryForm() {
             value={icon}
             onChange={(e) => setIcon(e.target.value)}
             disabled={isPending}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className={inputClass}
             maxLength={10}
             placeholder="📚"
           />
         </div>
 
         {error && (
-          <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+          <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 p-3 rounded-lg">
             {error}
           </p>
         )}
@@ -152,14 +161,14 @@ export default function CategoryForm() {
           <button
             type="submit"
             disabled={isPending}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) disabled:opacity-50 flex items-center gap-2 transition-colors font-medium"
           >
             <Save className="w-4 h-4" />
             {isPending ? "Сохранение..." : "Создать"}
           </button>
           <Link
             href="/admin/categories"
-            className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            className="px-6 py-2 text-(--text-secondary) hover:bg-(--bg-secondary) rounded-lg transition-colors"
           >
             Отмена
           </Link>

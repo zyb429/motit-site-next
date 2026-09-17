@@ -1,24 +1,23 @@
-﻿import { Headphones } from 'lucide-react';
-import NavigationClient from './NavigationClient';
-import Link from 'next/link';
-import { headers } from 'next/headers';
+﻿import { Headphones } from "lucide-react";
+import NavigationClient from "./NavigationClient";
+import Link from "next/link";
 
 const navLinks = [
-  { label: 'Направления', href: '/#directions' },
-  { label: 'О нас', href: '/#about' },
-  { label: 'Контакты', href: '/#contact' },
-  { label: 'Блог', href: '/blog' },
+  { label: "Направления", href: "/#directions" },
+  { label: "О нас", href: "/#about" },
+  { label: "Контакты", href: "/#contact" },
+  { label: "Блог", href: "/blog" },
 ];
 
 export default function Navigation() {
   return (
     <header className="sticky top-0 z-50">
-      <nav className="h-[72px]">
+      <nav className="h-18">
         <div className="content-container h-full flex items-center justify-between">
           <Link
             href="/"
             className="text-xl font-bold tracking-tight transition-colors duration-200 hover:text-[#2dd4bf]"
-            style={{ color: '#e0f7fa' }}
+            style={{ color: "#e0f7fa" }}
           >
             МОТИТ
           </Link>
@@ -29,7 +28,7 @@ export default function Navigation() {
                 key={link.href}
                 href={link.href}
                 className="text-sm font-medium uppercase tracking-wider transition-colors duration-200 hover:text-[#2dd4bf]"
-                style={{ color: 'rgba(224, 247, 250, 0.7)' }}
+                style={{ color: "rgba(224, 247, 250, 0.7)" }}
               >
                 {link.label}
               </Link>
@@ -39,15 +38,12 @@ export default function Navigation() {
               target="_blank"
               rel="noopener noreferrer"
               className="hidden lg:flex items-center gap-2 text-sm font-medium uppercase tracking-wider transition-colors duration-200 hover:text-[#2dd4bf]"
-              style={{ color: 'rgba(224, 247, 250, 0.7)' }}
+              style={{ color: "rgba(224, 247, 250, 0.7)" }}
             >
               <Headphones size={14} />
               Поддержка
             </a>
-            <Link
-              href="/#contact"
-              className="btn-primary py-3 px-5 text-xs"
-            >
+            <Link href="/#contact" className="btn-primary py-3 px-5 text-xs">
               Связаться
             </Link>
           </div>

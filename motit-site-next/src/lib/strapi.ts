@@ -557,35 +557,33 @@ export async function getPosts(
   options: FetchOptions = {},
   isDraftMode: boolean = false,
 ): Promise<PostResponse> {
-  // ✅ Создаем базовые опции
+  // Создаем базовые опции
   const defaultOptions: FetchOptions = {
     populate: getDefaultPopulate(),
     sort: ["publishedAt:desc"],
   };
 
-  // ✅ Объединяем с переданными опциями
+  // Объединяем с переданными опциями
   const mergedOptions: FetchOptions = {
     ...defaultOptions,
     ...options,
-    // ✅ Если передан filters, объединяем с существующими
+    // Если передан filters, объединяем с существующими
     ...(options.filters && { filters: options.filters }),
   };
 
-  // ✅ Логируем для отладки
+  // Логируем для отладки
   console.log("🔍 [getPosts] options:", JSON.stringify(options, null, 2));
   console.log(
     "🔍 [getPosts] mergedOptions:",
     JSON.stringify(mergedOptions, null, 2),
   );
 
-  if (isDraftMode) {
-    if (!mergedOptions.filters) {
-      mergedOptions.filters = {};
-    }
-    (mergedOptions.filters as Record<string, unknown>)["post_status"] = {
-      $eq: "draft",
-    };
+  if (!mergedOptions.filters) {
+    mergedOptions.filters = {};
   }
+  (mergedOptions.filters as Record<string, unknown>)["post_status"] = {
+    $eq: isDraftMode ? "draft" : "published",
+  };
 
   return fetchAPI<PostResponse>("/posts", mergedOptions, isDraftMode);
 }
@@ -626,14 +624,12 @@ export async function getPostBySlug(
     ...options,
   };
 
-  if (isDraftMode) {
-    if (!defaultOptions.filters) {
-      defaultOptions.filters = {};
-    }
-    (defaultOptions.filters as Record<string, unknown>)["post_status"] = {
-      $eq: "draft",
-    };
+  if (!defaultOptions.filters) {
+    defaultOptions.filters = {};
   }
+  (defaultOptions.filters as Record<string, unknown>)["post_status"] = {
+    $eq: isDraftMode ? "draft" : "published",
+  };
 
   const response = await fetchAPI<PostResponse>(
     "/posts",

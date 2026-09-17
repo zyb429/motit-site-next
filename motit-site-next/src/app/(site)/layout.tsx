@@ -2,6 +2,7 @@
 import Navigation from "@/components/sections/Navigation";
 import Footer from "@/components/sections/Footer";
 import DraftModeIndicator from "@/components/DraftModeIndicator";
+import { ThemeForce } from "@/components/ui/ThemeForce";
 
 export default function SiteLayout({
   children,
@@ -10,6 +11,7 @@ export default function SiteLayout({
 }) {
   return (
     <>
+      <ThemeForce theme="dark" />
       <Navigation />
       <main className="min-h-screen">{children}</main>
       <DraftModeIndicator />

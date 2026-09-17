@@ -9,6 +9,7 @@ import {
   useCallback,
   useMemo,
   useRef,
+  type ChangeEvent,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -78,6 +79,16 @@ const SlateEditor = dynamic(() => import("@/components/editor/SlateEditor"), {
   loading: () => <EditorSkeleton />,
 });
 
+// Общие классы для инпутов / селектов / textarea
+const inputClass =
+  "w-full px-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none transition-colors";
+
+const cardClass =
+  "bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border)] p-6";
+
+const cardHeaderClass =
+  "flex items-center gap-2 mb-4 text-[var(--text-primary)]";
+
 export default memo(function CreatePostClient({
   initialUser,
   initialCategories,
@@ -119,7 +130,6 @@ export default memo(function CreatePostClient({
 
   const excerptValue = watch("excerpt") || "";
 
-  // Загрузка пользователя и категорий (как было)
   useEffect(() => {
     const fetchData = async () => {
       if (!initialUser) {
@@ -158,7 +168,6 @@ export default memo(function CreatePostClient({
     }
   }, [content, setValue]);
 
-  // Загрузка поста в режиме редактирования
   useEffect(() => {
     if (!isEditMode || !editId) return;
 
@@ -209,7 +218,7 @@ export default memo(function CreatePostClient({
     loadPost();
   }, [isEditMode, editId, setValue]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -283,13 +292,6 @@ export default memo(function CreatePostClient({
             ? categories.find((c) => c.id === categoryId)?.documentId
             : null;
 
-          console.log(
-            "🔍 categoryId:",
-            categoryId,
-            "categoryDocId:",
-            categoryDocId,
-          );
-
           const generatedSlug = generateSlug(data.title);
           const slug = generatedSlug || `post-${Date.now()}`;
 
@@ -309,11 +311,9 @@ export default memo(function CreatePostClient({
             excerpt: data.excerpt || "",
           };
 
-          // ✅ categories — массив documentId (формат кастомного контроллера)
           if (categoryDocId) {
             payload.categories = [categoryDocId];
           }
-          // если категории нет — ключ не добавляется
 
           if (featuredImageId) {
             payload.featured_image = featuredImageId;
@@ -322,21 +322,19 @@ export default memo(function CreatePostClient({
           let response: Response;
 
           if (isEditMode && editId) {
-            // PUT — на кастомный endpoint
             response = await fetch(`/api/posts/${editId}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ data: payload }),
             });
           } else {
-            // POST — на кастомный endpoint
             response = await fetch("/api/posts", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 data: {
                   ...payload,
-                  author: user.documentId, // ✅ documentId, не id
+                  author: user.documentId,
                 },
               }),
             });
@@ -357,7 +355,6 @@ export default memo(function CreatePostClient({
             router.push(`/blog/${resultSlug}`);
             router.refresh();
           } else {
-            // если совсем ничего — ведём на список постов
             router.push("/admin/posts");
             router.refresh();
           }
@@ -388,12 +385,12 @@ export default memo(function CreatePostClient({
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-(--bg-primary)">
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-6 py-4 rounded-lg max-w-md">
           <p className="font-medium">Доступ запрещен</p>
           <p className="text-sm mt-1">
             Пожалуйста,{" "}
-            <Link href="/login" className="underline hover:text-red-800">
+            <Link href="/login" className="underline hover:text-red-300">
               войдите
             </Link>{" "}
             {isEditMode ? "для редактирования" : "для создания"} поста
@@ -404,26 +401,26 @@ export default memo(function CreatePostClient({
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-(--bg-primary)">
+      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
                 href="/admin"
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-(--text-muted) hover:text-(--text-primary) transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors">
-                  <PlusCircle className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+                  <PlusCircle className="w-6 h-6 text-(--accent)" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">
+                  <h1 className="text-xl font-bold text-(--text-primary)">
                     {isEditMode ? "Редактировать пост" : "Создать пост"}
                   </h1>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-(--text-secondary)">
                     Автор: {user.full_name || user.firstname || user.username}
                   </p>
                 </div>
@@ -435,7 +432,7 @@ export default memo(function CreatePostClient({
                 type="button"
                 onClick={() => router.back()}
                 disabled={isDisabled}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+                className="px-4 py-2 text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-secondary) rounded-lg transition-colors flex items-center gap-2"
               >
                 <X className="w-4 h-4" />
                 <span className="hidden sm:inline">Отмена</span>
@@ -444,7 +441,7 @@ export default memo(function CreatePostClient({
                 type="submit"
                 form="post-form"
                 disabled={isDisabled}
-                className="px-6 py-2 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-sm hover:shadow"
+                className="px-6 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-sm hover:shadow font-medium"
               >
                 {isPending || isSubmitting || isUploadingImage ? (
                   <>
@@ -476,19 +473,17 @@ export default memo(function CreatePostClient({
           className="space-y-6"
         >
           {/* Заголовок */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Основная информация
-              </h2>
+          <div className={cardClass}>
+            <div className={cardHeaderClass}>
+              <FileText className="w-5 h-5 text-(--accent)" />
+              <h2 className="text-lg font-semibold">Основная информация</h2>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label
                   htmlFor="title"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-(--text-primary) mb-1"
                 >
                   Заголовок <span className="text-red-500">*</span>
                 </label>
@@ -496,14 +491,14 @@ export default memo(function CreatePostClient({
                   id="title"
                   type="text"
                   {...register("title")}
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.title ? "border-red-500" : "border-gray-300"
+                  className={`${inputClass} ${
+                    errors.title ? "border-red-500" : ""
                   }`}
                   disabled={isDisabled}
                   placeholder="Введите заголовок поста..."
                 />
                 {errors.title && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p className="text-red-400 text-sm mt-1">
                     {errors.title.message}
                   </p>
                 )}
@@ -512,7 +507,7 @@ export default memo(function CreatePostClient({
               <div>
                 <label
                   htmlFor="excerpt"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-(--text-primary) mb-1"
                 >
                   Краткое описание
                 </label>
@@ -520,12 +515,12 @@ export default memo(function CreatePostClient({
                   id="excerpt"
                   type="text"
                   {...register("excerpt")}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className={inputClass}
                   disabled={isDisabled}
                   placeholder="Краткое описание поста (до 300 символов)..."
                   maxLength={300}
                 />
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-(--text-muted) mt-1">
                   {excerptValue.length}/300 символов
                 </p>
               </div>
@@ -533,12 +528,10 @@ export default memo(function CreatePostClient({
           </div>
 
           {/* Превью */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <ImageIcon className="w-5 h-5 text-orange-600" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Превью поста
-              </h2>
+          <div className={cardClass}>
+            <div className={cardHeaderClass}>
+              <ImageIcon className="w-5 h-5 text-(--accent)" />
+              <h2 className="text-lg font-semibold">Превью поста</h2>
             </div>
 
             <div className="space-y-4">
@@ -547,7 +540,7 @@ export default memo(function CreatePostClient({
                   <img
                     src={featuredImagePreview}
                     alt="Preview"
-                    className="w-full h-64 object-cover rounded-lg border border-gray-200"
+                    className="w-full h-64 object-cover rounded-lg border border-(--border)"
                   />
                   <button
                     type="button"
@@ -561,13 +554,13 @@ export default memo(function CreatePostClient({
               ) : (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                  className="border-2 border-dashed border-(--border) rounded-lg p-8 text-center cursor-pointer hover:border-(--accent) hover:bg-(--accent-dim) transition-colors"
                 >
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600 font-medium">
+                  <Upload className="w-12 h-12 text-(--text-muted) mx-auto mb-2" />
+                  <p className="text-(--text-primary) font-medium">
                     Нажмите для загрузки изображения
                   </p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-(--text-muted) mt-1">
                     PNG, JPG, WEBP до 5MB
                   </p>
                 </div>
@@ -585,16 +578,16 @@ export default memo(function CreatePostClient({
           </div>
 
           {/* Категория */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Tag className="w-5 h-5 text-purple-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Категория</h2>
+          <div className={cardClass}>
+            <div className={cardHeaderClass}>
+              <Tag className="w-5 h-5 text-(--accent)" />
+              <h2 className="text-lg font-semibold">Категория</h2>
             </div>
 
             <select
               id="category"
               {...register("categoryId", { valueAsNumber: true })}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className={inputClass}
               disabled={isDisabled}
             >
               <option value="">Без категории</option>
@@ -607,10 +600,10 @@ export default memo(function CreatePostClient({
           </div>
 
           {/* Содержание */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <AlignLeft className="w-5 h-5 text-green-600" />
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className={cardClass}>
+            <div className={cardHeaderClass}>
+              <AlignLeft className="w-5 h-5 text-(--accent)" />
+              <h2 className="text-lg font-semibold">
                 Содержание <span className="text-red-500">*</span>
               </h2>
             </div>
@@ -621,7 +614,7 @@ export default memo(function CreatePostClient({
               readOnly={isDisabled}
             />
             {errors.content && (
-              <p className="text-red-500 text-sm mt-2">
+              <p className="text-red-400 text-sm mt-2">
                 {errors.content.message}
               </p>
             )}

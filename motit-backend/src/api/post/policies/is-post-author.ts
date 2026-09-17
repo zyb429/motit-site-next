@@ -1,23 +1,25 @@
-import type { Core } from "@strapi/strapi";
-
-export default async (
-  policyContext: any,
-  config: any,
-  { strapi }: { strapi: Core.Strapi },
-) => {
+export default async (policyContext: any, config: any, { strapi }: any) => {
   const user = policyContext.state.user;
   if (!user) return false;
 
-  if (user.role?.type === "admin") return true;
+  // Админ может всё
+  const roleName = (user.role?.name ?? user.role?.type ?? "").toLowerCase();
+  if (roleName === "admin") return true;
 
   const { id } = policyContext.params;
   if (!id) return false;
 
-  const post = await strapi.documents("api::post.post").findOne({
-    documentId: id,
-    populate: ["author"],
-  });
+  // Найти пост и проверить автора
+  try {
+    const post = await strapi.entityService.findOne("api::post.post", id, {
+      populate: ["author"],
+    });
+    if (!post) return false;
 
-  if (!post?.author) return false;
-  return Number(post.author.id) === Number(user.id);
+    const authorId = post.author?.id ?? post.author?.data?.id;
+    return authorId === user.id;
+  } catch (err) {
+    strapi.log.error("[is-post-author] error:", err);
+    return false;
+  }
 };

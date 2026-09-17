@@ -47,11 +47,32 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru" data-scroll-behavior="smooth" className="scroll-smooth">
+    <html
+      lang="ru"
+      data-scroll-behavior="smooth"
+      className="scroll-smooth"
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var path = window.location.pathname;
+                  // Тёмная тема для всех зон, КРОМЕ /admin
+                  var isAdmin = path.startsWith("/admin");
+                  if (!isAdmin) {
+                    document.documentElement.classList.add("dark");
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>

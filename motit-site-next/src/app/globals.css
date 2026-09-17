@@ -2,7 +2,34 @@
 @import "tailwindcss/preflight" layer(base);
 @import "tailwindcss/utilities" layer(utilities);
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================
+   Светлая тема (по умолчанию)
+   ============================================ */
 :root {
+  --bg-primary: #f9fafb;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --accent: #0891b2;
+  --accent-hover: #06b6d4;
+  --accent-dim: rgba(8, 145, 178, 0.1);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(8, 145, 178, 0.4);
+  --card-shadow: rgba(0, 0, 0, 0.08);
+  --card-radius: 16px;
+  --section-padding: 100px;
+  --content-max-width: 1280px;
+}
+
+/* ============================================
+   Тёмная тема
+   ============================================ */
+.dark {
   --bg-primary: #0a1920;
   --bg-secondary: #0d2029;
   --bg-card: #0f2832;
@@ -15,9 +42,7 @@
   --accent-dim: rgba(45, 212, 191, 0.12);
   --border: rgba(45, 212, 191, 0.1);
   --border-hover: rgba(45, 212, 191, 0.25);
-  --card-radius: 16px;
-  --section-padding: 100px;
-  --content-max-width: 1280px;
+  --card-shadow: rgba(0, 0, 0, 0.3);
 }
 
 html {
@@ -33,6 +58,9 @@ body {
   overflow-x: hidden;
   font-size: 16px;
   line-height: 1.6;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 ::selection {
@@ -54,12 +82,30 @@ body {
   background: var(--accent);
 }
 
+/* ============================================
+   Типографика
+   ============================================ */
 .section-label {
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--accent);
+}
+
+.section-title {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.section-subtitle {
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  opacity: 0.85;
 }
 
 .section-padding {
@@ -82,6 +128,9 @@ body {
   }
 }
 
+/* ============================================
+   Кнопки
+   ============================================ */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -104,7 +153,7 @@ body {
 .btn-primary:hover {
   background-color: var(--accent-hover);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(45, 212, 191, 0.3);
+  box-shadow: 0 8px 24px var(--accent-dim);
 }
 
 .btn-secondary {
@@ -157,6 +206,10 @@ body {
   color: var(--text-primary);
 }
 
+/* ============================================
+   Карточки
+   ============================================ */
+.card,
 .card-dark {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -165,27 +218,50 @@ body {
   transition: all 0.4s ease-out;
 }
 
+.card:hover,
 .card-dark:hover {
   border-color: var(--border-hover);
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 40px var(--card-shadow);
   background: var(--bg-card-hover);
 }
 
-.section-title {
-  font-size: clamp(1.8rem, 4vw, 3rem);
-  font-weight: 700;
-  line-height: 1.1;
-  text-transform: uppercase;
+/* ============================================
+   Формы
+   ============================================ */
+input,
+textarea,
+select {
+  background-color: var(--bg-secondary);
   color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
 }
 
-.section-subtitle {
-  font-size: clamp(1rem, 1.8vw, 1.15rem);
-  line-height: 1.6;
-  color: rgba(128, 222, 234, 0.75);
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
 }
 
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+input:focus::placeholder,
+textarea:focus::placeholder {
+  opacity: 0.3;
+}
+
+/* ============================================
+   Анимация reveal
+   ============================================ */
 .reveal {
   opacity: 0;
   transform: translateY(30px);
@@ -225,8 +301,38 @@ body {
   transition-delay: 0.72s;
 }
 
+.hero-animate {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+/* ============================================
+   Горизонтальный скроллбар
+   ============================================ */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--accent-dim);
+  border-radius: 2px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* ============================================
+   Мобильные
+   ============================================ */
 @media (max-width: 768px) {
-  :root {
+  :root,
+  .dark {
     --section-padding: 64px;
   }
   .section-title {
@@ -237,97 +343,19 @@ body {
     padding: 12px 20px;
     font-size: 13px;
   }
+  .card,
   .card-dark {
     padding: 20px;
   }
 }
 
-input::placeholder,
-textarea::placeholder {
-  color: rgba(128, 222, 234, 0.4);
-}
-
-input:focus::placeholder,
-textarea:focus::placeholder {
-  color: rgba(128, 222, 234, 0.25);
-}
-
 @media (max-width: 480px) {
-  :root {
+  :root,
+  .dark {
     --section-padding: 48px;
   }
   .content-container {
     padding-left: 16px;
     padding-right: 16px;
   }
-}
-
-.hero-animate {
-  opacity: 0;
-  transform: translateY(30px);
-}
-
-/* ============================================
-   ✅ Стили для админки (светлая тема)
-   ============================================ */
-
-/* Плейсхолдеры в админке — серые */
-.admin-wrapper input::placeholder,
-.admin-wrapper textarea::placeholder,
-.admin-wrapper select::placeholder {
-  color: #9ca3af !important; /* Серый */
-  opacity: 1;
-}
-
-/* Текст при вводе — чёрный */
-.admin-wrapper input,
-.admin-wrapper textarea,
-.admin-wrapper select {
-  color: #000000 !important;
-}
-
-/* Фокус на полях */
-.admin-wrapper input:focus,
-.admin-wrapper textarea:focus,
-.admin-wrapper select:focus {
-  color: #000000 !important;
-}
-
-/* Плейсхолдер при фокусе — светло-серый */
-.admin-wrapper input:focus::placeholder,
-.admin-wrapper textarea:focus::placeholder {
-  color: #d1d5db !important;
-}
-
-/* Для WebKit браузеров */
-.admin-wrapper input::-webkit-input-placeholder,
-.admin-wrapper textarea::-webkit-input-placeholder {
-  color: #9ca3af !important;
-  opacity: 1;
-}
-
-/* Для Firefox */
-.admin-wrapper input::-moz-placeholder,
-.admin-wrapper textarea::-moz-placeholder {
-  color: #9ca3af !important;
-  opacity: 1;
-}
-
-/* src/app/globals.css */
-.thin-scrollbar {
-  scrollbar-width: thin;                        /* Firefox */
-  scrollbar-color: rgba(45, 212, 191, 0.3) transparent;
-}
-.thin-scrollbar::-webkit-scrollbar {
-  height: 4px;                                  /* высота для горизонтали */
-}
-.thin-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.thin-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(45, 212, 191, 0.3);
-  border-radius: 2px;
-}
-.thin-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(45, 212, 191, 0.5);
 }

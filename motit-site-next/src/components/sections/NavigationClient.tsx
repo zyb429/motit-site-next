@@ -83,7 +83,6 @@ export default function NavigationClient() {
           zIndex: -1,
         }}
       />
-
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

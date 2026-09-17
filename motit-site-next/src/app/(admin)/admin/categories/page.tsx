@@ -1,4 +1,4 @@
-// src/app/admin/categories/page.tsx
+// src/app/(admin)/admin/categories/page.tsx
 import Link from "next/link";
 import { cookies } from "next/headers";
 import {
@@ -75,7 +75,6 @@ export default async function AdminCategoriesPage({
     getPostsCountByCategory(),
   ]);
 
-  // Фильтрация по поиску
   let categories = allCategories;
   if (query) {
     categories = categories.filter((c: any) => {
@@ -93,24 +92,25 @@ export default async function AdminCategoriesPage({
   const totalCount = allCategories.length;
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
-      {/* Sticky header — как в /admin/posts */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-(--bg-primary)">
+      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4 max-w-6xl">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Link
                 href="/admin"
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-(--text-muted) hover:text-(--text-primary) transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                <FolderTree className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+                <FolderTree className="w-6 h-6 text-(--accent)" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Категории</h1>
-                <p className="text-sm text-gray-500">
+                <h1 className="text-xl font-bold text-(--text-primary)">
+                  Категории
+                </h1>
+                <p className="text-sm text-(--text-secondary)">
                   Управление категориями блога
                 </p>
               </div>
@@ -118,7 +118,7 @@ export default async function AdminCategoriesPage({
 
             <Link
               href="/admin/categories/new"
-              className="px-6 py-2 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 flex items-center gap-2 shadow-sm hover:shadow transition-all"
+              className="px-6 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) flex items-center gap-2 shadow-sm hover:shadow transition-all font-medium"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Создать категорию</span>
@@ -131,76 +131,78 @@ export default async function AdminCategoriesPage({
       <main className="container mx-auto px-6 py-8 max-w-6xl">
         {/* Статистика */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+          <div className="bg-(--bg-card) rounded-xl border border-(--border) p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Всего категорий</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
+                <p className="text-sm text-(--text-secondary)">
+                  Всего категорий
+                </p>
+                <p className="text-2xl font-bold text-(--text-primary) mt-1">
                   {totalCount}
                 </p>
               </div>
-              <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                <FolderTree className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+                <FolderTree className="w-5 h-5 text-(--accent)" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+          <div className="bg-(--bg-card) rounded-xl border border-(--border) p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Найдено</p>
-                <p className="text-2xl font-bold text-blue-600 mt-1">
+                <p className="text-sm text-(--text-secondary)">Найдено</p>
+                <p className="text-2xl font-bold text-(--accent) mt-1">
                   {categories.length}
                 </p>
               </div>
-              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Search className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+                <Search className="w-5 h-5 text-(--accent)" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+          <div className="bg-(--bg-card) rounded-xl border border-(--border) p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Со статьями</p>
-                <p className="text-2xl font-bold text-green-600 mt-1">
+                <p className="text-sm text-(--text-secondary)">Со статьями</p>
+                <p className="text-2xl font-bold text-(--accent) mt-1">
                   {
                     allCategories.filter((c: any) => (counts[c.slug] ?? 0) > 0)
                       .length
                   }
                 </p>
               </div>
-              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-(--accent)" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Поиск */}
-        <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm mb-6">
+        <div className="bg-(--bg-card) rounded-xl border border-(--border) p-4 shadow-sm mb-6">
           <form className="relative" action="/admin/categories" method="GET">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-(--text-muted) absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               name="q"
               defaultValue={params.q || ""}
               placeholder="Поиск по названию, slug или описанию..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-(--bg-secondary) border border-(--border) rounded-lg text-(--text-primary) focus:border-(--accent) focus:outline-none transition-colors text-sm"
             />
           </form>
         </div>
 
         {/* Сетка или пустое состояние */}
         {categories.length === 0 ? (
-          <div className="bg-white rounded-xl border border-dashed border-gray-200 p-12 text-center">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FolderTree className="w-8 h-8 text-gray-400" />
+          <div className="bg-(--bg-card) rounded-xl border border-dashed border-(--border) p-12 text-center">
+            <div className="w-16 h-16 bg-(--bg-secondary) rounded-full flex items-center justify-center mx-auto mb-4">
+              <FolderTree className="w-8 h-8 text-(--text-muted)" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            <h3 className="text-lg font-semibold text-(--text-primary) mb-1">
               {query ? "Ничего не найдено" : "Категорий пока нет"}
             </h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-(--text-secondary) mb-4">
               {query
                 ? "Попробуйте изменить поисковый запрос"
                 : "Создайте первую категорию, чтобы она появилась здесь"}
@@ -208,7 +210,7 @@ export default async function AdminCategoriesPage({
             {!query && (
               <Link
                 href="/admin/categories/new"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) transition-colors font-medium"
               >
                 <Plus className="w-4 h-4" />
                 Создать категорию
@@ -224,40 +226,40 @@ export default async function AdminCategoriesPage({
               return (
                 <div
                   key={catId}
-                  className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:border-purple-200 hover:shadow-md transition-all"
+                  className="group bg-(--bg-card) rounded-xl shadow-sm border border-(--border) p-5 hover:border-(--border-hover) hover:shadow-md transition-all"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
                       {cat.icon ? (
                         <span className="text-lg">{cat.icon}</span>
                       ) : (
-                        <Tag className="w-5 h-5 text-purple-600" />
+                        <Tag className="w-5 h-5 text-(--accent)" />
                       )}
                     </div>
                     <Link
                       href={`/admin/categories/${catId}`}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors opacity-60 group-hover:opacity-100"
+                      className="p-2 text-(--accent) hover:bg-(--accent-dim) rounded-lg transition-colors opacity-60 group-hover:opacity-100"
                       title="Редактировать"
                     >
                       <Edit className="w-4 h-4" />
                     </Link>
                   </div>
 
-                  <h3 className="font-semibold text-gray-900 line-clamp-1">
+                  <h3 className="font-semibold text-(--text-primary) line-clamp-1">
                     {cat.name || "Без названия"}
                   </h3>
-                  <code className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded font-mono inline-block mt-1">
+                  <code className="text-xs text-(--text-muted) bg-(--bg-secondary) px-2 py-0.5 rounded font-mono inline-block mt-1">
                     {cat.slug || catId}
                   </code>
 
                   {cat.description && (
-                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                    <p className="text-sm text-(--text-secondary) mt-2 line-clamp-2">
                       {cat.description}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50">
-                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-(--border)">
+                    <span className="text-xs text-(--text-muted) flex items-center gap-1">
                       <FileText className="w-3 h-3" />
                       {postsCount}{" "}
                       {postsCount === 1
@@ -268,7 +270,7 @@ export default async function AdminCategoriesPage({
                     </span>
                     <Link
                       href={`/blog?category=${cat.slug}`}
-                      className="text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                      className="text-xs text-(--accent) hover:text-(--accent-hover) transition-colors"
                     >
                       Открыть в блоге →
                     </Link>
@@ -279,9 +281,8 @@ export default async function AdminCategoriesPage({
           </div>
         )}
 
-        {/* Футер */}
         {categories.length > 0 && (
-          <p className="text-xs text-gray-400 text-center mt-4">
+          <p className="text-xs text-(--text-muted) text-center mt-4">
             Показано {categories.length} из {totalCount}{" "}
             {totalCount === 1
               ? "категории"

@@ -1,88 +1,20 @@
+// src/app/(admin)/admin/page.tsx
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import Link from "next/link";
 import {
   PlusCircle,
   FileText,
   FolderTree,
   Settings,
-  LogOut,
   Home,
   PenSquare,
 } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
 
-type User = {
-  id: number;
-  username: string;
-  email: string;
-  firstname?: string;
-  lastname?: string;
-  full_name?: string;
-};
-
-async function getCurrentUser(): Promise<User | null> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("strapi_jwt")?.value;
-
-    console.log(`[Admin] JWT token: ${token ? "✅" : "❌"}`);
-
-    if (!token) {
-      return null;
-    }
-
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-    // ✅ Запрашиваем пользователя через Strapi с API Token
-    const response = await fetch(`${baseUrl}/api/auth/me`, {
-      headers: {
-        Cookie: `strapi_jwt=${token}`,
-      },
-      cache: "no-store",
-    });
-
-    console.log(`[Admin] Strapi status: ${response.status}`);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Admin] Strapi error: ${response.status} - ${errorText}`);
-
-      return null;
-    }
-
-    const data = await response.json();
-    console.log(`[Admin] Full API response:`, JSON.stringify(data, null, 2));
-
-    const user = data.user;
-    console.log(`[Admin] User found: ${user?.username || user?.email}`);
-
-    if (!user) {
-      return null;
-    }
-
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      firstname: user.firstname || user.username,
-      lastname: user.lastname || "",
-      full_name:
-        user.full_name ||
-        `${user.firstname || ""} ${user.lastname || ""}`.trim() ||
-        user.username,
-    };
-  } catch (error) {
-    console.error("Error getting user:", error);
-    return null;
-  }
-}
-
-async function getCounts(token: string) {
+async function getCounts() {
   const strapiUrl = process.env.STRAPI_URL || "http://localhost:1337";
-
   const headers = {
     Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
-    // или Cookie: `strapi_jwt=${token}` — смотря как у вас авторизован API
   };
 
   const [postsRes, catsRes] = await Promise.all([
@@ -107,33 +39,25 @@ async function getCounts(token: string) {
 
 export default async function AdminPage() {
   const user = await getCurrentUser();
+  if (!user) redirect("/login?from=/admin");
 
-  if (!user) {
-    console.log("[Admin] No user, redirecting to login");
-    redirect("/login");
-  }
-
-  const cookieStore = await cookies();
-  const token = cookieStore.get("strapi_jwt")?.value ?? "";
-
-  const { posts, categories } = await getCounts(token);
+  const { posts, categories } = await getCounts();
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
+    <div className="min-h-screen bg-(--bg-primary)">
+      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10">
+        <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <PenSquare className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+                <PenSquare className="w-5 h-5 text-(--accent)" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-xl font-bold text-(--text-primary)">
                   Админ панель
                 </h1>
-                <p className="text-sm text-gray-500">
-                  Добро пожаловать,{" "}
-                  {user.full_name || user.firstname || user.username}!
+                <p className="text-sm text-(--text-secondary)">
+                  Добро пожаловать, {user.full_name || user.username}!
                 </p>
               </div>
             </div>
@@ -141,130 +65,108 @@ export default async function AdminPage() {
             <div className="flex items-center gap-4">
               <Link
                 href="/"
-                className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
+                className="text-(--text-secondary) hover:text-(--text-primary) transition-colors flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-(--accent-dim)"
               >
                 <Home className="w-4 h-4" />
                 <span className="text-sm hidden sm:inline">На сайт</span>
               </Link>
-              <form action="/api/auth/logout" method="POST">
-                <button
-                  type="submit"
-                  className="text-red-600 hover:text-red-700 transition-colors flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm hidden sm:inline">Выйти</span>
-                </button>
-              </form>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div className="bg-(--bg-card) rounded-xl p-6 border border-(--border)">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">
+                <p className="text-sm font-medium text-(--text-secondary)">
                   Всего постов
                 </p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{posts}</p>
+                <p className="text-3xl font-bold text-(--text-primary) mt-1">
+                  {posts}
+                </p>
               </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+                <FileText className="w-6 h-6 text-(--accent)" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div className="bg-(--bg-card) rounded-xl p-6 border border-(--border)">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Категории</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
+                <p className="text-sm font-medium text-(--text-secondary)">
+                  Категории
+                </p>
+                <p className="text-3xl font-bold text-(--text-primary) mt-1">
                   {categories}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                <FolderTree className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center">
+                <FolderTree className="w-6 h-6 text-(--accent)" />
               </div>
             </div>
           </div>
         </div>
 
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-semibold text-(--text-primary) mb-4">
             Быстрые действия
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
-              href="/admin/posts/new"
-              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-green-200"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors">
-                  <PlusCircle className="w-6 h-6 text-green-600" />
+            {[
+              {
+                href: "/admin/posts/new",
+                icon: PlusCircle,
+                title: "Создать пост",
+                desc: "Написать новый пост",
+              },
+              {
+                href: "/admin/posts",
+                icon: FileText,
+                title: "Все посты",
+                desc: "Управление постами",
+              },
+              {
+                href: "/admin/categories",
+                icon: FolderTree,
+                title: "Категории",
+                desc: "Управление категориями",
+              },
+              {
+                href: "/admin/settings",
+                icon: Settings,
+                title: "Настройки",
+                desc: "Настройки сайта",
+              },
+            ].map(({ href, icon: Icon, title, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group bg-(--bg-card) rounded-xl p-6 border border-(--border) hover:border-(--border-hover) transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center group-hover:bg-(--accent)/20 transition-colors">
+                    <Icon className="w-6 h-6 text-(--accent)" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-(--text-primary)">
+                      {title}
+                    </h3>
+                    <p className="text-sm text-(--text-secondary)">{desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Создать пост</h3>
-                  <p className="text-sm text-gray-500">Написать новый пост</p>
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              href="/admin/posts"
-              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-blue-200"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                  <FileText className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Все посты</h3>
-                  <p className="text-sm text-gray-500">Управление постами</p>
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              href="/admin/categories"
-              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-purple-200"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
-                  <FolderTree className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Категории</h3>
-                  <p className="text-sm text-gray-500">
-                    Управление категориями
-                  </p>
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              href="/admin/settings"
-              className="group bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all hover:border-gray-300"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center group-hover:bg-gray-100 transition-colors">
-                  <Settings className="w-6 h-6 text-gray-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Настройки</h3>
-                  <p className="text-sm text-gray-500">Настройки сайта</p>
-                </div>
-              </div>
-            </Link>
+              </Link>
+            ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-(--bg-card) rounded-xl border border-(--border) p-6">
+          <h2 className="text-lg font-semibold text-(--text-primary) mb-4">
             Последняя активность
           </h2>
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-(--text-secondary)">
             <p className="text-sm">
               Здесь будет отображаться последняя активность
             </p>

@@ -5,11 +5,17 @@ export default {
       method: "POST",
       path: "/posts/with-relations",
       handler: "post.createWithRelations",
+      config: {
+        policies: [],
+      },
     },
     {
       method: "PUT",
       path: "/posts/:id/with-relations",
       handler: "post.updateWithRelations",
+      config: {
+        policies: ["api::post.is-post-author"],
+      },
     },
     {
       method: "GET",

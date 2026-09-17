@@ -19,8 +19,17 @@ export default factories.createCoreController(
         const updateData: any = {
           ...rest,
           post_status: rest.post_status || "published",
-          publishedAt: new Date().toISOString(),
         };
+
+        // publishedAt управляем явно:
+        // - publishedAt: null  → снять с публикации
+        // - post_status: published → поставить текущую дату
+        // - иначе (draft/archived) → не трогать дату
+        if (rest.publishedAt === null) {
+          updateData.publishedAt = null;
+        } else if (rest.post_status === "published") {
+          updateData.publishedAt = new Date().toISOString();
+        }
 
         if (Array.isArray(categories)) {
           updateData.categories = {
@@ -41,7 +50,7 @@ export default factories.createCoreController(
 
         const existing = await strapiAny.entityService.findMany(
           "api::post.post",
-          { filters: { documentId: id } as any, limit: 1 }
+          { filters: { documentId: id } as any, limit: 1 },
         );
 
         if (!existing || existing.length === 0) {
@@ -61,7 +70,7 @@ export default factories.createCoreController(
               "author",
               "author.avatar",
             ],
-          }
+          },
         );
 
         return { data: updated };
@@ -83,9 +92,15 @@ export default factories.createCoreController(
 
         const createData: any = {
           ...rest,
-          post_status: rest.post_status || "published",
-          publishedAt: new Date().toISOString(),
+          post_status: rest.post_status || "draft",
         };
+
+        // publishedAt только если публикуем
+        if (createData.post_status === "published") {
+          createData.publishedAt = new Date().toISOString();
+        } else {
+          createData.publishedAt = null;
+        }
 
         if (Array.isArray(categories) && categories.length > 0) {
           createData.categories = {
@@ -108,12 +123,7 @@ export default factories.createCoreController(
 
         const newPost = await strapiAny.entityService.create("api::post.post", {
           data: createData,
-          populate: [
-            "categories",
-            "featured_image",
-            "author",
-            "author.avatar",
-          ],
+          populate: ["categories", "featured_image", "author", "author.avatar"],
         });
 
         return { data: newPost };
@@ -134,7 +144,7 @@ export default factories.createCoreController(
             filters: { documentId } as any,
             populate: ["author", "author.avatar"],
             limit: 1,
-          }
+          },
         );
 
         if (!posts?.length) return { data: null };
@@ -160,5 +170,5 @@ export default factories.createCoreController(
         return ctx.badRequest(error.message || "Ошибка");
       }
     },
-  })
+  }),
 );

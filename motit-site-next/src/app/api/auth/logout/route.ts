@@ -1,15 +1,19 @@
+// src/app/api/auth/logout/route.ts
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-export async function POST() {
+async function logout() {
   const cookieStore = await cookies();
   cookieStore.delete("strapi_jwt");
   cookieStore.delete("token");
+}
 
-  return NextResponse.redirect(
-    new URL(
-      "/login",
-      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-    ),
-  );
+export async function POST() {
+  await logout();
+  return NextResponse.json({ success: true });
+}
+
+export async function GET(request: Request) {
+  await logout();
+  return NextResponse.redirect(new URL("/login", request.url));
 }

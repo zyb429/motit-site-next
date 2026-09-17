@@ -32,14 +32,17 @@ export async function PATCH(
       data.publishedAt = null;
     }
 
-    const response = await fetch(`${STRAPI_URL}/api/posts/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userToken}`,
+    const response = await fetch(
+      `${STRAPI_URL}/api/posts/${id}/with-relations`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userToken}`,
+        },
+        body: JSON.stringify({ data }),
       },
-      body: JSON.stringify({ data }),
-    });
+    );
 
     const result = await response.json();
     console.log("📥 Strapi status update:", response.status, result);

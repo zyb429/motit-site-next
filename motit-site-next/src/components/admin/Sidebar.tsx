@@ -3,8 +3,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FileText, FolderTree, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, FolderTree } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
+import { LogoutButton } from "@/components/auth/LogoutButton";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const NAV = [
   { href: "/admin", label: "Дашборд", icon: LayoutDashboard },
@@ -16,15 +18,15 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 shrink-0 border-r border-[rgba(45,212,191,0.08)] bg-[#0f2832] flex flex-col">
-      <div className="p-4 border-b border-[rgba(45,212,191,0.08)]">
+    <aside className="w-56 shrink-0 border-r border-(--border) bg-(--bg-card) flex flex-col">
+      <div className="p-4 border-b border-(--border)">
         <Link
           href="/"
-          className="text-sm font-semibold text-[#e0f7fa] hover:text-[#2dd4bf]"
+          className="text-sm font-semibold text-(--text-primary) hover:text-(--accent)"
         >
           ← Motit
         </Link>
-        <div className="text-xs text-gray-500 mt-1">Админка</div>
+        <div className="text-xs text-(--text-muted) mt-1">Админка</div>
       </div>
 
       <nav className="flex-1 p-2 space-y-1">
@@ -36,8 +38,8 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
               href={href}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                 active
-                  ? "bg-[#2dd4bf]/10 text-[#2dd4bf]"
-                  : "text-gray-400 hover:text-[#e0f7fa] hover:bg-[#2dd4bf]/5"
+                  ? "bg-(--accent-dim) text-(--accent)"
+                  : "text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-dim)"
               }`}
             >
               <Icon size={16} />
@@ -47,17 +49,14 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
         })}
       </nav>
 
-      <div className="p-3 border-t border-[rgba(45,212,191,0.08)]">
-        <div className="text-xs text-gray-500 mb-2 truncate">
+      <div className="p-3 border-t border-(--border)">
+        <div className="text-xs text-(--text-muted) mb-2 truncate">
           @{user.username} · {user.role ?? "no role"}
         </div>
-        <Link
-          href="/api/auth/logout"
-          className="flex items-center gap-2 text-xs text-gray-400 hover:text-[#2dd4bf]"
-        >
-          <LogOut size={14} />
-          Выйти
-        </Link>
+        <div className="flex items-center justify-between">
+          <LogoutButton className="text-(--text-muted) hover:text-red-400 transition-colors flex items-center gap-2 text-xs" />
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   );

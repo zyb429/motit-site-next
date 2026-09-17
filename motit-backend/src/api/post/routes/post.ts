@@ -1,3 +1,4 @@
+// src/api/post/routes/post.ts
 import { factories } from "@strapi/strapi";
 
 export default factories.createCoreRouter("api::post.post", {
@@ -6,9 +7,6 @@ export default factories.createCoreRouter("api::post.post", {
       policies: ["api::post.is-post-author"],
     },
     delete: {
-      policies: ["api::post.is-post-author"],
-    },
-    updateWithRelations: {
       policies: ["api::post.is-post-author"],
     },
   },
