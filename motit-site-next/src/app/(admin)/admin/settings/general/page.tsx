@@ -1,39 +1,11 @@
 // src/app/(admin)/admin/settings/general/page.tsx
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { ArrowLeft, Globe } from "lucide-react";
 import { GeneralSettingsForm } from "./GeneralSettingsForm";
-
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-
-export type Setting = {
-  id: number;
-  documentId?: string;
-  key: string;
-  value: string;
-  description?: string | null;
-};
+import { getAllSettingsPrisma } from "@/lib/db/settings";
 
 async function getSettings(): Promise<Record<string, string>> {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-  const res = await fetch(
-    `${STRAPI_URL}/api/settings?pagination[pageSize]=100`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    },
-  );
-  if (!res.ok) return {};
-
-  const data = await res.json();
-  const out: Record<string, string> = {};
-  for (const item of data.data || []) {
-    out[item.key] = item.value ?? "";
-  }
-  return out;
+  return getAllSettingsPrisma();
 }
 
 export default async function GeneralSettingsPage() {

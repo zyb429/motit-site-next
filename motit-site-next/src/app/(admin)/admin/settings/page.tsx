@@ -108,7 +108,6 @@ export default function SettingsPage() {
       </header>
 
       <main className="container mx-auto px-6 py-8 max-w-6xl">
-        {/* Сетка секций */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 auto-rows-fr">
           {SECTIONS.map(({ href, icon: Icon, title, desc }) => (
             <Link
@@ -131,7 +130,6 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        {/* О системе */}
         <div className="bg-(--bg-card) rounded-xl border border-(--border) p-6">
           <h2 className="text-lg font-semibold text-(--text-primary) mb-4">
             О системе
@@ -142,9 +140,9 @@ export default function SettingsPage() {
               <span className="text-(--text-primary) font-medium">16.3.5</span>
             </div>
             <div className="flex justify-between py-2 border-b border-(--border)">
-              <span className="text-(--text-secondary)">CMS</span>
+              <span className="text-(--text-secondary)">БД</span>
               <span className="text-(--text-primary) font-medium">
-                Strapi v5
+                MySQL + Prisma
               </span>
             </div>
             <div className="flex justify-between py-2 border-b border-(--border)">
@@ -156,8 +154,10 @@ export default function SettingsPage() {
               </span>
             </div>
             <div className="flex justify-between py-2">
-              <span className="text-(--text-secondary)">Версия CMS</span>
-              <span className="text-(--text-primary) font-medium">v5</span>
+              <span className="text-(--text-secondary)">Хранилище</span>
+              <span className="text-(--text-primary) font-medium">
+                S3 / MinIO
+              </span>
             </div>
           </div>
         </div>

@@ -1,17 +1,13 @@
 // src/app/api/settings/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    const user = await getCurrentUser();
+    if (!user || !user.isAdmin) {
+      return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
     }
 
     const { data } = await request.json();
@@ -19,52 +15,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Нет данных" }, { status: 400 });
     }
 
-    // Получаем существующие настройки
-    const existingRes = await fetch(
-      `${STRAPI_URL}/api/settings?pagination[pageSize]=100`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      },
-    );
-    if (!existingRes.ok) {
-      return NextResponse.json(
-        { error: "Не удалось прочитать настройки" },
-        { status: existingRes.status },
-      );
-    }
-    const existing = await existingRes.json();
-    const byKey = new Map<string, any>();
-    for (const item of existing.data || []) {
-      byKey.set(item.key, item);
-    }
-
-    // Создаём или обновляем по ключу
     for (const [key, value] of Object.entries(data)) {
-      const item = byKey.get(key);
-      const payload = { data: { key, value: String(value ?? "") } };
+      const strValue = String(value ?? "");
+      const existing = await prisma.settings.findFirst({ where: { key } });
 
-      const url = item
-        ? `${STRAPI_URL}/api/settings/${item.documentId ?? item.id}`
-        : `${STRAPI_URL}/api/settings`;
-
-      const method = item ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        return NextResponse.json(
-          { error: err.error?.message || `Ошибка сохранения: ${key}` },
-          { status: res.status },
-        );
+      if (existing) {
+        await prisma.settings.update({
+          where: { id: existing.id },
+          data: { value: strValue },
+        });
+      } else {
+        await prisma.settings.create({
+          data: { key, value: strValue },
+        });
       }
     }
 

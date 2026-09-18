@@ -3,3 +3,8 @@ motit-backend/src/extensions/documentation/documentation/1.0.0/full_documentatio
 motit-backend/src/extensions/documentation/documentation/1.0.0/full_documentation.json
 
 motit-site-next/motit-site-next/.next/
+
+# DB dumps
+*.sql
+*.sql.bak
+mysql creds.txt
