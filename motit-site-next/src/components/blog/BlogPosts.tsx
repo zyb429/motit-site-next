@@ -15,7 +15,6 @@ export function BlogPosts({ posts, initialViewMode = "list" }: BlogPostsProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // ✅ Режим читаем из URL — back/forward сохраняется автоматически
   const raw = searchParams.get("view");
   const viewMode: ViewMode =
     raw === "list" || raw === "tiles" || raw === "grid" ? raw : initialViewMode;
@@ -23,7 +22,7 @@ export function BlogPosts({ posts, initialViewMode = "list" }: BlogPostsProps) {
   const setViewMode = (next: ViewMode) => {
     const params = new URLSearchParams(searchParams.toString());
     if (next === "list") {
-      params.delete("view"); // дефолт не пишем в URL
+      params.delete("view");
     } else {
       params.set("view", next);
     }
@@ -31,21 +30,12 @@ export function BlogPosts({ posts, initialViewMode = "list" }: BlogPostsProps) {
     router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
   };
 
-  const normalized = posts.map((post) => ({
-    ...post,
-    attributes: post.attributes || post,
-  }));
-
   const renderCards = () => {
     if (viewMode === "list") {
       return (
         <div className="space-y-4">
-          {normalized.map((post) => (
-            <BlogCard
-              key={post.id || post.documentId}
-              post={post}
-              variant="list"
-            />
+          {posts.map((post) => (
+            <BlogCard key={post.id} post={post} variant="list" />
           ))}
         </div>
       );
@@ -54,12 +44,8 @@ export function BlogPosts({ posts, initialViewMode = "list" }: BlogPostsProps) {
     if (viewMode === "tiles") {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {normalized.map((post) => (
-            <BlogCard
-              key={post.id || post.documentId}
-              post={post}
-              variant="tiles"
-            />
+          {posts.map((post) => (
+            <BlogCard key={post.id} post={post} variant="tiles" />
           ))}
         </div>
       );
@@ -67,12 +53,8 @@ export function BlogPosts({ posts, initialViewMode = "list" }: BlogPostsProps) {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {normalized.map((post) => (
-          <BlogCard
-            key={post.id || post.documentId}
-            post={post}
-            variant="grid"
-          />
+        {posts.map((post) => (
+          <BlogCard key={post.id} post={post} variant="grid" />
         ))}
       </div>
     );

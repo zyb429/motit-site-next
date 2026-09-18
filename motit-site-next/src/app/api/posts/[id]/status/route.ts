@@ -1,62 +1,71 @@
 // src/app/api/posts/[id]/status/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
+async function findPostId(rawId: string): Promise<number | null> {
+  const num = Number(rawId);
+  if (Number.isFinite(num) && num > 0) {
+    const byId = await prisma.posts.findUnique({
+      where: { id: num },
+      select: { id: true },
+    });
+    if (byId) return byId.id;
+  }
+  const byDoc = await prisma.posts.findFirst({
+    where: { document_id: rawId },
+    select: { id: true },
+  });
+  return byDoc?.id ?? null;
+}
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await params;
-    const cookieStore = await cookies();
-    const userToken =
-      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-    if (!userToken) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+    }
+
+    const { id: rawId } = await params;
+    const postId = await findPostId(rawId);
+    if (!postId) {
+      return NextResponse.json({ error: "Пост не найден" }, { status: 404 });
     }
 
     const body = await request.json();
     const { post_status } = body;
 
-    console.log("🔄 PATCH post status:", id, "→", post_status);
-
-    const data: any = { post_status };
-
-    // Strapi v5: publishedAt управляет публикацией
-    if (post_status === "published") {
-      data.publishedAt = new Date().toISOString();
-    } else {
-      data.publishedAt = null;
-    }
-
-    const response = await fetch(
-      `${STRAPI_URL}/api/posts/${id}/with-relations`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userToken}`,
-        },
-        body: JSON.stringify({ data }),
-      },
-    );
-
-    const result = await response.json();
-    console.log("📥 Strapi status update:", response.status, result);
-
-    if (!response.ok) {
+    if (!post_status) {
       return NextResponse.json(
-        { error: result.error?.message || "Ошибка обновления статуса" },
-        { status: response.status },
+        { error: "Нужен post_status" },
+        { status: 400 },
       );
     }
 
-    return NextResponse.json(result);
+    const now = new Date();
+
+    const updated = await prisma.posts.update({
+      where: { id: postId },
+      data: {
+        post_status,
+        published_at: post_status === "published" ? now : null,
+        updated_at: now,
+      },
+    });
+
+    return NextResponse.json({
+      data: {
+        id: updated.id,
+        documentId: updated.document_id ?? null,
+        post_status: updated.post_status ?? null,
+        publishedAt: updated.published_at?.toISOString() ?? null,
+      },
+    });
   } catch (error) {
-    console.error("❌ Status update error:", error);
+    console.error("[api/posts/:id/status] PATCH error:", error);
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
       { status: 500 },

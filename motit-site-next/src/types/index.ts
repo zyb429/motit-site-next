@@ -1,2 +1,2 @@
-export * from './slate';
-export * from './strapi';
+export * from "./slate";
+// добавляй сюда другие типы, если они есть

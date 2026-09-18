@@ -1,11 +1,11 @@
-// src/app/authors/[username]/page.tsx
+// src/app/(site)/authors/[username]/page.tsx
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { User, FileText } from "lucide-react";
-import { getAuthorByUsername, getPostsByAuthor } from "@/lib/strapi";
-import { BackButton } from "@/components/blog/BackButton";
 import { Suspense } from "react";
+import { prisma } from "@/lib/prisma";
+import { BackButton } from "@/components/blog/BackButton";
 import { AuthorPosts } from "@/components/blog/AuthorPosts";
 import { parseView } from "@/lib/view";
 
@@ -14,17 +14,70 @@ interface AuthorPageProps {
   searchParams?: Promise<{ view?: string }> | { view?: string };
 }
 
+async function getAuthor(username: string) {
+  const u = await prisma.users.findFirst({
+    where: { username },
+  });
+  if (!u) return null;
+  return {
+    id: u.id,
+    username: u.username ?? "",
+    full_name: u.full_name ?? null,
+    bio: u.bio ?? null,
+    avatar_url: null, // у нас пока нет аватарок
+  };
+}
+
+async function getPostsByAuthorPrisma(username: string) {
+  const user = await prisma.users.findFirst({
+    where: { username },
+    select: { id: true },
+  });
+  if (!user) return [];
+
+  const rows = await prisma.posts.findMany({
+    where: { author_id: user.id, post_status: "published" },
+    orderBy: [{ published_at: "desc" }],
+    take: 50,
+    include: {
+      users: true,
+      posts_categories_lnk: { include: { categories: true } },
+    },
+  });
+
+  return rows.map((p) => ({
+    id: p.id,
+    documentId: p.document_id ?? null,
+    title: p.title ?? "",
+    slug: p.slug ?? null,
+    excerpt: p.excerpt ?? null,
+    post_status: p.post_status ?? null,
+    publishedAt: p.published_at?.toISOString() ?? null,
+    updatedAt: p.updated_at?.toISOString() ?? null,
+    author: p.users
+      ? {
+          id: p.users.id,
+          username: p.users.username ?? "",
+          full_name: p.users.full_name ?? null,
+          avatar_url: null,
+        }
+      : null,
+    categories:
+      p.posts_categories_lnk
+        ?.map((l) => l.categories)
+        .filter(Boolean)
+        .map((c: any) => ({ id: c.id, name: c.name ?? "", slug: c.slug ?? null })) ?? [],
+  }));
+}
+
 export async function generateMetadata({
   params,
 }: AuthorPageProps): Promise<Metadata> {
   const { username } = await params;
-  const author = await getAuthorByUsername(username);
+  const author = await getAuthor(username);
   if (!author) return { title: "Автор не найден" };
 
-  const name =
-    author.full_name ||
-    [author.firstname, author.lastname].filter(Boolean).join(" ") ||
-    author.username;
+  const name = author.full_name || author.username;
 
   return {
     title: `${name} — Автор`,
@@ -45,23 +98,13 @@ export default async function AuthorPage({
   const sp = await searchParams;
   const initialView = parseView(sp?.view);
 
-  const author = await getAuthorByUsername(username);
-
+  const author = await getAuthor(username);
   if (!author) notFound();
 
-  const postsRes = await getPostsByAuthor(username, { pageSize: 50 });
-  const posts = postsRes?.data ?? [];
+  const posts = await getPostsByAuthorPrisma(username);
 
-  const displayName =
-    author.full_name ||
-    [author.firstname, author.lastname].filter(Boolean).join(" ") ||
-    author.username;
-
-  const avatarUrl = author.avatar_url
-    ? author.avatar_url.startsWith("/uploads")
-      ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337"}${author.avatar_url}`
-      : author.avatar_url
-    : null;
+  const displayName = author.full_name || author.username;
+  const avatarUrl = author.avatar_url;
 
   const pluralize = (n: number) => {
     const mod10 = n % 10;
@@ -77,7 +120,6 @@ export default async function AuthorPage({
       <div className="container mx-auto px-4 max-w-4xl">
         <BackButton fallback="/blog" />
 
-        {/* Профиль автора */}
         <header className="bg-[#0f2832] rounded-xl p-6 md:p-8 mb-8 border border-[rgba(45,212,191,0.06)]">
           <div className="flex flex-col md:flex-row items-start gap-6">
             {avatarUrl ? (
@@ -117,7 +159,6 @@ export default async function AuthorPage({
           </div>
         </header>
 
-        {/* Публикации */}
         <section>
           {posts.length === 0 ? (
             <>
@@ -132,9 +173,9 @@ export default async function AuthorPage({
             <Suspense
               fallback={
                 <div className="space-y-4">
-                  {posts.slice(0, 3).map((post: any) => (
+                  {posts.slice(0, 3).map((post) => (
                     <div
-                      key={post.id || post.documentId}
+                      key={post.id}
                       className="h-40 bg-[#0f2832] rounded-xl border border-[rgba(45,212,191,0.06)] animate-pulse"
                     />
                   ))}

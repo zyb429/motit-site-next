@@ -1,3 +1,4 @@
-export { BlogCard } from './BlogCard';
-export { BlogList } from './BlogList';
-export { BlogPost } from './BlogPost';
+export { BlogCard } from "./BlogCard";
+export { BlogCategories } from "./BlogCategories";
+export { BlogPosts } from "./BlogPosts";
+export { BlogSidebar } from "./BlogSidebar";

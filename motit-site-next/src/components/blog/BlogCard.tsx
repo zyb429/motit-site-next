@@ -4,9 +4,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
-import Image from "next/image";
 import { Calendar, Clock } from "lucide-react";
-import { getPostCategories, getMediaUrl } from "@/lib/strapi";
 import { AuthorLink } from "./AuthorLink";
 import type { View } from "@/lib/view";
 
@@ -16,10 +14,8 @@ interface BlogCardProps {
   variant?: View;
 }
 
-// Универсальная функция для извлечения текста из любого формата контента
 const getTextFromContent = (content: any): string => {
   if (!content) return "";
-
   if (typeof content === "string") {
     try {
       const parsed = JSON.parse(content);
@@ -28,23 +24,13 @@ const getTextFromContent = (content: any): string => {
       return content.replace(/<[^>]*>/g, " ");
     }
   }
-
   if (Array.isArray(content)) {
     return content.map((item) => getTextFromContent(item)).join(" ");
   }
-
   if (typeof content === "object") {
     if (content.text) return content.text;
-    if (content.data?.text) return content.data.text;
     if (content.children) return getTextFromContent(content.children);
-    if (content.data?.items) {
-      return content.data.items
-        .map((item: any) => item.content || item.text || "")
-        .join(" ");
-    }
-    if (content.data?.code) return content.data.code;
   }
-
   return "";
 };
 
@@ -56,68 +42,36 @@ export function BlogCard({
   const searchParams = useSearchParams();
   const { saveScrollPosition } = useScrollRestoration();
 
-  // Нормализация данных для Strapi v5
-  const attrs = post?.attributes || post || {};
+  if (!post) return null;
 
-  const isDraft = attrs.post_status === "draft";
-  const title = attrs.title || "Без названия";
-  const slug = attrs.slug || "";
-  const excerpt = attrs.excerpt || "";
-  const publishedAt = attrs.publishedAt || attrs.createdAt || null;
+  const isDraft = post.post_status === "draft";
+  const title = post.title || "Без названия";
+  const slug = post.slug || "";
+  const excerpt = post.excerpt || "";
+  const publishedAt = post.publishedAt || post.updatedAt || null;
 
-  // ✅ Получаем ВСЕ категории
-  const categories = getPostCategories(post);
+  const categories = (post.categories || []).map((c: any) => ({
+    name: c.name ?? "",
+    slug: c.slug ?? "",
+  }));
 
-  const getPostAuthor = (): {
-    username: string;
-    full_name: string;
-    avatar_url: string | null;
-  } | null => {
-    const authorData = attrs.author || attrs.admin_user;
-    if (!authorData) return null;
+  const postAuthor = post.author
+    ? {
+        username: post.author.username ?? "",
+        full_name: post.author.full_name ?? post.author.username ?? "",
+        avatar_url: post.author.avatar_url ?? null,
+      }
+    : null;
 
-    let user: any = null;
-    if (authorData.data) {
-      user = authorData.data.attributes || authorData.data;
-    } else if (authorData.attributes) {
-      user = authorData.attributes;
-    } else {
-      user = authorData;
-    }
-
-    if (!user?.username) return null;
-
-    const full_name =
-      user.full_name ||
-      [user.firstname, user.lastname].filter(Boolean).join(" ") ||
-      user.username;
-
-    // getMediaUrl сам развернёт любую форму и добавит базовый URL
-    const avatar_url = getMediaUrl(user, "avatar");
-
-    return { username: user.username, full_name, avatar_url };
-  };
-
-  const postAuthor = getPostAuthor();
-
-  // Сохраняем параметры поиска при переходе на статью
   const getPostUrl = () => {
     saveScrollPosition();
-
     const params = new URLSearchParams();
-
     searchParams.forEach((value, key) => {
-      if (key !== "page") {
-        params.append(key, value);
-      }
+      if (key !== "page") params.append(key, value);
     });
-
-    const queryString = params.toString();
-    return `/blog/${slug}${queryString ? `?${queryString}` : ""}`;
+    const qs = params.toString();
+    return `/blog/${slug}${qs ? `?${qs}` : ""}`;
   };
-
-  const imageUrl = getMediaUrl(post, "featured_image");
-  const imageAlt = attrs.featured_image?.alternativeText || title;
 
   const formatDate = (dateString: string) => {
     if (!dateString) return null;
@@ -132,23 +86,19 @@ export function BlogCard({
     }
   };
 
-  // ИСПРАВЛЕНО: используем getTextFromContent
   const getReadingTime = () => {
-    const content = attrs.content || "";
-    const text = getTextFromContent(content);
+    const text = getTextFromContent(post.content || excerpt || "");
     const words = text.trim().split(/\s+/).filter(Boolean).length;
     return Math.max(1, Math.ceil(words / 200));
   };
 
   if (!slug) return null;
 
-  // Сортируем категории по имени
   const sortedCategories = [...categories].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
   const postUrl = getPostUrl();
 
-  // Вариант списка
   if (variant === "list") {
     return (
       <Link
@@ -157,20 +107,9 @@ export function BlogCard({
       >
         <div className="flex flex-col md:flex-row gap-4 p-4">
           <div className="relative w-full md:w-48 h-40 md:h-32 shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
-            {imageUrl ? (
-              <Image
-                src={imageUrl}
-                alt={imageAlt}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                loading="lazy"
-                sizes="(max-width: 768px) 100vw, 192px"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="text-3xl opacity-20">📄</span>
-              </div>
-            )}
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-3xl opacity-20">📄</span>
+            </div>
             {isDraft && (
               <span className="absolute top-2 right-2 bg-yellow-500/90 text-black text-[10px] font-medium px-2 py-0.5 rounded-full">
                 Черновик
@@ -214,12 +153,11 @@ export function BlogCard({
               </p>
             )}
 
-            {/* ✅ Все категории, отсортированные */}
             {sortedCategories.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {sortedCategories.map((cat) => (
                   <span
-                    key={cat.slug}
+                    key={cat.slug || cat.name}
                     className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full"
                   >
                     {cat.name}
@@ -237,7 +175,6 @@ export function BlogCard({
     );
   }
 
-  // Вариант плитки (компактный, квадратное изображение)
   if (variant === "tiles") {
     return (
       <Link
@@ -245,20 +182,9 @@ export function BlogCard({
         className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${className}`}
       >
         <div className="relative w-full aspect-16/10 overflow-hidden bg-[#0a1920]">
-          {imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={imageAlt}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-4xl opacity-20">📄</span>
-            </div>
-          )}
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-4xl opacity-20">📄</span>
+          </div>
           {isDraft && (
             <span className="absolute top-2 right-2 bg-yellow-500 text-black text-[10px] font-medium px-2 py-0.5 rounded-full">
               Черновик
@@ -271,12 +197,11 @@ export function BlogCard({
             {title}
           </h2>
 
-          {/* ✅ Все категории, одна строка со скроллом */}
           {sortedCategories.length > 0 && (
-            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 thin-scrollbar">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
               {sortedCategories.map((cat) => (
                 <span
-                  key={cat.slug}
+                  key={cat.slug || cat.name}
                   className="shrink-0 text-[10px] font-medium text-[#2dd4bf] bg-[#2dd4bf]/10 border border-[#2dd4bf]/20 px-2 py-0.5 rounded-full"
                 >
                   {cat.name}
@@ -315,4 +240,45 @@ export function BlogCard({
       </Link>
     );
   }
+
+  // variant === "grid" — оставим тот же вид, что и tiles
+  return (
+    <Link
+      href={postUrl}
+      className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 ${className}`}
+    >
+      <div className="p-5 space-y-3">
+        <h2 className="text-lg font-bold text-[#e0f7fa] line-clamp-2 group-hover:text-[#2dd4bf] transition-colors">
+          {title}
+        </h2>
+        {sortedCategories.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {sortedCategories.map((cat) => (
+              <span
+                key={cat.slug || cat.name}
+                className="text-[10px] font-medium text-[#2dd4bf] bg-[#2dd4bf]/10 border border-[#2dd4bf]/20 px-2 py-0.5 rounded-full"
+              >
+                {cat.name}
+              </span>
+            ))}
+          </div>
+        )}
+        {excerpt && (
+          <p className="text-sm text-gray-400 line-clamp-3">{excerpt}</p>
+        )}
+        <div className="flex items-center justify-between gap-2 text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">
+          <span className="flex items-center gap-1">
+            <Clock size={12} className="text-[#2dd4bf]" />
+            {getReadingTime()} мин
+          </span>
+          {publishedAt && (
+            <span className="flex items-center gap-1">
+              <Calendar size={12} className="text-[#2dd4bf]" />
+              {formatDate(publishedAt)}
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
 }

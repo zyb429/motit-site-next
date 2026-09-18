@@ -1,38 +1,30 @@
+// src/app/(site)/blog/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Search, X } from "lucide-react";
-import { getPosts, getPostsPerPage, getPostCategories } from "@/lib/strapi";
-import { getDraftModeStatus } from "@/lib/server/strapi";
+import { getPostsPrisma } from "@/lib/db/posts";
+import { getPostsPerPagePrisma } from "@/lib/db/settings";
+import { getCategoriesPrisma } from "@/lib/db/categories";
 import { BlogPosts } from "@/components/blog/BlogPosts";
 import { BlogCategories } from "@/components/blog/BlogCategories";
 import { PaginationClient } from "@/components/blog/PaginationClient";
 import { SearchInput } from "@/components/blog/SearchInput";
 import type { ViewMode } from "@/components/blog/ViewModeToggle";
 
-// ISR - пересоздаем страницу каждый час
-export const revalidate = 3600; // 1 час
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Блог | Motit",
   description: "Новости, статьи и обновления от Motit",
 };
 
-// Генерируем статические страницы для первых 10 страниц
 export async function generateStaticParams() {
   try {
-    const postsPerPage = await getPostsPerPage();
-    const postsResponse = await getPosts(
-      {
-        pagination: { page: 1, pageSize: postsPerPage },
-        populate: ["categories", "author", "author.avatar", "featured_image"],
-      },
-      false,
-    );
-
-    const total = postsResponse?.meta?.pagination?.total || 0;
+    const postsPerPage = await getPostsPerPagePrisma();
+    const allPosts = await getPostsPrisma({ status: "published", take: 1000 });
+    const total = allPosts.length;
     const totalPages = Math.ceil(total / postsPerPage);
-
     const pagesToGenerate = Math.min(totalPages, 10);
 
     return Array.from({ length: pagesToGenerate }, (_, i) => ({
@@ -73,7 +65,6 @@ export default async function BlogPage({
   const searchQuery = params?.search || "";
   const currentPage = parseInt(params?.page || "1", 10);
 
-  // ✅ Читаем режим отображения из URL (дефолт — "list")
   const rawView = params?.view;
   const initialViewMode: ViewMode =
     rawView === "list" || rawView === "tiles" || rawView === "grid"
@@ -82,97 +73,77 @@ export default async function BlogPage({
 
   let categorySlugs: string[] = [];
   if (params?.category) {
-    if (Array.isArray(params.category)) {
-      categorySlugs = params.category;
-    } else {
-      categorySlugs = [params.category];
-    }
+    categorySlugs = Array.isArray(params.category)
+      ? params.category
+      : [params.category];
   }
 
-  const isDraftMode = await getDraftModeStatus();
-  const postsPerPage = await getPostsPerPage();
+  const [postsPerPage, allPosts, allCategories] = await Promise.all([
+    getPostsPerPagePrisma(),
+    getPostsPrisma({ status: "published", take: 1000 }),
+    getCategoriesPrisma(),
+  ]);
 
-  // ✅ Загружаем все посты (с пагинацией только для поиска)
-  const postsResponse = await getPosts(
-    {
-      pagination: { page: 1, pageSize: 100 },
-      populate: ["categories", "author", "author.avatar", "featured_image"],
-      filters: searchQuery ? { title: { $containsi: searchQuery } } : undefined,
-    },
-    isDraftMode,
-  );
-
-  let allPosts = postsResponse?.data || [];
-
-  // Считаем количество постов на категорию (по уже загруженным данным)
-  const categoryCounts: Record<string, number> = {};
-  for (const post of allPosts) {
-    const cats = getPostCategories(post);
-    for (const cat of cats) {
-      categoryCounts[cat.slug] = (categoryCounts[cat.slug] || 0) + 1;
-    }
-  }
-
-  // Фильтруем по категориям на клиенте (AND - все категории должны быть)
-  if (categorySlugs.length > 0) {
-    allPosts = allPosts.filter((post: any) => {
-      const postCategories = getPostCategories(post);
-      const postCategorySlugs = postCategories.map((c: any) => c.slug);
-
-      console.log(
-        "📦 post:",
-        post.slug || post.title,
-        "cats:",
-        postCategorySlugs,
-      );
-
-      return categorySlugs.every((slug) => postCategorySlugs.includes(slug));
+  let filtered = allPosts;
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter((p) => {
+      const t = (p.title || "").toLowerCase();
+      const s = (p.slug || "").toLowerCase();
+      return t.includes(q) || s.includes(q);
     });
   }
 
-  // ✅ Пагинация на клиенте
-  const total = allPosts.length;
+  const categoryCounts: Record<string, number> = {};
+  for (const post of allPosts) {
+    for (const cat of post.categories) {
+      if (cat.slug) {
+        categoryCounts[cat.slug] = (categoryCounts[cat.slug] || 0) + 1;
+      }
+    }
+  }
+
+  if (categorySlugs.length > 0) {
+    filtered = filtered.filter((post) => {
+      const postSlugs = post.categories.map((c) => c.slug);
+      return categorySlugs.every((slug) => postSlugs.includes(slug));
+    });
+  }
+
+  const total = filtered.length;
   const totalPages = Math.ceil(total / postsPerPage);
   const startIndex = (currentPage - 1) * postsPerPage;
   const endIndex = Math.min(startIndex + postsPerPage, total);
-  const posts = allPosts.slice(startIndex, endIndex);
+  const posts = filtered.slice(startIndex, endIndex);
 
   const paginationStart = total > 0 ? startIndex + 1 : 0;
   const paginationEnd = endIndex;
 
-  console.log("🔍 [BlogPage] categorySlugs:", categorySlugs);
-  console.log("🔍 [BlogPage] searchQuery:", searchQuery);
-  console.log("🔍 [BlogPage] initialViewMode:", initialViewMode);
-  console.log("🔍 [BlogPage] total posts after filter:", total);
-  console.log("🔍 [BlogPage] displayed posts:", posts.length);
-
-  // Формируем baseUrl — сохраняем search, category и view (кроме дефолтного)
   const buildBaseUrl = () => {
-    const params = new URLSearchParams();
-    if (searchQuery) params.set("search", searchQuery);
+    const p = new URLSearchParams();
+    if (searchQuery) p.set("search", searchQuery);
     if (categorySlugs.length > 0) {
-      categorySlugs.forEach((slug) => params.append("category", slug));
+      categorySlugs.forEach((slug) => p.append("category", slug));
     }
-    if (initialViewMode !== "list") params.set("view", initialViewMode);
-    return `/blog${params.toString() ? `?${params.toString()}` : ""}`;
+    if (initialViewMode !== "list") p.set("view", initialViewMode);
+    return `/blog${p.toString() ? `?${p.toString()}` : ""}`;
   };
 
   const baseUrl = buildBaseUrl();
 
   const buildSearchResetUrl = () => {
-    const params = new URLSearchParams();
+    const p = new URLSearchParams();
     if (categorySlugs.length > 0) {
-      categorySlugs.forEach((slug) => params.append("category", slug));
+      categorySlugs.forEach((slug) => p.append("category", slug));
     }
-    if (initialViewMode !== "list") params.set("view", initialViewMode);
-    const qs = params.toString();
+    if (initialViewMode !== "list") p.set("view", initialViewMode);
+    const qs = p.toString();
     return `/blog${qs ? `?${qs}` : ""}`;
   };
 
   return (
     <div className="min-h-screen bg-[#0a1920] py-8 md:py-12">
       <div className="container mx-auto px-4 max-w-4xl">
-        {/* Шапка блога */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-[rgba(45,212,191,0.06)]">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#e0f7fa] tracking-tight">
@@ -186,13 +157,12 @@ export default async function BlogPage({
           <SearchInput defaultValue={searchQuery} className="w-full md:w-72" />
         </div>
 
-        {/* Категории - над постами */}
         <BlogCategories
+          categories={allCategories}
           currentCategories={categorySlugs}
           counts={categoryCounts}
         />
 
-        {/* Статусы */}
         {searchQuery && (
           <div className="mb-4 flex items-center gap-3 px-4 py-2.5 bg-[#0f2832] border border-[rgba(45,212,191,0.12)] rounded-xl">
             <Search size={16} className="text-[#2dd4bf] shrink-0" />
@@ -215,13 +185,7 @@ export default async function BlogPage({
             </Link>
           </div>
         )}
-        {isDraftMode && (
-          <div className="mb-4 p-3 bg-yellow-500/5 border border-yellow-500/10 rounded-lg text-sm text-yellow-400">
-            🔧 Режим превью: показаны черновики ({total} постов)
-          </div>
-        )}
 
-        {/* Список постов */}
         <div id="blog-posts">
           {posts.length === 0 ? (
             <div className="text-center py-8">
@@ -237,13 +201,12 @@ export default async function BlogPage({
             </div>
           ) : (
             <>
-              {/* ✅ Suspense обязателен: BlogPosts использует useSearchParams */}
               <Suspense
                 fallback={
                   <div className="space-y-4">
-                    {posts.slice(0, 3).map((post: any) => (
+                    {posts.slice(0, 3).map((post) => (
                       <div
-                        key={post.id || post.documentId}
+                        key={post.id}
                         className="h-40 bg-[#0f2832] rounded-xl border border-[rgba(45,212,191,0.06)] animate-pulse"
                       />
                     ))}
@@ -253,7 +216,6 @@ export default async function BlogPage({
                 <BlogPosts posts={posts} initialViewMode={initialViewMode} />
               </Suspense>
 
-              {/* Пагинация */}
               {totalPages > 1 && (
                 <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 border-t border-[rgba(45,212,191,0.06)] pt-4 sm:pt-6">
                   <div className="text-xs sm:text-sm text-gray-400 text-center sm:text-left">
