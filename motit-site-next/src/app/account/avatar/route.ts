@@ -1,55 +1,62 @@
+// src/app/account/avatar/route.ts
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
+import { randomUUID } from "crypto";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { s3, S3_BUCKET, publicUrl } from "@/lib/s3";
 
 export async function POST(req: Request) {
-  const cookieStore = await cookies();
-  const strapiJwt = cookieStore.get("strapi_jwt")?.value;
-
-  if (!strapiJwt) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
   }
 
-  // Получаем текущего пользователя, чтобы знать его ID
-  const meRes = await fetch(`${STRAPI_URL}/api/users/me`, {
-    headers: { Authorization: `Bearer ${strapiJwt}` },
-    cache: "no-store",
-  });
-
-  if (!meRes.ok) {
-    return NextResponse.json({ error: "Не удалось получить пользователя" }, { status: 401 });
-  }
-
-  const me = await meRes.json();
-
   const formData = await req.formData();
-  const file = formData.get("file") as File;
-
+  const file = formData.get("file") as File | null;
   if (!file) {
     return NextResponse.json({ error: "Файл не найден" }, { status: 400 });
   }
 
-  const strapiFormData = new FormData();
-  strapiFormData.append("files", file);
-  strapiFormData.append("ref", "plugin::users-permissions.user");
-  strapiFormData.append("refId", String(me.id));
-  strapiFormData.append("field", "avatar");
-
-  const uploadRes = await fetch(`${STRAPI_URL}/api/upload`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${strapiJwt}` },
-    body: strapiFormData,
-  });
-
-  const data = await uploadRes.json().catch(() => null);
-
-  if (!uploadRes.ok) {
-    return NextResponse.json(
-      { error: data?.error?.message || "Ошибка загрузки" },
-      { status: uploadRes.status },
-    );
+  if (!file.type.startsWith("image/")) {
+    return NextResponse.json({ error: "Только изображения" }, { status: 400 });
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: "Файл больше 5 МБ" }, { status: 400 });
   }
 
-  return NextResponse.json(data);
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+  const key = `avatars/${user.id}/${randomUUID()}.${ext}`;
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: file.type,
+    }),
+  );
+
+  const url = publicUrl(key);
+
+  const created = await prisma.files.create({
+    data: {
+      document_id: randomUUID(),
+      name: file.name,
+      mime: file.type,
+      size: file.size,
+      url,
+      provider: "s3",
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+
+  return NextResponse.json({
+    id: created.id,
+    documentId: created.document_id ?? null,
+    url,
+    name: created.name ?? "",
+  });
 }

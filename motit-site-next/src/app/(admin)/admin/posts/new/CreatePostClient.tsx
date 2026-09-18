@@ -201,7 +201,8 @@ export default memo(function CreatePostClient({
 
         if (post.featured_image?.url) {
           const base =
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337";
+            process.env.NEXT_PUBLIC_S3_URL ||
+            "http://localhost:9000/motit-uploads";
           const url = post.featured_image.url.startsWith("/uploads")
             ? `${base}${post.featured_image.url}`
             : post.featured_image.url;
@@ -301,12 +302,12 @@ export default memo(function CreatePostClient({
             content:
               typeof data.content === "string"
                 ? (() => {
-                    try {
-                      return JSON.parse(data.content);
-                    } catch {
-                      return data.content;
-                    }
-                  })()
+                  try {
+                    return JSON.parse(data.content);
+                  } catch {
+                    return data.content;
+                  }
+                })()
                 : data.content,
             excerpt: data.excerpt || "",
           };
@@ -344,8 +345,8 @@ export default memo(function CreatePostClient({
             const error = await response.json().catch(() => ({}));
             throw new Error(
               error.error?.message ||
-                error.error ||
-                (isEditMode ? "Ошибка обновления" : "Ошибка создания"),
+              error.error ||
+              (isEditMode ? "Ошибка обновления" : "Ошибка создания"),
             );
           }
 
@@ -491,9 +492,8 @@ export default memo(function CreatePostClient({
                   id="title"
                   type="text"
                   {...register("title")}
-                  className={`${inputClass} ${
-                    errors.title ? "border-red-500" : ""
-                  }`}
+                  className={`${inputClass} ${errors.title ? "border-red-500" : ""
+                    }`}
                   disabled={isDisabled}
                   placeholder="Введите заголовок поста..."
                 />

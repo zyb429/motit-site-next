@@ -12,6 +12,8 @@
     "db:generate": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1135.0",
+    "@aws-sdk/s3-request-presigner": "^3.1135.0",
     "@hookform/resolvers": "^5.9.1",
     "@prisma/client": "6",
     "@radix-ui/react-accordion": "^1.2.12",
