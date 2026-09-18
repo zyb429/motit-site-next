@@ -1,6 +1,7 @@
-// app/admin/posts/new/page.tsx (Server Component)
-import { cookies } from "next/headers";
+// src/app/(admin)/admin/posts/new/page.tsx
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 import CreatePostClient from "./CreatePostClient";
 
 export type User = {
@@ -20,83 +21,37 @@ export type Category = {
   slug: string;
   description?: string | null;
   icon?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-  publishedAt?: string;
 };
 
-async function getCurrentUser(): Promise<User | null> {
-  try {
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-    if (!token) {
-      return null;
-    }
-
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-    const response = await fetch(`${baseUrl}/api/auth/me`, {
-      headers: {
-        Cookie: `strapi_jwt=${token}`,
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[CreatePostPage] Strapi error: ${errorText}`);
-      return null;
-    }
-
-    const data = await response.json();
-    const user = data.user || data.data || data;
-
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      firstname: user.firstname || user.username,
-      lastname: user.lastname || "",
-      full_name: user.full_name || user.username,
-    };
-  } catch (error) {
-    console.error("Error getting user:", error);
-    return null;
-  }
-}
-
 async function getCategories(): Promise<Category[]> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const response = await fetch(`${baseUrl}/api/categories`, {
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      console.error("Failed to fetch categories:", response.status);
-      return [];
-    }
-
-    const data = await response.json();
-    return data.data || data || [];
-  } catch (error) {
-    console.error("Error getting categories:", error);
-    return [];
-  }
+  const rows = await prisma.categories.findMany({ orderBy: { name: "asc" } });
+  return rows.map((c) => ({
+    id: c.id,
+    documentId: c.document_id ?? undefined,
+    name: c.name ?? "",
+    slug: c.slug ?? "",
+    description: c.description ?? null,
+    icon: c.icon ?? null,
+  }));
 }
 
 export default async function CreatePostPage() {
-  const [user, categories] = await Promise.all([
-    getCurrentUser(),
-    getCategories(),
-  ]);
+  const currentUser = await getCurrentUser();
+  if (!currentUser) redirect("/login");
 
-  // ✅ Редирект без try-catch - это правильный подход
-  if (!user) {
-    redirect("/login");
-  }
+  const user: User = {
+    id: currentUser.id,
+    documentId: undefined,
+    username: currentUser.username,
+    email: currentUser.email,
+    firstname: currentUser.username,
+    lastname: "",
+    full_name: currentUser.full_name ?? currentUser.username,
+  };
 
-  return <CreatePostClient initialUser={user} initialCategories={categories} />;
+  const categories = await getCategories();
+
+  return (
+    <CreatePostClient initialUser={user} initialCategories={categories} />
+  );
 }
