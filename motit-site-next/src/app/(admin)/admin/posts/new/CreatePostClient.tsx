@@ -200,13 +200,7 @@ export default memo(function CreatePostClient({
         }
 
         if (post.featured_image?.url) {
-          const base =
-            process.env.NEXT_PUBLIC_S3_URL ||
-            "http://localhost:9000/motit-uploads";
-          const url = post.featured_image.url.startsWith("/uploads")
-            ? `${base}${post.featured_image.url}`
-            : post.featured_image.url;
-          setFeaturedImagePreview(url);
+          setFeaturedImagePreview(post.featured_image.url);
         }
       } catch (err) {
         console.error("❌ Load post error:", err);

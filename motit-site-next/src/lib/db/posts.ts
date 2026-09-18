@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 
-// ==================== TYPES ====================
+export type PostFeaturedImage = {
+  id: number;
+  url: string | null;
+  name: string | null;
+} | null;
 
 export type PostListItem = {
   id: number;
@@ -23,13 +27,23 @@ export type PostListItem = {
     avatar_url: string | null;
   } | null;
   categories: { id: number; name: string; slug: string | null }[];
+  featuredImage: PostFeaturedImage;
 };
 
 export type PostDetail = PostListItem & {
   content: unknown;
 };
 
-// ==================== MAPPER ====================
+const POST_INCLUDE = {
+  users: {
+    include: {
+      users_role_lnk: { include: { up_roles: true } },
+      avatar: true,
+    },
+  },
+  posts_categories_lnk: { include: { categories: true } },
+  featured_image: true,
+} satisfies Prisma.postsInclude;
 
 function mapPost(
   p: any,
@@ -50,11 +64,11 @@ function mapPost(
     updatedAt: p.updated_at?.toISOString() ?? null,
     author: p.users
       ? {
-          id: p.users.id,
-          username: p.users.username ?? "",
-          full_name: p.users.full_name ?? null,
-          avatar_url: p.users.users_role_lnk?.[0]?.up_roles?.type ?? null,
-        }
+        id: p.users.id,
+        username: p.users.username ?? "",
+        full_name: p.users.full_name ?? null,
+        avatar_url: p.users.avatar?.url ?? null,
+      }
       : null,
     categories:
       p.posts_categories_lnk
@@ -65,6 +79,13 @@ function mapPost(
           name: c.name ?? "",
           slug: c.slug ?? null,
         })) ?? [],
+    featuredImage: p.featured_image
+      ? {
+        id: p.featured_image.id,
+        url: p.featured_image.url ?? null,
+        name: p.featured_image.name ?? null,
+      }
+      : null,
   };
 
   if (opts.withContent) {
@@ -73,25 +94,22 @@ function mapPost(
   return base;
 }
 
-// ==================== QUERIES ====================
-
-export async function getPostsPrisma(options: {
-  status?: "draft" | "published" | "archived";
-  categorySlug?: string;
-  authorUsername?: string;
-  take?: number;
-  skip?: number;
-} = {}): Promise<PostListItem[]> {
+export async function getPostsPrisma(
+  options: {
+    status?: "draft" | "published" | "archived";
+    categorySlug?: string;
+    authorUsername?: string;
+    take?: number;
+    skip?: number;
+  } = {},
+): Promise<PostListItem[]> {
   const where: Prisma.postsWhereInput = {};
-
   if (options.status) where.post_status = options.status;
-
   if (options.categorySlug) {
     where.posts_categories_lnk = {
       some: { categories: { slug: options.categorySlug } },
     };
   }
-
   if (options.authorUsername) {
     where.users = { username: options.authorUsername };
   }
@@ -101,10 +119,7 @@ export async function getPostsPrisma(options: {
     orderBy: [{ published_at: "desc" }],
     take: options.take ?? 100,
     skip: options.skip ?? 0,
-    include: {
-      users: { include: { users_role_lnk: { include: { up_roles: true } } } },
-      posts_categories_lnk: { include: { categories: true } },
-    },
+    include: POST_INCLUDE,
   });
 
   return rows.map((r) => mapPost(r) as PostListItem);
@@ -116,10 +131,7 @@ export async function getPostBySlugPrisma(
 ): Promise<PostDetail | PostListItem | null> {
   const row = await prisma.posts.findFirst({
     where: { slug, post_status: "published" },
-    include: {
-      users: { include: { users_role_lnk: { include: { up_roles: true } } } },
-      posts_categories_lnk: { include: { categories: true } },
-    },
+    include: POST_INCLUDE,
   });
   if (!row) return null;
   return mapPost(row, opts) as any;
@@ -130,10 +142,7 @@ export async function getPostByIdPrisma(
 ): Promise<PostDetail | PostListItem | null> {
   const row = await prisma.posts.findUnique({
     where: { id },
-    include: {
-      users: { include: { users_role_lnk: { include: { up_roles: true } } } },
-      posts_categories_lnk: { include: { categories: true } },
-    },
+    include: POST_INCLUDE,
   });
   if (!row) return null;
   return mapPost(row, { withContent: true }) as any;

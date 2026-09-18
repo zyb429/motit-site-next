@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
-// Ищем пост по числовому id ИЛИ по document_id
 async function findPostId(rawId: string): Promise<number | null> {
   const num = Number(rawId);
   if (Number.isFinite(num) && num > 0) {
@@ -39,6 +38,7 @@ export async function GET(
         posts_categories_lnk: {
           include: { categories: true },
         },
+        featured_image: true,
       },
     });
 
@@ -61,12 +61,19 @@ export async function GET(
         meta_description: post.meta_description ?? null,
         publishedAt: post.published_at?.toISOString() ?? null,
         updatedAt: post.updated_at?.toISOString() ?? null,
+        featured_image: post.featured_image
+          ? {
+            id: post.featured_image.id,
+            url: post.featured_image.url ?? null,
+            name: post.featured_image.name ?? null,
+          }
+          : null,
         author: post.users
           ? {
-              id: post.users.id,
-              username: post.users.username ?? "",
-              full_name: post.users.full_name ?? null,
-            }
+            id: post.users.id,
+            username: post.users.username ?? "",
+            full_name: post.users.full_name ?? null,
+          }
           : null,
         categories:
           post.posts_categories_lnk
@@ -118,6 +125,7 @@ export async function PUT(
       views,
       categories,
       author,
+      featured_image,
     } = payload;
 
     const now = new Date();
@@ -128,9 +136,15 @@ export async function PUT(
     if (content !== undefined) data.content = content;
     if (excerpt !== undefined) data.excerpt = excerpt;
     if (meta_title !== undefined) data.meta_title = meta_title;
-    if (meta_description !== undefined) data.meta_description = meta_description;
+    if (meta_description !== undefined)
+      data.meta_description = meta_description;
     if (is_featured !== undefined) data.is_featured = is_featured;
     if (views !== undefined) data.views = views;
+
+    // Featured image
+    if (featured_image !== undefined) {
+      data.featured_image_id = featured_image ? Number(featured_image) : null;
+    }
 
     if (post_status !== undefined) {
       data.post_status = post_status;
@@ -161,6 +175,7 @@ export async function PUT(
     const updated = await prisma.posts.update({
       where: { id: postId },
       data,
+      include: { featured_image: true },
     });
 
     // Категории — заменяем связи
@@ -208,6 +223,13 @@ export async function PUT(
         post_status: updated.post_status ?? null,
         publishedAt: updated.published_at?.toISOString() ?? null,
         updatedAt: updated.updated_at?.toISOString() ?? null,
+        featured_image: updated.featured_image
+          ? {
+            id: updated.featured_image.id,
+            url: updated.featured_image.url ?? null,
+            name: updated.featured_image.name ?? null,
+          }
+          : null,
       },
     });
   } catch (error) {

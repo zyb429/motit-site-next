@@ -213,7 +213,7 @@ export default async function AdminCategoriesPage({
               return (
                 <div
                   key={catId}
-                  className="group bg-(--bg-card) rounded-xl shadow-sm border border-(--border) p-5 hover:border-(--border-hover) hover:shadow-md transition-all"
+                  className="group flex flex-col h-full bg-(--bg-card) rounded-xl shadow-sm border border-(--border) p-5 hover:border-(--border-hover) hover:shadow-md transition-all"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="w-10 h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
@@ -235,17 +235,17 @@ export default async function AdminCategoriesPage({
                   <h3 className="font-semibold text-(--text-primary) line-clamp-1">
                     {cat.name || "Без названия"}
                   </h3>
-                  <code className="text-xs text-(--text-muted) bg-(--bg-secondary) px-2 py-0.5 rounded font-mono inline-block mt-1">
+                  <code className="text-xs text-(--text-muted) bg-(--bg-secondary) px-2 py-0.5 rounded font-mono inline-block mt-1 self-start">
                     {cat.slug || catId}
                   </code>
 
-                  {cat.description && (
-                    <p className="text-sm text-(--text-secondary) mt-2 line-clamp-2">
-                      {cat.description}
-                    </p>
-                  )}
+                  {/* Описание — фиксированная высота в 2 строки, даже если пусто */}
+                  <p className="text-sm text-(--text-secondary) mt-2 line-clamp-2 min-h-10">
+                    {cat.description || ""}
+                  </p>
 
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-(--border)">
+                  {/* Футер прижат к низу */}
+                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-(--border)">
                     <span className="text-xs text-(--text-muted) flex items-center gap-1">
                       <FileText className="w-3 h-3" />
                       {postsCount}{" "}

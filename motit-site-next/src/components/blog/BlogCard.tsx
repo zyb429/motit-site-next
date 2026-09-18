@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { Calendar, Clock } from "lucide-react";
@@ -57,10 +58,10 @@ export function BlogCard({
 
   const postAuthor = post.author
     ? {
-        username: post.author.username ?? "",
-        full_name: post.author.full_name ?? post.author.username ?? "",
-        avatar_url: post.author.avatar_url ?? null,
-      }
+      username: post.author.username ?? "",
+      full_name: post.author.full_name ?? post.author.username ?? "",
+      avatar_url: post.author.avatar_url ?? null,
+    }
     : null;
 
   const getPostUrl = () => {
@@ -107,9 +108,19 @@ export function BlogCard({
       >
         <div className="flex flex-col md:flex-row gap-4 p-4">
           <div className="relative w-full md:w-48 h-40 md:h-32 shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-3xl opacity-20">📄</span>
-            </div>
+            {post.featuredImage?.url ? (
+              <Image
+                src={post.featuredImage.url}
+                alt={post.title || "Превью"}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="(max-width: 768px) 100vw, 192px"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-3xl opacity-20">📄</span>
+              </div>
+            )}
             {isDraft && (
               <span className="absolute top-2 right-2 bg-yellow-500/90 text-black text-[10px] font-medium px-2 py-0.5 rounded-full">
                 Черновик
@@ -182,9 +193,19 @@ export function BlogCard({
         className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${className}`}
       >
         <div className="relative w-full aspect-16/10 overflow-hidden bg-[#0a1920]">
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-4xl opacity-20">📄</span>
-          </div>
+          {post.featuredImage?.url ? (
+            <Image
+              src={post.featuredImage.url}
+              alt={post.title || "Превью"}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-4xl opacity-20">📄</span>
+            </div>
+          )}
           {isDraft && (
             <span className="absolute top-2 right-2 bg-yellow-500 text-black text-[10px] font-medium px-2 py-0.5 rounded-full">
               Черновик

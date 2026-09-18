@@ -32,7 +32,10 @@ async function getRecentPosts() {
     title: p.title ?? "",
     updatedAt: p.updated_at?.toISOString() ?? null,
     author: p.users
-      ? { username: p.users.username ?? "", full_name: p.users.full_name ?? null }
+      ? {
+        username: p.users.username ?? "",
+        full_name: p.users.full_name ?? null,
+      }
       : null,
   }));
 }
@@ -180,16 +183,13 @@ export default async function AdminPage() {
                   post.author?.full_name || post.author?.username || "—";
                 const date = post.updatedAt
                   ? new Date(post.updatedAt).toLocaleDateString("ru-RU", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })
                   : "—";
                 return (
-                  <li
-                    key={post.documentId || post.id}
-                    className="py-3"
-                  >
+                  <li key={post.documentId || post.id} className="py-3">
                     <Link
                       href={`/admin/posts/${post.documentId || post.id}`}
                       className="flex items-center justify-between gap-4 group"

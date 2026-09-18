@@ -52,7 +52,7 @@ export function DeletePostButton({ postId, postTitle }: Props) {
       onClick={handleDelete}
       disabled={disabled}
       title="Удалить"
-      className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      className="p-1.5 text-red-500 hover:bg-red-500/40 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
     >
       {disabled ? (
         <Loader2 className="w-4 h-4 animate-spin" />

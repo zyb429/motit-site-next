@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
       views,
       categories, // массив id, document_id или объекты { id }
       author, // id, document_id или объект
+      featured_image,
     } = payload;
 
     if (!title || typeof title !== "string") {
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
         is_featured: is_featured ?? false,
         views: views ?? 0,
         author_id: authorId,
+        featured_image_id: featured_image ? Number(featured_image) : null,
         published_at: isPublished ? now : null,
         created_at: now,
         updated_at: now,

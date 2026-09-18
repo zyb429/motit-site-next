@@ -353,6 +353,8 @@ model files {
   admin_users_files_updated_by_idToadmin_users admin_users?        @relation("files_updated_by_idToadmin_users", fields: [updated_by_id], references: [id], onUpdate: NoAction, map: "files_updated_by_id_fk")
   files_folder_lnk                             files_folder_lnk[]
   files_related_mph                            files_related_mph[]
+  user_avatars                                 users[]             @relation("UserAvatar")
+  posts_featured                               posts[]             @relation("PostFeaturedImage")
 
   @@index([created_by_id], map: "files_created_by_id_fk")
   @@index([document_id, locale, published_at], map: "files_documents_idx")
@@ -493,6 +495,8 @@ model posts {
   updated_by_id                                Int?                   @db.UnsignedInt
   author_id                                    Int?                   @db.UnsignedInt
   locale                                       String?                @db.VarChar(255)
+  featured_image_id                            Int?                   @db.UnsignedInt
+  featured_image                               files?                 @relation("PostFeaturedImage", fields: [featured_image_id], references: [id])
   users                                        users?                 @relation(fields: [author_id], references: [id], onUpdate: NoAction, map: "fk_posts_author")
   admin_users_posts_created_by_idToadmin_users admin_users?           @relation("posts_created_by_idToadmin_users", fields: [created_by_id], references: [id], onUpdate: NoAction, map: "posts_created_by_id_fk")
   admin_users_posts_updated_by_idToadmin_users admin_users?           @relation("posts_updated_by_idToadmin_users", fields: [updated_by_id], references: [id], onUpdate: NoAction, map: "posts_updated_by_id_fk")
@@ -503,6 +507,7 @@ model posts {
   @@index([created_by_id], map: "posts_created_by_id_fk")
   @@index([document_id, locale, published_at], map: "posts_documents_idx")
   @@index([updated_by_id], map: "posts_updated_by_id_fk")
+  @@index([featured_image_id], map: "posts_featured_image_fk")
 }
 
 model posts_author_lnk {
@@ -1247,6 +1252,8 @@ model users {
   updated_by_id                                Int?                       @db.UnsignedInt
   locale                                       String?                    @db.VarChar(255)
   bio                                          String?                    @db.LongText
+  avatar_id                                    Int?                       @db.UnsignedInt
+  avatar                                       files?                     @relation("UserAvatar", fields: [avatar_id], references: [id])
   posts                                        posts[]
   posts_author_lnk                             posts_author_lnk[]
   ticket_comments_user_lnk                     ticket_comments_user_lnk[]
@@ -1259,6 +1266,7 @@ model users {
   @@index([created_by_id], map: "users_created_by_id_fk")
   @@index([document_id, locale, published_at], map: "users_documents_idx")
   @@index([updated_by_id], map: "users_updated_by_id_fk")
+  @@index([avatar_id], map: "users_avatar_fk")
 }
 
 model users_role_lnk {

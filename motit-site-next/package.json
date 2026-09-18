@@ -9,7 +9,9 @@
     "lint": "eslint",
     "db:studio": "prisma studio",
     "db:pull": "prisma db pull",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1135.0",

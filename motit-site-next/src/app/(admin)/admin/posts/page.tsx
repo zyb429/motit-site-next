@@ -1,8 +1,8 @@
 // src/app/(admin)/admin/posts/page.tsx
 import Link from "next/link";
+import Image from "next/image";
 import {
   Plus,
-  Edit,
   FileText,
   Search,
   CheckCircle2,
@@ -16,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { DeletePostButton } from "./DeletePostButton";
 import { StatusToggleButton } from "./StatusToggleButton";
+import { EditPostButton } from "./EditPostButton";
 
 async function getPosts() {
   const user = await getCurrentUser();
@@ -28,8 +29,9 @@ async function getPosts() {
     orderBy: [{ published_at: "desc" }, { updated_at: "desc" }],
     take: 100,
     include: {
-      users: true,
+      users: { include: { avatar: true } },
       posts_categories_lnk: { include: { categories: true } },
+      featured_image: true,
     },
   });
 
@@ -43,13 +45,19 @@ async function getPosts() {
     publishedAt: p.published_at?.toISOString() ?? null,
     createdAt: p.created_at?.toISOString() ?? null,
     updatedAt: p.updated_at?.toISOString() ?? null,
-    featured_image: null,
+    featuredImage: p.featured_image
+      ? {
+        id: p.featured_image.id,
+        url: p.featured_image.url ?? null,
+        name: p.featured_image.name ?? null,
+      }
+      : null,
     author: p.users
       ? {
-          username: p.users.username ?? "",
-          full_name: p.users.full_name ?? null,
-          avatar: null,
-        }
+        username: p.users.username ?? "",
+        full_name: p.users.full_name ?? null,
+        avatar_url: p.users.avatar?.url ?? null,
+      }
       : null,
     categories:
       p.posts_categories_lnk
@@ -85,7 +93,7 @@ function getAuthorInfo(post: any): {
   return {
     name: fullName || username,
     username,
-    avatarUrl: author.avatar?.url ?? null,
+    avatarUrl: author.avatar_url ?? null,
   };
 }
 
@@ -93,7 +101,7 @@ export default async function AdminPostsPage({
   searchParams,
 }: {
   searchParams?:
-    Promise<{ q?: string; status?: string }> | { q?: string; status?: string };
+  Promise<{ q?: string; status?: string }> | { q?: string; status?: string };
 }) {
   const params = (await searchParams) || {};
   const query = (params.q || "").toLowerCase().trim();
@@ -103,7 +111,9 @@ export default async function AdminPostsPage({
 
   const totalCount = allPosts.length;
   const publishedCount = allPosts.filter(
-    (p) => (p.post_status || (p.publishedAt ? "published" : "draft")) === "published",
+    (p) =>
+      (p.post_status || (p.publishedAt ? "published" : "draft")) ===
+      "published",
   ).length;
   const draftCount = totalCount - publishedCount;
 
@@ -227,7 +237,11 @@ export default async function AdminPostsPage({
             <div className="flex items-center gap-1 bg-(--bg-secondary) rounded-lg p-1">
               {[
                 { key: "all", label: "Все", count: totalCount },
-                { key: "published", label: "Опубликовано", count: publishedCount },
+                {
+                  key: "published",
+                  label: "Опубликовано",
+                  count: publishedCount,
+                },
                 { key: "draft", label: "Черновики", count: draftCount },
               ].map((tab) => {
                 const isActive = statusFilter === tab.key;
@@ -239,19 +253,17 @@ export default async function AdminPostsPage({
                   <Link
                     key={tab.key}
                     href={href}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                      isActive
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${isActive
                         ? "bg-(--bg-card) text-(--accent) shadow-sm"
                         : "text-(--text-secondary) hover:text-(--text-primary)"
-                    }`}
+                      }`}
                   >
                     {tab.label}
                     <span
-                      className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        isActive
+                      className={`text-xs px-1.5 py-0.5 rounded-full ${isActive
                           ? "bg-(--accent-dim) text-(--accent)"
                           : "bg-(--bg-card) text-(--text-muted)"
-                      }`}
+                        }`}
                     >
                       {tab.count}
                     </span>
@@ -288,188 +300,356 @@ export default async function AdminPostsPage({
             )}
           </div>
         ) : (
-          <div className="bg-(--bg-card) rounded-xl shadow-sm border border-(--border) overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-(--bg-secondary) border-b border-(--border)">
-                <tr>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
-                    Превью
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
-                    Заголовок
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider hidden lg:table-cell">
-                    Slug
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider hidden lg:table-cell">
-                    Категории
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider hidden sm:table-cell">
-                    Дата
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider hidden lg:table-cell">
-                    Автор
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
-                    Статус
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
-                    Действия
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-(--border)">
-                {posts.map((post) => {
-                  const postId = post.documentId || String(post.id);
-                  const slug = post.slug || postId;
-                  const status =
-                    post.post_status ||
-                    (post.publishedAt ? "published" : "draft");
-                  const categories = (post.categories || [])
-                    .map((c: any) => c.name)
-                    .filter(Boolean);
+          <>
+            {/* Карточки — < lg */}
+            <div className="lg:hidden space-y-3">
+              {posts.map((post) => {
+                const postId = post.documentId || String(post.id);
+                const slug = post.slug || postId;
+                const status =
+                  post.post_status ||
+                  (post.publishedAt ? "published" : "draft");
+                const author = getAuthorInfo(post);
+                const categories = (post.categories || [])
+                  .map((c: any) => c.name)
+                  .filter(Boolean);
 
-                  return (
-                    <tr
-                      key={postId}
-                      className="hover:bg-(--bg-secondary)/50 transition-colors group"
+                return (
+                  <div
+                    key={postId}
+                    className="bg-(--bg-card) rounded-xl border border-(--border) p-4 space-y-3"
+                  >
+                    <div className="flex gap-3">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-(--bg-secondary) flex items-center justify-center shrink-0">
+                        {post.featuredImage?.url ? (
+                          <Image
+                            src={post.featuredImage.url}
+                            alt={post.title || ""}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 text-(--text-muted)" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/admin/posts/${postId}`}
+                          className="text-sm font-semibold text-(--text-primary) hover:text-(--accent) transition-colors line-clamp-2"
+                        >
+                          {post.title || "Без названия"}
+                        </Link>
+                        {post.excerpt && (
+                          <p className="text-xs text-(--text-muted) line-clamp-2 mt-1">
+                            {post.excerpt}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/blog/${slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
                     >
-                      <td className="px-4 py-3">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-(--bg-secondary) flex items-center justify-center shrink-0">
-                          <ImageIcon className="w-5 h-5 text-(--text-muted)" />
-                        </div>
-                      </td>
+                      <code className="text-xs text-(--text-muted) font-mono bg-(--bg-secondary) px-2 py-0.5 rounded block truncate">
+                        /{slug}
+                      </code>
+                    </Link>
 
-                      <td className="px-4 py-3">
-                        <div className="min-w-0">
+                    {categories.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {categories.map((cat: string) => (
+                          <span
+                            key={cat}
+                            className="inline-flex items-center gap-1 text-xs bg-(--accent-dim) text-(--accent) px-2 py-0.5 rounded-full"
+                          >
+                            <Tag className="w-3 h-3" />
+                            {cat}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-(--text-secondary)">
+                      {author && (
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-6 h-6 rounded-full overflow-hidden bg-(--bg-secondary) flex items-center justify-center shrink-0">
+                            {author.avatarUrl ? (
+                              <Image
+                                src={author.avatarUrl}
+                                alt={author.name}
+                                width={24}
+                                height={24}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-3 h-3 text-(--text-muted)" />
+                            )}
+                          </div>
+                          <span className="truncate">{author.name}</span>
+                        </div>
+                      )}
+                      <span className="whitespace-nowrap">
+                        {formatDate(post.publishedAt || post.createdAt)}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status === "published"
+                            ? "bg-(--accent-dim) text-(--accent)"
+                            : status === "archived"
+                              ? "bg-(--bg-secondary) text-(--text-muted)"
+                              : "bg-yellow-500/10 text-yellow-500"
+                          }`}
+                      >
+                        {status === "published" ? (
+                          <CheckCircle2 className="w-3 h-3" />
+                        ) : (
+                          <Clock className="w-3 h-3" />
+                        )}
+                        {status === "published"
+                          ? "Опубликован"
+                          : status === "archived"
+                            ? "Архив"
+                            : "Черновик"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-1 pt-2 border-t border-(--border)">
+                      <EditPostButton postId={postId} />
+                      <StatusToggleButton
+                        postId={postId}
+                        currentStatus={status}
+                      />
+                      <DeletePostButton
+                        postId={postId}
+                        postTitle={post.title}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Таблица — ≥ lg */}
+            <div className="hidden lg:block bg-(--bg-card) rounded-xl shadow-sm border border-(--border) overflow-hidden">
+              <table className="w-full table-fixed">
+                <colgroup>
+                  <col style={{ width: "7%" }} />
+                  <col />
+                  <col style={{ width: "16%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "10%" }} />
+                  <col style={{ width: "14%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "10%" }} />
+                </colgroup>
+                <thead className="bg-(--bg-secondary) border-b border-(--border)">
+                  <tr>
+                    <th className="text-center px-2 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
+                      Превью
+                    </th>
+                    <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
+                      Заголовок
+                    </th>
+                    <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
+                      Slug
+                    </th>
+                    <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
+                      Категории
+                    </th>
+                    <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
+                      Дата
+                    </th>
+                    <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
+                      Автор
+                    </th>
+                    <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
+                      Статус
+                    </th>
+                    <th className="text-right px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
+                      Действия
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-(--border)">
+                  {posts.map((post) => {
+                    const postId = post.documentId || String(post.id);
+                    const slug = post.slug || postId;
+                    const status =
+                      post.post_status ||
+                      (post.publishedAt ? "published" : "draft");
+                    const categories = (post.categories || [])
+                      .map((c: any) => c.name)
+                      .filter(Boolean);
+
+                    return (
+                      <tr
+                        key={postId}
+                        className="hover:bg-(--bg-secondary)/50 transition-colors group"
+                      >
+                        <td className="px-2 py-3 align-middle">
+                          <div className="w-10 h-10 mx-auto rounded-lg overflow-hidden bg-(--bg-secondary) flex items-center justify-center">
+                            {post.featuredImage?.url ? (
+                              <Image
+                                src={post.featuredImage.url}
+                                alt={post.title || ""}
+                                width={40}
+                                height={40}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <ImageIcon className="w-4 h-4 text-(--text-muted)" />
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-3 py-3 align-middle overflow-hidden">
                           <Link
                             href={`/admin/posts/${postId}`}
-                            className="text-sm font-medium text-(--text-primary) hover:text-(--accent) transition-colors line-clamp-1"
+                            className="text-sm font-medium text-(--text-primary) hover:text-(--accent) transition-colors block truncate"
+                            title={post.title || "Без названия"}
                           >
                             {post.title || "Без названия"}
                           </Link>
                           {post.excerpt && (
-                            <p className="text-xs text-(--text-muted) line-clamp-1 mt-0.5">
+                            <p className="text-xs text-(--text-muted) truncate mt-0.5">
                               {post.excerpt}
                             </p>
                           )}
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        <code className="text-xs text-(--text-muted) font-mono truncate max-w-45 block">
-                          /{slug}
-                        </code>
-                      </td>
-
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        {categories.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {categories.slice(0, 2).map((cat: string) => (
-                              <span
-                                key={cat}
-                                className="inline-flex items-center gap-1 text-xs bg-(--accent-dim) text-(--accent) px-2 py-0.5 rounded-full"
-                              >
-                                <Tag className="w-3 h-3" />
-                                {cat}
-                              </span>
-                            ))}
-                            {categories.length > 2 && (
-                              <span className="text-xs text-(--text-muted)">
-                                +{categories.length - 2}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-(--text-muted)">—</span>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className="text-xs text-(--text-secondary)">
-                          {formatDate(post.publishedAt || post.createdAt)}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        {(() => {
-                          const author = getAuthorInfo(post);
-                          if (!author) {
-                            return (
-                              <span className="text-xs text-(--text-muted)">
-                                —
-                              </span>
-                            );
-                          }
-                          return (
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full overflow-hidden bg-(--bg-secondary) flex items-center justify-center shrink-0">
-                                <User className="w-4 h-4 text-(--text-muted)" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs font-medium text-(--text-primary) truncate">
-                                  {author.name}
-                                </p>
-                                {author.username &&
-                                  author.username !== author.name && (
-                                    <p className="text-[10px] text-(--text-muted) truncate">
-                                      @{author.username}
-                                    </p>
-                                  )}
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                            status === "published"
-                              ? "bg-(--accent-dim) text-(--accent)"
-                              : status === "archived"
-                                ? "bg-(--bg-secondary) text-(--text-muted)"
-                                : "bg-yellow-500/10 text-yellow-500"
-                          }`}
-                        >
-                          {status === "published" ? (
-                            <CheckCircle2 className="w-3 h-3" />
-                          ) : (
-                            <Clock className="w-3 h-3" />
-                          )}
-                          {status === "published"
-                            ? "Опубликован"
-                            : status === "archived"
-                              ? "Архив"
-                              : "Черновик"}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <td className="px-3 py-3 align-middle overflow-hidden">
                           <Link
-                            href={`/admin/posts/${postId}`}
-                            className="p-2 text-(--accent) hover:bg-(--accent-dim) rounded-lg transition-colors"
-                            title="Редактировать"
+                            href={`/blog/${slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group/slug block"
+                            title={`/${slug}`}
                           >
-                            <Edit className="w-4 h-4" />
+                            <code className="text-xs text-(--text-muted) font-mono bg-(--bg-secondary) px-2 py-0.5 rounded transition-colors group-hover/slug:text-(--accent) group-hover/slug:bg-(--accent-dim) block truncate">
+                              /{slug}
+                            </code>
                           </Link>
-                          <StatusToggleButton
-                            postId={postId}
-                            currentStatus={status}
-                          />
-                          <DeletePostButton
-                            postId={postId}
-                            postTitle={post.title}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+
+                        <td className="px-3 py-3 align-middle overflow-hidden">
+                          {categories.length > 0 ? (
+                            <div className="flex items-center gap-1 min-w-0">
+                              <span className="inline-flex items-center gap-1 text-xs bg-(--accent-dim) text-(--accent) px-2 py-0.5 rounded-full max-w-full min-w-0">
+                                <Tag className="w-3 h-3 shrink-0" />
+                                <span className="truncate">
+                                  {categories[0]}
+                                </span>
+                              </span>
+                              {categories.length > 1 && (
+                                <span className="text-xs text-(--text-muted) shrink-0">
+                                  +{categories.length - 1}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-(--text-muted)">
+                              —
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-3 py-3 align-middle overflow-hidden">
+                          <span className="text-xs text-(--text-secondary) truncate block whitespace-nowrap">
+                            {formatDate(post.publishedAt || post.createdAt)}
+                          </span>
+                        </td>
+
+                        <td className="px-3 py-3 align-middle overflow-hidden">
+                          {(() => {
+                            const author = getAuthorInfo(post);
+                            if (!author) {
+                              return (
+                                <span className="text-xs text-(--text-muted)">
+                                  —
+                                </span>
+                              );
+                            }
+                            return (
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-7 h-7 rounded-full overflow-hidden bg-(--bg-secondary) flex items-center justify-center shrink-0">
+                                  {author.avatarUrl ? (
+                                    <Image
+                                      src={author.avatarUrl}
+                                      alt={author.name}
+                                      width={28}
+                                      height={28}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="w-3.5 h-3.5 text-(--text-muted)" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p
+                                    className="text-xs font-medium text-(--text-primary) truncate"
+                                    title={author.name}
+                                  >
+                                    {author.name}
+                                  </p>
+                                  {author.username &&
+                                    author.username !== author.name && (
+                                      <p className="text-[10px] text-(--text-muted) truncate">
+                                        @{author.username}
+                                      </p>
+                                    )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </td>
+
+                        <td className="px-3 py-3 align-middle overflow-hidden">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${status === "published"
+                                ? "bg-(--accent-dim) text-(--accent)"
+                                : status === "archived"
+                                  ? "bg-(--bg-secondary) text-(--text-muted)"
+                                  : "bg-yellow-500/10 text-yellow-500"
+                              }`}
+                          >
+                            {status === "published" ? (
+                              <CheckCircle2 className="w-3 h-3 shrink-0" />
+                            ) : (
+                              <Clock className="w-3 h-3 shrink-0" />
+                            )}
+                            <span className="hidden xl:inline">
+                              {status === "published"
+                                ? "Опубликован"
+                                : status === "archived"
+                                  ? "Архив"
+                                  : "Черновик"}
+                            </span>
+                          </span>
+                        </td>
+
+                        <td className="px-3 py-3 align-middle">
+                          <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                            <EditPostButton postId={postId} />
+                            <StatusToggleButton
+                              postId={postId}
+                              currentStatus={status}
+                            />
+                            <DeletePostButton
+                              postId={postId}
+                              postTitle={post.title}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {posts.length > 0 && (

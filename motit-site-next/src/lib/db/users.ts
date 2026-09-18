@@ -8,12 +8,16 @@ export type UserItem = {
   phone: string | null;
   blocked: boolean;
   role: { id: number; name: string; type: string } | null;
+  avatar_url: string | null;
 };
 
 export async function getUsersPrisma(): Promise<UserItem[]> {
   const rows = await prisma.users.findMany({
     orderBy: { created_at: "desc" },
-    include: { users_role_lnk: { include: { up_roles: true } } },
+    include: {
+      users_role_lnk: { include: { up_roles: true } },
+      avatar: true,
+    },
   });
 
   return rows.map((u) => {
@@ -28,6 +32,7 @@ export async function getUsersPrisma(): Promise<UserItem[]> {
       role: role
         ? { id: role.id, name: role.name ?? "", type: role.type ?? "" }
         : null,
+      avatar_url: u.avatar?.url ?? null,
     };
   });
 }

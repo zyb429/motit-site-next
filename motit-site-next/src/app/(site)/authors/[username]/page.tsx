@@ -17,6 +17,7 @@ interface AuthorPageProps {
 async function getAuthor(username: string) {
   const u = await prisma.users.findFirst({
     where: { username },
+    include: { avatar: true },
   });
   if (!u) return null;
   return {
@@ -24,7 +25,7 @@ async function getAuthor(username: string) {
     username: u.username ?? "",
     full_name: u.full_name ?? null,
     bio: u.bio ?? null,
-    avatar_url: null, // у нас пока нет аватарок
+    avatar_url: u.avatar?.url ?? null,
   };
 }
 
@@ -40,8 +41,9 @@ async function getPostsByAuthorPrisma(username: string) {
     orderBy: [{ published_at: "desc" }],
     take: 50,
     include: {
-      users: true,
+      users: { include: { avatar: true } },
       posts_categories_lnk: { include: { categories: true } },
+      featured_image: true,
     },
   });
 
@@ -56,17 +58,28 @@ async function getPostsByAuthorPrisma(username: string) {
     updatedAt: p.updated_at?.toISOString() ?? null,
     author: p.users
       ? {
-          id: p.users.id,
-          username: p.users.username ?? "",
-          full_name: p.users.full_name ?? null,
-          avatar_url: null,
-        }
+        id: p.users.id,
+        username: p.users.username ?? "",
+        full_name: p.users.full_name ?? null,
+        avatar_url: p.users.avatar?.url ?? null,
+      }
       : null,
     categories:
       p.posts_categories_lnk
         ?.map((l) => l.categories)
         .filter(Boolean)
-        .map((c: any) => ({ id: c.id, name: c.name ?? "", slug: c.slug ?? null })) ?? [],
+        .map((c: any) => ({
+          id: c.id,
+          name: c.name ?? "",
+          slug: c.slug ?? null,
+        })) ?? [],
+    featuredImage: p.featured_image
+      ? {
+        id: p.featured_image.id,
+        url: p.featured_image.url ?? null,
+        name: p.featured_image.name ?? null,
+      }
+      : null,
   }));
 }
 
