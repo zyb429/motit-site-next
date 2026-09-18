@@ -1,6 +1,5 @@
 // src/app/(admin)/admin/posts/page.tsx
 import Link from "next/link";
-import { cookies } from "next/headers";
 import {
   Plus,
   Edit,
@@ -13,49 +12,54 @@ import {
   ArrowLeft,
   User,
 } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 import { DeletePostButton } from "./DeletePostButton";
 import { StatusToggleButton } from "./StatusToggleButton";
 
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-
 async function getPosts() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("strapi_jwt")?.value;
-  if (!token) return [];
+  const user = await getCurrentUser();
+  if (!user) return [];
 
-  // Кто я?
-  const meRes = await fetch(`${STRAPI_URL}/api/users/me?populate[role]=*`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-  if (!meRes.ok) return [];
-  const me = await meRes.json();
-  const roleName = (me.role?.name ?? me.role?.type ?? "").toLowerCase();
-  const isAdmin = roleName === "admin";
+  const isAdmin = user.isAdmin;
 
-  // Админ — все посты, автор — только свои
-  const filter = isAdmin ? "" : `filters[author][id][$eq]=${me.id}&`;
-
-  const res = await fetch(
-    `${STRAPI_URL}/api/posts?${filter}` +
-      `populate[0]=categories&` +
-      `populate[1]=featured_image&` +
-      `populate[2]=author&` +
-      `populate[3]=author.avatar&` +
-      `sort[0]=publishedAt:desc&` +
-      `pagination[pageSize]=100`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
+  const rows = await prisma.posts.findMany({
+    where: isAdmin ? {} : { author_id: user.id },
+    orderBy: [{ published_at: "desc" }, { updated_at: "desc" }],
+    take: 100,
+    include: {
+      users: true,
+      posts_categories_lnk: { include: { categories: true } },
     },
-  );
+  });
 
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.data || [];
+  return rows.map((p) => ({
+    id: p.id,
+    documentId: p.document_id ?? null,
+    title: p.title ?? "",
+    slug: p.slug ?? null,
+    excerpt: p.excerpt ?? null,
+    post_status: p.post_status ?? null,
+    publishedAt: p.published_at?.toISOString() ?? null,
+    createdAt: p.created_at?.toISOString() ?? null,
+    updatedAt: p.updated_at?.toISOString() ?? null,
+    featured_image: null,
+    author: p.users
+      ? {
+          username: p.users.username ?? "",
+          full_name: p.users.full_name ?? null,
+          avatar: null,
+        }
+      : null,
+    categories:
+      p.posts_categories_lnk
+        ?.map((l) => l.categories)
+        .filter(Boolean)
+        .map((c: any) => ({ name: c.name ?? "", slug: c.slug ?? null })) ?? [],
+  }));
 }
 
-function formatDate(dateString?: string) {
+function formatDate(dateString?: string | null) {
   if (!dateString) return "—";
   try {
     return new Date(dateString).toLocaleDateString("ru-RU", {
@@ -68,24 +72,6 @@ function formatDate(dateString?: string) {
   }
 }
 
-function getFeaturedImageUrl(post: any): string | null {
-  const img = post.featured_image;
-  if (!img) return null;
-
-  const raw = img.url || img.data?.attributes?.url || img.data?.url || null;
-
-  if (!raw) return null;
-
-  if (raw.startsWith("http")) return raw;
-
-  const base =
-    process.env.NEXT_PUBLIC_MEDIA_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    STRAPI_URL;
-
-  return `${base}${raw.startsWith("/") ? "" : "/"}${raw}`;
-}
-
 function getAuthorInfo(post: any): {
   name: string;
   username: string;
@@ -93,40 +79,14 @@ function getAuthorInfo(post: any): {
 } | null {
   const author = post.author;
   if (!author) return null;
-
-  // Strapi v5: author — плоский объект
-  // Strapi v4: author = { data: { attributes: {...} } }
-  const data = author.data?.attributes ?? author.attributes ?? author;
-
-  const username = data.username || "";
-  const fullName =
-    data.full_name ||
-    [data.firstname, data.lastname].filter(Boolean).join(" ") ||
-    username;
-
+  const username = author.username || "";
+  const fullName = author.full_name || username;
   if (!fullName && !username) return null;
-
-  // Аватар
-  const rawAvatar =
-    data.avatar?.url ||
-    data.avatar?.data?.attributes?.url ||
-    data.avatar?.data?.url ||
-    null;
-
-  let avatarUrl: string | null = null;
-  if (rawAvatar) {
-    if (rawAvatar.startsWith("http")) {
-      avatarUrl = rawAvatar;
-    } else {
-      const base =
-        process.env.NEXT_PUBLIC_MEDIA_URL ||
-        process.env.NEXT_PUBLIC_API_URL ||
-        STRAPI_URL;
-      avatarUrl = `${base}${rawAvatar.startsWith("/") ? "" : "/"}${rawAvatar}`;
-    }
-  }
-
-  return { name: fullName || username, username, avatarUrl };
+  return {
+    name: fullName || username,
+    username,
+    avatarUrl: author.avatar?.url ?? null,
+  };
 }
 
 export default async function AdminPostsPage({
@@ -143,22 +103,20 @@ export default async function AdminPostsPage({
 
   const totalCount = allPosts.length;
   const publishedCount = allPosts.filter(
-    (p: any) =>
-      (p.post_status || (p.publishedAt ? "published" : "draft")) ===
-      "published",
+    (p) => (p.post_status || (p.publishedAt ? "published" : "draft")) === "published",
   ).length;
   const draftCount = totalCount - publishedCount;
 
   let posts = allPosts;
   if (query) {
-    posts = posts.filter((p: any) => {
+    posts = posts.filter((p) => {
       const title = (p.title || "").toLowerCase();
       const slug = (p.slug || "").toLowerCase();
       return title.includes(query) || slug.includes(query);
     });
   }
   if (statusFilter !== "all") {
-    posts = posts.filter((p: any) => {
+    posts = posts.filter((p) => {
       const status = p.post_status || (p.publishedAt ? "published" : "draft");
       return status === statusFilter;
     });
@@ -166,7 +124,6 @@ export default async function AdminPostsPage({
 
   return (
     <div className="min-h-screen bg-(--bg-primary)">
-      {/* Sticky header */}
       <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10 h-20">
         <div className="container mx-auto px-6 h-full flex items-center max-w-6xl">
           <div className="flex items-center justify-between gap-4 w-full">
@@ -203,7 +160,6 @@ export default async function AdminPostsPage({
       </header>
 
       <main className="container mx-auto px-6 py-8 max-w-6xl">
-        {/* Статистика */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-(--bg-card) rounded-xl border border-(--border) p-4 shadow-sm">
             <div className="flex items-center justify-between">
@@ -248,7 +204,6 @@ export default async function AdminPostsPage({
           </div>
         </div>
 
-        {/* Фильтры и поиск */}
         <div className="bg-(--bg-card) rounded-xl border border-(--border) p-4 shadow-sm mb-6">
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
             <form
@@ -272,11 +227,7 @@ export default async function AdminPostsPage({
             <div className="flex items-center gap-1 bg-(--bg-secondary) rounded-lg p-1">
               {[
                 { key: "all", label: "Все", count: totalCount },
-                {
-                  key: "published",
-                  label: "Опубликовано",
-                  count: publishedCount,
-                },
+                { key: "published", label: "Опубликовано", count: publishedCount },
                 { key: "draft", label: "Черновики", count: draftCount },
               ].map((tab) => {
                 const isActive = statusFilter === tab.key;
@@ -311,7 +262,6 @@ export default async function AdminPostsPage({
           </div>
         </div>
 
-        {/* Таблица или пустое состояние */}
         {posts.length === 0 ? (
           <div className="bg-(--bg-card) rounded-xl border border-dashed border-(--border) p-12 text-center">
             <div className="w-16 h-16 bg-(--bg-secondary) rounded-full flex items-center justify-center mx-auto mb-4">
@@ -369,15 +319,14 @@ export default async function AdminPostsPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-(--border)">
-                {posts.map((post: any) => {
+                {posts.map((post) => {
                   const postId = post.documentId || String(post.id);
                   const slug = post.slug || postId;
                   const status =
                     post.post_status ||
                     (post.publishedAt ? "published" : "draft");
-                  const imageUrl = getFeaturedImageUrl(post);
                   const categories = (post.categories || [])
-                    .map((c: any) => c.attributes?.name || c.name)
+                    .map((c: any) => c.name)
                     .filter(Boolean);
 
                   return (
@@ -387,16 +336,7 @@ export default async function AdminPostsPage({
                     >
                       <td className="px-4 py-3">
                         <div className="w-12 h-12 rounded-lg overflow-hidden bg-(--bg-secondary) flex items-center justify-center shrink-0">
-                          {imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={imageUrl}
-                              alt={post.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <ImageIcon className="w-5 h-5 text-(--text-muted)" />
-                          )}
+                          <ImageIcon className="w-5 h-5 text-(--text-muted)" />
                         </div>
                       </td>
 
@@ -464,16 +404,7 @@ export default async function AdminPostsPage({
                           return (
                             <div className="flex items-center gap-2">
                               <div className="w-7 h-7 rounded-full overflow-hidden bg-(--bg-secondary) flex items-center justify-center shrink-0">
-                                {author.avatarUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={author.avatarUrl}
-                                    alt={author.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <User className="w-4 h-4 text-(--text-muted)" />
-                                )}
+                                <User className="w-4 h-4 text-(--text-muted)" />
                               </div>
                               <div className="min-w-0">
                                 <p className="text-xs font-medium text-(--text-primary) truncate">

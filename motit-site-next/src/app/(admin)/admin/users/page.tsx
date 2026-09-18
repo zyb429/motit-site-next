@@ -1,39 +1,44 @@
 // src/app/(admin)/admin/users/page.tsx
 import Link from "next/link";
 import { ArrowLeft, Users } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import { UsersTable } from "./UsersTable";
-import { getMediaItemUrl } from "@/lib/strapi";
-
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-const API_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
 async function getUsers() {
-  const res = await fetch(
-    `${STRAPI_URL}/api/users?populate[role]=*&populate[avatar]=*&sort[0]=createdAt:desc&pagination[pageSize]=100`,
-    {
-      headers: { Authorization: `Bearer ${API_TOKEN}` },
-      cache: "no-store",
-    },
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  const users = Array.isArray(data) ? data : (data.data ?? []);
+  const rows = await prisma.users.findMany({
+    orderBy: { created_at: "desc" },
+    take: 100,
+    include: { users_role_lnk: { include: { up_roles: true } } },
+  });
 
-  // ✅ Преобразуем avatar.url в абсолютный
-  return users.map((u: any) => ({
-    ...u,
-    avatar: u.avatar ? { ...u.avatar, url: getMediaItemUrl(u.avatar) } : null,
-  }));
+  return rows.map((u) => {
+    const role = u.users_role_lnk?.[0]?.up_roles ?? null;
+    return {
+      id: u.id,
+      documentId: u.document_id ?? null,
+      username: u.username ?? "",
+      email: u.email ?? "",
+      full_name: u.full_name ?? null,
+      phone: u.phone ?? null,
+      blocked: u.blocked ?? false,
+      confirmed: u.confirmed ?? false,
+      createdAt: u.created_at?.toISOString() ?? new Date().toISOString(),
+      avatar: null,
+      role: role
+        ? { id: role.id, name: role.name ?? "", type: role.type ?? "" }
+        : null,
+    };
+  });
 }
 
 async function getRoles() {
-  const res = await fetch(`${STRAPI_URL}/api/users-permissions/roles`, {
-    headers: { Authorization: `Bearer ${API_TOKEN}` },
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.roles ?? [];
+  const rows = await prisma.up_roles.findMany({ orderBy: { name: "asc" } });
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name ?? "",
+    type: r.type ?? "",
+    description: r.description ?? null,
+  }));
 }
 
 export default async function UsersPage() {

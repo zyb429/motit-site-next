@@ -1,6 +1,5 @@
 // src/app/(admin)/admin/categories/page.tsx
 import Link from "next/link";
-import { cookies } from "next/headers";
 import {
   Plus,
   Edit,
@@ -10,55 +9,44 @@ import {
   FileText,
   ArrowLeft,
 } from "lucide-react";
-
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
+import { prisma } from "@/lib/prisma";
 
 async function getCategories() {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-  const res = await fetch(
-    `${STRAPI_URL}/api/categories?sort[0]=name:asc&pagination[pageSize]=100`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    },
-  );
-
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.data || [];
+  const rows = await prisma.categories.findMany({
+    orderBy: { name: "asc" },
+  });
+  return rows.map((c) => ({
+    id: c.id,
+    documentId: c.document_id ?? null,
+    name: c.name ?? "",
+    slug: c.slug ?? "",
+    description: c.description ?? null,
+    icon: c.icon ?? null,
+  }));
 }
 
 async function getPostsCountByCategory(): Promise<Record<string, number>> {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-  const res = await fetch(
-    `${STRAPI_URL}/api/posts?populate%5B0%5D=categories&pagination%5BpageSize%5D=1000`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    },
-  );
-
-  if (!res.ok) return {};
-
-  const data = await res.json();
-  const counts: Record<string, number> = {};
-
-  for (const post of data.data || []) {
-    const cats = post.categories || [];
-    for (const cat of cats) {
-      const slug = cat.slug;
-      if (slug) {
-        counts[slug] = (counts[slug] || 0) + 1;
-      }
-    }
+  // Считаем через связующую таблицу posts_categories_lnk
+  const links = await prisma.posts_categories_lnk.findMany({
+    select: { category_id: true },
+  });
+  const countsByCategoryId: Record<number, number> = {};
+  for (const l of links) {
+    if (l.category_id == null) continue;
+    countsByCategoryId[l.category_id] =
+      (countsByCategoryId[l.category_id] ?? 0) + 1;
   }
 
+  // Сопоставляем category_id → slug
+  const cats = await prisma.categories.findMany({
+    select: { id: true, slug: true },
+  });
+  const counts: Record<string, number> = {};
+  for (const c of cats) {
+    if (c.slug && countsByCategoryId[c.id] != null) {
+      counts[c.slug] = countsByCategoryId[c.id];
+    }
+  }
   return counts;
 }
 
@@ -77,7 +65,7 @@ export default async function AdminCategoriesPage({
 
   let categories = allCategories;
   if (query) {
-    categories = categories.filter((c: any) => {
+    categories = categories.filter((c) => {
       const name = (c.name || "").toLowerCase();
       const slug = (c.slug || "").toLowerCase();
       const description = (c.description || "").toLowerCase();
@@ -167,7 +155,7 @@ export default async function AdminCategoriesPage({
                 <p className="text-sm text-(--text-secondary)">Со статьями</p>
                 <p className="text-2xl font-bold text-(--accent) mt-1">
                   {
-                    allCategories.filter((c: any) => (counts[c.slug] ?? 0) > 0)
+                    allCategories.filter((c) => (counts[c.slug] ?? 0) > 0)
                       .length
                   }
                 </p>
@@ -193,7 +181,6 @@ export default async function AdminCategoriesPage({
           </form>
         </div>
 
-        {/* Сетка или пустое состояние */}
         {categories.length === 0 ? (
           <div className="bg-(--bg-card) rounded-xl border border-dashed border-(--border) p-12 text-center">
             <div className="w-16 h-16 bg-(--bg-secondary) rounded-full flex items-center justify-center mx-auto mb-4">
@@ -219,8 +206,8 @@ export default async function AdminCategoriesPage({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((cat: any) => {
-              const catId = cat.documentId || cat.id;
+            {categories.map((cat) => {
+              const catId = cat.documentId || String(cat.id);
               const postsCount = counts[cat.slug] ?? 0;
 
               return (

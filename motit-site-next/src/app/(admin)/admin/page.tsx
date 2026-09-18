@@ -1,7 +1,6 @@
 // src/app/(admin)/admin/page.tsx
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import {
   PlusCircle,
   FileText,
@@ -10,50 +9,32 @@ import {
   Home,
   PenSquare,
 } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-
 async function getCounts() {
-  const headers = {
-    Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
-  };
-
-  const [postsRes, catsRes] = await Promise.all([
-    fetch(`${STRAPI_URL}/api/posts?pagination[pageSize]=1`, {
-      headers,
-      cache: "no-store",
-    }),
-    fetch(`${STRAPI_URL}/api/categories?pagination[pageSize]=1`, {
-      headers,
-      cache: "no-store",
-    }),
+  const [posts, categories] = await Promise.all([
+    prisma.posts.count(),
+    prisma.categories.count(),
   ]);
-
-  const posts = postsRes.ok ? await postsRes.json() : null;
-  const cats = catsRes.ok ? await catsRes.json() : null;
-
-  return {
-    posts: posts?.meta?.pagination?.total ?? 0,
-    categories: cats?.meta?.pagination?.total ?? 0,
-  };
+  return { posts, categories };
 }
 
 async function getRecentPosts() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("strapi_jwt")?.value;
-  if (!token) return [];
-
-  const res = await fetch(
-    `${STRAPI_URL}/api/posts?sort[0]=updatedAt:desc&pagination[pageSize]=5&populate[0]=author&populate[1]=categories`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    },
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.data || [];
+  const rows = await prisma.posts.findMany({
+    orderBy: { updated_at: "desc" },
+    take: 5,
+    include: { users: true },
+  });
+  return rows.map((p) => ({
+    id: p.id,
+    documentId: p.document_id ?? null,
+    title: p.title ?? "",
+    updatedAt: p.updated_at?.toISOString() ?? null,
+    author: p.users
+      ? { username: p.users.username ?? "", full_name: p.users.full_name ?? null }
+      : null,
+  }));
 }
 
 export default async function AdminPage() {
@@ -67,7 +48,6 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-screen bg-(--bg-primary)">
-      {/* Хедер */}
       <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10 h-20">
         <div className="h-full px-6 flex items-center">
           <div className="flex items-center justify-between w-full">
@@ -98,7 +78,6 @@ export default async function AdminPage() {
         </div>
       </header>
 
-      {/* Контент */}
       <main className="px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-(--bg-card) rounded-xl p-6 border border-(--border)">
@@ -196,19 +175,21 @@ export default async function AdminPage() {
             </p>
           ) : (
             <ul className="divide-y divide-(--border)">
-              {recentPosts.map((post: any) => {
+              {recentPosts.map((post) => {
                 const author =
                   post.author?.full_name || post.author?.username || "—";
-                const date = new Date(post.updatedAt).toLocaleDateString(
-                  "ru-RU",
-                  {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  },
-                );
+                const date = post.updatedAt
+                  ? new Date(post.updatedAt).toLocaleDateString("ru-RU", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "—";
                 return (
-                  <li key={post.documentId || post.id} className="py-3">
+                  <li
+                    key={post.documentId || post.id}
+                    className="py-3"
+                  >
                     <Link
                       href={`/admin/posts/${post.documentId || post.id}`}
                       className="flex items-center justify-between gap-4 group"
