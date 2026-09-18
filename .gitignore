@@ -1,10 +1,29 @@
-motit-backend/src/extensions/documentation/documentation/1.0.0/full_documentation.json
-motit-backend/src/extensions/documentation/documentation/1.0.0/full_documentation.json
-motit-backend/src/extensions/documentation/documentation/1.0.0/full_documentation.json
+# === Strapi (удалён после миграции) ===
+motit-backend/
+motit-backend.backup.tar.gz
 
-motit-site-next/motit-site-next/.next/
+# === Env (секреты) ===
+.env
+.env.local
+.env.*.local
 
-# DB dumps
+# === Backups and dumps ===
 *.sql
 *.sql.bak
+*.tar.gz
 mysql creds.txt
+
+# === Node ===
+node_modules/
+.next/
+out/
+dist/
+
+# === OS / IDE ===
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# === Next.js ===
+motit-site-next/motit-site-next/.next/
