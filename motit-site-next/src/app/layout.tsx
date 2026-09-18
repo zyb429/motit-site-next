@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -56,22 +57,20 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var path = window.location.pathname;
-                  // Тёмная тема для всех зон, КРОМЕ /admin
-                  var isAdmin = path.startsWith("/admin");
-                  if (!isAdmin) {
-                    document.documentElement.classList.add("dark");
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`
+            (function() {
+              try {
+                var path = window.location.pathname;
+                // Тёмная тема для всех зон, КРОМЕ /admin
+                var isAdmin = path.startsWith("/admin");
+                if (!isAdmin) {
+                  document.documentElement.classList.add("dark");
+                }
+              } catch (e) {}
+            })();
+          `}
+        </Script>
       </head>
       <body className={inter.className}>
         <Providers>{children}</Providers>

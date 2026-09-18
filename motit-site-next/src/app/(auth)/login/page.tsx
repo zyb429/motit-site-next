@@ -3,6 +3,7 @@
 import { useState, useEffect, SyntheticEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
@@ -15,31 +16,13 @@ export default function LoginPage() {
 
   const from = searchParams.get("from");
 
-  function zoneForRole(role: string | undefined): string {
+  function zoneForRole(role: string | undefined | null): string {
     const r = (role ?? "").toLowerCase();
     if (r === "admin" || r === "worker") return "/admin";
     if (r === "statistics") return "/stats";
     if (r === "client" || r === "authenticated") return "/account";
     return "/account";
   }
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch("/api/auth/me", { cache: "no-store" });
-        if (!res.ok) return;
-
-        const data = await res.json();
-        const role = data?.user?.role?.name ?? data?.user?.role?.type;
-        const zone = zoneForRole(role);
-        const target = from && from.startsWith(zone) ? from : zone;
-        router.push(target);
-      } catch {
-        // не авторизован — остаёмся на форме
-      }
-    };
-    checkAuth();
-  }, [router, from]);
 
   const handleSubmit = async (
     e: SyntheticEvent<HTMLFormElement, SubmitEvent>,
@@ -62,33 +45,29 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          identifier: identifier.trim(),
-          password: password.trim(),
-        }),
+      const res = await signIn("credentials", {
+        identifier: identifier.trim(),
+        password: password.trim(),
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || data.error || "Ошибка входа");
+      if (!res || res.error) {
+        throw new Error("Неверный логин или пароль");
       }
 
       setSuccessMessage("Вход выполнен успешно!");
 
-      const role = data?.user?.role;
+      // Подтянем сессию, чтобы узнать роль для редиректа
+      const meRes = await fetch("/api/auth/session", { cache: "no-store" });
+      const session = await meRes.json().catch(() => null);
+      const role = session?.user?.roleType || session?.user?.role;
       const zone = zoneForRole(role);
-      const target =
-        from && from.startsWith(zone) ? from : data?.redirectTo || zone;
+      const target = from && from.startsWith(zone) ? from : zone;
 
       setTimeout(() => {
         router.push(target);
         router.refresh();
-      }, 500);
+      }, 300);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка входа");
       setLoading(false);
@@ -163,33 +142,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-2.5 bg-[#2dd4bf] text-[#0a1920] rounded-lg font-medium hover:bg-[#14b8a6] focus:ring-4 focus:ring-[#2dd4bf]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Вход...
-              </span>
-            ) : (
-              "Войти"
-            )}
+            {loading ? "Вход..." : "Войти"}
           </button>
         </form>
 
@@ -202,12 +155,6 @@ export default function LoginPage() {
             Зарегистрироваться
           </Link>
         </div>
-
-        {process.env.NODE_ENV === "development" && (
-          <div className="mt-4 text-center text-xs text-gray-600">
-            🔧 Режим разработки
-          </div>
-        )}
       </div>
     </div>
   );

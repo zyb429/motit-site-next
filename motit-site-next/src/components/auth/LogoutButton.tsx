@@ -2,6 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
 
 interface LogoutButtonProps {
@@ -23,10 +24,7 @@ export function LogoutButton({
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await signOut({ redirect: false });
     } catch (err) {
       console.error("[LogoutButton] error:", err);
     }
@@ -61,7 +59,6 @@ export function LogoutButton({
     );
   }
 
-  // default — обратная совместимость
   return (
     <button
       type="button"
