@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, SyntheticEvent } from "react";
+import { Suspense, useState, SyntheticEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 
-export default function LoginPage() {
+function LoginForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -57,7 +57,6 @@ export default function LoginPage() {
 
       setSuccessMessage("Вход выполнен успешно!");
 
-      // Подтянем сессию, чтобы узнать роль для редиректа
       const meRes = await fetch("/api/auth/session", { cache: "no-store" });
       const session = await meRes.json().catch(() => null);
       const role = session?.user?.roleType || session?.user?.role;
@@ -157,5 +156,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a1920]" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

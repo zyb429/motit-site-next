@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { StatsSidebar } from "@/components/stats/Sidebar";
 import { ThemeForce } from "@/components/ui/ThemeForce";
 
+export const dynamic = "force-dynamic";
+
 export default async function StatsLayout({
   children,
 }: {

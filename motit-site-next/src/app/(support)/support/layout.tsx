@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { SupportSidebar } from "@/components/helpdesk/Sidebar";
 import { ThemeForce } from "@/components/ui/ThemeForce";
 
+export const dynamic = "force-dynamic";
+
 export default async function SupportLayout({
   children,
 }: {

@@ -1,7 +1,10 @@
+// src/app/(account)/account/layout.tsx
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { AccountSidebar } from "@/components/account/Sidebar";
 import { ThemeForce } from "@/components/ui/ThemeForce";
+
+export const dynamic = "force-dynamic";
 
 export default async function AccountLayout({
   children,
