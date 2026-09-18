@@ -1,22 +1,19 @@
-import { cookies } from "next/headers";
+// src/app/(admin)/admin/categories/[id]/page.tsx
 import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 import CategoryEditForm from "./CategoryEditForm";
 
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-
-async function getCategory(id: string) {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-  const res = await fetch(`${STRAPI_URL}/api/categories/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
+async function getCategory(rawId: string) {
+  // поддержка числового id и documentId
+  const num = Number(rawId);
+  if (Number.isFinite(num) && num > 0) {
+    const byId = await prisma.categories.findUnique({ where: { id: num } });
+    if (byId) return byId;
+  }
+  const byDoc = await prisma.categories.findFirst({
+    where: { document_id: rawId },
   });
-
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.data;
+  return byDoc;
 }
 
 export default async function EditCategoryPage({
@@ -29,5 +26,16 @@ export default async function EditCategoryPage({
 
   if (!category) notFound();
 
-  return <CategoryEditForm initialCategory={category} />;
+  return (
+    <CategoryEditForm
+      initialCategory={{
+        id: category.id,
+        documentId: category.document_id,
+        name: category.name ?? "",
+        slug: category.slug ?? "",
+        description: category.description ?? "",
+        icon: category.icon ?? "",
+      }}
+    />
+  );
 }
