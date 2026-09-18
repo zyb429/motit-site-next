@@ -1,9 +1,7 @@
 // src/app/api/admin/users/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-const API_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -17,36 +15,62 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
   }
 
-  const url = new URL(request.url);
-  const q = url.searchParams.get("q") ?? "";
-  const roleFilter = url.searchParams.get("role") ?? "";
+  try {
+    const url = new URL(request.url);
+    const q = (url.searchParams.get("q") ?? "").trim();
+    const roleFilter = (url.searchParams.get("role") ?? "").trim();
 
-  const params = new URLSearchParams();
-  params.set("populate[role]", "*");
-  params.set("populate[avatar]", "*");
-  params.set("sort[0]", "createdAt:desc");
-  params.set("pagination[pageSize]", "100");
-  if (q) {
-    params.set("filters[$or][0][username][$containsi]", q);
-    params.set("filters[$or][1][email][$containsi]", q);
-    params.set("filters[$or][2][full_name][$containsi]", q);
-  }
-  if (roleFilter) {
-    params.set("filters[role][name][$eq]", roleFilter);
-  }
+    // Формируем where
+    const where: any = {};
 
-  const res = await fetch(`${STRAPI_URL}/api/users?${params}`, {
-    headers: { Authorization: `Bearer ${API_TOKEN}` },
-    cache: "no-store",
-  });
+    if (q) {
+      where.OR = [
+        { username: { contains: q } },
+        { email: { contains: q } },
+        { full_name: { contains: q } },
+      ];
+    }
 
-  if (!res.ok) {
+    if (roleFilter) {
+      where.users_role_lnk = {
+        some: { up_roles: { name: roleFilter } },
+      };
+    }
+
+    const users = await prisma.users.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      take: 100,
+      include: {
+        users_role_lnk: { include: { up_roles: true } },
+      },
+    });
+
+    return NextResponse.json({
+      data: users.map((u) => {
+        const role = u.users_role_lnk?.[0]?.up_roles ?? null;
+        return {
+          id: u.id,
+          documentId: u.document_id ?? null,
+          username: u.username ?? "",
+          email: u.email ?? "",
+          full_name: u.full_name ?? null,
+          phone: u.phone ?? null,
+          blocked: u.blocked ?? false,
+          confirmed: u.confirmed ?? false,
+          createdAt: u.created_at?.toISOString() ?? null,
+          avatar: null,
+          role: role
+            ? { id: role.id, name: role.name ?? "", type: role.type ?? "" }
+            : null,
+        };
+      }),
+    });
+  } catch (error) {
+    console.error("[api/admin/users] GET error:", error);
     return NextResponse.json(
-      { error: "Ошибка Strapi" },
-      { status: res.status },
+      { error: "Внутренняя ошибка сервера" },
+      { status: 500 },
     );
   }
-
-  const data = await res.json();
-  return NextResponse.json(data);
 }

@@ -1,9 +1,7 @@
 // src/app/api/admin/roles/route.ts
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-const API_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
 export async function GET() {
   const admin = await getCurrentUser();
@@ -11,18 +9,24 @@ export async function GET() {
     return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
   }
 
-  const res = await fetch(`${STRAPI_URL}/api/users-permissions/roles`, {
-    headers: { Authorization: `Bearer ${API_TOKEN}` },
-    cache: "no-store",
-  });
+  try {
+    const roles = await prisma.up_roles.findMany({
+      orderBy: { name: "asc" },
+    });
 
-  if (!res.ok) {
+    return NextResponse.json({
+      roles: roles.map((r) => ({
+        id: r.id,
+        name: r.name ?? "",
+        type: r.type ?? "",
+        description: r.description ?? null,
+      })),
+    });
+  } catch (error) {
+    console.error("[api/admin/roles] error:", error);
     return NextResponse.json(
-      { error: "Ошибка Strapi" },
-      { status: res.status },
+      { error: "Внутренняя ошибка сервера" },
+      { status: 500 },
     );
   }
-
-  const data = await res.json();
-  return NextResponse.json(data);
 }

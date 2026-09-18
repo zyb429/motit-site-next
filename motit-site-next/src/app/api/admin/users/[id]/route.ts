@@ -1,10 +1,7 @@
 // src/app/api/admin/users/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-const API_TOKEN = process.env.STRAPI_API_TOKEN || "";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -12,6 +9,7 @@ async function requireAdmin() {
   return user;
 }
 
+// PATCH /api/admin/users/:id — смена роли / blocked / full_name / phone
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -21,66 +19,115 @@ export async function PATCH(
     return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
   }
 
-  const { id } = await params;
-  const body = await request.json();
-  const { roleId, blocked, full_name, phone } = body;
-
-  const cookieStore = await cookies();
-  const jwt = cookieStore.get("strapi_jwt")?.value;
-  if (!jwt) {
-    return NextResponse.json({ error: "Нет JWT" }, { status: 401 });
-  }
-
-  // Смена роли
-  if (roleId !== undefined) {
-    const res = await fetch(`${STRAPI_URL}/api/admin-users/${id}/role`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ roleId }),
-    });
-    const result = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: result.error?.message || "Ошибка смены роли" },
-        { status: res.status },
-      );
+  try {
+    const { id: rawId } = await params;
+    const userId = Number(rawId);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return NextResponse.json({ error: "Неверный id" }, { status: 400 });
     }
-    return NextResponse.json(result);
-  }
 
-  // Остальные поля (blocked, full_name, phone)
-  const data: Record<string, unknown> = {};
-  if (blocked !== undefined) data.blocked = blocked;
-  if (full_name !== undefined) data.full_name = full_name;
-  if (phone !== undefined) data.phone = phone;
+    const body = await request.json();
+    const { roleId, blocked, full_name, phone } = body ?? {};
 
-  if (Object.keys(data).length === 0) {
-    return NextResponse.json({ error: "Нет данных" }, { status: 400 });
-  }
+    // 1. Смена роли
+    if (roleId !== undefined) {
+      // Защита: нельзя менять свою роль
+      if (admin.id === userId) {
+        return NextResponse.json(
+          { error: "Нельзя изменить свою собственную роль" },
+          { status: 400 },
+        );
+      }
 
-  const res = await fetch(`${STRAPI_URL}/api/admin-users/${id}/update`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
+      const roleExists = await prisma.up_roles.findUnique({
+        where: { id: Number(roleId) },
+      });
+      if (!roleExists) {
+        return NextResponse.json({ error: "Роль не найдена" }, { status: 400 });
+      }
 
-  const result = await res.json().catch(() => ({}));
-  if (!res.ok) {
+      // Удаляем все старые связи и создаём новую
+      await prisma.users_role_lnk.deleteMany({ where: { user_id: userId } });
+      await prisma.users_role_lnk.create({
+        data: { user_id: userId, role_id: Number(roleId) },
+      });
+
+      const updated = await prisma.users.findUnique({
+        where: { id: userId },
+        include: { users_role_lnk: { include: { up_roles: true } } },
+      });
+
+      const role = updated?.users_role_lnk?.[0]?.up_roles ?? null;
+
+      return NextResponse.json({
+        data: {
+          id: updated?.id,
+          documentId: updated?.document_id ?? null,
+          username: updated?.username ?? "",
+          email: updated?.email ?? "",
+          full_name: updated?.full_name ?? null,
+          phone: updated?.phone ?? null,
+          blocked: updated?.blocked ?? false,
+          role: role
+            ? { id: role.id, name: role.name ?? "", type: role.type ?? "" }
+            : null,
+        },
+      });
+    }
+
+    // 2. Обновление остальных полей
+    const data: Record<string, unknown> = {};
+    if (blocked !== undefined) {
+      // Защита: нельзя заблокировать самого себя
+      if (admin.id === userId && blocked === true) {
+        return NextResponse.json(
+          { error: "Нельзя заблокировать самого себя" },
+          { status: 400 },
+        );
+      }
+      data.blocked = blocked;
+    }
+    if (full_name !== undefined) data.full_name = full_name;
+    if (phone !== undefined) data.phone = phone;
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: "Нет данных" }, { status: 400 });
+    }
+
+    data.updated_at = new Date();
+
+    const updated = await prisma.users.update({
+      where: { id: userId },
+      data,
+      include: { users_role_lnk: { include: { up_roles: true } } },
+    });
+
+    const role = updated.users_role_lnk?.[0]?.up_roles ?? null;
+
+    return NextResponse.json({
+      data: {
+        id: updated.id,
+        documentId: updated.document_id ?? null,
+        username: updated.username ?? "",
+        email: updated.email ?? "",
+        full_name: updated.full_name ?? null,
+        phone: updated.phone ?? null,
+        blocked: updated.blocked ?? false,
+        role: role
+          ? { id: role.id, name: role.name ?? "", type: role.type ?? "" }
+          : null,
+      },
+    });
+  } catch (error) {
+    console.error("[api/admin/users/:id] PATCH error:", error);
     return NextResponse.json(
-      { error: result.error?.message || "Ошибка обновления" },
-      { status: res.status },
+      { error: "Внутренняя ошибка сервера" },
+      { status: 500 },
     );
   }
-
-  return NextResponse.json(result);
 }
 
+// DELETE /api/admin/users/:id
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -90,26 +137,37 @@ export async function DELETE(
     return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
   }
 
-  const { id } = await params;
+  try {
+    const { id: rawId } = await params;
+    const userId = Number(rawId);
 
-  if (String(admin.id) === String(id)) {
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return NextResponse.json({ error: "Неверный id" }, { status: 400 });
+    }
+
+    if (admin.id === userId) {
+      return NextResponse.json(
+        { error: "Нельзя удалить самого себя" },
+        { status: 400 },
+      );
+    }
+
+    // Сначала отвязываем связи
+    await prisma.users_role_lnk.deleteMany({ where: { user_id: userId } });
+    await prisma.posts_author_lnk.deleteMany({ where: { user_id: userId } });
+    await prisma.tickets_assigned_to_lnk.deleteMany({ where: { user_id: userId } });
+    await prisma.tickets_client_lnk.deleteMany({ where: { user_id: userId } });
+    await prisma.ticket_comments_user_lnk.deleteMany({ where: { user_id: userId } });
+
+    // Потом сам пользователь
+    await prisma.users.delete({ where: { id: userId } });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[api/admin/users/:id] DELETE error:", error);
     return NextResponse.json(
-      { error: "Нельзя удалить самого себя" },
-      { status: 400 },
+      { error: "Внутренняя ошибка сервера" },
+      { status: 500 },
     );
   }
-
-  const res = await fetch(`${STRAPI_URL}/api/users/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${API_TOKEN}` },
-  });
-
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: "Ошибка удаления" },
-      { status: res.status },
-    );
-  }
-
-  return NextResponse.json({ success: true });
 }
