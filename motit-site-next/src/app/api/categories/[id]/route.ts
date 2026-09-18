@@ -1,43 +1,77 @@
 // src/app/api/categories/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
+// Ищем категорию по числовому id ИЛИ по document_id
+async function findCategoryId(rawId: string): Promise<number | null> {
+  const num = Number(rawId);
+  if (Number.isFinite(num) && num > 0) {
+    const byId = await prisma.categories.findUnique({
+      where: { id: num },
+      select: { id: true },
+    });
+    if (byId) return byId.id;
+  }
+  const byDoc = await prisma.categories.findFirst({
+    where: { document_id: rawId },
+    select: { id: true },
+  });
+  return byDoc?.id ?? null;
+}
 
+// PUT /api/categories/:id — обновить категорию
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await params;
-    const cookieStore = await cookies();
-    const userToken =
-      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-    if (!userToken) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
 
-    const body = await request.json();
-
-    const response = await fetch(`${STRAPI_URL}/api/categories/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userToken}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(result, { status: response.status });
+    const { id: rawId } = await params;
+    const categoryId = await findCategoryId(rawId);
+    if (!categoryId) {
+      return NextResponse.json(
+        { error: "Категория не найдена" },
+        { status: 404 },
+      );
     }
 
-    return NextResponse.json(result);
+    const body = await request.json();
+    const payload = body?.data ?? body ?? {};
+
+    const { name, slug, description, icon } = payload;
+
+    const data: Record<string, unknown> = { updated_at: new Date() };
+    if (name !== undefined) data.name = name;
+    if (slug !== undefined) data.slug = slug;
+    if (description !== undefined) data.description = description;
+    if (icon !== undefined) data.icon = icon;
+
+    if (Object.keys(data).length === 1) {
+      return NextResponse.json({ error: "Нет данных" }, { status: 400 });
+    }
+
+    const updated = await prisma.categories.update({
+      where: { id: categoryId },
+      data,
+    });
+
+    return NextResponse.json({
+      data: {
+        id: updated.id,
+        documentId: updated.document_id ?? null,
+        name: updated.name ?? "",
+        slug: updated.slug ?? null,
+        description: updated.description ?? null,
+        icon: updated.icon ?? null,
+      },
+    });
   } catch (error) {
-    console.error("❌ PUT category error:", error);
+    console.error("[api/categories/:id] PUT error:", error);
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
       { status: 500 },
@@ -45,36 +79,35 @@ export async function PUT(
   }
 }
 
+// DELETE /api/categories/:id — удалить категорию
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await params;
-    const cookieStore = await cookies();
-    const userToken =
-      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-    if (!userToken) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
 
-    const response = await fetch(`${STRAPI_URL}/api/categories/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${userToken}` },
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
+    const { id: rawId } = await params;
+    const categoryId = await findCategoryId(rawId);
+    if (!categoryId) {
       return NextResponse.json(
-        { error: text || "Ошибка удаления" },
-        { status: response.status },
+        { error: "Категория не найдена" },
+        { status: 404 },
       );
     }
 
+    await prisma.posts_categories_lnk.deleteMany({
+      where: { category_id: categoryId },
+    });
+
+    await prisma.categories.delete({ where: { id: categoryId } });
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("❌ DELETE category error:", error);
+    console.error("[api/categories/:id] DELETE error:", error);
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
       { status: 500 },

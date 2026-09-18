@@ -1,55 +1,46 @@
+// src/app/api/categories/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { randomUUID } from "crypto";
 
-const STRAPI_URL = process.env.STRAPI_URL || "http://localhost:1337";
-
+// GET /api/categories — список категорий
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const sort = searchParams.get("sort") || "name:asc";
-    const page = searchParams.get("page") || "1";
-    const pageSize = searchParams.get("pageSize") || "100";
+    const { searchParams } = request.nextUrl;
+    const page = Number(searchParams.get("page") ?? "1") || 1;
+    const pageSize = Number(searchParams.get("pageSize") ?? "100") || 100;
+    const skip = (page - 1) * pageSize;
 
-    // Получаем токен из cookies
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
+    const [items, total] = await Promise.all([
+      prisma.categories.findMany({
+        orderBy: { name: "asc" },
+        skip,
+        take: pageSize,
+      }),
+      prisma.categories.count(),
+    ]);
 
-    // Формируем заголовки
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    // Запрашиваем категории из Strapi
-    const response = await fetch(
-      `${STRAPI_URL}/api/categories?sort=${sort}&pagination[page]=${page}&pagination[pageSize]=${pageSize}`,
-      {
-        headers,
-        cache: "no-store", // Отключаем кеш для разработки
-      },
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Strapi error:", data);
-      return NextResponse.json(
-        { error: data.error?.message || "Ошибка получения категорий" },
-        { status: response.status },
-      );
-    }
-
-    // Возвращаем данные в формате, который ожидает фронтенд
     return NextResponse.json({
-      data: data.data || [],
-      meta: data.meta || {},
+      data: items.map((c) => ({
+        id: c.id,
+        documentId: c.document_id ?? null,
+        name: c.name ?? "",
+        slug: c.slug ?? null,
+        description: c.description ?? null,
+        icon: c.icon ?? null,
+      })),
+      meta: {
+        pagination: {
+          page,
+          pageSize,
+          pageCount: Math.ceil(total / pageSize),
+          total,
+        },
+      },
     });
   } catch (error) {
-    console.error("API Error:", error);
+    console.error("[api/categories] GET error:", error);
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
       { status: 500 },
@@ -57,38 +48,51 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST /api/categories — создать категорию
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const userToken =
-      cookieStore.get("strapi_jwt")?.value || cookieStore.get("token")?.value;
-
-    if (!userToken) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
 
     const body = await request.json();
-    console.log("POST category:", JSON.stringify(body, null, 2));
+    // фронт может передавать { data: { name, slug, ... } } или { name, slug, ... }
+    const payload = body?.data ?? body;
 
-    const response = await fetch(`${STRAPI_URL}/api/categories`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userToken}`,
-      },
-      body: JSON.stringify(body),
-    });
+    const { name, slug, description, icon } = payload ?? {};
 
-    const result = await response.json();
-    console.log("Strapi POST category:", response.status, result);
-
-    if (!response.ok) {
-      return NextResponse.json(result, { status: response.status });
+    if (!name || typeof name !== "string") {
+      return NextResponse.json(
+        { error: "Поле name обязательно" },
+        { status: 400 },
+      );
     }
 
-    return NextResponse.json(result);
+    const created = await prisma.categories.create({
+      data: {
+        document_id: randomUUID(),
+        name,
+        slug: slug ?? name.toLowerCase().replace(/\s+/g, "-"),
+        description: description ?? null,
+        icon: icon ?? null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    return NextResponse.json({
+      data: {
+        id: created.id,
+        documentId: created.document_id ?? null,
+        name: created.name ?? "",
+        slug: created.slug ?? null,
+        description: created.description ?? null,
+        icon: created.icon ?? null,
+      },
+    });
   } catch (error) {
-    console.error("POST category error:", error);
+    console.error("[api/categories] POST error:", error);
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
       { status: 500 },
