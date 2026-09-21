@@ -101,7 +101,7 @@ export async function getTicket(
 ) {
   const isAgent = user.role === "admin" || user.role === "worker";
 
-  const ticket = await prisma.tickets.findFirst({
+  return prisma.tickets.findFirst({
     where: isAgent ? { uuid } : { uuid, client_uuid: user.uuid },
     include: {
       ...ticketInclude,
@@ -117,85 +117,14 @@ export async function getTicket(
               avatar_url: true,
             },
           },
-          // attachments убрали — читаем через $queryRaw ниже
+          attachments: {
+            include: { files: true },
+          },
         },
         orderBy: { created_at: "asc" },
       },
     },
   });
-
-  if (!ticket) return ticket;
-
-  // Вложения к комментариям через SQL, минуя схему Prisma Client
-  const commentUuids = ticket.ticket_comments.map((c) => c.uuid);
-
-  const attachmentsByComment: Record<
-    string,
-    {
-      uuid: string;
-      files: {
-        id: number;
-        uuid: string;
-        name: string | null;
-        url: string;
-        mime: string | null;
-        size: number | null;
-      };
-    }[]
-  > = {};
-
-  if (commentUuids.length > 0) {
-    const rows = await prisma.$queryRaw<
-      {
-        comment_uuid: string;
-        uuid: string;
-        file_id: number;
-        file_uuid: string;
-        name: string | null;
-        url: string;
-        mime: string | null;
-        size: number | null;
-      }[]
-    >`
-      SELECT
-        ta.comment_uuid,
-        ta.uuid,
-        ta.file_id,
-        f.uuid AS file_uuid,
-        f.name,
-        f.url,
-        f.mime,
-        f.size
-      FROM ticket_attachments ta
-      LEFT JOIN files f ON f.id = ta.file_id
-      WHERE ta.comment_uuid IN (${Prisma.join(commentUuids)})
-    `;
-
-    for (const row of rows) {
-      if (!attachmentsByComment[row.comment_uuid]) {
-        attachmentsByComment[row.comment_uuid] = [];
-      }
-      attachmentsByComment[row.comment_uuid].push({
-        uuid: row.uuid,
-        files: {
-          id: row.file_id,
-          uuid: row.file_uuid,
-          name: row.name,
-          url: row.url,
-          mime: row.mime,
-          size: row.size,
-        },
-      });
-    }
-  }
-
-  return {
-    ...ticket,
-    ticket_comments: ticket.ticket_comments.map((c) => ({
-      ...c,
-      attachments: attachmentsByComment[c.uuid] ?? [],
-    })),
-  };
 }
 
 // --------------------------------------------
@@ -276,18 +205,26 @@ export async function addComment(params: {
   attachmentFileIds?: number[];
 }) {
   const { ticketUuid, userUuid, content, isInternal, attachmentFileIds } = params;
-  const commentUuid = randomUUID();
 
-  // 1. Создаём комментарий БЕЗ attachments
   const comment = await prisma.ticket_comments.create({
     data: {
-      uuid: commentUuid,
+      uuid: randomUUID(),
       ticket_uuid: ticketUuid,
       user_uuid: userUuid,
       content,
       is_internal: !!isInternal,
       created_at: new Date(),
       updated_at: new Date(),
+      attachments: attachmentFileIds?.length
+        ? {
+            create: attachmentFileIds.map((fileId) => ({
+              uuid: randomUUID(),
+              ticket_uuid: ticketUuid,
+              file_id: fileId,
+              created_at: new Date(),
+            })),
+          }
+        : undefined,
     },
     include: {
       users: {
@@ -299,39 +236,20 @@ export async function addComment(params: {
           avatar_url: true,
         },
       },
+      attachments: {
+        include: { files: true },
+      },
     },
   });
 
-  // 2. Вложения через SQL — минуя схему клиента
-  if (attachmentFileIds?.length) {
-    for (const fileId of attachmentFileIds) {
-      await prisma.$executeRaw`
-        INSERT INTO ticket_attachments (uuid, ticket_uuid, comment_uuid, file_id, created_at)
-        VALUES (${randomUUID()}, ${ticketUuid}, ${commentUuid}, ${fileId}, NOW())
-      `;
-    }
-  }
-
-  // 3. Обновить тикет
   await prisma.tickets.update({
     where: { uuid: ticketUuid },
     data: { updated_at: new Date() },
   });
 
-  // 4. Прочитать вложения
-  const attachments = attachmentFileIds?.length
-    ? await prisma.$queryRaw<
-        { uuid: string; comment_uuid: string; file_id: number; name: string; url: string; mime: string | null; size: number | null }[]
-      >`
-        SELECT ta.uuid, ta.comment_uuid, ta.file_id, f.name, f.url, f.mime, f.size
-        FROM ticket_attachments ta
-        LEFT JOIN files f ON f.id = ta.file_id
-        WHERE ta.comment_uuid = ${commentUuid}
-      `
-    : [];
-
-  return { ...comment, attachments };
+  return comment;
 }
+
 // --------------------------------------------
 // Смена статуса
 // --------------------------------------------
