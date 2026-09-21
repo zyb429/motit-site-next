@@ -135,9 +135,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         role?: UserRole | null;
       };
 
+      // Аноним — token без id. Не трогаем session.user.
+      if (!t.id) {
+        return session;
+      }
+
       session.user = {
         ...session.user,
-        id: t.id ?? 0,
+        id: t.id,
         uuid: t.uuid ?? "",
         username: t.username ?? "",
         full_name: t.full_name,
