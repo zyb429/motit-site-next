@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
 
   transpilePackages: ["three", "gsap", "@studio-freight/lenis"],
 
+  serverExternalPackages: ["@prisma/client", ".prisma/client"],
+
   compress: true,
   poweredByHeader: false,
 
