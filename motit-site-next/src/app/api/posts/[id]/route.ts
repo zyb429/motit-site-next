@@ -34,7 +34,7 @@ export async function GET(
     const post = await prisma.posts.findUnique({
       where: { id: postId },
       include: {
-        users: true,
+        author: { include: { avatar: true } },
         posts_categories_links: {
           include: { categories: true },
         },
@@ -68,18 +68,18 @@ export async function GET(
             name: post.featured_image.name ?? null,
           }
           : null,
-        author: post.users
+        author: post.author
           ? {
-            id: post.users.id,
-            username: post.users.username ?? "",
-            full_name: post.users.full_name ?? null,
+            id: post.author.id,
+            username: post.author.username ?? "",
+            full_name: post.author.full_name ?? null,
           }
           : null,
         categories:
           post.posts_categories_links
             ?.map((l) => l.categories)
             .filter(Boolean)
-            .map((c: any) => ({
+            .map((c) => ({
               id: c.id,
               documentId: c.document_id ?? null,
               name: c.name ?? "",

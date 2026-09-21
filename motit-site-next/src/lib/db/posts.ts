@@ -36,9 +36,8 @@ export type PostDetail = PostListItem & {
 };
 
 const POST_INCLUDE = {
-  users: {
+  author: {
     include: {
-      users_role_lnk: { include: { roles: true } },
       avatar: true,
     },
   },
@@ -67,12 +66,12 @@ function mapPost(
     meta_description: p.meta_description ?? null,
     publishedAt: p.published_at ? p.published_at.toISOString() : null,
     updatedAt: p.updated_at ? p.updated_at.toISOString() : null,
-    author: p.users
+    author: p.author
       ? {
-          id: p.users.id,
-          username: p.users.username ?? "",
-          full_name: p.users.full_name ?? null,
-          avatar_url: p.users.avatar?.url ?? null,
+          id: p.author.id,
+          username: p.author.username ?? "",
+          full_name: p.author.full_name ?? null,
+          avatar_url: p.author.avatar?.url ?? null,
         }
       : null,
     categories:
@@ -116,7 +115,7 @@ export async function getPostsPrisma(
     };
   }
   if (options.authorUsername) {
-    where.users = { username: options.authorUsername };
+    where.author = { username: options.authorUsername };
   }
 
   const rows = await prisma.posts.findMany({

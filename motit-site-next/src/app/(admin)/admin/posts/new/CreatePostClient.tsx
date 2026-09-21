@@ -35,6 +35,7 @@ import type { CustomElement } from "@/types/slate";
 import { EditorSkeleton } from "@/components/editor/EditorSkeleton";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { generateSlug } from "@/lib/utils";
+import Image from "next/image";
 
 type Category = {
   id: number;
@@ -240,7 +241,7 @@ export default memo(function CreatePostClient({
     }
   };
 
-  const uploadImage = async (): Promise<number | null> => {
+  const uploadImage = useCallback(async (): Promise<number | null> => {
     if (!featuredImage) return null;
     try {
       setIsUploadingImage(true);
@@ -263,7 +264,7 @@ export default memo(function CreatePostClient({
     } finally {
       setIsUploadingImage(false);
     }
-  };
+  }, [featuredImage]);
 
   const onSubmit = useCallback(
     async (data: PostFormData) => {
@@ -290,19 +291,27 @@ export default memo(function CreatePostClient({
           const generatedSlug = generateSlug(data.title);
           const slug = generatedSlug || `post-${Date.now()}`;
 
-          const payload: any = {
+          type PostPayload = {
+            title: string;
+            slug: string;
+            content: unknown;
+            excerpt: string;
+            categories?: string[];
+            featured_image?: number;
+          };
+
+          const payload: PostPayload = {
             title: data.title,
             slug,
-            content:
-              typeof data.content === "string"
-                ? (() => {
-                  try {
-                    return JSON.parse(data.content);
-                  } catch {
-                    return data.content;
-                  }
-                })()
-                : data.content,
+            content: typeof data.content === "string"
+            ? (() => {
+              try {
+                return JSON.parse(data.content);
+              } catch {
+                return data.content;
+              }
+            })()
+            : data.content,
             excerpt: data.excerpt || "",
           };
 
@@ -329,7 +338,6 @@ export default memo(function CreatePostClient({
               body: JSON.stringify({
                 data: {
                   ...payload,
-                  author: user.documentId,
                 },
               }),
             });
@@ -362,7 +370,7 @@ export default memo(function CreatePostClient({
         }
       });
     },
-    [user, router, featuredImage, isEditMode, editId, categories],
+    [user, router, featuredImage, isEditMode, editId, categories, uploadImage],
   );
 
   const categoryOptions = useMemo(() => {
@@ -531,7 +539,7 @@ export default memo(function CreatePostClient({
             <div className="space-y-4">
               {featuredImagePreview ? (
                 <div className="relative">
-                  <img
+                  <Image
                     src={featuredImagePreview}
                     alt="Preview"
                     className="w-full h-64 object-cover rounded-lg border border-(--border)"

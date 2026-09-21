@@ -29,7 +29,7 @@ async function getPosts() {
     orderBy: [{ published_at: "desc" }, { updated_at: "desc" }],
     take: 100,
     include: {
-      users: { include: { avatar: true } },
+      author: { include: { avatar: true } },
       posts_categories_links: { include: { categories: true } },
       featured_image: true,
     },
@@ -52,18 +52,18 @@ async function getPosts() {
         name: p.featured_image.name ?? null,
       }
       : null,
-    author: p.users
+    author: p.author
       ? {
-        username: p.users.username ?? "",
-        full_name: p.users.full_name ?? null,
-        avatar_url: p.users.avatar?.url ?? null,
+        username: p.author.username ?? "",
+        full_name: p.author.full_name ?? null,
+        avatar_url: p.author.avatar?.url ?? null,
       }
       : null,
     categories:
       p.posts_categories_links
         ?.map((l) => l.categories)
-        .filter(Boolean)
-        .map((c: any) => ({ name: c.name ?? "", slug: c.slug ?? null })) ?? [],
+        .filter((c): c is NonNullable<typeof c> => Boolean(c))
+        .map((c) => ({ name: c.name ?? "", slug: c.slug ?? null })) ?? [],
   }));
 }
 
@@ -80,7 +80,17 @@ function formatDate(dateString?: string | null) {
   }
 }
 
-function getAuthorInfo(post: any): {
+type PostAuthor = {
+  username: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+};
+
+type PostWithAuthor = {
+  author: PostAuthor | null;
+};
+
+function getAuthorInfo(post: PostWithAuthor): {
   name: string;
   username: string;
   avatarUrl: string | null;
@@ -311,7 +321,7 @@ export default async function AdminPostsPage({
                   (post.publishedAt ? "published" : "draft");
                 const author = getAuthorInfo(post);
                 const categories = (post.categories || [])
-                  .map((c: any) => c.name)
+                  .map((c) => c.name)
                   .filter(Boolean);
 
                 return (
@@ -481,7 +491,7 @@ export default async function AdminPostsPage({
                       post.post_status ||
                       (post.publishedAt ? "published" : "draft");
                     const categories = (post.categories || [])
-                      .map((c: any) => c.name)
+                      .map((c) => c.name)
                       .filter(Boolean);
 
                     return (
