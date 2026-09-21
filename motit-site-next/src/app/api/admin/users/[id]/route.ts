@@ -31,7 +31,6 @@ export async function PATCH(
 
     // 1. Смена роли
     if (roleId !== undefined) {
-      // Защита: нельзя менять свою роль
       if (admin.id === userId) {
         return NextResponse.json(
           { error: "Нельзя изменить свою собственную роль" },
@@ -39,14 +38,13 @@ export async function PATCH(
         );
       }
 
-      const roleExists = await prisma.up_roles.findUnique({
+      const roleExists = await prisma.roles.findUnique({
         where: { id: Number(roleId) },
       });
       if (!roleExists) {
         return NextResponse.json({ error: "Роль не найдена" }, { status: 400 });
       }
 
-      // Удаляем все старые связи и создаём новую
       await prisma.users_role_lnk.deleteMany({ where: { user_id: userId } });
       await prisma.users_role_lnk.create({
         data: { user_id: userId, role_id: Number(roleId) },
@@ -54,22 +52,21 @@ export async function PATCH(
 
       const updated = await prisma.users.findUnique({
         where: { id: userId },
-        include: { users_role_lnk: { include: { up_roles: true } } },
+        include: { users_role_lnk: { include: { roles: true } } },
       });
 
-      const role = updated?.users_role_lnk?.[0]?.up_roles ?? null;
+      const role = updated?.users_role_lnk?.[0]?.roles ?? null;
 
       return NextResponse.json({
         data: {
           id: updated?.id,
-          documentId: updated?.document_id ?? null,
           username: updated?.username ?? "",
           email: updated?.email ?? "",
           full_name: updated?.full_name ?? null,
           phone: updated?.phone ?? null,
           blocked: updated?.blocked ?? false,
           role: role
-            ? { id: role.id, name: role.name ?? "", type: role.type ?? "" }
+            ? { id: role.id, name: role.name ?? "" }
             : null,
         },
       });
@@ -78,7 +75,6 @@ export async function PATCH(
     // 2. Обновление остальных полей
     const data: Record<string, unknown> = {};
     if (blocked !== undefined) {
-      // Защита: нельзя заблокировать самого себя
       if (admin.id === userId && blocked === true) {
         return NextResponse.json(
           { error: "Нельзя заблокировать самого себя" },
@@ -99,22 +95,21 @@ export async function PATCH(
     const updated = await prisma.users.update({
       where: { id: userId },
       data,
-      include: { users_role_lnk: { include: { up_roles: true } } },
+      include: { users_role_lnk: { include: { roles: true } } },
     });
 
-    const role = updated.users_role_lnk?.[0]?.up_roles ?? null;
+    const role = updated.users_role_lnk?.[0]?.roles ?? null;
 
     return NextResponse.json({
       data: {
         id: updated.id,
-        documentId: updated.document_id ?? null,
         username: updated.username ?? "",
         email: updated.email ?? "",
         full_name: updated.full_name ?? null,
         phone: updated.phone ?? null,
         blocked: updated.blocked ?? false,
         role: role
-          ? { id: role.id, name: role.name ?? "", type: role.type ?? "" }
+          ? { id: role.id, name: role.name ?? "" }
           : null,
       },
     });
@@ -152,14 +147,9 @@ export async function DELETE(
       );
     }
 
-    // Сначала отвязываем связи
+    // Отвязываем роли. Остальные связи удалятся каскадом (FK ON DELETE CASCADE/SET NULL).
     await prisma.users_role_lnk.deleteMany({ where: { user_id: userId } });
-    await prisma.posts_author_lnk.deleteMany({ where: { user_id: userId } });
-    await prisma.tickets_assigned_to_lnk.deleteMany({ where: { user_id: userId } });
-    await prisma.tickets_client_lnk.deleteMany({ where: { user_id: userId } });
-    await prisma.ticket_comments_user_lnk.deleteMany({ where: { user_id: userId } });
 
-    // Потом сам пользователь
     await prisma.users.delete({ where: { id: userId } });
 
     return NextResponse.json({ success: true });

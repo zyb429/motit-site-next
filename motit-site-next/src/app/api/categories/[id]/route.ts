@@ -99,7 +99,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.posts_categories_lnk.deleteMany({
+    await prisma.posts_categories_links.deleteMany({
       where: { category_id: categoryId },
     });
 

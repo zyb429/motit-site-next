@@ -15,13 +15,13 @@ export async function getUsersPrisma(): Promise<UserItem[]> {
   const rows = await prisma.users.findMany({
     orderBy: { created_at: "desc" },
     include: {
-      users_role_lnk: { include: { up_roles: true } },
+      users_role_lnk: { include: { roles: true } },
       avatar: true,
     },
   });
 
   return rows.map((u) => {
-    const role = u.users_role_lnk?.[0]?.up_roles ?? null;
+    const role = u.users_role_lnk?.[0]?.roles ?? null;
     return {
       id: u.id,
       username: u.username ?? "",
@@ -38,7 +38,7 @@ export async function getUsersPrisma(): Promise<UserItem[]> {
 }
 
 export async function getRolesPrisma() {
-  const rows = await prisma.up_roles.findMany({ orderBy: { name: "asc" } });
+  const rows = await prisma.roles.findMany({ orderBy: { name: "asc" } });
   return rows.map((r) => ({
     id: r.id,
     name: r.name ?? "",

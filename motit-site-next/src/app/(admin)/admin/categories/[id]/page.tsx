@@ -30,7 +30,7 @@ export default async function EditCategoryPage({
     <CategoryEditForm
       initialCategory={{
         id: category.id,
-        documentId: category.document_id,
+        document_id: category.document_id,
         name: category.name ?? "",
         slug: category.slug ?? "",
         description: category.description ?? "",

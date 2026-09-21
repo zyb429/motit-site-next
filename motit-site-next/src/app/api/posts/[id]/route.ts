@@ -35,7 +35,7 @@ export async function GET(
       where: { id: postId },
       include: {
         users: true,
-        posts_categories_lnk: {
+        posts_categories_links: {
           include: { categories: true },
         },
         featured_image: true,
@@ -76,7 +76,7 @@ export async function GET(
           }
           : null,
         categories:
-          post.posts_categories_lnk
+          post.posts_categories_links
             ?.map((l) => l.categories)
             .filter(Boolean)
             .map((c: any) => ({
@@ -200,11 +200,11 @@ export async function PUT(
         }
       }
 
-      await prisma.posts_categories_lnk.deleteMany({
+      await prisma.posts_categories_links.deleteMany({
         where: { post_id: postId },
       });
       if (categoryIds.length > 0) {
-        await prisma.posts_categories_lnk.createMany({
+        await prisma.posts_categories_links.createMany({
           data: categoryIds.map((categoryId) => ({
             post_id: postId,
             category_id: categoryId,

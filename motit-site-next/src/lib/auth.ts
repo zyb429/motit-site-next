@@ -8,6 +8,7 @@ export type UserRole = "admin" | "client" | "worker" | "statistics";
 
 export type CurrentUser = {
   id: number;
+  uuid: string;
   username: string;
   email: string;
   full_name?: string;
@@ -46,13 +47,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = String(credentials?.password ?? "");
         if (!identifier || !password) return null;
 
-        // identifier может быть email или username
         const user = await prisma.users.findFirst({
           where: {
             OR: [{ email: identifier }, { username: identifier }],
           },
           include: {
-            users_role_lnk: { include: { up_roles: true } },
+            users_role_lnk: { include: { roles: true } },
           },
         });
 
@@ -60,55 +60,93 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (user.blocked) return null;
         if (!user.password) return null;
 
-        // пароли из Strapi — bcrypt
         const ok = await bcrypt.compare(password, user.password);
         if (!ok) return null;
 
-        const roleType = user.users_role_lnk?.[0]?.up_roles?.type ?? null;
+        const roleType = user.users_role_lnk?.[0]?.roles?.name ?? null;
         const role = parseRole(roleType);
 
         return {
           id: String(user.id),
+          uuid: user.uuid,
           name: user.username ?? "",
           email: user.email ?? "",
           username: user.username ?? "",
           full_name: user.full_name ?? "",
           phone: user.phone ?? "",
           bio: user.bio ?? null,
-          avatar_url: null,
+          avatar_url: user.avatar_url ?? null,
           roleType,
           role,
-        } as any;
+        };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
+      const t = token as unknown as {
+        id?: number;
+        uuid?: string;
+        username?: string;
+        full_name?: string;
+        phone?: string;
+        bio?: string | null;
+        avatar_url?: string | null;
+        roleType?: string | null;
+        role?: UserRole | null;
+      };
+
       if (user) {
-        const u = user as any;
-        token.id = Number(u.id);
-        token.username = u.username;
-        token.full_name = u.full_name;
-        token.phone = u.phone;
-        token.bio = u.bio;
-        token.avatar_url = u.avatar_url;
-        token.roleType = u.roleType;
-        token.role = u.role;
+        const u = user as unknown as {
+          id: string;
+          uuid?: string;
+          username?: string;
+          full_name?: string;
+          phone?: string;
+          bio?: string | null;
+          avatar_url?: string | null;
+          roleType?: string | null;
+          role?: UserRole | null;
+        };
+
+        t.id = Number(u.id);
+        t.uuid = u.uuid;
+        t.username = u.username;
+        t.full_name = u.full_name;
+        t.phone = u.phone;
+        t.bio = u.bio;
+        t.avatar_url = u.avatar_url;
+        t.roleType = u.roleType;
+        t.role = u.role;
       }
       return token;
     },
+
     async session({ session, token }) {
-      (session.user as any) = {
-        ...(session.user as any),
-        id: token.id as number,
-        username: token.username,
-        full_name: token.full_name,
-        phone: token.phone,
-        bio: token.bio,
-        avatar_url: token.avatar_url,
-        roleType: token.roleType,
-        role: token.role,
+      const t = token as unknown as {
+        id?: number;
+        uuid?: string;
+        username?: string;
+        full_name?: string;
+        phone?: string;
+        bio?: string | null;
+        avatar_url?: string | null;
+        roleType?: string | null;
+        role?: UserRole | null;
       };
+
+      session.user = {
+        ...session.user,
+        id: t.id ?? 0,
+        uuid: t.uuid ?? "",
+        username: t.username ?? "",
+        full_name: t.full_name,
+        phone: t.phone,
+        bio: t.bio,
+        avatar_url: t.avatar_url,
+        roleType: t.roleType ?? null,
+        role: t.role ?? null,
+      } as typeof session.user;
       return session;
     },
   },
@@ -117,19 +155,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
     const session = await auth();
-    const u = session?.user as any;
+    const u = session?.user;
     if (!u || !u.id) return null;
 
-    const role = (u.role as UserRole | null) ?? null;
+    // Читаем актуальные данные из БД, чтобы имя/аватар/био обновлялись сразу после сохранения
+    const dbUser = await prisma.users.findUnique({
+      where: { id: u.id },
+      include: {
+        users_role_lnk: { include: { roles: true } },
+      },
+    });
+
+    if (!dbUser) return null;
+    if (dbUser.blocked) return null;
+
+    const roleType = dbUser.users_role_lnk?.[0]?.roles?.name ?? null;
+    const role = parseRole(roleType);
 
     return {
-      id: u.id,
-      username: u.username ?? "",
-      email: u.email ?? "",
-      full_name: u.full_name || undefined,
-      phone: u.phone || undefined,
-      avatar_url: u.avatar_url ?? null,
-      bio: u.bio ?? null,
+      id: dbUser.id,
+      uuid: dbUser.uuid,
+      username: dbUser.username ?? "",
+      email: dbUser.email ?? "",
+      full_name: dbUser.full_name || undefined,
+      phone: dbUser.phone || undefined,
+      avatar_url: dbUser.avatar_url ?? null,
+      bio: dbUser.bio ?? null,
       role,
       isAdmin: role === "admin",
       isWorker: role === "worker",

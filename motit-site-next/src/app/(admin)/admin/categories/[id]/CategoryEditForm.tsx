@@ -4,11 +4,17 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
+import type { categories } from "@prisma/client";
+
+type CategoryInput = Pick<
+  categories,
+  "id" | "document_id" | "name" | "slug" | "description" | "icon"
+>;
 
 export default function CategoryEditForm({
   initialCategory,
 }: {
-  initialCategory: any;
+  initialCategory: CategoryInput;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -20,9 +26,9 @@ export default function CategoryEditForm({
   const [icon, setIcon] = useState(initialCategory.icon || "");
   const [error, setError] = useState<string | null>(null);
 
-  const id = initialCategory.documentId || initialCategory.id;
+  const id = initialCategory.document_id || initialCategory.id;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 

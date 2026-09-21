@@ -8,11 +8,11 @@ async function getUsers() {
   const rows = await prisma.users.findMany({
     orderBy: { created_at: "desc" },
     take: 100,
-    include: { users_role_lnk: { include: { up_roles: true } } },
+    include: { users_role_lnk: { include: { roles: true } } },
   });
 
   return rows.map((u) => {
-    const role = u.users_role_lnk?.[0]?.up_roles ?? null;
+    const role = u.users_role_lnk?.[0]?.roles ?? null;
     return {
       id: u.id,
       documentId: u.document_id ?? null,
@@ -32,7 +32,7 @@ async function getUsers() {
 }
 
 async function getRoles() {
-  const rows = await prisma.up_roles.findMany({ orderBy: { name: "asc" } });
+  const rows = await prisma.roles.findMany({ orderBy: { name: "asc" } });
   return rows.map((r) => ({
     id: r.id,
     name: r.name ?? "",

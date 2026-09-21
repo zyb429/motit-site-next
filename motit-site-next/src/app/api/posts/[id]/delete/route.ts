@@ -36,8 +36,7 @@ export async function DELETE(
     }
 
     // Сначала отвязываем связи
-    await prisma.posts_categories_lnk.deleteMany({ where: { post_id: postId } });
-    await prisma.posts_author_lnk.deleteMany({ where: { post_id: postId } });
+    await prisma.posts_categories_links.deleteMany({ where: { post_id: postId } });
 
     // Потом сам пост
     await prisma.posts.delete({ where: { id: postId } });

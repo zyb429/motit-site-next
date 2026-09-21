@@ -30,7 +30,7 @@ async function getPosts() {
     take: 100,
     include: {
       users: { include: { avatar: true } },
-      posts_categories_lnk: { include: { categories: true } },
+      posts_categories_links: { include: { categories: true } },
       featured_image: true,
     },
   });
@@ -60,7 +60,7 @@ async function getPosts() {
       }
       : null,
     categories:
-      p.posts_categories_lnk
+      p.posts_categories_links
         ?.map((l) => l.categories)
         .filter(Boolean)
         .map((c: any) => ({ name: c.name ?? "", slug: c.slug ?? null })) ?? [],

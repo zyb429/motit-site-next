@@ -5,11 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  Inbox,
   LayoutDashboard,
   FileText,
   FolderTree,
   Settings,
   Home,
+  Plus,
   Users,
   ChevronLeft,
   ChevronRight,
@@ -45,6 +47,14 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/users", label: "Пользователи", icon: Users },
       { href: "/admin/settings", label: "Настройки", icon: Settings },
+    ],
+  },
+  {
+    title: "Тикеты",
+    items: [
+      { href: "/admin/tickets", label: "Обращения", icon: Inbox },
+      { href: "/admin/tickets/new", label: "Новое обращение", icon: Plus },
+      { href: "/admin/ticket-categories", label: "Категории обращений", icon: FolderTree },
     ],
   },
 ];

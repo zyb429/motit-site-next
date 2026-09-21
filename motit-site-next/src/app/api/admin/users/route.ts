@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     if (roleFilter) {
       where.users_role_lnk = {
-        some: { up_roles: { name: roleFilter } },
+        some: { roles: { name: roleFilter } },
       };
     }
 
@@ -42,13 +42,13 @@ export async function GET(request: NextRequest) {
       orderBy: { created_at: "desc" },
       take: 100,
       include: {
-        users_role_lnk: { include: { up_roles: true } },
+        users_role_lnk: { include: { roles: true } },
       },
     });
 
     return NextResponse.json({
       data: users.map((u) => {
-        const role = u.users_role_lnk?.[0]?.up_roles ?? null;
+        const role = u.users_role_lnk?.[0]?.roles ?? null;
         return {
           id: u.id,
           documentId: u.document_id ?? null,

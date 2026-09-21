@@ -26,8 +26,8 @@ async function getCategories() {
 }
 
 async function getPostsCountByCategory(): Promise<Record<string, number>> {
-  // Считаем через связующую таблицу posts_categories_lnk
-  const links = await prisma.posts_categories_lnk.findMany({
+  // Считаем через связующую таблицу posts_categories_links
+  const links = await prisma.posts_categories_links.findMany({
     select: { category_id: true },
   });
   const countsByCategoryId: Record<number, number> = {};

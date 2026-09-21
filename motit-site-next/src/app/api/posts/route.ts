@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Связи с категориями
     if (categoryIds.length > 0) {
-      await prisma.posts_categories_lnk.createMany({
+      await prisma.posts_categories_links.createMany({
         data: categoryIds.map((categoryId) => ({
           post_id: created.id,
           category_id: categoryId,

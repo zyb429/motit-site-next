@@ -42,7 +42,7 @@ async function getPostsByAuthorPrisma(username: string) {
     take: 50,
     include: {
       users: { include: { avatar: true } },
-      posts_categories_lnk: { include: { categories: true } },
+      posts_categories_links: { include: { categories: true } },
       featured_image: true,
     },
   });
@@ -65,7 +65,7 @@ async function getPostsByAuthorPrisma(username: string) {
       }
       : null,
     categories:
-      p.posts_categories_lnk
+      p.posts_categories_links
         ?.map((l) => l.categories)
         .filter(Boolean)
         .map((c: any) => ({
