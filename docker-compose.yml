@@ -4,17 +4,23 @@ services:
     container_name: motit-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: motit
-      MYSQL_USER: motit
-      MYSQL_PASSWORD: motit
+      MYSQL_ROOT_PASSWORD: root_local_dev
+      MYSQL_DATABASE: motit_site
+      MYSQL_USER: motit_user
+      MYSQL_PASSWORD: MotitSecure2024!
     ports:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      # если хочешь сразу залить дамп Strapi:
-      # - ./dump_before_migration.sql:/docker-entrypoint-initdb.d/dump.sql
-    command: --default-authentication-plugin=mysql_native_password
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_520_ci
+      --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-umotit_user", "-pMotitSecure2024!"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   minio:
     image: quay.io/minio/minio:latest

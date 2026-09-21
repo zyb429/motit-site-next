@@ -161,7 +161,7 @@ docker compose down -v       # + удалить volume (файлы в MinIO пр
 ### 4. Создать `.env`
 
 ```bash
-cd motit-site-next
+cd motit-site-next/motit-site-next
 cp .env.example .env
 ```
 
