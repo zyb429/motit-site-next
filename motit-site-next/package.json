@@ -14,14 +14,11 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed"
   },
-  "prisma": {
-    "seed": "bun prisma/seed.ts"
-  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1135.0",
     "@aws-sdk/s3-request-presigner": "^3.1135.0",
     "@hookform/resolvers": "^5.9.1",
-    "@prisma/client": "6.19.3",
+    "@prisma/client": "7.10.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
@@ -102,7 +99,7 @@
     "eslint-config-next": "^16.3.1",
     "eslint-formatter-compact": "^9.0.1",
     "postcss": "^8.5.6",
-    "prisma": "6.19.3",
+    "prisma": "7.10.0",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "~5.9.3"
