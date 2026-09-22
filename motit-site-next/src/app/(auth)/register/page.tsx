@@ -14,6 +14,7 @@ export default function RegisterPage() {
     username: "",
     email: "",
     full_name: "",
+    phone: "",
   });
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -100,6 +101,20 @@ export default function RegisterPage() {
           disabled={loading}
           placeholder="Иван Иванов"
           autoComplete="name"
+        />
+
+        <FormField
+          id="phone"
+          label="Телефон"
+          type="tel"
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          required
+          pattern="^\+?[0-9\s\-()]{7,20}$"
+          title="Введите корректный номер"
+          disabled={loading}
+          placeholder="+375 (29) 123-45-67"
+          autoComplete="tel"
         />
 
         <div>

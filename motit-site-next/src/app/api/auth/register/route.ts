@@ -27,6 +27,18 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (typeof phone !== "string" || !phone.trim()) {
+      return NextResponse.json(
+        { error: "Телефон обязателен" },
+        { status: 400 },
+      );
+    }
+    if (!/^\+?[0-9\s\-()]{7,20}$/.test(phone.trim())) {
+      return NextResponse.json(
+        { error: "Некорректный номер телефона" },
+        { status: 400 },
+      );
+    }
 
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim().toLowerCase();
@@ -58,8 +70,7 @@ export async function POST(request: NextRequest) {
           typeof full_name === "string" && full_name.trim()
             ? full_name.trim()
             : null,
-        phone:
-          typeof phone === "string" && phone.trim() ? phone.trim() : null,
+        phone: phone.trim(),
         confirmed: false,
         blocked: false,
         created_at: new Date(),
