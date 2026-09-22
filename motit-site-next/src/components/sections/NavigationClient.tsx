@@ -62,11 +62,11 @@ export default function NavigationClient() {
         }
       } else {
         // Если на другой странице - переходим на главную с якорем
-        window.location.href = href;
+        window.location.assign(href);
       }
     } else {
       // Обычная ссылка
-      window.location.href = href;
+      window.location.assign(href);
     }
   };
 

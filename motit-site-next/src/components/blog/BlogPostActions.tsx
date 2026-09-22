@@ -1,7 +1,7 @@
 'use client';
 
 import { Share2, Bookmark, BookmarkCheck } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 
 interface BlogPostActionsProps {
   title: string;
@@ -9,18 +9,29 @@ interface BlogPostActionsProps {
   url: string;
 }
 
-export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [currentUrl, setCurrentUrl] = useState('');
+const emptySubscribe = () => () => {};
 
-  useEffect(() => {
-    // Устанавливаем полный URL только на клиенте
-    setCurrentUrl(window.location.origin + url);
-    
-    // Проверяем, есть ли пост в закладках
-    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-    setIsBookmarked(bookmarks.includes(url));
-  }, [url]);
+function getOrigin() {
+  return window.location.origin;
+}
+
+function getServerOrigin() {
+  return '';
+}
+
+export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
+  const origin = useSyncExternalStore(emptySubscribe, getOrigin, getServerOrigin);
+  const currentUrl = origin ? `${origin}${url}` : url;
+
+  const [isBookmarked, setIsBookmarked] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+      return Array.isArray(bookmarks) && bookmarks.includes(url);
+    } catch {
+      return false;
+    }
+  });
 
   const handleShare = async () => {
     const shareData = {
@@ -33,7 +44,6 @@ export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        // Фолбэк: копируем ссылку в буфер обмена
         await navigator.clipboard.writeText(currentUrl);
         alert('Ссылка скопирована в буфер обмена!');
       }
@@ -45,16 +55,24 @@ export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
   };
 
   const handleBookmark = () => {
-    const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-    let newBookmarks;
-    
-    if (isBookmarked) {
-      newBookmarks = bookmarks.filter((b: string) => b !== url);
-    } else {
-      newBookmarks = [...bookmarks, url];
+    let bookmarks: string[] = [];
+    try {
+      const raw = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+      bookmarks = Array.isArray(raw) ? raw : [];
+    } catch {
+      bookmarks = [];
     }
-    
-    localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
+
+    const newBookmarks = isBookmarked
+      ? bookmarks.filter((b) => b !== url)
+      : [...new Set([...bookmarks, url])];
+
+    try {
+      localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
+    } catch {
+      // ignore
+    }
+
     setIsBookmarked(!isBookmarked);
   };
 

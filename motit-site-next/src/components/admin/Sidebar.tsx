@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Inbox,
   LayoutDashboard,
@@ -63,17 +63,14 @@ const STORAGE_KEY = "admin-sidebar-collapsed";
 
 export function AdminSidebar({ user }: { user: CurrentUser }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
-
-  // Читаем состояние из localStorage при монтировании
-  useEffect(() => {
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === "1") setCollapsed(true);
+      return localStorage.getItem(STORAGE_KEY) === "1";
     } catch {
-      // ignore
+      return false;
     }
-  }, []);
+  });
 
   const toggleCollapsed = () => {
     setCollapsed((v) => {

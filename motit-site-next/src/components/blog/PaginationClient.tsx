@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { Pagination } from './Pagination';
+import { useEffect, useRef } from "react";
+import { Pagination } from "./Pagination";
 
 interface PaginationClientProps {
   currentPage: number;
@@ -10,8 +9,11 @@ interface PaginationClientProps {
   baseUrl: string;
 }
 
-export function PaginationClient({ currentPage, totalPages, baseUrl }: PaginationClientProps) {
-  const router = useRouter();
+export function PaginationClient({
+  currentPage,
+  totalPages,
+  baseUrl,
+}: PaginationClientProps) {
   const isFirstRender = useRef(true);
 
   // Эффект для прокрутки при изменении страницы
@@ -23,29 +25,16 @@ export function PaginationClient({ currentPage, totalPages, baseUrl }: Paginatio
     }
 
     // Прокручиваем к постам
-    const postsContainer = document.getElementById('blog-posts');
+    const postsContainer = document.getElementById("blog-posts");
     if (postsContainer) {
-      postsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      postsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [currentPage]);
 
-  // Обработчик для перехвата навигации и добавления прокрутки
-  const handlePageChange = (page: number) => {
-    const url = new URL(baseUrl, window.location.origin);
-    if (page > 1) {
-      url.searchParams.set('page', String(page));
-    } else {
-      url.searchParams.delete('page');
-    }
-    
-    // Навигация без автоматической прокрутки
-    router.push(url.pathname + url.search, { scroll: false });
-  };
-
   return (
-    <Pagination 
+    <Pagination
       currentPage={currentPage}
       totalPages={totalPages}
       baseUrl={baseUrl}

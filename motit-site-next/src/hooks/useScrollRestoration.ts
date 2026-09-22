@@ -1,7 +1,7 @@
 // src/hooks/useScrollRestoration.ts
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 const SCROLL_KEY = 'blog_scroll_position';
@@ -19,20 +19,20 @@ export function useScrollRestoration() {
   };
 
   // Определяем, является ли переход внутренним (внутри блога)
-  const isInternalBlogNavigation = () => {
+  const isInternalBlogNavigation = useCallback(() => {
     try {
       const prev = sessionStorage.getItem(PREVIOUS_PATH_KEY);
       const current = pathname || '';
-      
+
       if (isBlogPath(prev || '') && isBlogPath(current)) {
         return true;
       }
-      
+
       return false;
     } catch {
       return false;
     }
-  };
+  }, [pathname]);
 
   // Сохраняем предыдущий путь
   useEffect(() => {
@@ -52,7 +52,7 @@ export function useScrollRestoration() {
         if (scrollTimeout.current) {
           clearTimeout(scrollTimeout.current);
         }
-        
+
         scrollTimeout.current = setTimeout(() => {
           if (isBlogPath(pathname)) {
             sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
@@ -77,17 +77,17 @@ export function useScrollRestoration() {
     try {
       if (isFirstRender.current) {
         isFirstRender.current = false;
-        
+
         const saved = sessionStorage.getItem(SCROLL_KEY);
         const prevPath = sessionStorage.getItem(PREVIOUS_PATH_KEY);
-        
+
         // Если пришли с другой страницы (не из блога) - скролл вверх
         if (prevPath && !isBlogPath(prevPath) && isBlogPath(pathname)) {
           window.scrollTo({ top: 0, behavior: 'instant' });
           sessionStorage.removeItem(SCROLL_KEY);
           return;
         }
-        
+
         // Если внутри блога - восстанавливаем позицию
         if (saved && isBlogPath(pathname)) {
           const position = parseInt(saved, 10);
@@ -118,7 +118,7 @@ export function useScrollRestoration() {
     } catch {
       // Игнорируем ошибки
     }
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, isInternalBlogNavigation]);
 
   // Функция для сохранения позиции перед навигацией
   const saveScrollPosition = () => {
