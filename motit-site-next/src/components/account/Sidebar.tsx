@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Shield,
   LifeBuoy,
+  Building2,
 } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/auth/LogoutButton";
@@ -17,10 +18,11 @@ interface SidebarProps {
 }
 
 const NAV = [
-  { href: "/account",          label: "Обзор",       Icon: LayoutDashboard },
-  { href: "/account/profile",  label: "Профиль",     Icon: User },
-  { href: "/account/security", label: "Безопасность", Icon: Shield },
-  { href: "/account/tickets",  label: "Мои тикеты",  Icon: LifeBuoy },
+  { href: "/cabinet",          label: "Обзор",       Icon: LayoutDashboard },
+  { href: "/cabinet/profile",  label: "Профиль",     Icon: User },
+  { href: "/cabinet/security", label: "Безопасность", Icon: Shield },
+  { href: "/cabinet/tickets",  label: "Мои тикеты",  Icon: LifeBuoy },
+  { href: "/cabinet/organizations", label: "Организации", Icon: Building2 },
 ];
 
 export function AccountSidebar({ user }: SidebarProps) {
@@ -56,8 +58,8 @@ export function AccountSidebar({ user }: SidebarProps) {
       <nav className="flex-1 p-3 space-y-1">
         {NAV.map(({ href, label, Icon }) => {
           const active =
-            href === "/account"
-              ? pathname === "/account"
+            href === "/cabinet"
+              ? pathname === "/cabinet"
               : pathname.startsWith(href);
 
           return (

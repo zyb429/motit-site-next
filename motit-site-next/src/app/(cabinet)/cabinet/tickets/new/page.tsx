@@ -1,4 +1,4 @@
-// src/app/(account)/account/tickets/new/page.tsx
+// src/app/(cabinet)/cabinet/tickets/new/page.tsx
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { listTicketCategories } from "@/lib/db/ticket-categories";
@@ -11,7 +11,7 @@ export default async function NewTicketCategoryPage() {
   return (
     <div className="p-8 w-full max-w-2xl mx-auto">
       <Link
-        href="/account/tickets"
+        href="/cabinet/tickets"
         className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#2dd4bf] transition-colors"
       >
         <ArrowLeft size={14} />

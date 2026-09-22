@@ -1,4 +1,4 @@
-// src/app/(account)/account/profile/page.tsx
+// src/app/(cabinet)/cabinet/profile/page.tsx
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/account/ProfileForm";

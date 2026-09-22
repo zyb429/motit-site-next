@@ -1,4 +1,4 @@
-// src/app/(account)/account/layout.tsx
+// src/app/(cabinet)/cabinet/layout.tsx
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { AccountSidebar } from "@/components/account/Sidebar";

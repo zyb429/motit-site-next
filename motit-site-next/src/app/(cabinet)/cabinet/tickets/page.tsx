@@ -1,4 +1,4 @@
-// src/app/(account)/account/tickets/page.tsx
+// src/app/(cabinet)/cabinet/tickets/page.tsx
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -32,7 +32,7 @@ export default async function TicketsPage() {
           </p>
         </div>
         <Link
-          href="/account/tickets/new"
+          href="/cabinet/tickets/new"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2dd4bf] text-[#0a1920] text-sm font-medium hover:bg-[#14b8a6] transition-colors"
         >
           <Plus size={16} />
@@ -46,7 +46,7 @@ export default async function TicketsPage() {
             У вас пока нет обращений
           </p>
           <Link
-            href="/account/tickets/new"
+            href="/cabinet/tickets/new"
             className="inline-block mt-4 text-[#2dd4bf] text-sm hover:underline"
           >
             Создать первое обращение →

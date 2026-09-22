@@ -1,4 +1,4 @@
-// src/app/(account)/account/tickets/[uuid]/page.tsx
+// src/app/(cabinet)/cabinet/tickets/[uuid]/page.tsx
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Paperclip } from "lucide-react";
@@ -25,7 +25,7 @@ export default async function TicketPage({
   return (
     <div className="p-8 w-full max-w-3xl mx-auto">
       <Link
-        href="/account/tickets"
+        href="/cabinet/tickets"
         className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#2dd4bf] transition-colors"
       >
         <ArrowLeft size={14} />

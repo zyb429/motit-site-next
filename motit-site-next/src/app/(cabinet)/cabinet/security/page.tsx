@@ -1,4 +1,4 @@
-// src/app/(account)/account/security/page.tsx
+// src/app/(cabinet)/cabinet/security/page.tsx
 import { getCurrentUser } from "@/lib/auth";
 import { PasswordForm } from "@/components/account/PasswordForm";
 
