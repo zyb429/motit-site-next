@@ -4,7 +4,7 @@
 import { useState, type SyntheticEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { AuthCard } from "./AuthCard";
 import { FormField } from "./FormField";
 import { FormAlert } from "./FormAlert";
@@ -52,12 +52,23 @@ export function LoginForm() {
         throw new Error("Неверный логин или пароль");
       }
 
+      // Получаем сессию, чтобы узнать роль
+      const session = await getSession();
+      const role = session?.user?.role ?? null;
+
       setSuccessMessage("Вход выполнен успешно!");
 
-      const target =
-        from && from.startsWith("/") && !from.startsWith("//")
-          ? from
-          : "/admin";
+      // Если есть from — уважаем его, но только если он соответствует роли
+      let target: string;
+      if (from && from.startsWith("/") && !from.startsWith("//")) {
+        target = from;
+      } else if (role === "admin") {
+        target = "/admin";
+      } else if (role === "worker") {
+        target = "/worker";
+      } else {
+        target = "/cabinet";
+      }
 
       router.refresh();
       router.push(target);
