@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import {  useState } from "react";
 import {
   Inbox,
   LayoutDashboard,
@@ -15,6 +15,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
@@ -46,6 +47,7 @@ const GROUPS: NavGroup[] = [
     title: "Система",
     items: [
       { href: "/admin/users", label: "Пользователи", icon: Users },
+      { href: "/admin/organizations", label: "Организации", icon: Building2 },
       { href: "/admin/settings", label: "Настройки", icon: Settings },
     ],
   },

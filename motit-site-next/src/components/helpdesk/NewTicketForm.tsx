@@ -163,7 +163,7 @@ export function NewTicketForm({
       }
 
       const data = await res.json();
-      const base = isAdmin ? "/admin/tickets" : "/account/tickets";
+      const base = isAdmin ? "/admin/tickets" : "/cabinet/tickets";
       router.push(`${base}/${data.data.uuid}`);
       router.refresh();
     } catch (err) {
