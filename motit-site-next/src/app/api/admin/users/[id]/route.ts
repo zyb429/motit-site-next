@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
 
 async function requireAdmin() {
