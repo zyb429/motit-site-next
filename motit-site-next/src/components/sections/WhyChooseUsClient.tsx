@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Plus } from "lucide-react";
+import Image from "next/image";
 
 const accordionItems = [
   {
@@ -121,13 +122,16 @@ export default function WhyChooseUsClient() {
             >
               <div className="px-5 md:px-6 pb-5 md:pb-6 flex flex-col md:flex-row gap-5">
                 <div className="md:w-[38%]">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full aspect-video object-cover rounded-xl"
-                    loading="lazy"
-                    style={{ opacity: 1 }}
-                  />
+                  <div className="relative w-full aspect-video">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 38vw"
+                      className="object-cover rounded-xl"
+                      loading="lazy"
+                    />
+                  </div>
                 </div>
                 <div className="md:w-[62%]">
                   <h5

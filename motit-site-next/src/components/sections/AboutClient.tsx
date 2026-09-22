@@ -83,15 +83,16 @@ export default function About() {
     <section ref={sectionRef} id="about" className="section-padding" style={{ backgroundColor: '#0d2029' }}>
       <div className="content-container">
         <div className="about-image mb-10 md:mb-12">
-          <img 
-            src="/images/about-image.jpg" 
-            alt="Офис МОТИТ" 
-            className="w-full object-cover rounded-2xl" 
-            style={{ height: '360px' }} 
-            loading="lazy" 
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/about-image.jpg"
+            alt="Офис МОТИТ"
+            className="w-full object-cover rounded-2xl"
+            style={{ height: '360px' }}
+            loading="lazy"
           />
         </div>
-        <div className="about-text max-w-[800px]">
+        <div className="about-text max-w-200">
           <span className="section-label block mb-3">КТО МЫ</span>
           <h2 className="section-title mb-5">МОТИТ — комплексные IT-решения для бизнеса</h2>
           <p className="text-base md:text-lg leading-relaxed mb-4" style={{ color: 'rgba(128, 222, 234, 0.75)' }}>

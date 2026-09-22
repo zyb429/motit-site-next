@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { User } from "lucide-react";
+import Image from "next/image";
 
 interface AuthorLinkProps {
   username: string;
@@ -35,9 +36,11 @@ export function AuthorLink({
       className={`cursor-pointer inline-flex items-center gap-1.5 hover:text-[#2dd4bf] transition-colors ${className ?? ""}`}
     >
       {avatarUrl ? (
-        <img
+        <Image
           src={avatarUrl}
           alt={name}
+          width={16}
+          height={16}
           className="w-4 h-4 rounded-full object-cover"
         />
       ) : (

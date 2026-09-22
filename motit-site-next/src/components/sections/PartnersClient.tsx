@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 
 interface Partner {
   name: string;
@@ -40,11 +41,11 @@ export default function PartnersClient() {
   useEffect(() => {
     const track = trackRef.current;
     if (!track || isDragging) return;
-    
+
     let animId: number;
     let pos = track.scrollLeft || 0;
     const speed = 0.4;
-    
+
     const animate = () => {
       if (!isDragging) {
         pos += speed;
@@ -54,7 +55,7 @@ export default function PartnersClient() {
       }
       animId = requestAnimationFrame(animate);
     };
-    
+
     animId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animId);
   }, [isDragging]);
@@ -99,7 +100,7 @@ export default function PartnersClient() {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleMouseUp}
-      style={{ 
+      style={{
         scrollbarWidth: 'none',
         overflowY: 'visible',
         paddingTop: '10px',
@@ -114,7 +115,7 @@ export default function PartnersClient() {
             href={partner.website}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-shrink-0 group relative transition-all duration-150"
+            className="shrink-0 group relative transition-all duration-150"
             style={{
               width: 'clamp(150px, 18vw, 210px)',
               backgroundColor: isHovered ? '#153541' : '#0f2832',
@@ -132,19 +133,21 @@ export default function PartnersClient() {
           >
             <div className="flex flex-col items-center justify-center p-4">
               <div
-                className="w-full aspect-[3/2] rounded-xl flex items-center justify-center mb-2 p-2 overflow-hidden relative"
+                className="w-full aspect-3/2 rounded-xl flex items-center justify-center mb-2 p-2 overflow-hidden relative"
                 style={{ backgroundColor: '#ffffff' }}
               >
-                <img
+                <Image
                   src={partner.logo}
                   alt={partner.name}
-                  className="relative z-[1] w-full h-full object-contain"
+                  fill
+                  sizes="(max-width: 768px) 150px, 210px"
+                  className="z-1 object-contain"
                   style={{ opacity: 0.95 }}
                   loading="lazy"
                   draggable={false}
                 />
                 <div
-                  className="absolute inset-0 z-[2] rounded-xl pointer-events-none"
+                  className="absolute inset-0 z-2 rounded-xl pointer-events-none"
                   style={{
                     backgroundColor: 'rgba(45, 212, 191, 0.4)',
                     mixBlendMode: 'multiply',

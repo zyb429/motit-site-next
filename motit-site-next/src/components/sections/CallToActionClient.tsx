@@ -57,6 +57,7 @@ export default function CallToActionClient() {
     <div ref={sectionRef}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
         <div className="cta-image cta-animate" style={{ opacity: 1 }}>
+         {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/cta-image.jpg"
             alt="Команда МОТИТ"

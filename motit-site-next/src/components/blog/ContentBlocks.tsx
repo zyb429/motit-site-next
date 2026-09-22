@@ -3,12 +3,84 @@
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import Image from "next/image";
+
+// ===== ТИПЫ БЛОКОВ =====
+type HeadingLevel = "h2" | "h3" | "h4";
+
+type BlogHeadingBlock = {
+  __component: "blog.heading";
+  heading_level?: HeadingLevel;
+  text?: string;
+};
+
+type BlogTextBlock = {
+  __component: "blog.text";
+  text?: string;
+};
+
+type BlogImageBlock = {
+  __component: "blog.image";
+  caption?: string;
+  image?: {
+    url?: string;
+    data?: { attributes?: { url?: string } };
+    attributes?: { url?: string };
+  };
+  url?: string;
+};
+
+type BlogQuoteBlock = {
+  __component: "blog.quote";
+  quote_text?: string;
+  quote_author?: string;
+};
+
+type BlogCodeBlock = {
+  __component: "blog.code";
+  code_language?: string;
+  code_content?: string;
+};
+
+type BlogButtonBlock = {
+  __component: "blog.button";
+  button_url?: string;
+  button_text?: string;
+};
+
+type BlogVideoBlock = {
+  __component: "blog.video";
+  video_url?: string;
+};
+
+type GalleryImage = {
+  url?: string;
+  attributes?: {
+    url?: string;
+    alternativeText?: string;
+  };
+};
+
+type BlogGalleryBlock = {
+  __component: "blog.gallery";
+  gallery_images?: {
+    data?: GalleryImage[];
+  };
+};
+
+type ContentBlock =
+  | BlogHeadingBlock
+  | BlogTextBlock
+  | BlogImageBlock
+  | BlogQuoteBlock
+  | BlogCodeBlock
+  | BlogButtonBlock
+  | BlogVideoBlock
+  | BlogGalleryBlock;
 
 interface ContentBlocksProps {
-  blocks: any[];
+  blocks: ContentBlock[];
 }
-
-type HeadingLevel = "h2" | "h3" | "h4";
 
 const headingClasses: Record<HeadingLevel, string> = {
   h2: "text-2xl md:text-3xl font-bold text-[#e0f7fa] mt-8 mb-4",
@@ -16,39 +88,39 @@ const headingClasses: Record<HeadingLevel, string> = {
   h4: "text-lg md:text-xl font-bold text-[#e0f7fa] mt-4 mb-2",
 };
 
+const S3_BASE =
+  process.env.NEXT_PUBLIC_S3_URL || "http://localhost:9000/motit-uploads";
+
+function buildImageUrl(url?: string): string | null {
+  if (!url || typeof url !== "string") return null;
+  if (url.startsWith("/uploads")) return `${S3_BASE}${url}`;
+  return url;
+}
+
+function getImageUrl(block: BlogImageBlock): string | null {
+  const url =
+    block.image?.url ||
+    block.image?.data?.attributes?.url ||
+    block.image?.attributes?.url ||
+    block.url;
+  return buildImageUrl(url);
+}
+
 export default function ContentBlocks({ blocks }: ContentBlocksProps) {
   if (!blocks?.length) return null;
-
-  const getImageUrl = (block: any) => {
-    const url =
-      block?.image?.url ||
-      block?.image?.data?.attributes?.url ||
-      block?.image?.attributes?.url ||
-      block?.url ||
-      "";
-    if (!url) return null;
-    if (typeof url !== "string") return null;
-    if (url.startsWith("/uploads")) {
-      return `${process.env.NEXT_PUBLIC_S3_URL || "http://localhost:9000/motit-uploads"}${url}`;
-    }
-    return url;
-  };
 
   return (
     <div className="space-y-6 max-w-none">
       {blocks.map((block, index) => {
-        const component = block?.__component || "";
-
-        switch (component) {
+        switch (block.__component) {
           case "blog.heading": {
-            const level = block?.heading_level || "h2";
-            const HeadingTag = block?.heading_level || "h2";
-            const className =
-              headingClasses[level as HeadingLevel] || headingClasses.h2;
+            const level = block.heading_level || "h2";
+            const HeadingTag = level;
+            const className = headingClasses[level] || headingClasses.h2;
 
             return (
               <HeadingTag key={index} className={className}>
-                {block?.text || ""}
+                {block.text || ""}
               </HeadingTag>
             );
           }
@@ -59,7 +131,7 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
                 key={index}
                 className="prose prose-invert max-w-none prose-p:text-gray-300 prose-strong:text-[#e0f7fa] prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6]"
               >
-                <ReactMarkdown>{block?.text || ""}</ReactMarkdown>
+                <ReactMarkdown>{block.text || ""}</ReactMarkdown>
               </div>
             );
 
@@ -69,17 +141,15 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
             return (
               <figure key={index} className="my-6">
                 <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#0a1920]">
-                  <img
+                  <Image
                     src={imageUrl}
-                    alt={block?.caption || "Изображение"}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
+                    alt={block.caption || "Изображение"}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 768px"
+                    className="object-cover"
                   />
                 </div>
-                {block?.caption && (
+                {block.caption && (
                   <figcaption className="text-sm text-gray-500 mt-2 text-center">
                     {block.caption}
                   </figcaption>
@@ -95,9 +165,9 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
                 className="border-l-4 border-[#2dd4bf] pl-5 py-2 my-6"
               >
                 <p className="text-lg italic text-gray-300 leading-relaxed">
-                  {block?.quote_text || ""}
+                  {block.quote_text || ""}
                 </p>
-                {block?.quote_author && (
+                {block.quote_author && (
                   <footer className="text-sm text-gray-500 mt-2">
                     — {block.quote_author}
                   </footer>
@@ -109,18 +179,18 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
             return (
               <div key={index} className="my-6 rounded-xl overflow-hidden">
                 <SyntaxHighlighter
-                  language={block?.code_language || "javascript"}
+                  language={block.code_language || "javascript"}
                   style={vscDarkPlus}
                   className="rounded-xl"
                   showLineNumbers
                 >
-                  {block?.code_content || ""}
+                  {block.code_content || ""}
                 </SyntaxHighlighter>
               </div>
             );
 
           case "blog.button":
-            if (!block?.button_url) return null;
+            if (!block.button_url) return null;
             return (
               <div key={index} className="my-6">
                 <a
@@ -129,14 +199,14 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {block?.button_text || "Подробнее"}
+                  {block.button_text || "Подробнее"}
                   <span>→</span>
                 </a>
               </div>
             );
 
           case "blog.video":
-            if (!block?.video_url) return null;
+            if (!block.video_url) return null;
             return (
               <div
                 key={index}
@@ -152,35 +222,31 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
             );
 
           case "blog.gallery": {
-            const images = block?.gallery_images?.data || [];
+            const images = block.gallery_images?.data || [];
             if (!images.length) return null;
             return (
               <div
                 key={index}
                 className="grid grid-cols-2 md:grid-cols-3 gap-4 my-6"
               >
-                {images.map((img: any, i: number) => {
-                  const url = img?.attributes?.url || img?.url || "";
-                  if (!url || typeof url !== "string") return null;
-                  const fullUrl = url.startsWith("/uploads")
-                    ? `${process.env.NEXT_PUBLIC_S3_URL || "http://localhost:9000/motit-uploads"}${url}`
-                    : url;
+                {images.map((img, i) => {
+                  const url = img.attributes?.url || img.url;
+                  const fullUrl = buildImageUrl(url);
+                  if (!fullUrl) return null;
                   return (
                     <div
                       key={i}
                       className="relative aspect-square rounded-xl overflow-hidden bg-[#0a1920]"
                     >
-                      <img
+                      <Image
                         src={fullUrl}
                         alt={
-                          img?.attributes?.alternativeText ||
+                          img.attributes?.alternativeText ||
                           `Изображение ${i + 1}`
                         }
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
+                        fill
+                        sizes="(max-width: 768px) 50vw, 33vw"
+                        className="object-cover"
                       />
                     </div>
                   );
