@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
+import { Element, Text, type Descendant } from "slate";
 import type { CustomElement } from "@/types/slate";
 
 type RenderSlateProps = {
@@ -9,45 +10,46 @@ type RenderSlateProps = {
 };
 
 // Вспомогательная функция для безопасного получения текста
-const getTextContent = (node: any): string => {
+const getTextContent = (node: Descendant): string => {
   if (!node) return "";
-  if (typeof node === "string") return node;
-  if (node.text) return node.text;
-  if (node.children && Array.isArray(node.children)) {
-    return node.children.map((child: any) => getTextContent(child)).join("");
+  if (Text.isText(node)) return node.text;
+  if (Element.isElement(node) && Array.isArray(node.children)) {
+    return node.children.map((child) => getTextContent(child)).join("");
   }
   return "";
 };
 
-// Вспомогательная функция для рендеринга детей с форматированием
-const renderChildren = (children: any[]): React.ReactNode => {
+// Рендер текстового узла с форматированием
+const renderTextNode = (node: Text, key: number): React.ReactNode => {
+  let content: React.ReactNode = node.text;
+
+  // Порядок важен: code → underline → italic → bold (изнутри наружу)
+  if (node.code) {
+    content = (
+      <code className="bg-gray-800 px-1 py-0.5 rounded text-sm">
+        {content}
+      </code>
+    );
+  }
+  if (node.underline) content = <u>{content}</u>;
+  if (node.italic) content = <em>{content}</em>;
+  if (node.bold) content = <strong>{content}</strong>;
+
+  return <Fragment key={key}>{content}</Fragment>;
+};
+
+// Рекурсивный рендер детей
+const renderChildren = (children: Descendant[]): React.ReactNode => {
   if (!children || !Array.isArray(children)) return null;
 
   return children.map((child, index) => {
-    if (typeof child === "string") {
-      return <span key={index}>{child}</span>;
+    if (Text.isText(child)) {
+      return renderTextNode(child, index);
     }
 
-    // Если это текстовый узел с форматированием
-    if (child.text !== undefined) {
-      let content = child.text || "";
-
-      if (child.bold) content = <strong key="bold">{content}</strong>;
-      if (child.italic) content = <em key="italic">{content}</em>;
-      if (child.underline) content = <u key="underline">{content}</u>;
-      if (child.code)
-        content = (
-          <code key="code" className="bg-gray-800 px-1 py-0.5 rounded text-sm">
-            {content}
-          </code>
-        );
-
-      return <Fragment key={index}>{content}</Fragment>;
-    }
-
-    // Рекурсивно рендерим вложенные элементы
-    if (child.children) {
-      return renderChildren(child.children);
+    if (Element.isElement(child)) {
+      // Вложенный элемент — рендерим его детей
+      return <Fragment key={index}>{renderChildren(child.children)}</Fragment>;
     }
 
     return null;
@@ -65,17 +67,17 @@ export default function RenderSlate({
   return (
     <div className={`prose prose-invert max-w-none ${className}`}>
       {nodes.map((node, index) => {
-        // Проверяем, является ли узел текстовым
-        if ("text" in node && typeof node.text === "string") {
+        // Текстовый узел на верхнем уровне
+        if (Text.isText(node)) {
           return <span key={index}>{node.text}</span>;
         }
 
-        // Проверяем, есть ли у узла тип
-        if (!node.type) {
+        // Не элемент — рендерим как текст
+        if (!Element.isElement(node) || !node.type) {
           return <span key={index}>{getTextContent(node)}</span>;
         }
 
-        const children = (node as any).children || [];
+        const children = node.children;
 
         switch (node.type) {
           case "heading-one":
@@ -90,9 +92,11 @@ export default function RenderSlate({
           case "bulleted-list":
             return (
               <ul key={index}>
-                {(children as any[]).map((item, i) => (
+                {children.map((item, i) => (
                   <li key={i}>
-                    {renderChildren((item as any).children || [])}
+                    {Element.isElement(item)
+                      ? renderChildren(item.children)
+                      : null}
                   </li>
                 ))}
               </ul>
@@ -101,9 +105,11 @@ export default function RenderSlate({
           case "numbered-list":
             return (
               <ol key={index}>
-                {(children as any[]).map((item, i) => (
+                {children.map((item, i) => (
                   <li key={i}>
-                    {renderChildren((item as any).children || [])}
+                    {Element.isElement(item)
+                      ? renderChildren(item.children)
+                      : null}
                   </li>
                 ))}
               </ol>

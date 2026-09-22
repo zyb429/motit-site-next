@@ -1,8 +1,21 @@
 "use client";
 
-import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { createEditor, Transforms, Editor, Descendant } from "slate";
-import { Slate, Editable, withReact } from "slate-react";
+import React, { useMemo, useState, useCallback } from "react";
+import {
+  createEditor,
+  Transforms,
+  Editor,
+  Element,
+  Text,
+  type Descendant,
+} from "slate";
+import {
+  Slate,
+  Editable,
+  withReact,
+  type RenderElementProps,
+  type RenderLeafProps,
+} from "slate-react";
 import { withHistory } from "slate-history";
 import type {
   CustomEditor,
@@ -46,7 +59,7 @@ const Toolbar = ({ editor }: { editor: CustomEditor }) => {
     const [match] = Editor.nodes(editor, {
       match: (n) => {
         if (Editor.isEditor(n)) return false;
-        return "type" in n && n.type === format;
+        return Element.isElement(n) && n.type === format;
       },
     });
     return !!match;
@@ -168,9 +181,8 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
   const editor = useMemo(() => withHistory(withReact(createEditor())), []);
 
   // Безопасное создание значения
-  const getSafeValue = useCallback((value?: CustomElement[] | null) => {
+  const getSafeValue = useCallback((value?: CustomElement[] | null): CustomElement[] => {
     if (!value || !Array.isArray(value) || value.length === 0) {
-      console.log("Нет значения, используем INITIAL_VALUE");
       return INITIAL_VALUE;
     }
 
@@ -184,10 +196,8 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
         return false;
       }
 
-      const hasValidChildren = node.children.every((child: any) => {
-        if (typeof child === "object" && child !== null && "text" in child) {
-          return true;
-        }
+      const hasValidChildren = node.children.every((child: Descendant) => {
+        if (Text.isText(child)) return true;
         console.warn("Дочерний элемент без text:", child);
         return false;
       });
@@ -202,18 +212,11 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
     return value;
   }, []);
 
-  const [value, setValue] = useState<CustomElement[]>(() => {
-    const safeValue = getSafeValue(initialValue);
-    console.log("Инициализация редактора: ", safeValue);
-    return safeValue;
-  });
+  const [value, setValue] = useState<CustomElement[]>(() =>
+    getSafeValue(initialValue),
+  );
 
-  useEffect(() => {
-    if (initialValue) {
-      const safeValue = getSafeValue(initialValue);
-      setValue(safeValue);
-    }
-  }, [initialValue, getSafeValue]);
+  // useEffect удалён — синхронизация делается через key на компоненте
 
   const handleChange = useCallback(
     (newValue: Descendant[]) => {
@@ -222,7 +225,8 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
         return;
       }
 
-      const isValid = newValue.every((node: any) => {
+      const isValid = newValue.every((node) => {
+        if (!Element.isElement(node)) return false;
         if (
           !node.children ||
           !Array.isArray(node.children) ||
@@ -230,9 +234,7 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
         ) {
           return false;
         }
-        return node.children.every((child: any) => {
-          return typeof child === "object" && child !== null && "text" in child;
-        });
+        return node.children.every((child) => Text.isText(child));
       });
 
       if (!isValid) {
@@ -248,13 +250,9 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
   );
 
   const renderElement = useCallback(
-    ({ attributes, children, element }: any) => {
-      if (!element?.type) {
+    ({ attributes, children, element }: RenderElementProps) => {
+      if (!Element.isElement(element) || !element.type) {
         return <p {...attributes}>{children || " "}</p>;
-      }
-
-      if (!children) {
-        return <p {...attributes}> </p>;
       }
 
       switch (element.type) {
@@ -323,39 +321,34 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
     [],
   );
 
-  const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
-    if (!leaf) {
-      return <span {...attributes}>{children || ""}</span>;
-    }
+  const renderLeaf = useCallback(
+    ({ attributes, children, leaf }: RenderLeafProps) => {
+      let formatted = children;
 
-    if (!children) {
-      return <span {...attributes}> </span>;
-    }
+      if (leaf.bold) {
+        formatted = <strong className="font-bold">{formatted}</strong>;
+      }
+      if (leaf.italic) {
+        formatted = <em className="italic">{formatted}</em>;
+      }
+      if (leaf.underline) {
+        formatted = <u className="underline">{formatted}</u>;
+      }
+      if (leaf.strikethrough) {
+        formatted = <s className="line-through">{formatted}</s>;
+      }
+      if (leaf.code) {
+        formatted = (
+          <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-black">
+            {formatted}
+          </code>
+        );
+      }
 
-    let formatted = children;
-
-    if (leaf.bold) {
-      formatted = <strong className="font-bold">{formatted}</strong>;
-    }
-    if (leaf.italic) {
-      formatted = <em className="italic">{formatted}</em>;
-    }
-    if (leaf.underline) {
-      formatted = <u className="underline">{formatted}</u>;
-    }
-    if (leaf.strikethrough) {
-      formatted = <s className="line-through">{formatted}</s>;
-    }
-    if (leaf.code) {
-      formatted = (
-        <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-black">
-          {formatted}
-        </code>
-      );
-    }
-
-    return <span {...attributes}>{formatted}</span>;
-  }, []);
+      return <span {...attributes}>{formatted}</span>;
+    },
+    [],
+  );
 
   return (
     <div className={`border rounded-lg overflow-hidden bg-white ${className}`}>

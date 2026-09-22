@@ -1,5 +1,6 @@
 // src/app/api/admin/users/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     const roleFilter = (url.searchParams.get("role") ?? "").trim();
 
     // Формируем where
-    const where: any = {};
+    const where: Prisma.usersWhereInput = {};
 
     if (q) {
       where.OR = [

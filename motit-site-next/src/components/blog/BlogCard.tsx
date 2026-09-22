@@ -8,18 +8,24 @@ import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { Calendar, Clock } from "lucide-react";
 import { AuthorLink } from "./AuthorLink";
 import type { View } from "@/lib/view";
+import type { PostListItem } from "@/lib/db/posts";
 
 interface BlogCardProps {
-  post: any;
+  post: PostListItem;
   className?: string;
   variant?: View;
 }
 
-const getTextFromContent = (content: any): string => {
+type SlateNode = {
+  text?: string;
+  children?: SlateNode[];
+};
+
+const getTextFromContent = (content: unknown): string => {
   if (!content) return "";
   if (typeof content === "string") {
     try {
-      const parsed = JSON.parse(content);
+      const parsed: unknown = JSON.parse(content);
       return getTextFromContent(parsed);
     } catch {
       return content.replace(/<[^>]*>/g, " ");
@@ -29,8 +35,9 @@ const getTextFromContent = (content: any): string => {
     return content.map((item) => getTextFromContent(item)).join(" ");
   }
   if (typeof content === "object") {
-    if (content.text) return content.text;
-    if (content.children) return getTextFromContent(content.children);
+    const node = content as SlateNode;
+    if (node.text) return node.text;
+    if (node.children) return getTextFromContent(node.children);
   }
   return "";
 };
@@ -51,7 +58,7 @@ export function BlogCard({
   const excerpt = post.excerpt || "";
   const publishedAt = post.publishedAt || post.updatedAt || null;
 
-  const categories = (post.categories || []).map((c: any) => ({
+  const categories = (post.categories || []).map((c) => ({
     name: c.name ?? "",
     slug: c.slug ?? "",
   }));
@@ -88,7 +95,7 @@ export function BlogCard({
   };
 
   const getReadingTime = () => {
-    const text = getTextFromContent(post.content || excerpt || "");
+    const text = getTextFromContent(excerpt || "");
     const words = text.trim().split(/\s+/).filter(Boolean).length;
     return Math.max(1, Math.ceil(words / 200));
   };

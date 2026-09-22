@@ -4,9 +4,10 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { BlogCard } from "./BlogCard";
 import { ViewModeToggle, type ViewMode } from "./ViewModeToggle";
+import { PostListItem } from "@/lib/db/posts";
 
 interface BlogPostsProps {
-  posts: any[];
+  posts: PostListItem[];
   initialViewMode?: ViewMode;
 }
 

@@ -41,7 +41,7 @@ async function getPostsByAuthorPrisma(username: string) {
     orderBy: [{ published_at: "desc" }],
     take: 50,
     include: {
-      users: { include: { avatar: true } },
+      author: { include: { avatar: true } },
       posts_categories_links: { include: { categories: true } },
       featured_image: true,
     },
@@ -56,19 +56,19 @@ async function getPostsByAuthorPrisma(username: string) {
     post_status: p.post_status ?? null,
     publishedAt: p.published_at?.toISOString() ?? null,
     updatedAt: p.updated_at?.toISOString() ?? null,
-    author: p.users
+    author: p.author
       ? {
-        id: p.users.id,
-        username: p.users.username ?? "",
-        full_name: p.users.full_name ?? null,
-        avatar_url: p.users.avatar?.url ?? null,
+        id: p.author.id,
+        username: p.author.username ?? "",
+        full_name: p.author.full_name ?? null,
+        avatar_url: p.author.avatar?.url ?? null,
       }
       : null,
     categories:
       p.posts_categories_links
         ?.map((l) => l.categories)
         .filter(Boolean)
-        .map((c: any) => ({
+        .map((c) => ({
           id: c.id,
           name: c.name ?? "",
           slug: c.slug ?? null,

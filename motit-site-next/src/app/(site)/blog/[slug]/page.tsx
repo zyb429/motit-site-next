@@ -2,11 +2,12 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { getPostBySlugPrisma, getPostsPrisma } from "@/lib/db/posts";
 import RenderSlate from "@/components/editor/RenderSlate";
 import { BlogPostActions } from "@/components/blog/BlogPostActions";
 import { Calendar, User, Clock, ArrowLeft, Tag } from "lucide-react";
+import { Element, Text, type Descendant } from "slate";
+import type { CustomElement } from "@/types/slate";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -100,19 +101,23 @@ export default async function BlogPostPage({
 
   const categories = post.categories;
   const author = post.author;
-  const content = (post as any).content as any[] | null;
+
+  const content = (post as { content?: CustomElement[] | null }).content ?? null;
 
   const hasSlateContent =
-    content && Array.isArray(content) && content.length > 0;
+    Array.isArray(content) && content.length > 0;
 
   const getReadingTime = () => {
     let text = "";
-    if (hasSlateContent) {
-      const extractText = (nodes: any[]): string => {
+    if (hasSlateContent && content) {
+      const extractText = (nodes: Descendant[]): string => {
         let result = "";
         for (const node of nodes) {
-          if (node.children) result += extractText(node.children);
-          if (node.text) result += node.text + " ";
+          if (Text.isText(node)) {
+            result += node.text + " ";
+          } else if (Element.isElement(node)) {
+            result += extractText(node.children);
+          }
         }
         return result;
       };
@@ -210,7 +215,7 @@ export default async function BlogPostPage({
         </header>
 
         <div className="prose prose-invert max-w-none prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-p:text-gray-300 prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:border-[#2dd4bf] prose-blockquote:text-gray-400">
-          {hasSlateContent ? (
+          {hasSlateContent && content ? (
             <RenderSlate nodes={content} />
           ) : (
             <p className="text-gray-500">Нет содержимого</p>

@@ -15,10 +15,10 @@ export type PostListItem = {
   slug: string | null;
   excerpt: string | null;
   post_status: string | null;
-  views: number | null;
-  is_featured: boolean | null;
-  meta_title: string | null;
-  meta_description: string | null;
+  views?: number | null;
+  is_featured?: boolean | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
   publishedAt: string | null;
   updatedAt: string | null;
   author: {

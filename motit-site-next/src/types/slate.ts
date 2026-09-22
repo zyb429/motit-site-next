@@ -1,9 +1,13 @@
-import { BaseEditor, BaseElement, BaseText, Descendant } from "slate";
+import {
+  BaseEditor,
+  type BaseElement,
+  type BaseText,
+} from "slate";
 import { ReactEditor } from "slate-react";
 import { HistoryEditor } from "slate-history";
 
 // ===== ТИПЫ ДЛЯ ТЕКСТОВЫХ УЗЛОВ =====
-export type CustomText = {
+export type CustomText = BaseText & {
   text: string;
   bold?: boolean;
   italic?: boolean;
@@ -26,9 +30,8 @@ export type CustomElementType =
   | "image"
   | "link";
 
-export type CustomElement = {
+export type CustomElement = BaseElement & {
   type: CustomElementType;
-  children: CustomText[];
   url?: string;
   href?: string;
   alt?: string;
@@ -63,7 +66,6 @@ export type Post = {
         };
       }>;
     };
-    // ===== ИЗМЕНЕНО: createdBy → author =====
     author?: {
       data?: {
         attributes: {
@@ -89,7 +91,7 @@ export type CreatePostData = {
   content: CustomElement[];
   excerpt?: string;
   categories?: number[];
-  author?: number; // ← ДОБАВЛЕНО
+  author?: number;
   featured_image?: number;
   post_status?: "draft" | "published" | "archived";
   publishedAt?: string;

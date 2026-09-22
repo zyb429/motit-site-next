@@ -1,47 +1,11 @@
-export function getSafeImageUrl(image: any): string | null {
-  if (!image) return null;
-
-  // Если это строка
-  if (typeof image === "string") {
-    return normalizeImageUrl(image);
-  }
-
-  // Если это объект (как в вашем случае)
-  if (typeof image === "object" && image !== null) {
-    try {
-      // Прямой доступ к url (самый простой путь)
-      let url = image?.url || null;
-
-      // Если url нет, пробуем другие пути
-      if (!url) {
-        url =
-          image?.data?.attributes?.url ||
-          image?.attributes?.url ||
-          image?.data?.url ||
-          null;
-      }
-
-      // Если URL - объект, преобразуем в строку
-      if (url && typeof url === "object") {
-        url = String(url);
-      }
-
-      // Если получили строку
-      if (url && typeof url === "string") {
-        return normalizeImageUrl(url);
-      }
-    } catch (e) {
-      console.warn("Error extracting image URL:", e);
-      return null;
-    }
-  }
-
-  return null;
-}
-
 /**
- * Нормализация URL изображения
+ * Универсальный тип для картинки из разных источников:
+ * - готовая строка URL
+ * - Prisma-модель files (url)
+ * - Strapi-объект с data.attributes.url
+ * - legacy-форматы
  */
+
 function normalizeImageUrl(url: string): string {
   if (!url || typeof url !== "string") return "";
 
@@ -53,4 +17,52 @@ function normalizeImageUrl(url: string): string {
   }
 
   return url;
+}
+
+type ImageInput =
+  | string
+  | {
+      url?: string | null;
+      attributes?: { url?: string | null } | null;
+      data?: {
+        url?: string | null;
+        attributes?: { url?: string | null } | null;
+      } | null;
+    }
+  | null
+  | undefined;
+
+export function getSafeImageUrl(image: ImageInput): string | null {
+  if (!image) return null;
+
+  if (typeof image === "string") {
+    return normalizeImageUrl(image);
+  }
+
+  if (typeof image === "object") {
+    try {
+      let url: unknown = image.url || null;
+
+      if (!url) {
+        url =
+          image.data?.attributes?.url ||
+          image.attributes?.url ||
+          image.data?.url ||
+          null;
+      }
+
+      if (url && typeof url === "object") {
+        url = String(url);
+      }
+
+      if (url && typeof url === "string") {
+        return normalizeImageUrl(url);
+      }
+    } catch (e) {
+      console.warn("Error extracting image URL:", e);
+      return null;
+    }
+  }
+
+  return null;
 }

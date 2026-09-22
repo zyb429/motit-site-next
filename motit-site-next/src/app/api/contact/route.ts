@@ -69,32 +69,32 @@ export async function POST(request: Request) {
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { 
-            background: #0a1920; 
-            color: #2dd4bf; 
-            padding: 20px; 
-            border-radius: 8px 8px 0 0; 
+          .header {
+            background: #0a1920;
+            color: #2dd4bf;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
           }
-          .content { 
-            background: #f8fafc; 
-            padding: 20px; 
-            border-radius: 0 0 8px 8px; 
+          .content {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
           }
           .field { margin-bottom: 15px; }
           .label { font-weight: bold; color: #475569; }
-          .value { 
-            margin-top: 5px; 
-            padding: 10px; 
-            background: white; 
-            border-radius: 4px; 
-            border: 1px solid #e2e8f0; 
+          .value {
+            margin-top: 5px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
           }
-          .footer { 
-            margin-top: 20px; 
-            padding-top: 20px; 
-            border-top: 1px solid #e2e8f0; 
-            font-size: 12px; 
-            color: #94a3b8; 
+          .footer {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #94a3b8;
           }
         </style>
       </head>
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
       html: htmlContent,
       text: `
         Новая заявка с сайта Motit
-        
+
         Имя: ${name}
         Email: ${email}
         ${phone ? `Телефон: ${phone}` : ""}
@@ -201,12 +201,13 @@ export async function POST(request: Request) {
       messageId: info.messageId,
       message: `Письмо отправлено на ${process.env.CONTACT_EMAIL}`,
     });
-  } catch (error: any) {
-    console.error("❌ Ошибка отправки письма:", error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Неизвестная ошибка";
+    console.error("❌ Ошибка отправки письма:", message);
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        error: message,
       },
       { status: 500 },
     );

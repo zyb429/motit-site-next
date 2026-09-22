@@ -5,9 +5,10 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { parseView, type View } from "@/lib/view";
 import { BlogCard } from "./BlogCard";
 import { ViewModeToggle } from "./ViewModeToggle";
+import type { PostListItem } from "@/lib/db/posts";
 
 interface AuthorPostsProps {
-  posts: any[];
+  posts: PostListItem[];
   initialView?: View;
 }
 
@@ -35,7 +36,7 @@ export function AuthorPosts({ posts, initialView }: AuthorPostsProps) {
         <div className="space-y-4">
           {posts.map((post) => (
             <BlogCard
-              key={post.id || post.documentId}
+              key={post.id}
               post={post}
               variant="list"
             />
