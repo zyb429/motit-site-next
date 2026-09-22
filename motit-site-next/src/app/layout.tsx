@@ -1,8 +1,8 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
+import Script from "next/script";
 import { Providers } from "./providers";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
@@ -46,6 +46,20 @@ export const metadata: Metadata = {
   },
 };
 
+// Скрипт до гидратации — вынесен в константу, чтобы не путался в JSX
+const THEME_INIT_SCRIPT = `
+(function() {
+  try {
+    var path = window.location.pathname;
+    // Тёмная тема для всех зон, КРОМЕ /admin
+    var isAdmin = path.startsWith("/admin");
+    if (!isAdmin) {
+      document.documentElement.classList.add("dark");
+    }
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -56,23 +70,10 @@ export default function RootLayout({
       className="scroll-smooth"
       suppressHydrationWarning
     >
-      <head>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {`
-            (function() {
-              try {
-                var path = window.location.pathname;
-                // Тёмная тема для всех зон, КРОМЕ /admin
-                var isAdmin = path.startsWith("/admin");
-                if (!isAdmin) {
-                  document.documentElement.classList.add("dark");
-                }
-              } catch (e) {}
-            })();
-          `}
-        </Script>
-      </head>
       <body className={inter.className}>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {THEME_INIT_SCRIPT}
+        </Script>
         <Providers>{children}</Providers>
       </body>
     </html>
