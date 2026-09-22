@@ -374,31 +374,32 @@ model tickets {
 }
 
 model users {
-  id                   Int                @id @default(autoincrement()) @db.UnsignedInt
-  uuid                 String             @unique(map: "idx_users_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
-  document_id          String?            @db.VarChar(255)
-  username             String?            @unique(map: "idx_users_username") @db.VarChar(255)
-  email                String?            @unique(map: "idx_users_email") @db.VarChar(255)
-  password             String?            @db.VarChar(255)
-  password_hash        String?            @db.VarChar(255)
-  full_name            String?            @db.VarChar(255)
-  phone                String?            @db.VarChar(255)
-  avatar_url           String?            @db.VarChar(500)
-  avatar_id            Int?               @db.UnsignedInt
-  bio                  String?            @db.LongText
-  is_active            Boolean?           @default(true)
-  last_login           DateTime?          @db.DateTime(6)
-  provider             String?            @db.VarChar(255)
-  confirmed            Boolean?           @default(false)
-  blocked              Boolean?           @default(false)
-  reset_password_token String?            @db.VarChar(255)
-  confirmation_token   String?            @db.VarChar(255)
-  created_at           DateTime?          @db.DateTime(6)
-  updated_at           DateTime?          @db.DateTime(6)
-  published_at         DateTime?          @db.DateTime(6)
-  created_by_id        Int?               @db.UnsignedInt
-  updated_by_id        Int?               @db.UnsignedInt
-  locale               String?            @db.VarChar(255)
+  id                     Int                @id @default(autoincrement()) @db.UnsignedInt
+  uuid                   String             @unique(map: "idx_users_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+  document_id            String?            @db.VarChar(255)
+  username               String?            @unique(map: "idx_users_username") @db.VarChar(255)
+  email                  String?            @unique(map: "idx_users_email") @db.VarChar(255)
+  password               String?            @db.VarChar(255)
+  password_hash          String?            @db.VarChar(255)
+  full_name              String?            @db.VarChar(255)
+  phone                  String?            @db.VarChar(255)
+  avatar_url             String?            @db.VarChar(500)
+  avatar_id              Int?               @db.UnsignedInt
+  bio                    String?            @db.LongText
+  is_active              Boolean?           @default(true)
+  last_login             DateTime?          @db.DateTime(6)
+  provider               String?            @db.VarChar(255)
+  confirmed              Boolean?           @default(false)
+  blocked                Boolean?           @default(false)
+  reset_password_token   String?            @db.VarChar(255)
+  reset_password_expires DateTime?          @db.DateTime(6)
+  confirmation_token     String?            @db.VarChar(255)
+  created_at             DateTime?          @db.DateTime(6)
+  updated_at             DateTime?          @db.DateTime(6)
+  published_at           DateTime?          @db.DateTime(6)
+  created_by_id          Int?               @db.UnsignedInt
+  updated_by_id          Int?               @db.UnsignedInt
+  locale                 String?            @db.VarChar(255)
 
   client_organizations client_organizations[]
   clients              clients?
