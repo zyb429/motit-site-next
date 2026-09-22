@@ -199,6 +199,9 @@ export function UsersTable({ users, roles }: Props) {
                 <th className="text-left px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider hidden md:table-cell">
                   Email
                 </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider hidden lg:table-cell">
+                  Телефон
+                </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
                   Роль
                 </th>
@@ -251,6 +254,11 @@ export function UsersTable({ users, roles }: Props) {
                     <td className="px-4 py-3 hidden md:table-cell">
                       <span className="text-sm text-(--text-secondary) truncate">
                         {u.email}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <span className="text-sm text-(--text-secondary) truncate">
+                        {u.phone || "—"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
