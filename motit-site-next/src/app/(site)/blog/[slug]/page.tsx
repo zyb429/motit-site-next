@@ -2,12 +2,14 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { getPostBySlugPrisma, getPostsPrisma } from "@/lib/db/posts";
 import RenderSlate from "@/components/editor/RenderSlate";
 import { BlogPostActions } from "@/components/blog/BlogPostActions";
 import { Calendar, User, Clock, ArrowLeft, Tag } from "lucide-react";
 import { Element, Text, type Descendant } from "slate";
 import type { CustomElement } from "@/types/slate";
+import { getSafeImageUrl } from "@/lib/images";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -192,7 +194,20 @@ export default async function BlogPostPage({
                 href={`/authors/${author.username}`}
                 className="flex items-center gap-1.5 hover:text-[#2dd4bf] transition-colors"
               >
-                <User size={14} className="text-[#2dd4bf]" />
+                {(() => {
+                  const avatarSrc = getSafeImageUrl(author.avatar_url);
+                  return avatarSrc ? (
+                    <Image
+                      src={avatarSrc}
+                      alt={author.full_name || author.username}
+                      width={20}
+                      height={20}
+                      className="w-5 h-5 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User size={14} className="text-[#2dd4bf]" />
+                  );
+                })()}
                 {author.full_name || author.username}
               </Link>
             )}
