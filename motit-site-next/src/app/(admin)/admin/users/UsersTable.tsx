@@ -29,7 +29,7 @@ type User = {
   confirmed?: boolean;
   createdAt: string;
   role?: Role | null;
-  avatar?: { url: string } | null;
+  avatar: { id: number; url: string | null; name: string | null } | null;
 };
 
 interface Props {
@@ -134,14 +134,16 @@ export function UsersTable({ users, roles }: Props) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              disabled={isPending}
               placeholder="Поиск по имени, email или username..."
-              className="w-full pl-10 pr-4 py-2 bg-(--bg-secondary) border border-(--border) rounded-lg text-(--text-primary) placeholder:text-(--text-muted) focus:border-(--accent) focus:outline-none text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-(--bg-secondary) border border-(--border) rounded-lg text-(--text-primary) placeholder:text-(--text-muted) focus:border-(--accent) focus:outline-none text-sm disabled:opacity-60"
             />
           </div>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 bg-(--bg-secondary) border border-(--border) rounded-lg text-(--text-primary) focus:border-(--accent) focus:outline-none text-sm"
+            disabled={isPending}
+            className="px-4 py-2 bg-(--bg-secondary) border border-(--border) rounded-lg text-(--text-primary) focus:border-(--accent) focus:outline-none text-sm disabled:opacity-60"
           >
             <option value="all">Все роли</option>
             {roles.map((r) => (
@@ -151,6 +153,14 @@ export function UsersTable({ users, roles }: Props) {
             ))}
           </select>
         </div>
+
+        {isPending && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-(--text-muted)">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Обновление...
+          </div>
+        )}
+
         {error && (
           <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
             {error}

@@ -8,7 +8,10 @@ async function getUsers() {
   const rows = await prisma.users.findMany({
     orderBy: { created_at: "desc" },
     take: 100,
-    include: { users_role_lnk: { include: { roles: true } } },
+    include: {
+      users_role_lnk: { include: { roles: true } },
+      avatar: true,
+    },
   });
 
   return rows.map((u) => {
@@ -23,7 +26,15 @@ async function getUsers() {
       blocked: u.blocked ?? false,
       confirmed: u.confirmed ?? false,
       createdAt: u.created_at?.toISOString() ?? new Date().toISOString(),
-      avatar: null,
+      avatar: u.avatar
+        ? {
+            id: u.avatar.id,
+            url: u.avatar.url ?? null,
+            name: u.avatar.name ?? null,
+          }
+        : u.avatar_url
+          ? { id: 0, url: u.avatar_url, name: null }
+          : null,
       role: role
         ? { id: role.id, name: role.name ?? "", type: role.type ?? "" }
         : null,
