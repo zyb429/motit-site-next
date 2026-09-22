@@ -1,9 +1,9 @@
 // src/components/auth/LogoutButton.tsx
 "use client";
 
-import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
-import { LogOut } from "lucide-react";
+import { useTransition } from "react";
+import { LogOut, Loader2 } from "lucide-react";
+import { logoutAction } from "@/app/actions/auth";
 
 interface LogoutButtonProps {
   /**
@@ -20,16 +20,12 @@ export function LogoutButton({
   variant = "default",
   className = "",
 }: LogoutButtonProps) {
-  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
-  const handleLogout = async () => {
-    try {
-      await signOut({ redirect: false });
-    } catch (err) {
-      console.error("[LogoutButton] error:", err);
-    }
-    router.push("/login");
-    router.refresh();
+  const handleLogout = () => {
+    startTransition(async () => {
+      await logoutAction(); // редирект сделает сам signOut через NEXT_REDIRECT
+    });
   };
 
   if (variant === "icon") {
@@ -37,11 +33,16 @@ export function LogoutButton({
       <button
         type="button"
         onClick={handleLogout}
+        disabled={isPending}
         title="Выйти"
         aria-label="Выйти"
-        className={`w-10 h-10 flex items-center justify-center rounded-lg text-(--text-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors ${className}`}
+        className={`w-10 h-10 flex items-center justify-center rounded-lg text-(--text-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 ${className}`}
       >
-        <LogOut size={18} />
+        {isPending ? (
+          <Loader2 size={18} className="animate-spin" />
+        ) : (
+          <LogOut size={18} />
+        )}
       </button>
     );
   }
@@ -51,9 +52,14 @@ export function LogoutButton({
       <button
         type="button"
         onClick={handleLogout}
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-(--text-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors w-full ${className}`}
+        disabled={isPending}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-(--text-muted) hover:text-red-400 hover:bg-red-500/10 transition-colors w-full disabled:opacity-50 ${className}`}
       >
-        <LogOut size={16} />
+        {isPending ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <LogOut size={16} />
+        )}
         <span>Выйти</span>
       </button>
     );
@@ -63,12 +69,17 @@ export function LogoutButton({
     <button
       type="button"
       onClick={handleLogout}
+      disabled={isPending}
       className={
         className ||
-        "flex items-center gap-2 text-xs text-(--text-muted) hover:text-(--accent) transition-colors"
+        "flex items-center gap-2 text-xs text-(--text-muted) hover:text-(--accent) transition-colors disabled:opacity-50"
       }
     >
-      <LogOut size={14} />
+      {isPending ? (
+        <Loader2 size={14} className="animate-spin" />
+      ) : (
+        <LogOut size={14} />
+      )}
       Выйти
     </button>
   );

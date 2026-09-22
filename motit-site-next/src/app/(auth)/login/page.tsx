@@ -16,14 +16,6 @@ function LoginForm() {
 
   const from = searchParams.get("from");
 
-  function zoneForRole(role: string | undefined | null): string {
-    const r = (role ?? "").toLowerCase();
-    if (r === "admin" || r === "worker") return "/admin";
-    if (r === "statistics") return "/stats";
-    if (r === "client" || r === "authenticated") return "/account";
-    return "/account";
-  }
-
   const handleSubmit = async (
     e: SyntheticEvent<HTMLFormElement, SubmitEvent>,
   ) => {
@@ -57,16 +49,16 @@ function LoginForm() {
 
       setSuccessMessage("Вход выполнен успешно!");
 
-      const meRes = await fetch("/api/auth/session", { cache: "no-store" });
-      const session = await meRes.json().catch(() => null);
-      const role = session?.user?.roleType || session?.user?.role;
-      const zone = zoneForRole(role);
-      const target = from && from.startsWith(zone) ? from : zone;
+      // Идём туда, куда шли (from), либо на /admin по умолчанию.
+      // Роль и права разрулит серверный layout (/admin/layout.tsx).
+      const target =
+        from && from.startsWith("/") && !from.startsWith("//")
+          ? from
+          : "/admin";
 
-      setTimeout(() => {
-        router.push(target);
-        router.refresh();
-      }, 300);
+      // router.refresh() до push — чтобы RSC перечитали сессию
+      router.refresh();
+      router.push(target);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка входа");
       setLoading(false);

@@ -33,19 +33,32 @@ function parseRole(rawType: string | null | undefined): UserRole | null {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   trustHost: true,
+  debug: process.env.NODE_ENV === "development",
+
   providers: [
     Credentials({
       credentials: {
         identifier: { label: "Email или username", type: "text" },
         password: { label: "Пароль", type: "password" },
       },
+
       async authorize(credentials) {
+        console.log("[authorize] START, credentials =", {
+          identifier: credentials?.identifier,
+          hasPassword: !!credentials?.password,
+        });
+
         const identifier = String(credentials?.identifier ?? "").trim();
         const password = String(credentials?.password ?? "");
-        if (!identifier || !password) return null;
+
+        if (!identifier || !password) {
+          console.log("[authorize] FAIL: empty identifier or password");
+          return null;
+        }
 
         const user = await prisma.users.findFirst({
           where: {
@@ -56,15 +69,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
 
-        if (!user) return null;
-        if (user.blocked) return null;
-        if (!user.password) return null;
+        console.log("[authorize] user lookup:", {
+          found: !!user,
+          id: user?.id,
+          email: user?.email,
+          username: user?.username,
+          blocked: user?.blocked,
+          hasPassword: !!user?.password,
+        });
+
+        if (!user) {
+          console.log("[authorize] FAIL: user not found");
+          return null;
+        }
+        if (user.blocked) {
+          console.log("[authorize] FAIL: user blocked");
+          return null;
+        }
+        if (!user.password) {
+          console.log("[authorize] FAIL: user has no password hash");
+          return null;
+        }
 
         const ok = await bcrypt.compare(password, user.password);
-        if (!ok) return null;
+        console.log("[authorize] bcrypt.compare:", ok);
+
+        if (!ok) {
+          console.log("[authorize] FAIL: wrong password");
+          return null;
+        }
 
         const roleType = user.users_role_lnk?.[0]?.roles?.name ?? null;
         const role = parseRole(roleType);
+
+        console.log("[authorize] SUCCESS, role =", role);
 
         return {
           id: String(user.id),
@@ -82,6 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+
   callbacks: {
     async jwt({ token, user }) {
       const t = token as unknown as {
@@ -118,7 +157,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         t.avatar_url = u.avatar_url;
         t.roleType = u.roleType;
         t.role = u.role;
+
+        console.log("[jwt] user set into token, token.id =", t.id);
       }
+
       return token;
     },
 
@@ -135,8 +177,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         role?: UserRole | null;
       };
 
-      // Аноним — token без id. Не трогаем session.user.
       if (!t.id) {
+        console.log("[session] no token.id → anonymous");
         return session;
       }
 
@@ -152,6 +194,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         roleType: t.roleType ?? null,
         role: t.role ?? null,
       } as typeof session.user;
+
+      console.log("[session] session.user.id =", t.id);
+
       return session;
     },
   },
@@ -160,10 +205,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
     const session = await auth();
+    console.log(
+      "[getCurrentUser] session.user =",
+      session?.user ? { id: (session.user as { id?: number }).id } : null,
+    );
+
     const u = session?.user;
     if (!u || !u.id) return null;
 
-    // Читаем актуальные данные из БД, чтобы имя/аватар/био обновлялись сразу после сохранения
     const dbUser = await prisma.users.findUnique({
       where: { id: u.id },
       include: {
@@ -171,8 +220,14 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       },
     });
 
-    if (!dbUser) return null;
-    if (dbUser.blocked) return null;
+    if (!dbUser) {
+      console.log("[getCurrentUser] dbUser not found for id =", u.id);
+      return null;
+    }
+    if (dbUser.blocked) {
+      console.log("[getCurrentUser] dbUser blocked");
+      return null;
+    }
 
     const roleType = dbUser.users_role_lnk?.[0]?.roles?.name ?? null;
     const role = parseRole(roleType);
