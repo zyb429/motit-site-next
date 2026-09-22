@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -27,7 +29,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { roleId, blocked, full_name, phone } = body ?? {};
+    const { roleId, blocked, full_name, phone, username, email, password } = body ?? {};
 
     // 1. Смена роли
     if (roleId !== undefined) {
@@ -74,6 +76,7 @@ export async function PATCH(
 
     // 2. Обновление остальных полей
     const data: Record<string, unknown> = {};
+
     if (blocked !== undefined) {
       if (admin.id === userId && blocked === true) {
         return NextResponse.json(
@@ -83,8 +86,51 @@ export async function PATCH(
       }
       data.blocked = blocked;
     }
-    if (full_name !== undefined) data.full_name = full_name;
-    if (phone !== undefined) data.phone = phone;
+
+    if (full_name !== undefined) {
+      data.full_name = typeof full_name === "string" && full_name.trim()
+        ? full_name.trim()
+        : null;
+    }
+
+    if (phone !== undefined) {
+      data.phone = typeof phone === "string" && phone.trim()
+        ? phone.trim()
+        : null;
+    }
+
+    if (username !== undefined) {
+      const trimmed = String(username).trim();
+      if (!trimmed || trimmed.length < 3) {
+        return NextResponse.json(
+          { error: "Username должен быть не короче 3 символов" },
+          { status: 400 },
+        );
+      }
+      data.username = trimmed;
+    }
+
+    if (email !== undefined) {
+      const trimmed = String(email).trim().toLowerCase();
+      // Простая проверка — на сервере достаточно
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+        return NextResponse.json(
+          { error: "Некорректный email" },
+          { status: 400 },
+        );
+      }
+      data.email = trimmed;
+    }
+
+    if (password !== undefined) {
+      if (typeof password !== "string" || password.length < 6) {
+        return NextResponse.json(
+          { error: "Пароль должен быть не короче 6 символов" },
+          { status: 400 },
+        );
+      }
+      data.password = await bcrypt.hash(password, 10);
+    }
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "Нет данных" }, { status: 400 });
@@ -114,6 +160,23 @@ export async function PATCH(
       },
     });
   } catch (error) {
+    // Уникальный индекс (username или email) — отдаём 409 с понятным текстом
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const target = (error.meta?.target as string[] | undefined) ?? [];
+      const field = target.includes("email")
+        ? "Email"
+        : target.includes("username")
+          ? "Username"
+          : "Значение";
+      return NextResponse.json(
+        { error: `${field} уже занят` },
+        { status: 409 },
+      );
+    }
+
     console.error("[api/admin/users/:id] PATCH error:", error);
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },

@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   Trash2,
   Loader2,
+  Pencil,
 } from "lucide-react";
+import { EditUserModal } from "@/components/admin/EditUserModal";
 
 type Role = {
   id: number;
@@ -43,6 +45,7 @@ export function UsersTable({ users, roles }: Props) {
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -281,6 +284,16 @@ export function UsersTable({ users, roles }: Props) {
                         )}
                         <button
                           type="button"
+                          onClick={() => setEditingUser(u)}
+                          disabled={isBusy}
+                          title="Редактировать"
+                          aria-label="Редактировать"
+                          className="p-2 rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--accent-dim) transition-colors disabled:opacity-50"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() =>
                             updateUser(u.id, { blocked: !u.blocked })
                           }
@@ -322,6 +335,18 @@ export function UsersTable({ users, roles }: Props) {
         <p className="text-xs text-(--text-muted) text-center">
           Показано {filtered.length} из {users.length}
         </p>
+      )}
+
+      {/* Модалка редактирования */}
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSaved={() => {
+            setEditingUser(null);
+            startTransition(() => router.refresh());
+          }}
+        />
       )}
     </div>
   );
