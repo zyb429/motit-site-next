@@ -41,3 +41,6 @@ structure.txt
 
 # === Прочее ===
 права для паблика и аутентифицированного/
+
+# Prisma Client (генерируется автоматически)
+motit-site-next/generated/
