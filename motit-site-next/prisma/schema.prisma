@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  output   = "../generated/prisma/"
 }
 
 datasource db {
@@ -379,7 +379,6 @@ model users {
   document_id            String?            @db.VarChar(255)
   username               String?            @unique(map: "idx_users_username") @db.VarChar(255)
   email                  String?            @unique(map: "idx_users_email") @db.VarChar(255)
-  password               String?            @db.VarChar(255)
   password_hash          String?            @db.VarChar(255)
   full_name              String?            @db.VarChar(255)
   phone                  String?            @db.VarChar(255)

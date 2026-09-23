@@ -4,7 +4,7 @@
 import { useState, type SyntheticEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { AuthCard } from "./AuthCard";
 import { FormField } from "./FormField";
 import { FormAlert } from "./FormAlert";
@@ -49,12 +49,31 @@ export function LoginForm() {
       });
 
       if (!res || res.error) {
-        throw new Error("Неверный логин или пароль");
-      }
+        // Извлекаем код ошибки из res.url или res.code
+        // NextAuth v5 кладёт code в URL: ?error=CredentialsSignin&code=user_not_found
+        const url = new URL(res?.url ?? "", window.location.origin);
+        const code =
+          url.searchParams.get("code") ??
+          (res as { code?: string } | undefined)?.code ??
+          res?.error ??
+          "CredentialsSignin";
 
-      // Получаем сессию, чтобы узнать роль
-      const session = await getSession();
-      const role = session?.user?.role ?? null;
+        switch (code) {
+          case "user_not_found":
+            throw new Error(
+              "Пользователь с таким именем или email не найден",
+            );
+          case "invalid_password":
+            throw new Error("Неверный пароль");
+          case "user_blocked":
+            throw new Error(
+              "Учётная запись заблокирована. Обратитесь к администратору",
+            );
+          case "CredentialsSignin":
+          default:
+            throw new Error("Неверный email или пароль");
+        }
+      }
 
       setSuccessMessage("Вход выполнен успешно!");
 
@@ -62,10 +81,6 @@ export function LoginForm() {
       let target: string;
       if (from && from.startsWith("/") && !from.startsWith("//")) {
         target = from;
-      } else if (role === "admin") {
-        target = "/admin";
-      } else if (role === "worker") {
-        target = "/worker";
       } else {
         target = "/cabinet";
       }

@@ -1,3 +1,4 @@
+// src/proxy.ts
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
@@ -7,39 +8,21 @@ export default auth((req) => {
   const role = session?.user?.role ?? null;
   const pathname = req.nextUrl.pathname;
 
-  // Уже залогинен и зашёл на /login → вернуть в свой раздел
+  // /login для залогиненных → в /cabinet (или в from)
   if (pathname === "/login" && isAuthed) {
     const from = req.nextUrl.searchParams.get("from");
     if (from) return NextResponse.redirect(new URL(from, req.url));
-
-    if (role === "admin") return NextResponse.redirect(new URL("/admin", req.url));
-    if (role === "worker") return NextResponse.redirect(new URL("/worker", req.url));
     return NextResponse.redirect(new URL("/cabinet", req.url));
   }
 
-  // /admin — только админ
+  // /admin — admin и worker
   if (pathname.startsWith("/admin")) {
     if (!isAuthed) {
       const url = new URL("/login", req.url);
       url.searchParams.set("from", pathname);
       return NextResponse.redirect(url);
     }
-    if (role !== "admin") {
-      if (role === "worker") {
-        return NextResponse.redirect(new URL("/worker", req.url));
-      }
-      return NextResponse.redirect(new URL("/cabinet", req.url));
-    }
-  }
-
-  // /worker — работник или админ
-  if (pathname.startsWith("/worker")) {
-    if (!isAuthed) {
-      const url = new URL("/login", req.url);
-      url.searchParams.set("from", pathname);
-      return NextResponse.redirect(url);
-    }
-    if (role !== "worker" && role !== "admin") {
+    if (role !== "admin" && role !== "worker") {
       return NextResponse.redirect(new URL("/cabinet", req.url));
     }
   }
@@ -51,14 +34,12 @@ export default auth((req) => {
       url.searchParams.set("from", pathname);
       return NextResponse.redirect(url);
     }
-    // Опционально: админ и работник не должны заходить в клиентский кабинет
-    if (role === "admin") return NextResponse.redirect(new URL("/admin", req.url));
-    if (role === "worker") return NextResponse.redirect(new URL("/worker", req.url));
+    // admin / worker / client / statistics — все пускаются
   }
 
   return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/admin/:path*", "/worker/:path*", "/cabinet/:path*", "/login"],
+  matcher: ["/admin/:path*", "/cabinet/:path*", "/login"],
 };

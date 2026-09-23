@@ -26,7 +26,7 @@ export default async function TicketPage({
     <div className="p-8 w-full max-w-3xl mx-auto">
       <Link
         href="/cabinet/tickets"
-        className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#2dd4bf] transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-(--text-secondary) hover:text-(--accent) transition-colors"
       >
         <ArrowLeft size={14} />
         К списку обращений
@@ -34,8 +34,10 @@ export default async function TicketPage({
 
       <div className="mt-4 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-[#e0f7fa]">{ticket.title}</h1>
-          <div className="text-xs text-gray-500 mt-1">
+          <h1 className="text-xl font-bold text-(--text-primary)">
+            {ticket.title}
+          </h1>
+          <div className="text-xs text-(--text-muted) mt-1">
             Создан{" "}
             {ticket.created_at
               ? new Date(ticket.created_at).toLocaleString("ru-RU")
@@ -49,38 +51,49 @@ export default async function TicketPage({
       </div>
 
       {ticket.description && (
-        <div className="mt-6 p-4 rounded-xl bg-[#0f2832] border border-[rgba(45,212,191,0.08)] text-gray-300 whitespace-pre-wrap">
+        <div className="mt-6 p-4 rounded-xl bg-(--bg-card) border border-(--border) text-(--text-secondary) whitespace-pre-wrap">
           {ticket.description}
         </div>
       )}
 
       {/* Метаданные контакта */}
-      {(ticket.contact_name || ticket.contact_email || ticket.contact_phone || ticket.organization) && (
-        <div className="mt-4 p-4 rounded-xl bg-[#0f2832] border border-[rgba(45,212,191,0.08)] text-sm space-y-1">
+      {(ticket.contact_name ||
+        ticket.contact_email ||
+        ticket.contact_phone ||
+        ticket.organization) && (
+        <div className="mt-4 p-4 rounded-xl bg-(--bg-card) border border-(--border) text-sm space-y-1">
           {ticket.contact_name && (
             <div>
-              <span className="text-gray-500">Контакт: </span>
-              <span className="text-[#e0f7fa]">{ticket.contact_name}</span>
+              <span className="text-(--text-muted)">Контакт: </span>
+              <span className="text-(--text-primary)">
+                {ticket.contact_name}
+              </span>
             </div>
           )}
           {ticket.contact_email && (
             <div>
-              <span className="text-gray-500">Email: </span>
-              <span className="text-[#e0f7fa]">{ticket.contact_email}</span>
+              <span className="text-(--text-muted)">Email: </span>
+              <span className="text-(--text-primary)">
+                {ticket.contact_email}
+              </span>
             </div>
           )}
           {ticket.contact_phone && (
             <div>
-              <span className="text-gray-500">Телефон: </span>
-              <span className="text-[#e0f7fa]">{ticket.contact_phone}</span>
+              <span className="text-(--text-muted)">Телефон: </span>
+              <span className="text-(--text-primary)">
+                {ticket.contact_phone}
+              </span>
             </div>
           )}
           {ticket.organization && (
             <div>
-              <span className="text-gray-500">Предприятие: </span>
-              <span className="text-[#e0f7fa]">
+              <span className="text-(--text-muted)">Предприятие: </span>
+              <span className="text-(--text-primary)">
                 {ticket.organization.name}
-                {ticket.organization.inn ? ` (ИНН ${ticket.organization.inn})` : ""}
+                {ticket.organization.inn
+                  ? ` (ИНН ${ticket.organization.inn})`
+                  : ""}
               </span>
             </div>
           )}
@@ -90,7 +103,7 @@ export default async function TicketPage({
       {/* Вложения */}
       {ticket.attachments && ticket.attachments.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-medium text-(--text-secondary) uppercase tracking-wider mb-3 flex items-center gap-2">
             <Paperclip size={14} />
             Вложения ({ticket.attachments.length})
           </h2>
@@ -105,7 +118,7 @@ export default async function TicketPage({
                     href={f.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group block p-3 rounded-xl bg-[#0f2832] border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 transition-colors"
+                    className="group block p-3 rounded-xl bg-(--bg-card) border border-(--border) hover:border-(--accent) transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       {isImage ? (
@@ -116,16 +129,18 @@ export default async function TicketPage({
                           className="w-12 h-12 rounded-lg object-cover shrink-0"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-lg bg-[#0a1920] flex items-center justify-center text-[#2dd4bf] shrink-0">
+                        <div className="w-12 h-12 rounded-lg bg-(--bg-primary) flex items-center justify-center text-(--accent) shrink-0">
                           <Paperclip size={18} />
                         </div>
                       )}
                       <div className="min-w-0">
-                        <div className="text-sm text-[#e0f7fa] truncate group-hover:text-[#2dd4bf] transition-colors">
+                        <div className="text-sm text-(--text-primary) truncate group-hover:text-(--accent) transition-colors">
                           {f.name ?? "Файл"}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {f.size ? `${(Number(f.size) / 1024).toFixed(1)} КБ` : ""}
+                        <div className="text-xs text-(--text-muted)">
+                          {f.size
+                            ? `${(Number(f.size) / 1024).toFixed(1)} КБ`
+                            : ""}
                           {f.mime ? ` · ${f.mime}` : ""}
                         </div>
                       </div>

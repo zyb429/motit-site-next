@@ -50,7 +50,7 @@ export default async function NewTicketFormPage({
     <div className="p-8 w-full max-w-2xl mx-auto">
       <Link
         href="/cabinet/tickets/new"
-        className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#2dd4bf] transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-(--text-secondary) hover:text-(--accent) transition-colors"
       >
         <ArrowLeft size={14} />
         К выбору категории
@@ -59,10 +59,10 @@ export default async function NewTicketFormPage({
       <div className="mt-4 flex items-center gap-3">
         {category.icon && <span className="text-2xl">{category.icon}</span>}
         <div>
-          <h1 className="text-2xl font-bold text-[#e0f7fa]">
+          <h1 className="text-2xl font-bold text-(--text-primary)">
             {category.name}
           </h1>
-          <p className="text-gray-400 text-sm">
+          <p className="text-(--text-secondary) text-sm">
             Опишите проблему как можно точнее
           </p>
         </div>

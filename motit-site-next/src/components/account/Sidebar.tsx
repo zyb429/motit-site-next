@@ -9,28 +9,32 @@ import {
   Shield,
   LifeBuoy,
   Building2,
+  ShieldCheck,
 } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface SidebarProps {
   user: CurrentUser;
 }
 
 const NAV = [
-  { href: "/cabinet",          label: "Обзор",       Icon: LayoutDashboard },
-  { href: "/cabinet/profile",  label: "Профиль",     Icon: User },
-  { href: "/cabinet/security", label: "Безопасность", Icon: Shield },
-  { href: "/cabinet/tickets",  label: "Мои тикеты",  Icon: LifeBuoy },
-  { href: "/cabinet/organizations", label: "Организации", Icon: Building2 },
+  { href: "/cabinet",               label: "Обзор",        Icon: LayoutDashboard },
+  { href: "/cabinet/profile",       label: "Профиль",      Icon: User },
+  { href: "/cabinet/security",      label: "Безопасность", Icon: Shield },
+  { href: "/cabinet/tickets",       label: "Мои тикеты",   Icon: LifeBuoy },
+  { href: "/cabinet/organizations", label: "Организации",  Icon: Building2 },
 ];
 
 export function AccountSidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+  const canAccessAdmin = user.isAdmin || user.isWorker;
 
   return (
-    <aside className="w-64 shrink-0 border-r border-[rgba(45,212,191,0.08)] bg-[#0d2029] flex flex-col">
-      <div className="p-5 border-b border-[rgba(45,212,191,0.08)]">
+    <aside className="w-64 shrink-0 border-r border-(--border) bg-(--bg-card) flex flex-col">
+      {/* Шапка с профилем */}
+      <div className="p-5 border-b border-(--border)">
         <div className="flex items-center gap-3">
           {user.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -40,21 +44,22 @@ export function AccountSidebar({ user }: SidebarProps) {
               className="w-10 h-10 rounded-full object-cover"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-[#2dd4bf]/10 flex items-center justify-center text-[#2dd4bf] font-bold">
+            <div className="w-10 h-10 rounded-full bg-(--accent-dim) flex items-center justify-center text-(--accent) font-bold">
               {user.username.charAt(0).toUpperCase()}
             </div>
           )}
           <div className="min-w-0">
-            <div className="text-sm font-medium text-[#e0f7fa] truncate">
+            <div className="text-sm font-medium text-(--text-primary) truncate">
               {user.full_name || user.username}
             </div>
-            <div className="text-xs text-gray-500 truncate">
+            <div className="text-xs text-(--text-muted) truncate">
               @{user.username}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Навигация */}
       <nav className="flex-1 p-3 space-y-1">
         {NAV.map(({ href, label, Icon }) => {
           const active =
@@ -68,8 +73,8 @@ export function AccountSidebar({ user }: SidebarProps) {
               href={href}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                 active
-                  ? "bg-[#2dd4bf]/10 text-[#2dd4bf] font-medium"
-                  : "text-gray-400 hover:text-[#e0f7fa] hover:bg-[#2dd4bf]/5"
+                  ? "bg-(--accent-dim) text-(--accent) font-medium"
+                  : "text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-dim)"
               }`}
             >
               <Icon size={16} />
@@ -79,8 +84,25 @@ export function AccountSidebar({ user }: SidebarProps) {
         })}
       </nav>
 
-      <div className="p-3 border-t border-[rgba(45,212,191,0.08)]">
-        <LogoutButton />
+      {/* Кнопка перехода в админку — только для admin и worker */}
+      {canAccessAdmin && (
+        <div className="px-3 pb-2">
+          <Link
+            href="/admin"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-(--accent) border border-(--border) hover:bg-(--accent-dim) transition-colors"
+          >
+            <ShieldCheck size={16} />
+            Перейти в админку
+          </Link>
+        </div>
+      )}
+
+      {/* Футер: выход + тема */}
+      <div className="p-3 border-t border-(--border)">
+        <div className="flex items-center justify-between gap-2">
+          <LogoutButton variant="full" />
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   );

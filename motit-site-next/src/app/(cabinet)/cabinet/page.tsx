@@ -32,10 +32,10 @@ export default async function CabinetPage() {
 
   return (
     <div className="p-8 max-w-3xl">
-      <h1 className="text-2xl font-bold text-[#e0f7fa]">
+      <h1 className="text-2xl font-bold text-(--text-primary)">
         Личный кабинет
       </h1>
-      <p className="text-gray-400 text-sm mt-1">
+      <p className="text-(--text-secondary) text-sm mt-1">
         Добро пожаловать, {user.full_name || user.username}
       </p>
 
@@ -79,13 +79,13 @@ export default async function CabinetPage() {
       {/* Организации */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+          <h2 className="text-sm font-semibold text-(--text-muted) uppercase tracking-wider">
             Мои организации
           </h2>
           {organizations.length > 0 && (
             <Link
               href="/cabinet/organizations"
-              className="text-xs text-[#2dd4bf] hover:text-[#14b8a6] transition-colors"
+              className="text-xs text-(--accent) hover:opacity-80 transition-opacity"
             >
               Все →
             </Link>
@@ -93,7 +93,7 @@ export default async function CabinetPage() {
         </div>
 
         {organizations.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-(--text-muted)">
             Вы пока не привязаны ни к одной организации.
           </p>
         ) : (
@@ -101,13 +101,13 @@ export default async function CabinetPage() {
             {organizations.slice(0, 3).map((co) => (
               <div
                 key={co.organization_uuid}
-                className="flex items-center justify-between p-3 rounded-lg bg-[#0f2832] border border-[rgba(45,212,191,0.06)]"
+                className="flex items-center justify-between p-3 rounded-lg bg-(--bg-card) border border-(--border)"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-[#e0f7fa] truncate">
+                  <div className="text-sm font-medium text-(--text-primary) truncate">
                     {co.organizations.name}
                   </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
+                  <div className="text-xs text-(--text-muted) mt-0.5">
                     {co.organizations.inn
                       ? `ИНН: ${co.organizations.inn} · `
                       : ""}
@@ -116,12 +116,12 @@ export default async function CabinetPage() {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
                   {co.is_primary && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2dd4bf]/10 text-[#2dd4bf] border border-[#2dd4bf]/20">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-(--accent-dim) text-(--accent) border border-(--border)">
                       основная
                     </span>
                   )}
                   {!co.organizations.is_active && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
                       неактивна
                     </span>
                   )}
@@ -132,7 +132,7 @@ export default async function CabinetPage() {
             {organizations.length > 3 && (
               <Link
                 href="/cabinet/organizations"
-                className="block text-center text-xs text-gray-500 hover:text-[#2dd4bf] transition-colors py-2"
+                className="block text-center text-xs text-(--text-muted) hover:text-(--accent) transition-colors py-2"
               >
                 Ещё {organizations.length - 3}...
               </Link>
@@ -144,13 +144,13 @@ export default async function CabinetPage() {
       <div className="mt-8 flex flex-wrap gap-3">
         <Link
           href="/cabinet/profile"
-          className="px-4 py-2 rounded-lg bg-[#2dd4bf] text-[#0a1920] text-sm font-medium hover:bg-[#14b8a6] transition-colors"
+          className="px-4 py-2 rounded-lg bg-(--accent) text-(--bg-card) text-sm font-medium hover:opacity-90 transition-opacity"
         >
           Редактировать профиль
         </Link>
         <Link
           href="/cabinet/tickets"
-          className="px-4 py-2 rounded-lg border border-[rgba(45,212,191,0.15)] text-[#2dd4bf] text-sm hover:bg-[#2dd4bf]/5 transition-colors"
+          className="px-4 py-2 rounded-lg border border-(--border) text-(--accent) text-sm hover:bg-(--accent-dim) transition-colors"
         >
           Мои обращения
         </Link>
@@ -169,12 +169,12 @@ function Card({
   Icon: typeof Shield;
 }) {
   return (
-    <div className="p-4 rounded-xl bg-[#0f2832] border border-[rgba(45,212,191,0.06)]">
-      <div className="flex items-center gap-2 text-gray-400 text-xs uppercase tracking-wider">
-        <Icon size={14} className="text-[#2dd4bf]" />
+    <div className="p-4 rounded-xl bg-(--bg-card) border border-(--border)">
+      <div className="flex items-center gap-2 text-(--text-secondary) text-xs uppercase tracking-wider">
+        <Icon size={14} className="text-(--accent)" />
         {title}
       </div>
-      <div className="text-xl font-bold text-[#e0f7fa] mt-2">{value}</div>
+      <div className="text-xl font-bold text-(--text-primary) mt-2">{value}</div>
     </div>
   );
 }
@@ -190,9 +190,9 @@ function Row({
 }) {
   return (
     <div className="flex items-center gap-3 text-sm">
-      <span className="text-gray-500">{icon}</span>
-      <span className="text-gray-500 w-32">{label}</span>
-      <span className="text-[#e0f7fa]">{value}</span>
+      <span className="text-(--text-muted)">{icon}</span>
+      <span className="text-(--text-muted) w-32">{label}</span>
+      <span className="text-(--text-primary)">{value}</span>
     </div>
   );
 }

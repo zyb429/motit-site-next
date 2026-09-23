@@ -4,6 +4,20 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
+import { CredentialsSignin } from "next-auth";
+
+class UserNotFoundError extends CredentialsSignin {
+  code = "user_not_found";
+}
+
+class InvalidPasswordError extends CredentialsSignin {
+  code = "invalid_password";
+}
+
+class UserBlockedError extends CredentialsSignin {
+  code = "user_blocked";
+}
+
 export type UserRole = "admin" | "client" | "worker" | "statistics";
 
 export type CurrentUser = {
@@ -80,23 +94,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user) {
           console.log("[authorize] FAIL: user not found");
-          return null;
+          throw new UserNotFoundError();
         }
         if (user.blocked) {
           console.log("[authorize] FAIL: user blocked");
-          return null;
+          throw new UserBlockedError();
         }
-        if (!user.password) {
+        if (!user.password_hash) {
           console.log("[authorize] FAIL: user has no password hash");
-          return null;
+          throw new InvalidPasswordError();
         }
 
-        const ok = await bcrypt.compare(password, user.password);
+        const ok = await bcrypt.compare(password, user.password_hash);
         console.log("[authorize] bcrypt.compare:", ok);
 
         if (!ok) {
           console.log("[authorize] FAIL: wrong password");
-          return null;
+          throw new InvalidPasswordError();
         }
 
         const roleType = user.users_role_lnk?.[0]?.roles?.name ?? null;

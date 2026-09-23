@@ -16,7 +16,7 @@
 
 ## Структура
 
-```
+"```"
 motit-site-next/                     # корень репозитория
 ├─ docker-compose.yml                # MinIO + minio-init (MySQL — локальный!)
 ├─ README.md                         # этот файл
@@ -57,7 +57,7 @@ motit-site-next/                     # корень репозитория
    ├─ postcss.config.mjs
    ├─ bun.lock
    └─ tsconfig.json
-```
+"```"
 
 ## Требования
 

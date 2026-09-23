@@ -52,7 +52,7 @@ export function PasswordForm() {
           value={current}
           onChange={(e) => setCurrent(e.target.value)}
           autoComplete="current-password"
-          className="w-full px-3 py-2 rounded-lg bg-[#0a1920] border border-[rgba(45,212,191,0.15)] text-[#e0f7fa] focus:border-[#2dd4bf] outline-none"
+          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none transition-colors"
         />
       </Field>
 
@@ -62,7 +62,7 @@ export function PasswordForm() {
           value={next}
           onChange={(e) => setNext(e.target.value)}
           autoComplete="new-password"
-          className="w-full px-3 py-2 rounded-lg bg-[#0a1920] border border-[rgba(45,212,191,0.15)] text-[#e0f7fa] focus:border-[#2dd4bf] outline-none"
+          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none transition-colors"
         />
       </Field>
 
@@ -72,17 +72,17 @@ export function PasswordForm() {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"
-          className="w-full px-3 py-2 rounded-lg bg-[#0a1920] border border-[rgba(45,212,191,0.15)] text-[#e0f7fa] focus:border-[#2dd4bf] outline-none"
+          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none transition-colors"
         />
       </Field>
 
       {error && <p className="text-red-400 text-sm">{error}</p>}
-      {message && <p className="text-[#2dd4bf] text-sm">{message}</p>}
+      {message && <p className="text-(--accent) text-sm">{message}</p>}
 
       <button
         type="submit"
         disabled={saving}
-        className="px-5 py-2 rounded-lg bg-[#2dd4bf] text-[#0a1920] text-sm font-medium hover:bg-[#14b8a6] transition-colors disabled:opacity-50"
+        className="px-5 py-2 rounded-lg bg-(--accent) text-(--bg-card) text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
       >
         {saving ? "Сохранение…" : "Сменить пароль"}
       </button>
@@ -99,7 +99,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs text-gray-400 mb-1.5">{label}</label>
+      <label className="block text-xs text-(--text-secondary) mb-1.5">
+        {label}
+      </label>
       {children}
     </div>
   );

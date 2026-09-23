@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
+  User,
   type LucideIcon,
 } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
@@ -171,6 +172,17 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
 
       {/* Быстрые ссылки */}
       <div className="px-2 py-2 border-t border-(--border) space-y-0.5">
+        <Link
+          href="/cabinet"
+          title={collapsed ? "Личный кабинет" : undefined}
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-dim) transition-colors ${
+            collapsed ? "justify-center" : ""
+          }`}
+        >
+          <User size={18} className="shrink-0" />
+          {!collapsed && <span>Личный кабинет</span>}
+        </Link>
+
         <Link
           href="/"
           title={collapsed ? "На сайт" : undefined}

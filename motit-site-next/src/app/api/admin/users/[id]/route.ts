@@ -129,7 +129,7 @@ export async function PATCH(
           { status: 400 },
         );
       }
-      data.password = await bcrypt.hash(password, 10);
+      data.password_hash = await bcrypt.hash(password, 10);
     }
 
     if (Object.keys(data).length === 0) {

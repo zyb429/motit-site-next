@@ -26,8 +26,8 @@ export default async function ProfilePage() {
 
   return (
     <div className="p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-[#e0f7fa]">Профиль</h1>
-      <p className="text-gray-400 text-sm mt-1">
+      <h1 className="text-2xl font-bold text-(--text-primary)">Профиль</h1>
+      <p className="text-(--text-secondary) text-sm mt-1">
         Обновите свои данные. Логин и email изменить нельзя.
       </p>
 

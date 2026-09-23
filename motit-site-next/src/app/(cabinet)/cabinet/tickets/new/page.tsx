@@ -12,21 +12,21 @@ export default async function NewTicketCategoryPage() {
     <div className="p-8 w-full max-w-2xl mx-auto">
       <Link
         href="/cabinet/tickets"
-        className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#2dd4bf] transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-(--text-secondary) hover:text-(--accent) transition-colors"
       >
         <ArrowLeft size={14} />
         К списку обращений
       </Link>
 
-      <h1 className="text-2xl font-bold text-[#e0f7fa] mt-4">
+      <h1 className="text-2xl font-bold text-(--text-primary) mt-4">
         Новое обращение
       </h1>
-      <p className="text-gray-400 text-sm mt-1">
+      <p className="text-(--text-secondary) text-sm mt-1">
         Выберите категорию, к которой относится ваш вопрос
       </p>
 
       {categories.length === 0 ? (
-        <div className="mt-8 text-center py-16 border border-dashed border-[rgba(45,212,191,0.15)] rounded-xl text-gray-500">
+        <div className="mt-8 text-center py-16 border border-dashed border-(--border) rounded-xl text-(--text-muted)">
           Категории ещё не созданы. Обратитесь к администратору.
         </div>
       ) : (
@@ -34,17 +34,17 @@ export default async function NewTicketCategoryPage() {
           {categories.map((cat) => (
             <li key={cat.uuid}>
               <Link
-                href={`/account/tickets/new/${cat.slug}`}
-                className="block p-4 rounded-xl bg-[#0f2832] border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 transition-colors"
+                href={`/cabinet/tickets/new/${cat.slug}`}
+                className="block p-4 rounded-xl bg-(--bg-card) border border-(--border) hover:border-(--accent) transition-colors"
               >
                 <div className="flex items-center gap-3">
                   {cat.icon && <span className="text-xl">{cat.icon}</span>}
                   <div>
-                    <div className="text-[#e0f7fa] font-medium">
+                    <div className="text-(--text-primary) font-medium">
                       {cat.name}
                     </div>
                     {cat.description && (
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-xs text-(--text-muted) mt-0.5">
                         {cat.description}
                       </div>
                     )}

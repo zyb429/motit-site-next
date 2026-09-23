@@ -22,7 +22,7 @@
 
 ## Структура репозитория
 
-```
+"```"
 motit-site-next/            ← корень монорепы
 ├── motit-site-next/        ← Next.js приложение
 │   ├── prisma/
@@ -31,7 +31,7 @@ motit-site-next/            ← корень монорепы
 │   └── .env.example
 ├── docker-compose.yml      ← MySQL + MinIO
 └── README.md
-```
+"```"
 
 ## Быстрый старт
 
@@ -52,7 +52,7 @@ cp .env.example .env.local
 Заполните `.env.local`:
 
 | Переменная | Назначение |
-|---|---|
+| --- | --- |
 | `DATABASE_URL` | MySQL connection string |
 | `AUTH_SECRET` | `openssl rand -base64 32` |
 | `AUTH_URL` | `http://localhost:3000` |
@@ -112,7 +112,7 @@ bun run dev
 ## Скрипты
 
 | Команда | Что делает |
-|---|---|
+| --- | --- |
 | `bun run dev` | Dev-сервер (Turbopack) |
 | `bun run build` | Production-сборка |
 | `bun run start` | Запуск production |
@@ -148,7 +148,7 @@ src/
 ## Роли
 
 | Роль | Доступ |
-|---|---|
+| --- | --- |
 | `admin` | Всё, включая пользователей |
 | `worker` | Посты, категории |
 | `client` | Личный кабинет |
@@ -178,7 +178,7 @@ bun scripts/fix-content-type.ts
 (папка `motit-backend/` удалена).
 
 | Было (Strapi) | Стало |
-|---|---|
+| --- | --- |
 | Strapi API :1337 | Prisma + MySQL |
 | `strapi_jwt` cookie | Auth.js sessions |
 | `users-permissions` | Своя `users` + bcrypt |
