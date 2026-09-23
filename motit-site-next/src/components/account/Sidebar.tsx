@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   User,
+  Home,
   LayoutDashboard,
   Shield,
   LifeBuoy,
@@ -142,20 +143,31 @@ export function AccountSidebar({ user }: SidebarProps) {
       </nav>
 
       {/* Кнопка перехода в админку — только для admin и worker */}
-      {canAccessAdmin && (
-        <div className="px-2 py-2 border-t border-(--border)">
+      <div className="px-2 py-2 border-t border-(--border) space-y-0.5">
+        {canAccessAdmin && (
           <Link
             href="/admin"
             title={collapsed ? "Перейти в админку" : undefined}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-(--accent) border border-(--border) hover:bg-(--accent-dim) transition-colors ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-dim) transition-colors ${
               collapsed ? "justify-center" : ""
             }`}
           >
             <ShieldCheck size={18} className="shrink-0" />
             {!collapsed && <span>Перейти в админку</span>}
           </Link>
-        </div>
-      )}
+        )}
+
+        <Link
+          href="/"
+          title={collapsed ? "На сайт" : undefined}
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-dim) transition-colors ${
+            collapsed ? "justify-center" : ""
+          }`}
+        >
+          <Home size={18} className="shrink-0" />
+          {!collapsed && <span>На сайт</span>}
+        </Link>
+      </div>
 
       {/* Футер: выход + тема */}
       <div className="px-2 py-3 border-t border-(--border)">
@@ -165,10 +177,28 @@ export function AccountSidebar({ user }: SidebarProps) {
             <LogoutButton variant="icon" />
           </div>
         ) : (
-          <div className="flex items-center justify-between px-1">
-            <LogoutButton variant="full" />
-            <ThemeToggle />
-          </div>
+          <>
+            {/* Учётка */}
+            <div className="px-3 mb-2 truncate">
+              <div className="text-xs text-(--text-muted) truncate">
+                @{user.username}
+              </div>
+              {user.role && (
+                <div className="text-[10px] text-(--text-muted)/60 truncate">
+                  {user.role}
+                </div>
+              )}
+            </div>
+
+            {/* Дивайдер */}
+            <div className="border-t border-(--border) mb-2" />
+
+            {/* Кнопки */}
+            <div className="flex items-center justify-between px-1">
+              <LogoutButton variant="full" />
+              <ThemeToggle />
+            </div>
+          </>
         )}
       </div>
     </aside>
