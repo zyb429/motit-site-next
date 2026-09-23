@@ -95,7 +95,7 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
   return (
     <aside
       className={`${
-        collapsed ? "w-16" : "w-60"
+        collapsed ? "w-16" : "w-64"
       } sticky top-0 h-screen shrink-0 border-r border-(--border) bg-(--bg-card) flex flex-col transition-all duration-200 overflow-hidden`}
     >
       {/* Хедер */}
