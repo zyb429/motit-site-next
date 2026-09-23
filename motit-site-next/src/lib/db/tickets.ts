@@ -15,6 +15,15 @@ const ticketInclude = {
       email: true,
       phone: true,
       avatar_url: true,
+      client_organizations: {
+        select: {
+          is_primary: true,
+          organizations: {
+            select: { uuid: true, name: true, inn: true },
+          },
+        },
+        orderBy: { is_primary: "desc" as const },
+      },
     },
   },
   assignee: {
@@ -34,6 +43,74 @@ const ticketInclude = {
   _count: { select: { ticket_comments: true, attachments: true } },
 } satisfies Prisma.ticketsInclude;
 
+export type CreatorInfo = {
+  id: number;
+  uuid: string;
+  username: string | null;
+  full_name: string | null;
+};
+
+async function attachCreators<T extends { created_by_id: number | null }>(
+  tickets: T[],
+): Promise<(T & { created_by: CreatorInfo | null })[]> {
+  const ids = [
+    ...new Set(tickets.map((t) => t.created_by_id).filter(Boolean)),
+  ] as number[];
+
+  if (ids.length === 0) {
+    return tickets.map((t) => ({ ...t, created_by: null }));
+  }
+
+  const creators = await prisma.users.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, uuid: true, username: true, full_name: true },
+  });
+
+  const byId = new Map(creators.map((u) => [u.id, u]));
+
+  return tickets.map((t) => ({
+    ...t,
+    created_by: t.created_by_id ? byId.get(t.created_by_id) ?? null : null,
+  }));
+}
+
+// --------------------------------------------
+// Хелперы для отображения клиента и организации
+// --------------------------------------------
+type ClientWithOrgs = {
+  uuid: string;
+  full_name: string | null;
+  username: string | null;
+  client_organizations?: {
+    is_primary: boolean | null;
+    organizations: { uuid: string; name: string; inn: string | null } | null;
+  }[];
+} | null;
+
+export function clientLabel(client: ClientWithOrgs): string {
+  if (!client) return "—";
+  const name = client.full_name || client.username || "—";
+  return client.username ? `${name} (@${client.username})` : name;
+}
+
+export function clientOrganization(
+  client: ClientWithOrgs,
+  ticketOrg?: { name: string; inn: string | null } | null,
+): string | null {
+  if (ticketOrg) {
+    return ticketOrg.inn
+      ? `${ticketOrg.name} (ИНН ${ticketOrg.inn})`
+      : ticketOrg.name;
+  }
+  if (!client?.client_organizations?.length) return null;
+  const primary =
+    client.client_organizations.find((o) => o.is_primary) ??
+    client.client_organizations[0];
+  const org = primary.organizations;
+  if (!org) return null;
+  return org.inn ? `${org.name} (ИНН ${org.inn})` : org.name;
+}
+
 // --------------------------------------------
 // Список тикетов
 // --------------------------------------------
@@ -41,9 +118,12 @@ export async function listTickets(params: {
   user: { id: number; uuid: string; role: string | null };
   statusCode?: string;
   priorityCode?: string;
-  assigneeId?: number;
+  assigneeId?: number | "me" | "unassigned";
   clientUuid?: string;
+  categoryUuid?: string;
   search?: string;
+  sort?: "created" | "updated" | "priority" | "deadline";
+  dir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
 }) {
@@ -53,12 +133,24 @@ export async function listTickets(params: {
     priorityCode,
     assigneeId,
     clientUuid,
+    categoryUuid,
     search,
+    sort = "updated",
+    dir = "desc",
     page = 1,
     pageSize = 20,
   } = params;
 
   const isAgent = user.role === "admin" || user.role === "worker";
+
+  const assigneeFilter: Prisma.ticketsWhereInput["assignee"] =
+    assigneeId === "me"
+      ? { uuid: user.uuid }
+      : assigneeId === "unassigned"
+        ? null
+        : typeof assigneeId === "number"
+          ? { id: assigneeId }
+          : undefined;
 
   const where: Prisma.ticketsWhereInput = {
     ...(isAgent
@@ -68,24 +160,69 @@ export async function listTickets(params: {
       : { client_uuid: user.uuid }),
     ...(statusCode ? { statuses: { code: statusCode } } : {}),
     ...(priorityCode ? { priorities: { code: priorityCode } } : {}),
-    ...(assigneeId ? { assignee: { id: assigneeId } } : {}),
-    ...(search ? { title: { contains: search } } : {}),
+    ...(assigneeId !== undefined
+      ? assigneeId === "unassigned"
+        ? { assigned_to_uuid: null }
+        : { assignee: assigneeFilter as Prisma.usersWhereInput }
+      : {}),
+    ...(categoryUuid ? { category_uuid: categoryUuid } : {}),
+    ...(search
+      ? {
+          OR: [
+            { title: { contains: search } },
+            { description: { contains: search } },
+            { contact_name: { contains: search } },
+            { contact_email: { contains: search } },
+          ],
+        }
+      : {}),
   };
 
+  const orderBy: Prisma.ticketsOrderByWithRelationInput =
+    sort === "created"
+      ? { created_at: dir }
+      : sort === "priority"
+        ? { priorities: { level: dir } }
+        : sort === "deadline"
+          ? { deadline_at: dir }
+          : { updated_at: dir };
+
+  // 1. Список + общее количество — в транзакции
   const [items, total] = await prisma.$transaction([
     prisma.tickets.findMany({
       where,
       include: ticketInclude,
-      orderBy: { updated_at: "desc" },
+      orderBy,
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
     prisma.tickets.count({ where }),
   ]);
 
+  // 2. Счётчики по статусам — отдельным запросом
+  const byStatus = await prisma.tickets.groupBy({
+    by: ["status_uuid"],
+    where: isAgent ? {} : { client_uuid: user.uuid },
+    orderBy: { status_uuid: "asc" },
+    _count: { _all: true },
+  });
+
+  const statuses = await prisma.statuses.findMany({
+    select: { uuid: true, code: true, name: true },
+  });
+  const statusByUuid = new Map(statuses.map((s) => [s.uuid, s]));
+  const statusCounts: Record<string, number> = {};
+  for (const row of byStatus) {
+    const code = row.status_uuid ? statusByUuid.get(row.status_uuid)?.code : null;
+    if (code) statusCounts[code] = row._count._all ?? 0;
+  }
+
+  const itemsWithCreators = await attachCreators(items);
+
   return {
-    items,
+    items: itemsWithCreators,
     total,
+    statusCounts,
     page,
     pageSize,
     totalPages: Math.ceil(total / pageSize),
@@ -101,7 +238,7 @@ export async function getTicket(
 ) {
   const isAgent = user.role === "admin" || user.role === "worker";
 
-  return prisma.tickets.findFirst({
+  const ticket = await prisma.tickets.findFirst({
     where: isAgent ? { uuid } : { uuid, client_uuid: user.uuid },
     include: {
       ...ticketInclude,
@@ -125,6 +262,11 @@ export async function getTicket(
       },
     },
   });
+
+  if (!ticket) return null;
+
+  const [withCreator] = await attachCreators([ticket]);
+  return withCreator;
 }
 
 // --------------------------------------------
@@ -134,6 +276,7 @@ export async function createTicket(params: {
   title: string;
   description?: string;
   clientUuid: string;
+  createdById?: number;
   priorityCode?: string;
   categoryUuid?: string | null;
   assignedToUuid?: string;
@@ -147,6 +290,7 @@ export async function createTicket(params: {
     title,
     description,
     clientUuid,
+    createdById,
     priorityCode = "NORMAL",
     categoryUuid,
     assignedToUuid,
@@ -170,6 +314,7 @@ export async function createTicket(params: {
       title,
       description,
       client_uuid: clientUuid,
+      created_by_id: createdById ?? null,
       status_uuid: status.uuid,
       priority_uuid: priority?.uuid ?? null,
       category_uuid: categoryUuid ?? null,

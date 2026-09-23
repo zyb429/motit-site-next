@@ -359,6 +359,7 @@ model tickets {
   assignee      users?         @relation("TicketAssignee", fields: [assigned_to_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_assigned")
   ticket_category ticket_categories? @relation(fields: [category_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_category")
   client        users?         @relation("TicketClient", fields: [client_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_client")
+  created_by    users?         @relation("TicketCreatedBy", fields: [created_by_id], references: [id], onUpdate: NoAction, map: "fk_tickets_created_by")
   organization  organizations? @relation(fields: [organization_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_organization")
   priorities    priorities?    @relation(fields: [priority_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_priority")
   statuses      statuses?      @relation(fields: [status_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_status")
@@ -407,6 +408,7 @@ model users {
   ticket_comments      ticket_comments[]
   ticketsAssigned      tickets[]          @relation("TicketAssignee")
   ticketsClient        tickets[]          @relation("TicketClient")
+  ticketsCreated       tickets[]          @relation("TicketCreatedBy")
   avatar               files?             @relation("UserAvatar", fields: [avatar_id], references: [id], onUpdate: NoAction, map: "fk_users_avatar")
   users_role_lnk       users_role_lnk[]
   workers              workers?

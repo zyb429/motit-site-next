@@ -15,7 +15,7 @@ const createSchema = z.object({
   contactPhone: z.string().max(50).optional().nullable(),
   organizationUuid: z.string().uuid().optional().nullable(),
   attachmentFileIds: z.array(z.number().int().positive()).max(5).optional(),
-  clientUuid: z.string().uuid().optional(),   // ← новое, только для агентов
+  clientUuid: z.string().uuid().optional(),
 });
 
 export async function GET(req: Request) {
@@ -48,13 +48,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const isAgent = user.role === "admin" || user.role === "worker";
+  const isAgent = user.isAdmin || user.isWorker;
 
   // Кто будет клиентом заявки
   let clientUuid = user.uuid;
 
-  if (isAgent && parsed.data.clientUuid) {
-    // Админ может создать заявку от имени клиента
+  if (isAgent) {
+    if (!parsed.data.clientUuid) {
+      return NextResponse.json({ error: "Выберите клиента" }, { status: 400 });
+    }
     const client = await prisma.users.findUnique({
       where: { uuid: parsed.data.clientUuid },
       select: { uuid: true, blocked: true },
@@ -65,19 +67,24 @@ export async function POST(req: Request) {
     clientUuid = client.uuid;
   }
 
-  // Проверка организации:
-  // — для клиента: организация должна быть привязана к нему
-  // — для агента: организация просто существует
+  // Проверка организации
   if (parsed.data.organizationUuid) {
     if (isAgent) {
-      const org = await prisma.organizations.findUnique({
-        where: { uuid: parsed.data.organizationUuid },
-        select: { uuid: true, is_active: true },
+      // Для агента: организация должна быть привязана к выбранному клиенту
+      const link = await prisma.client_organizations.findFirst({
+        where: {
+          client_user_uuid: clientUuid,
+          organization_uuid: parsed.data.organizationUuid,
+        },
       });
-      if (!org || org.is_active === false) {
-        return NextResponse.json({ error: "Организация не найдена" }, { status: 400 });
+      if (!link) {
+        return NextResponse.json(
+          { error: "Организация не привязана к выбранному клиенту" },
+          { status: 400 },
+        );
       }
     } else {
+      // Для клиента: организация должна быть привязана к нему
       const link = await prisma.client_organizations.findFirst({
         where: {
           client_user_uuid: user.uuid,
@@ -96,6 +103,7 @@ export async function POST(req: Request) {
   const ticket = await createTicket({
     ...parsed.data,
     clientUuid,
+    createdById: user.id, // ← кто физически создал тикет
   });
 
   return NextResponse.json({ data: ticket }, { status: 201 });

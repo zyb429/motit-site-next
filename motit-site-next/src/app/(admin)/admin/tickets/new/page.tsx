@@ -15,7 +15,20 @@ export default async function AdminNewTicketPage() {
         users_role_lnk: { some: { roles: { name: "client" } } },
         blocked: false,
       },
-      select: { uuid: true, username: true, full_name: true, email: true },
+      select: {
+        uuid: true,
+        username: true,
+        full_name: true,
+        email: true,
+        phone: true,
+        client_organizations: {
+          select: {
+            organization_uuid: true,
+            is_primary: true,
+          },
+          orderBy: { is_primary: "desc" },
+        },
+      },
       orderBy: { full_name: "asc" },
     }),
   ]);
@@ -54,6 +67,8 @@ export default async function AdminNewTicketPage() {
             uuid: c.uuid,
             name: c.full_name || c.username || "—",
             email: c.email ?? "",
+            phone: c.phone ?? "",
+            organizationUuid: c.client_organizations[0]?.organization_uuid ?? null,
           }))}
         />
       )}

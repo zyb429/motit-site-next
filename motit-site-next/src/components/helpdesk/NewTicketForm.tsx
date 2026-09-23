@@ -1,7 +1,7 @@
 // src/components/helpdesk/NewTicketForm.tsx
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 
@@ -42,6 +42,8 @@ interface ClientOption {
   uuid: string;
   name: string;
   email: string;
+  phone?: string | null;
+  organizationUuid?: string | null;
 }
 
 interface UploadedFile {
@@ -99,6 +101,25 @@ export function NewTicketForm({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // В админском режиме: при выборе клиента — автозаполняем контакты
+  useEffect(() => {
+    if (!isAdmin || !selectedClientUuid) return;
+    const client = clients.find((c) => c.uuid === selectedClientUuid);
+    if (!client) return;
+
+    setContactName(client.name ?? "");
+    setContactEmail(client.email ?? "");
+    if (client.phone) setContactPhone(client.phone);
+  }, [isAdmin, selectedClientUuid, clients]);
+
+  // В клиентском режиме: если организации подгрузились позже — выбрать основную
+  useEffect(() => {
+    if (isAdmin) return;
+    if (organizationUuid) return;
+    const primary = organizations.find((o) => o.isPrimary) ?? organizations[0];
+    if (primary) setOrganizationUuid(primary.uuid);
+  }, [isAdmin, organizations, organizationUuid]);
+
   function handleFileSelect(e: ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
     setFiles([...files, ...picked].slice(0, 5));
@@ -146,7 +167,9 @@ export function NewTicketForm({
           contactName,
           contactEmail,
           contactPhone,
-          organizationUuid: isAdmin ? null : organizationUuid,
+          organizationUuid: isAdmin
+            ? (clients.find((c) => c.uuid === selectedClientUuid)?.organizationUuid ?? null)
+            : organizationUuid,
           categoryUuid: selectedCategoryUuid,
           attachmentFileIds,
           ...(isAdmin && selectedClientUuid
