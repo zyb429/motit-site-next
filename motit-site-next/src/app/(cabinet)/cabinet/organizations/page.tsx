@@ -17,7 +17,7 @@ export default async function OrganizationsPage() {
   });
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-8 w-full">
       <h1 className="text-2xl font-bold text-(--text-primary) flex items-center gap-2">
         <Building2 size={22} className="text-(--accent)" />
         Мои организации
