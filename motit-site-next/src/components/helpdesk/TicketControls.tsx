@@ -22,6 +22,7 @@ interface Props {
   statuses: Option[];
   priorities: Option[];
   agents: Agent[];
+  canAssign?: boolean;
 }
 
 export function TicketControls({
@@ -32,6 +33,7 @@ export function TicketControls({
   statuses,
   priorities,
   agents,
+  canAssign = true,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -44,11 +46,23 @@ export function TicketControls({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+
+    if (res.status === 403) {
+      const d = await res.json().catch(() => ({}));
+      setError(
+        typeof d.error === "string"
+          ? d.error
+          : "Недостаточно прав для этого действия",
+      );
+      return;
+    }
+
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       setError(typeof d.error === "string" ? d.error : "Не удалось сохранить");
       return;
     }
+
     startTransition(() => router.refresh());
   }
 
@@ -87,9 +101,10 @@ export function TicketControls({
       <Field label="Исполнитель">
         <select
           value={currentAssigneeUuid ?? ""}
-          disabled={isPending}
+          disabled={isPending || !canAssign}
           onChange={(e) => patch({ assigneeUuid: e.target.value || null })}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
+          title={!canAssign ? "Только администратор может менять исполнителя" : undefined}
+          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <option value="">— не назначен —</option>
           {agents.map((a) => (

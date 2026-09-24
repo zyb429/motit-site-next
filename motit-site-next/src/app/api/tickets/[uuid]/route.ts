@@ -43,6 +43,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: 
   const existing = await getTicket(uuid, user);
   if (!existing) return NextResponse.json({ error: "Не найдено" }, { status: 404 });
 
+  const isAdmin = user.role === "admin";
+
   if (statusCode) {
     await changeStatus({
       ticketUuid: uuid,
@@ -51,7 +53,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: 
     });
   }
   if (priorityCode) await changePriority({ ticketUuid: uuid, priorityCode });
+
   if (assigneeUuid !== undefined) {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Только администратор может менять исполнителя" },
+        { status: 403 },
+      );
+    }
     await assignTicket({ ticketUuid: uuid, assigneeUuid });
   }
 

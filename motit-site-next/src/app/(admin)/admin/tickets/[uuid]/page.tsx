@@ -132,6 +132,7 @@ export default async function AdminTicketPage({
           uuid: a.uuid,
           name: a.full_name || a.username || "—",
         }))}
+        canAssign={user.role === "admin"}
       />
 
       {/* Клиент */}

@@ -11,10 +11,12 @@ import {
 export function LastStatusChangeBlock({
   change,
   history,
+  hideAuthor = false,
   className = "",
 }: {
   change: LastStatusChange | null;
   history?: StatusHistoryEntry[];
+  hideAuthor?: boolean;
   className?: string;
 }) {
   if (!change?.status) return null;
@@ -40,7 +42,7 @@ export function LastStatusChangeBlock({
           </>
         )}
         <StatusBadge code={change.status.code ?? undefined} />
-        {change.changed_by && (
+        {!hideAuthor && change.changed_by && (
           <>
             <span className="opacity-60">·</span>
             <span className="text-(--text-primary)">
@@ -84,10 +86,12 @@ export function LastStatusChangeBlock({
                     {h.status?.code && <StatusBadge code={h.status.code} />}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-(--text-muted) mt-1">
-                    <span className="inline-flex items-center gap-1">
-                      <User2 size={10} />
-                      {shortUser(h.changed_by)}
-                    </span>
+                    {!hideAuthor && h.changed_by && (
+                      <span className="inline-flex items-center gap-1">
+                        <User2 size={10} />
+                        {shortUser(h.changed_by)}
+                      </span>
+                    )}
                     {h.changed_at && (
                       <span title={new Date(h.changed_at).toLocaleString("ru-RU")}>
                         {timeAgo(h.changed_at)}

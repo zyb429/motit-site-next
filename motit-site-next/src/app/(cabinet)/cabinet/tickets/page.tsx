@@ -4,6 +4,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/helpdesk/StatusBadge";
 import { PriorityBadge } from "@/components/helpdesk/PriorityBadge";
+import {
+  getLastStatusChangesBatchForClient,
+  getStatusHistoryBatchForClient,
+} from "@/lib/db/ticket-status-history";
+import { LastStatusChangeBlock } from "@/components/helpdesk/LastStatusChange";
 import { Plus, MessageSquare, User2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -49,13 +54,17 @@ export default async function TicketsPage() {
       statuses: true,
       priorities: true,
       client: { select: { uuid: true, full_name: true, username: true } },
-      // created_by убран — Prisma 7.10 не поддерживает эту relation в include
       _count: { select: { ticket_comments: true } },
     },
     orderBy: { updated_at: "desc" },
   });
 
   const tickets = await attachCreators(ticketsRaw);
+
+  const [lastChanges, histories] = await Promise.all([
+    getLastStatusChangesBatchForClient(tickets.map((t) => t.uuid)),
+    getStatusHistoryBatchForClient(tickets.map((t) => t.uuid)),
+  ]);
 
   return (
     <div className="p-8 w-full">
@@ -137,6 +146,11 @@ export default async function TicketsPage() {
                         : "—"}
                     </span>
                   </div>
+                  <LastStatusChangeBlock
+                    change={lastChanges.get(t.uuid) ?? null}
+                    history={histories.get(t.uuid)}
+                    className="mt-2"
+                  />
                 </Link>
               </li>
             );

@@ -7,6 +7,11 @@ import { getTicket } from "@/lib/db/tickets";
 import { StatusBadge } from "@/components/helpdesk/StatusBadge";
 import { PriorityBadge } from "@/components/helpdesk/PriorityBadge";
 import { TicketThread } from "@/components/helpdesk/TicketThread";
+import {
+  getLastStatusChangeForClient,
+  getStatusHistoryForClient,
+} from "@/lib/db/ticket-status-history";
+import { LastStatusChangeBlock } from "@/components/helpdesk/LastStatusChange";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +26,11 @@ export default async function TicketPage({
   const { uuid } = await params;
   const ticket = await getTicket(uuid, user);
   if (!ticket) notFound();
+
+  const [lastChange, history] = await Promise.all([
+    getLastStatusChangeForClient(ticket.uuid),
+    getStatusHistoryForClient(ticket.uuid),
+  ]);
 
   return (
     <div className="p-8 w-full max-w-3xl mx-auto">
@@ -37,6 +47,11 @@ export default async function TicketPage({
           <h1 className="text-xl font-bold text-(--text-primary)">
             {ticket.title}
           </h1>
+          <LastStatusChangeBlock
+            change={lastChange}
+            history={history}
+            className="mt-1"
+          />
           <div className="text-xs text-(--text-muted) mt-1">
             Создан{" "}
             {ticket.created_at
