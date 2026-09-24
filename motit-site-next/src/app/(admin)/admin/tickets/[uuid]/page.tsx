@@ -22,6 +22,11 @@ import { PriorityBadge } from "@/components/helpdesk/PriorityBadge";
 import { TicketThread } from "@/components/helpdesk/TicketThread";
 import { TicketControls } from "@/components/helpdesk/TicketControls";
 import { TicketAttachments } from "@/components/helpdesk/TicketAttachments";
+import {
+  getLastStatusChange,
+  getStatusHistory,
+} from "@/lib/db/ticket-status-history";
+import { LastStatusChangeBlock } from "@/components/helpdesk/LastStatusChange";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +68,11 @@ export default async function AdminTicketPage({
 
   const orgText = clientOrganization(ticket.client, ticket.organization);
 
+  const [lastChange, history] = await Promise.all([
+    getLastStatusChange(ticket.uuid),
+    getStatusHistory(ticket.uuid),
+  ]);
+
   return (
     <div className="p-8 w-full max-w-4xl mx-auto">
       <Link
@@ -79,6 +89,11 @@ export default async function AdminTicketPage({
           <h1 className="text-xl font-bold text-(--text-primary)">
             {ticket.title}
           </h1>
+          <LastStatusChangeBlock
+            change={lastChange}
+            history={history}
+            className="mt-2"
+          />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-(--text-muted) mt-1.5">
             {ticket.ticket_category && (
               <span className="inline-flex items-center gap-1">

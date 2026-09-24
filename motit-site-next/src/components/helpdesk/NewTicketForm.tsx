@@ -1,7 +1,7 @@
 // src/components/helpdesk/NewTicketForm.tsx
 "use client";
 
-import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 
@@ -87,12 +87,13 @@ export function NewTicketForm({
   const [selectedCategoryUuid, setSelectedCategoryUuid] = useState<string | null>(
     categoryUuid ?? categories[0]?.uuid ?? null,
   );
-  const [contactName, setContactName] = useState(defaultFullName);
-  const [contactEmail, setContactEmail] = useState(defaultEmail);
-  const [contactPhone, setContactPhone] = useState(defaultPhone);
-  const [organizationUuid, setOrganizationUuid] = useState<string | null>(
-    organizations.find((o) => o.isPrimary)?.uuid ?? organizations[0]?.uuid ?? null,
-  );
+
+  // Пользовательские правки полей. null = «не редактировал», значение = «переопределил».
+  const [customContactName, setCustomContactName] = useState<string | null>(null);
+  const [customContactEmail, setCustomContactEmail] = useState<string | null>(null);
+  const [customContactPhone, setCustomContactPhone] = useState<string | null>(null);
+  const [customOrganizationUuid, setCustomOrganizationUuid] = useState<string | null>(null);
+
   const [priorityCode, setPriorityCode] = useState("NORMAL");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -101,24 +102,39 @@ export function NewTicketForm({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // В админском режиме: при выборе клиента — автозаполняем контакты
-  useEffect(() => {
-    if (!isAdmin || !selectedClientUuid) return;
-    const client = clients.find((c) => c.uuid === selectedClientUuid);
-    if (!client) return;
+  // --- Производные значения: считаем на каждом рендере ---
 
-    setContactName(client.name ?? "");
-    setContactEmail(client.email ?? "");
-    if (client.phone) setContactPhone(client.phone);
-  }, [isAdmin, selectedClientUuid, clients]);
+  const selectedClient = isAdmin
+    ? clients.find((c) => c.uuid === selectedClientUuid) ?? null
+    : null;
 
-  // В клиентском режиме: если организации подгрузились позже — выбрать основную
-  useEffect(() => {
-    if (isAdmin) return;
-    if (organizationUuid) return;
-    const primary = organizations.find((o) => o.isPrimary) ?? organizations[0];
-    if (primary) setOrganizationUuid(primary.uuid);
-  }, [isAdmin, organizations, organizationUuid]);
+  // Контакты: пользовательское значение, если задано, иначе из клиента/пропсов
+  const contactName =
+    customContactName ??
+    (isAdmin && selectedClient ? selectedClient.name : null) ??
+    defaultFullName;
+
+  const contactEmail =
+    customContactEmail ??
+    (isAdmin && selectedClient ? selectedClient.email : null) ??
+    defaultEmail;
+
+  const contactPhone =
+    customContactPhone ??
+    (isAdmin && selectedClient ? selectedClient.phone ?? "" : null) ??
+    defaultPhone;
+
+  // Организация: пользовательское значение, иначе из клиента или primary
+  const organizationUuid =
+    customOrganizationUuid ??
+    (isAdmin && selectedClient
+      ? selectedClient.organizationUuid ?? null
+      : null) ??
+    organizations.find((o) => o.isPrimary)?.uuid ??
+    organizations[0]?.uuid ??
+    null;
+
+  // --- Обработчики ---
 
   function handleFileSelect(e: ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
@@ -130,7 +146,7 @@ export function NewTicketForm({
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
@@ -167,9 +183,7 @@ export function NewTicketForm({
           contactName,
           contactEmail,
           contactPhone,
-          organizationUuid: isAdmin
-            ? (clients.find((c) => c.uuid === selectedClientUuid)?.organizationUuid ?? null)
-            : organizationUuid,
+          organizationUuid,
           categoryUuid: selectedCategoryUuid,
           attachmentFileIds,
           ...(isAdmin && selectedClientUuid
@@ -236,7 +250,7 @@ export function NewTicketForm({
       <Field label="Фамилия, Имя, Отчество">
         <input
           value={contactName}
-          onChange={(e) => setContactName(e.target.value)}
+          onChange={(e) => setCustomContactName(e.target.value)}
           className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
         />
       </Field>
@@ -245,7 +259,7 @@ export function NewTicketForm({
         <input
           type="email"
           value={contactEmail}
-          onChange={(e) => setContactEmail(e.target.value)}
+          onChange={(e) => setCustomContactEmail(e.target.value)}
           className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
         />
       </Field>
@@ -253,7 +267,7 @@ export function NewTicketForm({
       <Field label="Телефон">
         <input
           value={contactPhone}
-          onChange={(e) => setContactPhone(e.target.value)}
+          onChange={(e) => setCustomContactPhone(e.target.value)}
           className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
         />
       </Field>
@@ -273,7 +287,7 @@ export function NewTicketForm({
           ) : (
             <select
               value={organizationUuid ?? ""}
-              onChange={(e) => setOrganizationUuid(e.target.value || null)}
+              onChange={(e) => setCustomOrganizationUuid(e.target.value || null)}
               className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
             >
               {organizations.map((o) => (

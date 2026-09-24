@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       data: {
         username: trimmedUsername,
         email: trimmedEmail,
-        password: hashedPassword,
+        password_hash: hashedPassword,
         full_name:
           typeof full_name === "string" && full_name.trim()
             ? full_name.trim()

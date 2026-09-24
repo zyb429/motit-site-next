@@ -12,7 +12,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "backfill:status-history": "bun run scripts/backfill-status-history.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1135.0",

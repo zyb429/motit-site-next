@@ -16,18 +16,22 @@ export async function POST(req: Request) {
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: z.flattenError(parsed.error) },
+      { status: 400 },
+    );
   }
 
   const dbUser = await prisma.users.findUnique({
     where: { id: user.id },
-    select: { password: true },
+    select: { password_hash: true },
   });
-  if (!dbUser?.password) {
+
+  if (!dbUser?.password_hash) {
     return NextResponse.json({ error: "Пароль не установлен" }, { status: 400 });
   }
 
-  const ok = await bcrypt.compare(parsed.data.currentPassword, dbUser.password);
+  const ok = await bcrypt.compare(parsed.data.currentPassword, dbUser.password_hash);
   if (!ok) {
     return NextResponse.json({ error: "Неверный текущий пароль" }, { status: 400 });
   }
@@ -36,7 +40,7 @@ export async function POST(req: Request) {
 
   await prisma.users.update({
     where: { id: user.id },
-    data: { password: hash, updated_at: new Date() },
+    data: { password_hash: hash, updated_at: new Date() },
   });
 
   return NextResponse.json({ success: true });

@@ -1,6 +1,6 @@
 // src/lib/db/posts.ts
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@/generated/prisma/client";
+import type { Prisma } from "@generated/prisma/client";
 
 export type PostFeaturedImage = {
   id: number;

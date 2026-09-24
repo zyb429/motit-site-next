@@ -1,6 +1,6 @@
 // src/lib/prisma.ts
 import "./bigint";
-import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient } from "@generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 const url = new URL(process.env.DATABASE_URL!);
@@ -14,17 +14,7 @@ const adapter = new PrismaMariaDb({
   connectionLimit: 5,
 });
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+export const prisma = new PrismaClient({
+  adapter,
+  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+});

@@ -271,6 +271,8 @@ model statuses {
   created_at    DateTime? @default(now()) @db.Timestamp(0)
   updated_at    DateTime? @default(now()) @db.Timestamp(0)
   tickets       tickets[]
+  status_history_new   ticket_status_history[] @relation("TicketStatusHistoryNew")
+  status_history_old   ticket_status_history[] @relation("TicketStatusHistoryOld")
 }
 
 model ticket_categories {
@@ -355,6 +357,7 @@ model tickets {
 
   ticket_comments ticket_comments[]
   attachments     ticket_attachments[]
+  status_history  ticket_status_history[]
 
   assignee      users?         @relation("TicketAssignee", fields: [assigned_to_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_assigned")
   ticket_category ticket_categories? @relation(fields: [category_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_category")
@@ -372,6 +375,29 @@ model tickets {
   @@index([organization_uuid], map: "idx_tickets_organization")
   @@index([priority_uuid], map: "idx_tickets_priority")
   @@index([status_uuid], map: "idx_tickets_status")
+}
+
+model ticket_status_history {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid            String    @unique(map: "idx_ticket_status_history_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+
+  ticket_uuid     String    @db.Char(36)
+  status_uuid     String?   @db.Char(36)   // новый статус
+  old_status_uuid String?   @db.Char(36)   // предыдущий статус (для истории)
+
+  changed_by_uuid String?   @db.Char(36)   // кто сменил
+  comment         String?   @db.VarChar(500) // опционально: причина смены
+
+  created_at      DateTime? @default(now()) @db.Timestamp(0)
+
+  tickets     tickets   @relation(fields: [ticket_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_tsh_ticket")
+  statuses    statuses? @relation("TicketStatusHistoryNew", fields: [status_uuid],     references: [uuid], onDelete: SetNull, onUpdate: NoAction, map: "fk_tsh_status")
+  old_status  statuses? @relation("TicketStatusHistoryOld", fields: [old_status_uuid], references: [uuid], onDelete: SetNull, onUpdate: NoAction, map: "fk_tsh_old_status")
+  changed_by  users?    @relation("TicketStatusChangedBy",  fields: [changed_by_uuid], references: [uuid], onDelete: SetNull, onUpdate: NoAction, map: "fk_tsh_user")
+
+  @@index([ticket_uuid, created_at], map: "idx_tsh_ticket_created")
+  @@index([changed_by_uuid], map: "idx_tsh_user")
+  @@index([status_uuid], map: "idx_tsh_status")
 }
 
 model users {
@@ -401,17 +427,18 @@ model users {
   updated_by_id          Int?               @db.UnsignedInt
   locale                 String?            @db.VarChar(255)
 
-  client_organizations client_organizations[]
-  clients              clients?
-  posts                posts[]            @relation("PostCreatedBy")
-  postsAuthored        posts[]            @relation("PostAuthor")
-  ticket_comments      ticket_comments[]
-  ticketsAssigned      tickets[]          @relation("TicketAssignee")
-  ticketsClient        tickets[]          @relation("TicketClient")
-  ticketsCreated       tickets[]          @relation("TicketCreatedBy")
-  avatar               files?             @relation("UserAvatar", fields: [avatar_id], references: [id], onUpdate: NoAction, map: "fk_users_avatar")
-  users_role_lnk       users_role_lnk[]
-  workers              workers?
+  client_organizations  client_organizations[]
+  clients               clients?
+  posts                 posts[]                 @relation("PostCreatedBy")
+  postsAuthored         posts[]                 @relation("PostAuthor")
+  ticket_comments       ticket_comments[]
+  ticketsAssigned       tickets[]               @relation("TicketAssignee")
+  ticketsClient         tickets[]               @relation("TicketClient")
+  ticketsCreated        tickets[]               @relation("TicketCreatedBy")
+  avatar                files?                  @relation("UserAvatar", fields: [avatar_id], references: [id], onUpdate: NoAction, map: "fk_users_avatar")
+  ticket_status_changes ticket_status_history[] @relation("TicketStatusChangedBy")
+  users_role_lnk        users_role_lnk[]
+  workers               workers?
 
   @@index([avatar_id], map: "idx_users_avatar_id")
   @@index([document_id], map: "idx_users_document_id")

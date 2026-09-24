@@ -7,7 +7,7 @@ import { getTicket, changeStatus, assignTicket, changePriority } from "@/lib/db/
 const patchSchema = z.object({
   statusCode: z.enum(["OPEN", "IN_PROGRESS", "WAITING_CLIENT", "RESOLVED", "CLOSED"]).optional(),
   priorityCode: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).optional(),
-  assigneeUuid: z.string().uuid().nullable().optional(),
+  assigneeUuid: z.uuid().nullable().optional(),
 });
 
 export async function GET(_: Request, { params }: { params: Promise<{ uuid: string }> }) {
@@ -30,7 +30,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: 
 
   const parsed = patchSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: z.flattenError(parsed.error) },
+      { status: 400 },
+    );
   }
 
   const { uuid } = await params;
@@ -40,7 +43,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: 
   const existing = await getTicket(uuid, user);
   if (!existing) return NextResponse.json({ error: "Не найдено" }, { status: 404 });
 
-  if (statusCode) await changeStatus({ ticketUuid: uuid, statusCode });
+  if (statusCode) {
+    await changeStatus({
+      ticketUuid: uuid,
+      statusCode,
+      changedByUuid: user.uuid,
+    });
+  }
   if (priorityCode) await changePriority({ ticketUuid: uuid, priorityCode });
   if (assigneeUuid !== undefined) {
     await assignTicket({ ticketUuid: uuid, assigneeUuid });

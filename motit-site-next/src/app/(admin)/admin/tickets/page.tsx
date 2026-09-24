@@ -13,6 +13,11 @@ import { StatusBadge } from "@/components/helpdesk/StatusBadge";
 import { PriorityBadge } from "@/components/helpdesk/PriorityBadge";
 import { TicketFilters } from "@/components/helpdesk/TicketFilters";
 import { TicketPagination } from "@/components/helpdesk/TicketPagination";
+import {
+  getLastStatusChangesBatch,
+  getStatusHistoryBatch,
+} from "@/lib/db/ticket-status-history";
+import { LastStatusChangeBlock } from "@/components/helpdesk/LastStatusChange";
 import { User2, AlertCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +76,10 @@ export default async function AdminTicketsPage({
   ]);
 
   const { items, total, totalPages, statusCounts } = result;
+  const [lastChanges, histories] = await Promise.all([
+    getLastStatusChangesBatch(items.map((t) => t.uuid)),
+    getStatusHistoryBatch(items.map((t) => t.uuid)),
+  ]);
 
   return (
     <div className="p-8">
@@ -203,6 +212,11 @@ export default async function AdminTicketsPage({
                         <span className="italic">Организация не привязана</span>
                       )}
                     </div>
+                    <LastStatusChangeBlock
+                      change={lastChanges.get(t.uuid) ?? null}
+                      history={histories.get(t.uuid)}
+                      className="mt-2"
+                    />
                   </div>
                   <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4">
                     <StatusBadge code={t.statuses?.code} />

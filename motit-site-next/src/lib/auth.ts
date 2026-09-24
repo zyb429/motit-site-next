@@ -89,7 +89,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user?.email,
           username: user?.username,
           blocked: user?.blocked,
-          hasPassword: !!user?.password,
+          hasPassword: !!user?.password_hash,
         });
 
         if (!user) {

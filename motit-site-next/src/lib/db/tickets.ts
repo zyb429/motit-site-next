@@ -1,7 +1,7 @@
 // src/lib/db/tickets.ts
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@generated/prisma/client";
 
 const ticketInclude = {
   statuses: true,
@@ -270,13 +270,14 @@ export async function getTicket(
 }
 
 // --------------------------------------------
-// Создание
+// Создание (с первой записью в истории)
 // --------------------------------------------
 export async function createTicket(params: {
   title: string;
   description?: string;
   clientUuid: string;
   createdById?: number;
+  createdByUuid?: string; // ← uuid автора для истории
   priorityCode?: string;
   categoryUuid?: string | null;
   assignedToUuid?: string;
@@ -291,6 +292,7 @@ export async function createTicket(params: {
     description,
     clientUuid,
     createdById,
+    createdByUuid,
     priorityCode = "NORMAL",
     categoryUuid,
     assignedToUuid,
@@ -308,34 +310,48 @@ export async function createTicket(params: {
 
   if (!status) throw new Error("Status OPEN not found");
 
-  return prisma.tickets.create({
-    data: {
-      uuid: randomUUID(),
-      title,
-      description,
-      client_uuid: clientUuid,
-      created_by_id: createdById ?? null,
-      status_uuid: status.uuid,
-      priority_uuid: priority?.uuid ?? null,
-      category_uuid: categoryUuid ?? null,
-      assigned_to_uuid: assignedToUuid ?? null,
-      contact_name: contactName ?? null,
-      contact_email: contactEmail ?? null,
-      contact_phone: contactPhone ?? null,
-      organization_uuid: organizationUuid ?? null,
-      created_at: new Date(),
-      updated_at: new Date(),
-      attachments: attachmentFileIds?.length
-        ? {
-            create: attachmentFileIds.map((fileId) => ({
-              uuid: randomUUID(),
-              file_id: fileId,
-              created_at: new Date(),
-            })),
-          }
-        : undefined,
-    },
-    include: ticketInclude,
+  return prisma.$transaction(async (tx) => {
+    const created = await tx.tickets.create({
+      data: {
+        uuid: randomUUID(),
+        title,
+        description,
+        client_uuid: clientUuid,
+        created_by_id: createdById ?? null,
+        status_uuid: status.uuid,
+        priority_uuid: priority?.uuid ?? null,
+        category_uuid: categoryUuid ?? null,
+        assigned_to_uuid: assignedToUuid ?? null,
+        contact_name: contactName ?? null,
+        contact_email: contactEmail ?? null,
+        contact_phone: contactPhone ?? null,
+        organization_uuid: organizationUuid ?? null,
+        created_at: new Date(),
+        updated_at: new Date(),
+        attachments: attachmentFileIds?.length
+          ? {
+              create: attachmentFileIds.map((fileId) => ({
+                uuid: randomUUID(),
+                file_id: fileId,
+                created_at: new Date(),
+              })),
+            }
+          : undefined,
+      },
+      include: ticketInclude,
+    });
+
+    // Первая запись в истории
+    await tx.ticket_status_history.create({
+      data: {
+        ticket_uuid: created.uuid,
+        status_uuid: status.uuid,
+        old_status_uuid: null,
+        changed_by_uuid: createdByUuid ?? clientUuid, // если агент не указан — считаем автором клиента
+      },
+    });
+
+    return created;
   });
 }
 
@@ -396,25 +412,50 @@ export async function addComment(params: {
 }
 
 // --------------------------------------------
-// Смена статуса
+// Смена статуса (с записью в историю)
 // --------------------------------------------
 export async function changeStatus(params: {
   ticketUuid: string;
   statusCode: string;
+  changedByUuid: string; // uuid того, кто меняет
 }) {
-  const { ticketUuid, statusCode } = params;
+  const { ticketUuid, statusCode, changedByUuid } = params;
+
   const status = await prisma.statuses.findFirstOrThrow({
     where: { code: statusCode },
   });
 
-  return prisma.tickets.update({
-    where: { uuid: ticketUuid },
-    data: {
-      status_uuid: status.uuid,
-      resolved_at: status.is_final ? new Date() : null,
-      updated_at: new Date(),
-    },
-    include: ticketInclude,
+  return prisma.$transaction(async (tx) => {
+    // 1. Читаем текущий статус
+    const current = await tx.tickets.findUnique({
+      where: { uuid: ticketUuid },
+      select: { status_uuid: true },
+    });
+
+    // 2. Обновляем тикет
+    const updated = await tx.tickets.update({
+      where: { uuid: ticketUuid },
+      data: {
+        status_uuid: status.uuid,
+        resolved_at: status.is_final ? new Date() : null,
+        updated_at: new Date(),
+      },
+      include: ticketInclude,
+    });
+
+    // 3. Пишем в историю только если статус реально изменился
+    if (current?.status_uuid !== status.uuid) {
+      await tx.ticket_status_history.create({
+        data: {
+          ticket_uuid: ticketUuid,
+          status_uuid: status.uuid,
+          old_status_uuid: current?.status_uuid ?? null,
+          changed_by_uuid: changedByUuid,
+        },
+      });
+    }
+
+    return updated;
   });
 }
 

@@ -9,13 +9,13 @@ const createSchema = z.object({
   title: z.string().min(3).max(255),
   description: z.string().min(10).max(10_000),
   priorityCode: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).optional(),
-  categoryUuid: z.string().uuid().optional().nullable(),
+  categoryUuid: z.uuid().optional().nullable(),
   contactName: z.string().min(1).max(255),
-  contactEmail: z.string().email().max(255),
+  contactEmail: z.email().max(255),
   contactPhone: z.string().max(50).optional().nullable(),
-  organizationUuid: z.string().uuid().optional().nullable(),
+  organizationUuid: z.uuid().optional().nullable(),
   attachmentFileIds: z.array(z.number().int().positive()).max(5).optional(),
-  clientUuid: z.string().uuid().optional(),
+  clientUuid: z.uuid().optional(),
 });
 
 export async function GET(req: Request) {
@@ -45,7 +45,10 @@ export async function POST(req: Request) {
 
   const parsed = createSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: z.flattenError(parsed.error) },
+      { status: 400 },
+    );
   }
 
   const isAgent = user.isAdmin || user.isWorker;
@@ -103,7 +106,8 @@ export async function POST(req: Request) {
   const ticket = await createTicket({
     ...parsed.data,
     clientUuid,
-    createdById: user.id, // ← кто физически создал тикет
+    createdById: user.id,
+    createdByUuid: user.uuid,
   });
 
   return NextResponse.json({ data: ticket }, { status: 201 });
