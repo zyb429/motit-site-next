@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   ChevronRight,
   ChevronLeft,
+  MessageSquare
 } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/auth/LogoutButton";
@@ -28,6 +29,7 @@ const NAV = [
   { href: "/cabinet/profile",       label: "Профиль",      Icon: User },
   { href: "/cabinet/security",      label: "Безопасность", Icon: Shield },
   { href: "/cabinet/tickets",       label: "Мои тикеты",   Icon: LifeBuoy },
+  { href: "/cabinet/chat",          label: "Сообщения",    Icon: MessageSquare },
   { href: "/cabinet/organizations", label: "Организации",  Icon: Building2 },
 ];
 

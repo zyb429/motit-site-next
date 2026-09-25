@@ -4,16 +4,21 @@
 import { useEffect } from "react";
 import { getSocket } from "@/lib/socket-client";
 
-type NewMessageHandler = (msg: {
+export type NewMessageHandler = (msg: {
   uuid: string;
   chat_uuid: string;
   content: string;
   kind: string;
   created_at: string;
-  user: { uuid: string; full_name: string | null; username: string | null } | null;
+  user: {
+    uuid: string;
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;   // ← добавить
+  } | null;
 }) => void;
 
-type TypingHandler = (payload: {
+export type TypingHandler = (payload: {
   chatUuid: string;
   userUuid: string;
   typing: boolean;

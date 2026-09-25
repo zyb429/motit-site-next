@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {  useState } from "react";
 import {
   Inbox,
+  MessageSquare,
   LayoutDashboard,
   FileText,
   FolderTree,
@@ -58,6 +59,12 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/tickets", label: "Обращения", icon: Inbox },
       { href: "/admin/tickets/new", label: "Новое обращение", icon: Plus },
       { href: "/admin/ticket-categories", label: "Категории обращений", icon: FolderTree },
+    ],
+  },
+  {
+    title: "Сообщения",
+    items: [
+      { href: "/admin/chat", label: "Чаты", icon: MessageSquare },
     ],
   },
 ];
