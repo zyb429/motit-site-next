@@ -49,6 +49,23 @@ services:
       echo 'MinIO ready';
       "
 
+  # Redis для pub/sub и presence в чатах
+  redis:
+    image: redis:7-alpine
+    container_name: motit-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   mysql_data:
   minio_data:
+  redis_data:
