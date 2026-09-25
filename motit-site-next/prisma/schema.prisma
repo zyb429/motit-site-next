@@ -101,6 +101,7 @@ model files {
   posts              posts[]              @relation("PostFeaturedImage")
   user_avatars       users[]              @relation("UserAvatar")
   ticket_attachments ticket_attachments[]
+  chat_attachments   chat_attachments[]
 
   @@index([document_id], map: "idx_files_document_id")
   @@index([folder_path], map: "idx_files_folder")
@@ -358,6 +359,7 @@ model tickets {
   ticket_comments ticket_comments[]
   attachments     ticket_attachments[]
   status_history  ticket_status_history[]
+  chat            chats?
 
   assignee      users?         @relation("TicketAssignee", fields: [assigned_to_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_assigned")
   ticket_category ticket_categories? @relation(fields: [category_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_category")
@@ -437,6 +439,11 @@ model users {
   ticketsCreated        tickets[]               @relation("TicketCreatedBy")
   avatar                files?                  @relation("UserAvatar", fields: [avatar_id], references: [id], onUpdate: NoAction, map: "fk_users_avatar")
   ticket_status_changes ticket_status_history[] @relation("TicketStatusChangedBy")
+  chats_created         chats[]                 @relation("ChatCreatedBy")
+  chat_members          chat_members[]
+  chat_messages         chat_messages[]
+  chat_reactions        chat_reactions[]
+  chat_read_receipts    chat_read_receipts[]
   users_role_lnk        users_role_lnk[]
   workers               workers?
 
@@ -466,4 +473,135 @@ model workers {
   created_at    DateTime? @default(now()) @db.Timestamp(0)
   updated_at    DateTime? @default(now()) @db.Timestamp(0)
   users         users     @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_workers_user")
+}
+
+// ============================================
+// ЧАТЫ: ЛС, группы, каналы, чаты тикетов
+// ============================================
+model chats {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid            String    @unique(map: "idx_chats_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+
+  // "direct" — ЛС (2 участника)
+  // "group" — группа (3+)
+  // "channel" — публичный канал
+  // "private_channel" — приватный канал
+  // "ticket" — чат, привязанный к тикету
+  kind            String    @db.VarChar(20)
+
+  name            String?   @db.VarChar(255)
+  description     String?   @db.VarChar(500)
+  avatar_url      String?   @db.VarChar(500)
+  is_archived     Boolean   @default(false)
+
+  // для kind="direct" — детерминированный ключ из двух uuid
+  direct_key      String?   @unique(map: "idx_chats_direct_key") @db.VarChar(80)
+
+  ticket_uuid     String?   @unique(map: "idx_chats_ticket_unique") @db.Char(36)
+  created_by_uuid String?   @db.Char(36)
+  created_at      DateTime? @default(now()) @db.Timestamp(0)
+  updated_at      DateTime? @default(now()) @db.Timestamp(0)
+  last_message_at DateTime? @db.Timestamp(0)
+
+  ticket          tickets?  @relation(fields: [ticket_uuid], references: [uuid], onDelete: SetNull, onUpdate: NoAction, map: "fk_chats_ticket")
+  created_by      users?    @relation("ChatCreatedBy", fields: [created_by_uuid], references: [uuid], onDelete: SetNull, onUpdate: NoAction, map: "fk_chats_creator")
+  members         chat_members[]
+  messages        chat_messages[]
+
+  @@index([kind], map: "idx_chats_kind")
+  @@index([last_message_at], map: "idx_chats_last_message")
+}
+
+model chat_members {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid            String    @unique(map: "idx_chat_members_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+
+  chat_uuid       String    @db.Char(36)
+  user_uuid       String    @db.Char(36)
+
+  // "owner" | "admin" | "member"
+  role            String    @default("member") @db.VarChar(20)
+
+  joined_at       DateTime? @default(now()) @db.Timestamp(0)
+  last_read_at    DateTime? @db.Timestamp(0)
+  last_read_message_uuid String? @db.Char(36)
+  unread_count    Int       @default(0)
+  is_muted        Boolean   @default(false)
+  is_pinned       Boolean   @default(false)
+
+  chat            chats     @relation(fields: [chat_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_members_chat")
+  user            users     @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_members_user")
+
+  @@unique([chat_uuid, user_uuid], map: "idx_chat_members_unique")
+  @@index([user_uuid], map: "idx_chat_members_user")
+  @@index([chat_uuid], map: "idx_chat_members_chat")
+}
+
+model chat_messages {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid            String    @unique(map: "idx_chat_messages_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+
+  chat_uuid       String    @db.Char(36)
+  user_uuid       String?   @db.Char(36)
+
+  kind            String    @default("text") @db.VarChar(20)
+  content         String    @db.Text
+  reply_to_uuid   String?   @db.Char(36)
+  edited_at       DateTime? @db.Timestamp(0)
+  deleted_at      DateTime? @db.Timestamp(0)
+
+  created_at      DateTime? @default(now()) @db.Timestamp(0)
+
+  chat            chats     @relation(fields: [chat_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_messages_chat")
+  user            users?    @relation(fields: [user_uuid], references: [uuid], onDelete: SetNull, onUpdate: NoAction, map: "fk_chat_messages_user")
+  reply_to        chat_messages? @relation("ReplyTo", fields: [reply_to_uuid], references: [uuid], onDelete: SetNull, onUpdate: NoAction, map: "fk_chat_messages_reply")
+  replies         chat_messages[] @relation("ReplyTo")
+  attachments     chat_attachments[]
+  reactions       chat_reactions[]
+  read_receipts   chat_read_receipts[]
+
+  @@index([chat_uuid, created_at], map: "idx_chat_messages_chat_created")
+  @@index([user_uuid], map: "idx_chat_messages_user")
+}
+
+model chat_attachments {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid            String    @unique(map: "idx_chat_attachments_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+
+  message_uuid    String    @db.Char(36)
+  file_id         Int       @db.UnsignedInt
+  created_at      DateTime? @default(now()) @db.Timestamp(0)
+
+  message         chat_messages @relation(fields: [message_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_attachments_message")
+  file            files         @relation(fields: [file_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "fk_chat_attachments_file")
+
+  @@index([message_uuid], map: "idx_chat_attachments_message")
+  @@index([file_id], map: "idx_chat_attachments_file")
+}
+
+model chat_reactions {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  message_uuid    String    @db.Char(36)
+  user_uuid       String    @db.Char(36)
+  emoji           String    @db.VarChar(10)
+  created_at      DateTime? @default(now()) @db.Timestamp(0)
+
+  message         chat_messages @relation(fields: [message_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_reactions_message")
+  user            users         @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_reactions_user")
+
+  @@unique([message_uuid, user_uuid, emoji], map: "idx_chat_reactions_unique")
+  @@index([message_uuid], map: "idx_chat_reactions_message")
+}
+
+model chat_read_receipts {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  message_uuid    String    @db.Char(36)
+  user_uuid       String    @db.Char(36)
+  read_at         DateTime? @default(now()) @db.Timestamp(0)
+
+  message         chat_messages @relation(fields: [message_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_read_receipts_message")
+  user            users         @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_read_receipts_user")
+
+  @@unique([message_uuid, user_uuid], map: "idx_chat_read_receipts_unique")
+  @@index([user_uuid, read_at], map: "idx_chat_read_receipts_user")
 }
