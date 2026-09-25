@@ -14,9 +14,9 @@ export default async function AccountLayout({
   if (!user) redirect("/login?from=/cabinet");
 
   return (
-    <div className="min-h-screen bg-(--bg-primary) flex">
+    <div className="fixed inset-0 bg-(--bg-primary) flex overflow-hidden">
       <AccountSidebar user={user} />
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">{children}</main>
     </div>
   );
 }

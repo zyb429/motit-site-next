@@ -16,7 +16,7 @@ export default async function CabinetChatLayout({
   const chats = await listChatsForUser(user.uuid);
 
   return (
-    <div className="h-[calc(100vh-64px)] flex">
+    <div className="flex-1 min-h-0 flex">
       <aside className="w-80 border-r border-(--border) shrink-0 overflow-hidden">
         <ChatListSidebar
           initialChats={chats}
@@ -24,7 +24,7 @@ export default async function CabinetChatLayout({
           basePath="/cabinet/chat"
         />
       </aside>
-      <main className="flex-1 overflow-hidden">{children}</main>
+      <main className="flex-1 min-h-0 overflow-hidden flex flex-col">{children}</main>
     </div>
   );
 }
