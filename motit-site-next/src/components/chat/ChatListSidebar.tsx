@@ -34,6 +34,15 @@ export function ChatListSidebar({
     router.push(`${basePath}/${chatUuid}`);
   }
 
+  async function openSaved() {
+   const res = await fetch("/api/chat/chats/saved", { method: "POST" });
+    if (res.ok) {
+     const data = await res.json();
+      router.push(`${basePath}/${data.data.uuid}`);
+      refreshChats();
+    }
+  }
+
   return (
     <>
       <ChatList
@@ -41,6 +50,7 @@ export function ChatListSidebar({
         currentUserUuid={currentUserUuid}
         basePath={basePath}
         onNewChatAction={() => setShowNewDialog(true)}
+        onSavedAction={openSaved}
       />
 
       {showNewDialog && (

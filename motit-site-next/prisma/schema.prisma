@@ -442,6 +442,7 @@ model users {
   chats_created         chats[]                 @relation("ChatCreatedBy")
   chat_members          chat_members[]
   chat_messages         chat_messages[]
+  chat_message_deletions chat_message_deletions[]
   chat_reactions        chat_reactions[]
   chat_read_receipts    chat_read_receipts[]
   users_role_lnk        users_role_lnk[]
@@ -550,6 +551,10 @@ model chat_messages {
   edited_at       DateTime? @db.Timestamp(0)
   deleted_at      DateTime? @db.Timestamp(0)
 
+  forwarded_from_message_uuid String? @db.Char(36)
+  forwarded_from_chat_uuid    String? @db.Char(36)
+  forwarded_from_user_uuid    String? @db.Char(36)
+
   created_at      DateTime? @default(now()) @db.Timestamp(0)
 
   chat            chats     @relation(fields: [chat_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_messages_chat")
@@ -559,9 +564,26 @@ model chat_messages {
   attachments     chat_attachments[]
   reactions       chat_reactions[]
   read_receipts   chat_read_receipts[]
+  deletions       chat_message_deletions[]
 
   @@index([chat_uuid, created_at], map: "idx_chat_messages_chat_created")
   @@index([user_uuid], map: "idx_chat_messages_user")
+}
+
+model chat_message_deletions {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid         String    @unique(map: "idx_chat_message_deletions_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+
+  message_uuid String    @db.Char(36)
+  user_uuid    String    @db.Char(36)
+  created_at   DateTime? @default(now()) @db.Timestamp(0)
+
+  message      chat_messages @relation(fields: [message_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_cmd_message")
+  user         users         @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_cmd_user")
+
+  @@unique([message_uuid, user_uuid], map: "idx_cmd_unique")
+  @@index([user_uuid], map: "idx_cmd_user")
+  @@index([message_uuid], map: "idx_cmd_message")
 }
 
 model chat_attachments {

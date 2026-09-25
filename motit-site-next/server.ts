@@ -37,11 +37,19 @@ sub.on("pmessage", (_pattern: string, channel: string, message: string) => {
     const payload = JSON.parse(message);
 
     if (channel.startsWith("chat:")) {
-      // "chat:{chatUuid}:messages"
-      const [, chatUuid] = channel.split(":");
-      io.to(`chat:${chatUuid}`).emit("message:new", payload);
+      const parts = channel.split(":");
+      const chatUuid = parts[1];
+      const kind = parts[2];
+
+      if (kind === "read") {
+        io.to(`chat:${chatUuid}`).emit("message:read", payload);
+      } else if (payload.event === "message:deleted") {
+        io.to(`chat:${chatUuid}`).emit("message:deleted", payload);
+      } else {
+        io.to(`chat:${chatUuid}`).emit("message:new", payload);
+      }
     } else if (channel.startsWith("typing:")) {
-      const [, chatUuid] = channel.split(":");
+      const chatUuid = channel.split(":")[1];
       io.to(`chat:${chatUuid}`).emit("typing", payload);
     } else if (channel.startsWith("presence:")) {
       io.emit("presence:update", payload);

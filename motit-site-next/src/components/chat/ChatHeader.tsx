@@ -1,7 +1,7 @@
 // src/components/chat/ChatHeader.tsx
 "use client";
 
-import { Users, Hash, Lock, MoreVertical } from "lucide-react";
+import { Users, Hash, Lock, MoreVertical, Bookmark } from "lucide-react";
 
 type ChatHeaderProps = {
   chat: {
@@ -27,6 +27,23 @@ export function ChatHeader({
   currentUserUuid,
   isOnlineAction,
 }: ChatHeaderProps) {
+  // Saved Messages — особый вид
+  if (chat.kind === "saved") {
+    return (
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-(--border) bg-(--bg-card)">
+        <div className="w-9 h-9 rounded-full bg-(--accent-dim) flex items-center justify-center shrink-0">
+          <Bookmark size={18} className="text-(--accent)" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-(--text-primary)">
+            Saved Messages
+          </div>
+          <div className="text-xs text-(--text-muted)">только вы</div>
+        </div>
+      </div>
+    );
+  }
+
   const otherMember = chat.members.find((m) => m.user.uuid !== currentUserUuid);
 
   const displayName =

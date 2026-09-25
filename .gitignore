@@ -13,6 +13,9 @@ motit-backend.backup.tar.gz
 *.tar.gz
 mysql creds.txt
 
+# Исключение: миграции Prisma должны быть в git
+!motit-site-next/prisma/migrations/**/*.sql
+
 # === Node ===
 node_modules/
 .next/

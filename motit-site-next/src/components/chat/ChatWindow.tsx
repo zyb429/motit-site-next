@@ -30,6 +30,18 @@ type ChatWindowProps = {
   hasMore?: boolean;
   isOnlineAction?: (userUuid: string) => boolean;
   typingUsers?: string[];
+  // Управление сообщениями
+  replyTo?: ChatMessageItem | null;
+  onReplyAction?: (message: ChatMessageItem) => void;
+  onCancelReplyAction?: () => void;
+  editing?: ChatMessageItem | null;
+  onEditAction?: (message: ChatMessageItem) => void;
+  onCancelEditAction?: () => void;
+  onEditSubmitAction?: (messageUuid: string, content: string) => Promise<void>;
+  onDeleteAction?: (message: ChatMessageItem) => void;
+  onCopyAction?: (message: ChatMessageItem) => void;
+  onReactAction?: (message: ChatMessageItem, emoji: string) => void;
+  onForwardAction?: (message: ChatMessageItem) => void;
 };
 
 export function ChatWindow({
@@ -42,8 +54,18 @@ export function ChatWindow({
   hasMore,
   isOnlineAction,
   typingUsers = [],
+  replyTo,
+  onReplyAction,
+  onCancelReplyAction,
+  editing,
+  onEditAction,
+  onCancelEditAction,
+  onEditSubmitAction,
+  onDeleteAction,
+  onCopyAction,
+  onReactAction,
+  onForwardAction,
 }: ChatWindowProps) {
-  // Имена печатающих (без currentUser)
   const typingNames = typingUsers
     .filter((uuid) => uuid !== currentUserUuid)
     .map((uuid) => {
@@ -64,13 +86,25 @@ export function ChatWindow({
         currentUserUuid={currentUserUuid}
         onLoadMoreAction={onLoadMoreAction}
         hasMore={hasMore}
+        onReplyAction={onReplyAction}
+        onCopyAction={onCopyAction}
+        onEditAction={onEditAction}
+        onDeleteAction={onDeleteAction}
+        onReactAction={onReactAction}
+        onForwardAction={onForwardAction}
       />
 
       <TypingIndicator names={typingNames} />
 
       <MessageInput
+        key={editing?.uuid ?? "new"}
         onSendMessageAction={onSendMessageAction}
         onTypingAction={onTypingAction}
+        replyTo={replyTo}
+        onCancelReplyAction={onCancelReplyAction}
+        editing={editing}
+        onCancelEditAction={onCancelEditAction}
+        onEditSubmitAction={onEditSubmitAction}
       />
     </div>
   );

@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Bookmark } from "lucide-react";
 import type { ChatListItem as ChatListItemType } from "@/lib/db/chat";
 import { ChatListItem } from "./ChatListItem";
 
@@ -12,11 +12,13 @@ export function ChatList({
   currentUserUuid,
   basePath,
   onNewChatAction,
+  onSavedAction,
 }: {
   chats: ChatListItemType[];
   currentUserUuid: string;
   basePath: string;
   onNewChatAction?: () => void;
+  onSavedAction ?: () => void;
 }) {
   const [search, setSearch] = useState("");
   const pathname = usePathname();
@@ -45,8 +47,19 @@ export function ChatList({
     <div className="flex flex-col h-full">
       {/* Заголовок + поиск */}
       <div className="p-4 border-b border-(--border)">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-(--text-primary)">Чаты</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-semibold text-(--text-primary)">Чаты</h2>
+        <div className="flex items-center gap-1">
+          {onSavedAction && (
+            <button
+              type="button"
+              onClick={onSavedAction}
+              className="p-1.5 rounded-lg border border-(--border) hover:border-(--accent) text-(--text-secondary) hover:text-(--accent) transition-colors"
+              title="Saved Messages"
+            >
+              <Bookmark size={16} />
+            </button>
+          )}
           {onNewChatAction && (
             <button
               type="button"
@@ -58,7 +71,7 @@ export function ChatList({
             </button>
           )}
         </div>
-
+      </div>
         <div className="relative">
           <Search
             size={14}

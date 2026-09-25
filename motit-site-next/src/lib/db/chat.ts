@@ -67,6 +67,10 @@ export type ChatMessageItem = {
   }>;
   reactions: Array<{ emoji: string; user_uuid: string }>;
   read_receipts: Array<{ user_uuid: string; read_at: Date | null }>;
+
+  forwarded_from_message_uuid: string | null;
+  forwarded_from_chat_uuid: string | null;
+  forwarded_from_user_uuid: string | null;
 };
 
 // --------------------------------------------
@@ -307,6 +311,7 @@ export async function getMessages(
     where: {
       chat_uuid: chatUuid,
       deleted_at: null,
+      deletions: { none: { user_uuid: userUuid } },
       ...(before ? { created_at: { lt: new Date(before) } } : {}),
     },
     orderBy: { created_at: "desc" },
@@ -347,6 +352,9 @@ export async function getMessages(
     })),
     reactions: m.reactions,
     read_receipts: m.read_receipts,
+    forwarded_from_message_uuid: m.forwarded_from_message_uuid,
+    forwarded_from_chat_uuid: m.forwarded_from_chat_uuid,
+    forwarded_from_user_uuid: m.forwarded_from_user_uuid,
   }));
 };
 
@@ -445,20 +453,181 @@ export async function sendMessage(params: {
       attachments: message.attachments.map((a) => ({ uuid: a.uuid, file: a.file })),
       reactions: message.reactions,
       read_receipts: message.read_receipts,
+      forwarded_from_message_uuid: message.forwarded_from_message_uuid,
+      forwarded_from_chat_uuid: message.forwarded_from_chat_uuid,
+      forwarded_from_user_uuid: message.forwarded_from_user_uuid,
     };
   });
 };
+
+// --------------------------------------------
+// Удаление сообщения
+// --------------------------------------------
+export async function deleteMessageForUser(
+  messageUuid: string,
+  userUuid: string,
+  scope: "self" | "everyone",
+) {
+  const message = await prisma.chat_messages.findUnique({
+    where: { uuid: messageUuid },
+    select: { user_uuid: true, chat_uuid: true },
+  });
+  if (!message) throw new Error("Сообщение не найдено");
+
+  if (scope === "everyone") {
+    if (message.user_uuid !== userUuid) {
+      throw new Error("Только автор может удалить для всех");
+    }
+
+    await prisma.chat_messages.update({
+      where: { uuid: messageUuid },
+      data: { deleted_at: new Date(), content: "" },
+    });
+
+    return { scope: "everyone" as const, chatUuid: message.chat_uuid };
+  }
+
+  await prisma.chat_message_deletions.upsert({
+    where: {
+      message_uuid_user_uuid: {
+        message_uuid: messageUuid,
+        user_uuid: userUuid,
+      },
+    },
+    create: {
+      message_uuid: messageUuid,
+      user_uuid: userUuid,
+      created_at: new Date(),
+    },
+    update: {},
+  });
+
+  return { scope: "self" as const, chatUuid: message.chat_uuid };
+}
+
+// --------------------------------------------
+// Форвардинг сообщения
+// --------------------------------------------
+export async function forwardMessage(params: {
+  messageUuid: string;
+  targetChatUuids: string[];
+  userUuid: string;
+}) {
+  const { messageUuid, targetChatUuids, userUuid } = params;
+
+  if (targetChatUuids.length === 0) {
+    throw new Error("Не выбрано ни одного чата");
+  }
+
+  const original = await prisma.chat_messages.findUnique({
+    where: { uuid: messageUuid },
+    include: { attachments: true },
+  });
+  if (!original) throw new Error("Сообщение не найдено");
+
+  const created: string[] = [];
+
+  for (const chatUuid of targetChatUuids) {
+    const member = await prisma.chat_members.findUnique({
+      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+    });
+    if (!member) continue;
+
+    const now = new Date();
+
+    const msg = await prisma.chat_messages.create({
+      data: {
+        uuid: randomUUID(),
+        chat_uuid: chatUuid,
+        user_uuid: userUuid,
+        kind: "text",
+        content: original.content,
+        forwarded_from_message_uuid: original.uuid,
+        forwarded_from_chat_uuid: original.chat_uuid,
+        forwarded_from_user_uuid: original.user_uuid,
+        created_at: now,
+        attachments: original.attachments.length
+          ? {
+              create: original.attachments.map((a) => ({
+                uuid: randomUUID(),
+                file_id: a.file_id,
+                created_at: now,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        user: {
+          select: { uuid: true, full_name: true, username: true, avatar_url: true },
+        },
+        attachments: {
+          include: {
+            file: {
+              select: { id: true, uuid: true, name: true, url: true, mime: true, size: true },
+            },
+          },
+        },
+        reactions: { select: { emoji: true, user_uuid: true } },
+        read_receipts: { select: { user_uuid: true, read_at: true } },
+      },
+    });
+
+    await prisma.chats.update({
+      where: { uuid: chatUuid },
+      data: { last_message_at: now, updated_at: now },
+    });
+
+    await prisma.chat_members.updateMany({
+      where: { chat_uuid: chatUuid, user_uuid: { not: userUuid } },
+      data: { unread_count: { increment: 1 } },
+    });
+
+    created.push(msg.uuid);
+  }
+
+  return { forwarded: created.length, messageUuids: created };
+}
 
 // --------------------------------------------
 // Отметить чат прочитанным
 // --------------------------------------------
 export async function markChatAsRead(chatUuid: string, userUuid: string) {
   const now = new Date();
-  return prisma.chat_members.update({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
-    data: { last_read_at: now, unread_count: 0 },
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Обновляем last_read_at + unread_count
+    await tx.chat_members.update({
+      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+      data: { last_read_at: now, unread_count: 0 },
+    });
+
+    // 2. Находим все сообщения, которые пользователь ещё не читал
+    //    (не свои, не удалённые, без его read_receipt)
+    const unread = await tx.chat_messages.findMany({
+      where: {
+        chat_uuid: chatUuid,
+        user_uuid: { not: userUuid },
+        deleted_at: null,
+        read_receipts: { none: { user_uuid: userUuid } },
+      },
+      select: { uuid: true },
+    });
+
+    // 3. Создаём read_receipts для каждого
+    if (unread.length > 0) {
+      await tx.chat_read_receipts.createMany({
+        data: unread.map((m) => ({
+          message_uuid: m.uuid,
+          user_uuid: userUuid,
+          read_at: now,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    return { markedCount: unread.length };
   });
-};
+}
 
 // --------------------------------------------
 // Участники
@@ -563,3 +732,40 @@ export async function searchUsersForChat(
     orderBy: { full_name: "asc" },
   });
 };
+
+// --------------------------------------------
+// Saved Messages — чат с самим собой
+// --------------------------------------------
+export async function getOrCreateSavedChat(userUuid: string) {
+  const directKey = `saved:${userUuid}`;
+
+  const existing = await prisma.chats.findUnique({
+    where: { direct_key: directKey },
+  });
+  if (existing) return existing;
+
+  return prisma.$transaction(async (tx) => {
+    const chat = await tx.chats.create({
+      data: {
+        uuid: randomUUID(),
+        kind: "saved",
+        direct_key: directKey,
+        name: "Saved Messages",
+        created_by_uuid: userUuid,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    await tx.chat_members.create({
+      data: {
+        uuid: randomUUID(),
+        chat_uuid: chat.uuid,
+        user_uuid: userUuid,
+        role: "owner",
+      },
+    });
+
+    return chat;
+  });
+}
