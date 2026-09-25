@@ -1,7 +1,7 @@
 // src/hooks/useChatSocket.ts
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { getSocket } from "@/lib/socket-client";
 
 type NewMessageHandler = (msg: {
@@ -27,25 +27,22 @@ type PresenceHandler = (payload: {
 export function useChatSocket({
   userUuid,
   chatUuids,
-  onMessage,
-  onTyping,
-  onPresence,
+  onMessageAction,
+  onTypingAction,
+  onPresenceAction,
 }: {
   userUuid: string;
   chatUuids: string[];
-  onMessage?: NewMessageHandler;
-  onTyping?: TypingHandler;
-  onPresence?: PresenceHandler;
+  onMessageAction?: NewMessageHandler;
+  onTypingAction?: TypingHandler;
+  onPresenceAction?: PresenceHandler;
 }) {
-  const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
-
   useEffect(() => {
     const socket = getSocket(userUuid);
-    socketRef.current = socket;
 
-    const handleMessage: NewMessageHandler = (msg) => onMessage?.(msg);
-    const handleTyping: TypingHandler = (p) => onTyping?.(p);
-    const handlePresence: PresenceHandler = (p) => onPresence?.(p);
+    const handleMessage: NewMessageHandler = (msg) => onMessageAction?.(msg);
+    const handleTyping: TypingHandler = (p) => onTypingAction?.(p);
+    const handlePresence: PresenceHandler = (p) => onPresenceAction?.(p);
 
     socket.on("message:new", handleMessage);
     socket.on("typing", handleTyping);
@@ -62,5 +59,5 @@ export function useChatSocket({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUuid, chatUuids.join(",")]);
 
-  return socketRef.current;
+  // ничего не возвращаем — socket доступен через getSocket()
 }
