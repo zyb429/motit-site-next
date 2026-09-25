@@ -65,6 +65,7 @@
     "critters": "^0.0.23",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "emoji-picker-react": "^4.22.2",
     "gsap": "^3.15.0",
     "input-otp": "^1.4.2",
     "ioredis": "^6.0.0",

@@ -2,14 +2,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Reply,
-  Copy,
-  Pencil,
-  Trash2,
-  Smile,
-  Forward,
-} from "lucide-react";
+import { Reply, Copy, Pencil, Trash2, Forward } from "lucide-react";
+import { EmojiPickerButton } from "./EmojiPickerButton";
 
 export type MessageContextMenuProps = {
   x: number;
@@ -108,14 +102,12 @@ export function MessageContextMenu({
               {emoji}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => run(() => onReactAction?.("more"))}
-            className="w-8 h-8 rounded-lg hover:bg-(--bg-primary) flex items-center justify-center text-(--text-muted)"
-            title="Больше эмодзи"
-          >
-            <Smile size={16} />
-          </button>
+
+          {/* ← Полный пикер вместо "more" */}
+          <EmojiPickerButton
+            variant="menu"
+            onEmojiAction={(emoji) => run(() => onReactAction(emoji))}
+          />
         </div>
       )}
 
