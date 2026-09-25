@@ -23,6 +23,7 @@ export default async function CabinetChatPage({
 
   return (
     <ChatView
+      key={chat.uuid}
       chat={{
         uuid: chat.uuid,
         kind: chat.kind,

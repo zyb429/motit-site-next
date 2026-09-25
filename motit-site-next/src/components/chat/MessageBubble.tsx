@@ -47,11 +47,23 @@ export function MessageBubble({
     () => false,  // server snapshot
   );
 
+  // Системные сообщения (вход/выход, смена статуса)
   if (isSystem) {
     return (
       <div className="text-center py-1">
         <span className="text-xs text-(--text-muted) italic px-2 py-0.5 rounded-full bg-(--bg-primary)">
           {message.content}
+        </span>
+      </div>
+    );
+  }
+
+  // Удалённые сообщения — плашка вместо пузыря
+  if (message.deleted_at) {
+    return (
+      <div className="text-center py-1">
+        <span className="text-xs text-(--text-muted) italic px-2 py-0.5 rounded-full bg-(--bg-primary)">
+          Сообщение удалено
         </span>
       </div>
     );

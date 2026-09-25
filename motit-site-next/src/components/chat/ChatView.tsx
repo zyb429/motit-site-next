@@ -51,6 +51,20 @@ export function ChatView({
 
   const isSaved = chat.kind === "saved";
 
+  const addMessages = useCallback(
+    (prev: ChatMessageItem[], incoming: ChatMessageItem[]) => {
+      const seen = new Set(prev.map((m) => m.uuid));
+      const unique = incoming.filter((m) => {
+        if (!m?.uuid) return false;         // ← главное
+        if (seen.has(m.uuid)) return false;
+        seen.add(m.uuid);
+        return true;
+      });
+      return unique.length ? [...prev, ...unique] : prev;
+    },
+    [],
+  );
+
   const { signalTyping } = useTypingIndicator(currentUserUuid, chat.uuid);
 
   const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -98,30 +112,32 @@ export function ChatView({
     chatUuids,
     onMessageAction: useCallback(
       (msg: Parameters<NewMessageHandler>[0]) => {
+        if (!msg?.uuid) return;
         if (msg.user?.uuid === currentUserUuid) return;
-        setMessages((prev) => [
-          ...prev,
-          {
-            uuid: msg.uuid,
-            chat_uuid: msg.chat_uuid,
-            kind: msg.kind as ChatMessageItem["kind"],
-            content: msg.content,
-            reply_to_uuid: null,
-            edited_at: null,
-            deleted_at: null,
-            created_at: msg.created_at as unknown as Date,
-            user: msg.user,
-            attachments: [],
-            reactions: [],
-            read_receipts: [],
-            forwarded_from_message_uuid: null,
-            forwarded_from_chat_uuid: null,
-            forwarded_from_user_uuid: null,
-          },
-        ]);
+        setMessages((prev) =>
+          addMessages(prev, [
+            {
+              uuid: msg.uuid,
+              chat_uuid: msg.chat_uuid,
+              kind: msg.kind as ChatMessageItem["kind"],
+              content: msg.content,
+              reply_to_uuid: null,
+              edited_at: null,
+              deleted_at: null,
+              created_at: msg.created_at as unknown as Date,
+              user: msg.user,
+              attachments: [],
+              reactions: [],
+              read_receipts: [],
+              forwarded_from_message_uuid: null,
+              forwarded_from_chat_uuid: null,
+              forwarded_from_user_uuid: null,
+            },
+          ]),
+        );
         if (typeof document !== "undefined" && document.hasFocus()) markAsRead();
       },
-      [currentUserUuid, markAsRead],
+      [currentUserUuid, markAsRead, addMessages],
     ),
     onTypingAction: useCallback(
       (payload: Parameters<TypingHandler>[0]) => {
@@ -163,7 +179,7 @@ export function ChatView({
       (payload: { messageUuid: string }) => {
         setMessages((prev) =>
           prev.map((m) =>
-            m.uuid === payload.messageUuid
+            m.uuid === payload.messageUuid && !m.deleted_at
               ? { ...m, deleted_at: new Date(), content: "" }
               : m,
           ),
@@ -188,11 +204,35 @@ export function ChatView({
         throw new Error(typeof d.error === "string" ? d.error : "Ошибка");
       }
       const data = await res.json();
-      setMessages((prev) => [...prev, data.data]);
+      if (!data?.data?.uuid) return;
+      setMessages((prev) => addMessages(prev, [data.data]));
       lastMarkedCountRef.current = messages.length + 1;
       setReplyTo(null);
     },
-    [chat.uuid, replyTo, messages.length],
+    [chat.uuid, replyTo, messages.length, addMessages],
+  );
+
+  const handleAttach = useCallback(
+    async (files: File[]) => {
+      const form = new FormData();
+      for (const f of files) form.append("files", f);
+
+      const res = await fetch(`/api/chat/chats/${chat.uuid}/attachments`, {
+        method: "POST",
+        body: form, // Content-Type НЕ ставим — браузер сам добавит boundary
+      });
+
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(typeof d.error === "string" ? d.error : "Ошибка загрузки");
+      }
+
+      const data = await res.json();
+      const list = (data?.data ?? []).filter((m: ChatMessageItem) => m?.uuid);
+      if (list.length === 0) return;
+      setMessages((prev) => addMessages(prev, list));
+    },
+    [chat.uuid, addMessages],
   );
 
   const handleEditSubmit = useCallback(
@@ -231,10 +271,19 @@ export function ChatView({
       }
 
       if (scope === "self") {
-        // Убираем из локального списка
+        // Убираем только у себя
         setMessages((prev) => prev.filter((m) => m.uuid !== deleting.uuid));
+      } else {
+        // scope="everyone" — сразу помечаем как удалённое,
+        // не дожидаясь WebSocket (он у нас пока не работает)
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.uuid === deleting.uuid && !m.deleted_at
+              ? { ...m, deleted_at: new Date(), content: "" }
+              : m,
+          ),
+        );
       }
-      // Для scope="everyone" — обновление придёт через WebSocket (message:deleted)
 
       setDeleting(null);
     },
@@ -290,25 +339,28 @@ export function ChatView({
 
   return (
     <>
-      <ChatWindow
-        chat={chat}
-        currentUserUuid={currentUserUuid}
-        messages={messages}
-        onSendMessageAction={handleSend}
-        onTypingAction={signalTyping}
-        typingUsers={typingUsers}
-        replyTo={replyTo}
-        onReplyAction={setReplyTo}
-        onCancelReplyAction={() => setReplyTo(null)}
-        editing={editing}
-        onEditAction={setEditing}
-        onCancelEditAction={() => setEditing(null)}
-        onEditSubmitAction={handleEditSubmit}
-        onDeleteAction={(message) => setDeleting(message)}
-        onCopyAction={handleCopy}
-        onReactAction={handleReact}
-        onForwardAction={openForward}
-      />
+      <div className="h-full min-h-0 flex flex-col">
+        <ChatWindow
+          chat={chat}
+          currentUserUuid={currentUserUuid}
+          messages={messages}
+          onSendMessageAction={handleSend}
+          onTypingAction={signalTyping}
+          typingUsers={typingUsers}
+          replyTo={replyTo}
+          onReplyAction={setReplyTo}
+          onCancelReplyAction={() => setReplyTo(null)}
+          editing={editing}
+          onEditAction={setEditing}
+          onCancelEditAction={() => setEditing(null)}
+          onEditSubmitAction={handleEditSubmit}
+          onDeleteAction={(message) => setDeleting(message)}
+          onCopyAction={handleCopy}
+          onReactAction={handleReact}
+          onForwardAction={openForward}
+          onAttachAction={handleAttach}
+        />
+      </div>
 
       {deleting && (
         <DeleteMessageDialog

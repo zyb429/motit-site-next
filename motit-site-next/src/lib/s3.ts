@@ -1,4 +1,4 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const endpoint = process.env.S3_ENDPOINT || "http://localhost:9000";
 const region = process.env.S3_REGION || "us-east-1";
@@ -18,4 +18,20 @@ export const S3_PUBLIC_URL =
 
 export function publicUrl(key: string): string {
   return `${S3_PUBLIC_URL.replace(/\/+$/, "")}/${key.replace(/^\/+/, "")}`;
+}
+
+export async function uploadToS3(params: {
+  key: string;
+  body: Buffer;
+  contentType: string;
+}): Promise<string> {
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: params.key,
+      Body: params.body,
+      ContentType: params.contentType,
+    }),
+  );
+  return publicUrl(params.key);
 }

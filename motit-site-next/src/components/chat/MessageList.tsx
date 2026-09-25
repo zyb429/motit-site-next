@@ -32,10 +32,21 @@ export function MessageList({
   const containerRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
 
+  // Защита от дубликатов по uuid
+  const uniqueMessages = useMemo(() => {
+    const seen = new Set<string>();
+    return messages.filter((m) => {
+      if (!m.uuid) return false;
+      if (seen.has(m.uuid)) return false;
+      seen.add(m.uuid);
+      return true;
+    });
+  }, [messages]);
+
   // Индекс uuid → message для быстрого поиска replyTo
   const messagesByUuid = useMemo(
-    () => new Map(messages.map((m) => [m.uuid, m])),
-    [messages],
+    () => new Map(uniqueMessages.map((m) => [m.uuid, m])),
+    [uniqueMessages],
   );
 
   useEffect(() => {
@@ -48,20 +59,20 @@ export function MessageList({
     if (isNearBottom) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages.length]);
+  }, [uniqueMessages.length]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    if (prevScrollHeightRef.current > 0 && messages.length > 0) {
+    if (prevScrollHeightRef.current > 0 && uniqueMessages.length > 0) {
       const diff = container.scrollHeight - prevScrollHeightRef.current;
       if (diff > 0) {
         container.scrollTop += diff;
       }
     }
     prevScrollHeightRef.current = container.scrollHeight;
-  }, [messages.length]);
+  }, [uniqueMessages.length]);
 
   const handleScroll = useCallback(() => {
     const container = containerRef.current;
@@ -84,7 +95,7 @@ export function MessageList({
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto p-4 space-y-3"
+      className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3"
     >
       {hasMore && (
         <div className="text-center py-2">
@@ -98,13 +109,13 @@ export function MessageList({
         </div>
       )}
 
-      {messages.length === 0 ? (
+      {uniqueMessages.length === 0 ? (
         <div className="text-center py-12 text-sm text-(--text-muted)">
           Сообщений пока нет. Начните первым!
         </div>
       ) : (
         <>
-          {messages.map((m) => (
+          {uniqueMessages.map((m) => (
             <div key={m.uuid} data-message-uuid={m.uuid}>
               <MessageBubble
                 message={m}

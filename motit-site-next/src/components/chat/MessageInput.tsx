@@ -7,12 +7,14 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from "react";
+import { EmojiPickerButton } from "./EmojiPickerButton";
 import { Send, Paperclip, X, CornerUpLeft, Pencil } from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
 
 export function MessageInput({
   onSendMessageAction,
   onTypingAction,
+  onAttachAction,
   disabled,
   replyTo,
   onCancelReplyAction,
@@ -22,6 +24,7 @@ export function MessageInput({
 }: {
   onSendMessageAction: (content: string) => Promise<void>;
   onTypingAction?: () => void;
+  onAttachAction?: (files: File[]) => Promise<void>;
   disabled?: boolean;
   replyTo?: ChatMessageItem | null;
   onCancelReplyAction?: () => void;
@@ -122,11 +125,37 @@ export function MessageInput({
       )}
 
       <div className="flex items-end gap-2">
+        {/* Скрепка (вложения) */}
         <label className="shrink-0 p-2 rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--bg-primary) transition-colors cursor-pointer">
           <Paperclip size={18} />
-          <input type="file" multiple className="hidden" disabled={disabled || sending} />
+          <input
+            type="file"
+            multiple
+            className="hidden"
+            disabled={disabled || sending}
+              onChange={async (e) => {
+              const files = Array.from(e.target.files ?? []);
+              e.target.value = "";
+              if (files.length === 0) return;
+              setSending(true);
+              try {
+                await onAttachAction?.(files);
+              } finally {
+                setSending(false);
+              }
+            }}
+          />
         </label>
 
+        {/* ← Эмодзи-пикер */}
+        <EmojiPickerButton
+          onEmojiAction={(emoji) => {
+            setText((prev) => prev + emoji);
+            textareaRef.current?.focus();
+          }}
+        />
+
+        {/* Поле ввода */}
         <textarea
           ref={textareaRef}
           value={text}
@@ -138,6 +167,7 @@ export function MessageInput({
           className="flex-1 px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-sm text-(--text-primary) focus:border-(--accent) outline-none resize-none max-h-48 disabled:opacity-50"
         />
 
+        {/* Отправить */}
         <button
           type="button"
           onClick={handleSend}

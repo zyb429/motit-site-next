@@ -42,6 +42,7 @@ type ChatWindowProps = {
   onCopyAction?: (message: ChatMessageItem) => void;
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
+  onAttachAction?: (files: File[]) => Promise<void>;
 };
 
 export function ChatWindow({
@@ -65,6 +66,7 @@ export function ChatWindow({
   onCopyAction,
   onReactAction,
   onForwardAction,
+  onAttachAction,
 }: ChatWindowProps) {
   const typingNames = typingUsers
     .filter((uuid) => uuid !== currentUserUuid)
@@ -74,7 +76,7 @@ export function ChatWindow({
     });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       <ChatHeader
         chat={chat}
         currentUserUuid={currentUserUuid}
@@ -99,6 +101,7 @@ export function ChatWindow({
       <MessageInput
         key={editing?.uuid ?? "new"}
         onSendMessageAction={onSendMessageAction}
+        onAttachAction={onAttachAction}
         onTypingAction={onTypingAction}
         replyTo={replyTo}
         onCancelReplyAction={onCancelReplyAction}
