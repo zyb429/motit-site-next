@@ -9,6 +9,7 @@ import {
   User2,
   Calendar,
   Tag,
+  MessageSquare,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import {
@@ -134,6 +135,17 @@ export default async function AdminTicketPage({
         }))}
         canAssign={user.role === "admin"}
       />
+
+      {/* Ссылка на чат тикета */}
+      {ticket.chat && (
+        <Link
+          href={`/admin/chat/${ticket.chat.uuid}`}
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-(--border) hover:border-(--accent) text-(--text-secondary) hover:text-(--accent) text-sm transition-colors"
+        >
+          <MessageSquare size={16} />
+          Перейти в чат
+        </Link>
+      )}
 
       {/* Клиент */}
       <div className="mt-6 p-4 rounded-xl bg-(--bg-card) border border-(--border)">

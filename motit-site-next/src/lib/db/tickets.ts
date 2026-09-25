@@ -242,6 +242,7 @@ export async function getTicket(
     where: isAgent ? { uuid } : { uuid, client_uuid: user.uuid },
     include: {
       ...ticketInclude,
+      chat: { select: { uuid: true } },
       ticket_comments: {
         where: isAgent ? {} : { is_internal: false },
         include: {
@@ -351,6 +352,32 @@ export async function createTicket(params: {
       },
     });
 
+    // Создаём чат тикета
+    const chat = await tx.chats.create({
+      data: {
+        uuid: randomUUID(),
+        kind: "ticket",
+        ticket_uuid: created.uuid,
+        created_by_uuid: createdByUuid ?? clientUuid,
+        name: created.title,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    // Участники: клиент + назначенный исполнитель (если есть)
+    const memberUuids = new Set<string>([clientUuid]);
+    if (assignedToUuid) memberUuids.add(assignedToUuid);
+
+    await tx.chat_members.createMany({
+      data: [...memberUuids].map((uuid) => ({
+        uuid: randomUUID(),
+        chat_uuid: chat.uuid,
+        user_uuid: uuid,
+        role: uuid === clientUuid ? "owner" : "member",
+      })),
+    });
+
     return created;
   });
 }
@@ -453,6 +480,41 @@ export async function changeStatus(params: {
           changed_by_uuid: changedByUuid,
         },
       });
+
+      // System message в чат тикета
+      const ticketChat = await tx.chats.findUnique({
+        where: { ticket_uuid: ticketUuid },
+        select: { uuid: true },
+      });
+
+      if (ticketChat) {
+        // Определяем имя старого статуса
+        let oldStatusName = "—";
+        if (current?.status_uuid) {
+          const oldStatus = await tx.statuses.findUnique({
+            where: { uuid: current.status_uuid },
+            select: { name: true },
+          });
+          oldStatusName = oldStatus?.name ?? "—";
+        }
+
+        const now = new Date();
+        await tx.chat_messages.create({
+          data: {
+            uuid: randomUUID(),
+            chat_uuid: ticketChat.uuid,
+            user_uuid: null,
+            kind: "status_change",
+            content: `Статус изменён: ${oldStatusName} → ${status.name}`,
+            created_at: now,
+          },
+        });
+
+        await tx.chats.update({
+          where: { uuid: ticketChat.uuid },
+          data: { last_message_at: now, updated_at: now },
+        });
+      }
     }
 
     return updated;
@@ -468,10 +530,42 @@ export async function assignTicket(params: {
 }) {
   const { ticketUuid, assigneeUuid } = params;
 
-  return prisma.tickets.update({
-    where: { uuid: ticketUuid },
-    data: { assigned_to_uuid: assigneeUuid, updated_at: new Date() },
-    include: ticketInclude,
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.tickets.update({
+      where: { uuid: ticketUuid },
+      data: { assigned_to_uuid: assigneeUuid, updated_at: new Date() },
+      include: ticketInclude,
+    });
+
+    // Синхронизируем участников чата тикета
+    const ticketChat = await tx.chats.findUnique({
+      where: { ticket_uuid: ticketUuid },
+      select: { uuid: true },
+    });
+
+    if (ticketChat && assigneeUuid) {
+      const existing = await tx.chat_members.findUnique({
+        where: {
+          chat_uuid_user_uuid: {
+            chat_uuid: ticketChat.uuid,
+            user_uuid: assigneeUuid,
+          },
+        },
+      });
+
+      if (!existing) {
+        await tx.chat_members.create({
+          data: {
+            uuid: randomUUID(),
+            chat_uuid: ticketChat.uuid,
+            user_uuid: assigneeUuid,
+            role: "member",
+          },
+        });
+      }
+    }
+
+    return updated;
   });
 }
 

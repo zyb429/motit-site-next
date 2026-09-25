@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "backfill:status-history": "bun run scripts/backfill-status-history.ts",
+    "backfill:chats": "bun run scripts/backfill-chats.ts",
     "ws": "bun run server.ts"
   },
   "dependencies": {

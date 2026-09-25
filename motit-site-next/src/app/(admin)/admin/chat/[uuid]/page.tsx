@@ -33,7 +33,7 @@ export default async function ChatPage({
         })),
       }}
       currentUserUuid={user.uuid}
-      initialMessages={messages.reverse()}
+      initialMessages={[...messages].reverse()}
     />
   );
 }

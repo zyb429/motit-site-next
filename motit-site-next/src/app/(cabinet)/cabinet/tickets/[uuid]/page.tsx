@@ -1,7 +1,7 @@
 // src/app/(cabinet)/cabinet/tickets/[uuid]/page.tsx
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Paperclip } from "lucide-react";
+import { ArrowLeft, Paperclip, MessageSquare } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { getTicket } from "@/lib/db/tickets";
 import { StatusBadge } from "@/components/helpdesk/StatusBadge";
@@ -64,6 +64,17 @@ export default async function TicketPage({
           <PriorityBadge code={ticket.priorities?.code} />
         </div>
       </div>
+
+      {/* Ссылка на чат тикета */}
+      {ticket.chat && (
+        <Link
+          href={`/cabinet/chat/${ticket.chat.uuid}`}
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-(--border) hover:border-(--accent) text-(--text-secondary) hover:text-(--accent) text-sm transition-colors"
+        >
+          <MessageSquare size={16} />
+          Перейти в чат
+        </Link>
+      )}
 
       {ticket.description && (
         <div className="mt-6 p-4 rounded-xl bg-(--bg-card) border border-(--border) text-(--text-secondary) whitespace-pre-wrap">
