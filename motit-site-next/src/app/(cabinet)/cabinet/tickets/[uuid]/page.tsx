@@ -33,7 +33,7 @@ export default async function TicketPage({
   ]);
 
   return (
-    <div className="p-8 w-full max-w-3xl mx-auto">
+    <div className="p-8 w-full max-w-3xl mx-auto flex-1 min-h-0 overflow-y-auto no-scrollbar">
       <Link
         href="/cabinet/tickets"
         className="inline-flex items-center gap-1 text-sm text-(--text-secondary) hover:text-(--accent) transition-colors"

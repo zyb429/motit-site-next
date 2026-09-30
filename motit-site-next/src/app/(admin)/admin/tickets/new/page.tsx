@@ -34,7 +34,7 @@ export default async function AdminNewTicketPage() {
   ]);
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-8 max-w-3xl flex-1 min-h-0 overflow-y-auto">
       <Link
         href="/admin/tickets"
         className="inline-flex items-center gap-1 text-sm text-(--text-muted) hover:text-(--accent)"

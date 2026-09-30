@@ -9,7 +9,7 @@ export default async function AdminTicketCategoriesPage() {
   const categories = await listTicketCategories({ includeInactive: true });
 
   return (
-    <div className="p-8">
+    <div className="p-8 flex-1 min-h-0 overflow-y-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-(--text-primary)">

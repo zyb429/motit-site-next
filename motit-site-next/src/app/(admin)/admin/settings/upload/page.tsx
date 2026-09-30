@@ -9,7 +9,7 @@ export default async function UploadSettingsPage() {
   const allowed = await getAllowedMime();
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-8 max-w-3xl flex-1 min-h-0 overflow-y-auto">
       <div className="flex items-center gap-3 mb-6">
         <Upload size={20} className="text-(--accent)" />
         <div>

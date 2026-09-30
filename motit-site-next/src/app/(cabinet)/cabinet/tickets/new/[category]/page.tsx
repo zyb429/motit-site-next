@@ -47,7 +47,7 @@ export default async function NewTicketFormPage({
     }));
 
   return (
-    <div className="p-8 w-full max-w-2xl mx-auto">
+    <div className="p-8 w-full max-w-2xl mx-auto flex-1 min-h-0 overflow-y-auto">
       <Link
         href="/cabinet/tickets/new"
         className="inline-flex items-center gap-1 text-sm text-(--text-secondary) hover:text-(--accent) transition-colors"
