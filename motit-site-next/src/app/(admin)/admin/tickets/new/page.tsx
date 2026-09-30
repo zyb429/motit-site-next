@@ -34,44 +34,47 @@ export default async function AdminNewTicketPage() {
   ]);
 
   return (
-    <div className="p-8 max-w-3xl flex-1 min-h-0 overflow-y-auto">
-      <Link
-        href="/admin/tickets"
-        className="inline-flex items-center gap-1 text-sm text-(--text-muted) hover:text-(--accent)"
-      >
-        <ArrowLeft size={14} />
-        К списку обращений
-      </Link>
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-3xl mx-auto w-full">
+        <Link
+          href="/admin/tickets"
+          className="inline-flex items-center gap-1 text-sm text-(--text-muted) hover:text-(--accent)"
+        >
+          <ArrowLeft size={14} />
+          К списку обращений
+        </Link>
 
-      <h1 className="text-2xl font-bold text-(--text-primary) mt-4">
-        Новое обращение
-      </h1>
-      <p className="text-sm text-(--text-muted) mt-1">
-        Выберите клиента и заполните данные
-      </p>
+        <h1 className="text-2xl font-bold text-(--text-primary) mt-4">
+          Новое обращение
+        </h1>
+        <p className="text-sm text-(--text-muted) mt-1">
+          Выберите клиента и заполните данные
+        </p>
 
-      {clients.length === 0 ? (
-        <div className="mt-8 p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/15 text-yellow-400 text-sm">
-          Нет ни одного активного клиента с ролью «client». Создайте
-          пользователя и назначьте ему роль.
-        </div>
-      ) : (
-        <NewTicketForm
-          mode="admin"
-          categories={categories.map((c) => ({
-            uuid: c.uuid,
-            name: c.name,
-            icon: c.icon,
-          }))}
-          clients={clients.map((c) => ({
-            uuid: c.uuid,
-            name: c.full_name || c.username || "—",
-            email: c.email ?? "",
-            phone: c.phone ?? "",
-            organizationUuid: c.client_organizations[0]?.organization_uuid ?? null,
-          }))}
-        />
-      )}
+        {clients.length === 0 ? (
+          <div className="mt-8 p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/15 text-yellow-400 text-sm">
+            Нет ни одного активного клиента с ролью «client». Создайте
+            пользователя и назначьте ему роль.
+          </div>
+        ) : (
+          <NewTicketForm
+            mode="admin"
+            categories={categories.map((c) => ({
+              uuid: c.uuid,
+              name: c.name,
+              icon: c.icon,
+            }))}
+            clients={clients.map((c) => ({
+              uuid: c.uuid,
+              name: c.full_name || c.username || "—",
+              email: c.email ?? "",
+              phone: c.phone ?? "",
+              organizationUuid:
+                c.client_organizations[0]?.organization_uuid ?? null,
+            }))}
+          />
+        )}
+      </div>
     </div>
   );
 }

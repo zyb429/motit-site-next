@@ -33,9 +33,9 @@ export default async function OrganizationsPage() {
   const organizations = await getOrganizations();
 
   return (
-    <div className="min-h-screen bg-(--bg-primary)">
-      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10 h-20">
-        <div className="container mx-auto px-6 h-full flex items-center max-w-6xl">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
+      <header className="shrink-0 bg-(--bg-card) border-b border-(--border)">
+        <div className="h-20 px-4 sm:px-6 max-w-6xl mx-auto w-full flex items-center">
           <div className="flex items-center justify-between gap-4 w-full">
             <div className="flex items-center gap-3">
               <Link
@@ -62,8 +62,10 @@ export default async function OrganizationsPage() {
         </div>
       </header>
 
-      <main className="px-6 py-8">
-        <OrganizationsTable organizations={organizations} />
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto w-full">
+          <OrganizationsTable organizations={organizations} />
+        </div>
       </main>
     </div>
   );

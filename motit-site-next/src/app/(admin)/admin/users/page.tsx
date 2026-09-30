@@ -14,7 +14,7 @@ async function getUsers() {
       avatar: true,
       client_organizations: {
         include: { organizations: true },
-      }
+      },
     },
   });
 
@@ -50,7 +50,7 @@ async function getUsers() {
           role_in_company: co.role_in_company ?? "member",
           is_primary: co.is_primary ?? false,
           is_active: co.organizations.is_active ?? true,
-      })) ?? [],
+        })) ?? [],
     };
   });
 }
@@ -86,37 +86,46 @@ export default async function UsersPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-(--bg-primary)">
-      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10 h-20">
-        <div className="container mx-auto px-6 h-full flex items-center max-w-6xl">
-          <div className="flex items-center justify-between gap-4 w-full">
-            <div className="flex items-center gap-3">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
+      <header className="shrink-0 bg-(--bg-card) border-b border-(--border)">
+        <div className="h-20 px-4 sm:px-6 max-w-6xl mx-auto w-full flex items-center">
+          <div className="flex items-center justify-between gap-3 w-full min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <Link
                 href="/admin"
-                className="text-(--text-muted) hover:text-(--text-primary) transition-colors"
+                className="text-(--text-muted) hover:text-(--text-primary) transition-colors shrink-0"
+                aria-label="Назад"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
-                <Users className="w-6 h-6 text-(--accent)" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-(--accent)" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-(--text-primary)">
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold text-(--text-primary) truncate">
                   Пользователи
                 </h1>
-                <p className="text-sm text-(--text-secondary)">
+                <p className="text-xs sm:text-sm text-(--text-secondary) truncate">
                   {users.length} пользователей
                 </p>
               </div>
             </div>
 
-            <CreateUserButton roles={roles} />
+            <div className="shrink-0">
+              <CreateUserButton roles={roles} />
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="px-6 py-8">
-        <UsersTable users={users} roles={roles} allOrganizations={allOrganizations} />
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto w-full">
+          <UsersTable
+            users={users}
+            roles={roles}
+            allOrganizations={allOrganizations}
+          />
+        </div>
       </main>
     </div>
   );

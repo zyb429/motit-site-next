@@ -98,7 +98,7 @@ export default async function AdminTicketsPage({
   ]);
 
   return (
-    <div className="p-8 flex-1 min-h-0 overflow-y-auto">
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-(--text-primary)">Обращения</h1>
         <p className="text-sm text-(--text-muted) mt-1">Всего: {total}</p>

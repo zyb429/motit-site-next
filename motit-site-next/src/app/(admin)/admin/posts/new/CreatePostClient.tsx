@@ -388,7 +388,7 @@ export default memo(function CreatePostClient({
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-(--bg-primary)">
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-(--bg-primary) p-4">
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-6 py-4 rounded-lg max-w-md">
           <p className="font-medium">Доступ запрещен</p>
           <p className="text-sm mt-1">
@@ -404,33 +404,31 @@ export default memo(function CreatePostClient({
   }
 
   return (
-    <div className="min-h-screen bg-(--bg-primary)">
-      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4 max-w-6xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
+      <header className="shrink-0 bg-(--bg-card) border-b border-(--border)">
+        <div className="px-4 sm:px-6 py-4 max-w-6xl mx-auto w-full">
+          <div className="flex items-center justify-between gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <Link
                 href="/admin"
-                className="text-(--text-muted) hover:text-(--text-primary) transition-colors"
+                className="text-(--text-muted) hover:text-(--text-primary) transition-colors shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center">
-                  <PlusCircle className="w-6 h-6 text-(--accent)" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
+                  <PlusCircle className="w-5 h-5 sm:w-6 sm:h-6 text-(--accent)" />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-(--text-primary)">
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-xl font-bold text-(--text-primary) truncate">
                     {isEditMode ? "Редактировать пост" : "Создать пост"}
                   </h1>
-                  <p className="text-sm text-(--text-secondary)">
+                  <p className="text-xs sm:text-sm text-(--text-secondary) truncate">
                     Автор: {user.full_name || user.firstname || user.username}
                   </p>
                 </div>
-              </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => router.back()}
@@ -469,7 +467,8 @@ export default memo(function CreatePostClient({
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8 max-w-6xl">
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto w-full">
         <form
           id="post-form"
           onSubmit={handleSubmit(onSubmit)}
@@ -622,6 +621,7 @@ export default memo(function CreatePostClient({
             )}
           </div>
         </form>
+        </div>
       </main>
     </div>
   );

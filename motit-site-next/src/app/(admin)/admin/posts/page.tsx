@@ -143,25 +143,25 @@ export default async function AdminPostsPage({
   }
 
   return (
-    <div className="min-h-screen bg-(--bg-primary)">
-      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10 h-20">
-        <div className="container mx-auto px-6 h-full flex items-center max-w-6xl">
-          <div className="flex items-center justify-between gap-4 w-full">
-            <div className="flex items-center gap-3">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
+      <header className="shrink-0 bg-(--bg-card) border-b border-(--border)">
+        <div className="h-20 flex items-center px-4 sm:px-6 max-w-6xl mx-auto w-full">
+          <div className="flex items-center justify-between gap-3 w-full min-w-0">
+            <div className="flex items-center gap-3 min-w-0">
               <Link
                 href="/admin"
-                className="text-(--text-muted) hover:text-(--text-primary) transition-colors"
+                className="text-(--text-muted) hover:text-(--text-primary) transition-colors shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
-              <div className="w-12 h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
-                <FileText className="w-6 h-6 text-(--accent)" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-(--accent)" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-(--text-primary)">
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold text-(--text-primary) truncate">
                   Посты
                 </h1>
-                <p className="text-sm text-(--text-secondary)">
+                <p className="text-xs sm:text-sm text-(--text-secondary) truncate">
                   Управление статьями и новостями
                 </p>
               </div>
@@ -169,7 +169,7 @@ export default async function AdminPostsPage({
 
             <Link
               href="/admin/posts/new"
-              className="px-6 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) flex items-center gap-2 shadow-sm hover:shadow transition-all font-medium"
+              className="px-4 sm:px-6 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) flex items-center gap-2 shadow-sm hover:shadow transition-all font-medium shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Создать пост</span>
@@ -179,7 +179,8 @@ export default async function AdminPostsPage({
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8 max-w-6xl">
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto w-full">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-(--bg-card) rounded-xl border border-(--border) p-4 shadow-sm">
             <div className="flex items-center justify-between">
@@ -227,7 +228,7 @@ export default async function AdminPostsPage({
         <div className="bg-(--bg-card) rounded-xl border border-(--border) p-4 shadow-sm mb-6">
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
             <form
-              className="flex-1 relative"
+              className="flex-1 min-w-0 relative"
               action="/admin/posts"
               method="GET"
             >
@@ -244,7 +245,7 @@ export default async function AdminPostsPage({
               )}
             </form>
 
-            <div className="flex items-center gap-1 bg-(--bg-secondary) rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-(--bg-secondary) rounded-lg p-1 overflow-x-auto no-scrollbar shrink-0">
               {[
                 { key: "all", label: "Все", count: totalCount },
                 {
@@ -668,6 +669,7 @@ export default async function AdminPostsPage({
             {totalCount === 1 ? "поста" : "постов"}
           </p>
         )}
+        </div>
       </main>
     </div>
   );

@@ -12,9 +12,9 @@ export default async function GeneralSettingsPage() {
   const settings = await getSettings();
 
   return (
-    <div className="min-h-screen bg-(--bg-primary)">
-      <header className="bg-(--bg-card) border-b border-(--border) sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4 max-w-3xl">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
+      <header className="shrink-0 bg-(--bg-card) border-b border-(--border)">
+        <div className="px-4 sm:px-6 py-4 max-w-3xl mx-auto w-full">
           <div className="flex items-center gap-3">
             <Link
               href="/admin/settings"
@@ -37,8 +37,10 @@ export default async function GeneralSettingsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8 max-w-3xl">
-        <GeneralSettingsForm initial={settings} />
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-3xl mx-auto w-full">
+          <GeneralSettingsForm initial={settings} />
+        </div>
       </main>
     </div>
   );

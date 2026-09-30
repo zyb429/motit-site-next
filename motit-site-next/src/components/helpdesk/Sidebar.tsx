@@ -19,7 +19,7 @@ export function SupportSidebar({ user }: { user: CurrentUser }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 shrink-0 border-r border-(--border) bg-(--bg-card) flex flex-col">
+    <aside className="hidden lg:flex w-56 shrink-0 border-r border-(--border) bg-(--bg-card) flex-col">
       <div className="p-4 border-b border-(--border)">
         <Link
           href="/"

@@ -18,7 +18,7 @@ export function StatsSidebar({ user }: { user: CurrentUser }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 shrink-0 border-r border-[rgba(45,212,191,0.08)] bg-[#0f2832] flex flex-col">
+    <aside className="hidden lg:flex w-56 shrink-0 border-r border-[rgba(45,212,191,0.08)] bg-[#0f2832] flex-col">
       <div className="p-4 border-b border-[rgba(45,212,191,0.08)]">
         <Link
           href="/"

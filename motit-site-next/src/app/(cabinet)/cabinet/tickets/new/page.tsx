@@ -9,7 +9,7 @@ export default async function NewTicketCategoryPage() {
   const categories = await listTicketCategories();
 
   return (
-    <div className="p-8 w-full max-w-2xl mx-auto flex-1 min-h-0 overflow-y-auto">
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <Link
         href="/cabinet/tickets"
         className="inline-flex items-center gap-1 text-sm text-(--text-secondary) hover:text-(--accent) transition-colors"

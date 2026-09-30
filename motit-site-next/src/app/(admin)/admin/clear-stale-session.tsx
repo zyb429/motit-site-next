@@ -10,7 +10,7 @@ export function ClearStaleSession({ from = "/admin" }: { from?: string }) {
   }, [from]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-sm opacity-70">
+    <div className="fixed inset-0 flex items-center justify-center text-sm opacity-70 bg-(--bg-primary)">
       Очищаем сессию…
     </div>
   );
