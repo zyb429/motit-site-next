@@ -78,7 +78,7 @@ export function MessageInput({
   }
 
   return (
-    <div className="p-3 border-t border-(--border) bg-(--bg-card)">
+    <div className="shrink-0 p-3 border-t border-(--border) bg-(--bg-card)">
       {/* Reply preview */}
       {replyTo && !editing && (
         <div className="mb-2 flex items-start gap-2 px-2 py-1.5 rounded-lg bg-(--bg-primary) border-l-2 border-(--accent)">

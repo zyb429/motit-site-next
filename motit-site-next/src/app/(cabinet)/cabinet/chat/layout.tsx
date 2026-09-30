@@ -17,7 +17,7 @@ export default async function CabinetChatLayout({
 
   return (
     <div className="flex-1 min-h-0 flex">
-      <aside className="w-80 border-r border-(--border) shrink-0 overflow-hidden">
+      <aside className="w-80 border-r border-(--border) shrink-0 h-full flex flex-col overflow-hidden">
         <ChatListSidebar
           initialChats={chats}
           currentUserUuid={user.uuid}

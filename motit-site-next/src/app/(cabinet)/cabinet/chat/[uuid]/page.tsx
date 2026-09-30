@@ -35,6 +35,7 @@ export default async function CabinetChatPage({
       }}
       currentUserUuid={user.uuid}
       initialMessages={[...messages].reverse()}
+      basePath="/cabinet/chat"
     />
   );
 }

@@ -1,18 +1,51 @@
 // src/app/api/chat/chats/[uuid]/route.ts
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { getChatByUuid } from "@/lib/db/chat";
+import { updateChat, deleteChat } from "@/lib/db/chat";
 
-export async function GET(
-  _: Request,
+export async function PATCH(
+  req: Request,
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
-  const chat = await getChatByUuid(uuid, user.uuid);
-  if (!chat) return NextResponse.json({ error: "Не найдено" }, { status: 404 });
+  const body = await req.json().catch(() => ({}));
 
-  return NextResponse.json({ data: chat });
+  try {
+    const chat = await updateChat({
+      chatUuid: uuid,
+      byUuid: user.uuid,
+      name: body.name,
+      description: body.description,
+      avatar_url: body.avatar_url,
+    });
+    return NextResponse.json({ success: true, data: chat });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Ошибка" },
+      { status: 400 },
+    );
+  }
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ uuid: string }> },
+) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+
+  const { uuid } = await params;
+
+  try {
+    await deleteChat(uuid, user.uuid);
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Ошибка" },
+      { status: 400 },
+    );
+  }
 }

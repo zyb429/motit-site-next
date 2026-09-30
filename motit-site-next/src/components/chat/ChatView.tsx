@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { ChatWindow } from "./ChatWindow";
 import { DeleteMessageDialog } from "./DeleteMessageDialog";
 import { ForwardDialog } from "./ForwardDialog";
@@ -36,11 +37,15 @@ export function ChatView({
   chat,
   currentUserUuid,
   initialMessages,
+  basePath,
 }: {
   chat: Chat;
   currentUserUuid: string;
   initialMessages: ChatMessageItem[];
+  basePath: string;
 }) {
+  const router = useRouter();
+
   const [messages, setMessages] = useState<ChatMessageItem[]>(initialMessages);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [replyTo, setReplyTo] = useState<ChatMessageItem | null>(null);
@@ -55,7 +60,7 @@ export function ChatView({
     (prev: ChatMessageItem[], incoming: ChatMessageItem[]) => {
       const seen = new Set(prev.map((m) => m.uuid));
       const unique = incoming.filter((m) => {
-        if (!m?.uuid) return false;         // ← главное
+        if (!m?.uuid) return false;
         if (seen.has(m.uuid)) return false;
         seen.add(m.uuid);
         return true;
@@ -77,7 +82,9 @@ export function ChatView({
     if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
     markReadTimerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/chat/chats/${chat.uuid}/read`, { method: "POST" });
+        const res = await fetch(`/api/chat/chats/${chat.uuid}/read`, {
+          method: "POST",
+        });
         if (res.ok) lastMarkedCountRef.current = messages.length;
       } catch {}
     }, 400);
@@ -143,7 +150,8 @@ export function ChatView({
       (payload: Parameters<TypingHandler>[0]) => {
         if (payload.userUuid === currentUserUuid) return;
         setTypingUsers((prev) => {
-          if (payload.typing && !prev.includes(payload.userUuid)) return [...prev, payload.userUuid];
+          if (payload.typing && !prev.includes(payload.userUuid))
+            return [...prev, payload.userUuid];
           if (!payload.typing) return prev.filter((u) => u !== payload.userUuid);
           return prev;
         });
@@ -161,7 +169,9 @@ export function ChatView({
         setMessages((prev) =>
           prev.map((m) => {
             if (m.user?.uuid !== currentUserUuid) return m;
-            const hasReceipt = m.read_receipts.some((r) => r.user_uuid === payload.userUuid);
+            const hasReceipt = m.read_receipts.some(
+              (r) => r.user_uuid === payload.userUuid,
+            );
             if (hasReceipt) return m;
             return {
               ...m,
@@ -219,12 +229,14 @@ export function ChatView({
 
       const res = await fetch(`/api/chat/chats/${chat.uuid}/attachments`, {
         method: "POST",
-        body: form, // Content-Type НЕ ставим — браузер сам добавит boundary
+        body: form,
       });
 
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(typeof d.error === "string" ? d.error : "Ошибка загрузки");
+        throw new Error(
+          typeof d.error === "string" ? d.error : "Ошибка загрузки",
+        );
       }
 
       const data = await res.json();
@@ -271,11 +283,8 @@ export function ChatView({
       }
 
       if (scope === "self") {
-        // Убираем только у себя
         setMessages((prev) => prev.filter((m) => m.uuid !== deleting.uuid));
       } else {
-        // scope="everyone" — сразу помечаем как удалённое,
-        // не дожидаясь WebSocket (он у нас пока не работает)
         setMessages((prev) =>
           prev.map((m) =>
             m.uuid === deleting.uuid && !m.deleted_at
@@ -331,15 +340,51 @@ export function ChatView({
       if (!res.ok) return;
       const data = await res.json();
       setMessages((prev) =>
-        prev.map((m) => (m.uuid === message.uuid ? { ...m, reactions: data.data } : m)),
+        prev.map((m) =>
+          m.uuid === message.uuid ? { ...m, reactions: data.data } : m,
+        ),
       );
     },
     [],
   );
 
+  // ---------- Обработчики меню хедера ----------
+
+  const handleChatInfo = useCallback(() => {
+    router.push(`${basePath}/${chat.uuid}/info`);
+  }, [router, basePath, chat.uuid]);
+
+  const handleChatSettings = useCallback(() => {
+    router.push(`${basePath}/${chat.uuid}/settings`);
+  }, [router, basePath, chat.uuid]);
+
+  const handleLeaveChat = useCallback(async () => {
+    if (!confirm("Покинуть чат?")) return;
+    const res = await fetch(`/api/chat/chats/${chat.uuid}/leave`, {
+      method: "POST",
+    });
+    if (res.ok) {
+      router.push(basePath);
+    } else {
+      alert("Не удалось покинуть чат");
+    }
+  }, [router, basePath, chat.uuid]);
+
+  const handleDeleteChat = useCallback(async () => {
+    if (!confirm("Удалить чат? Действие необратимо.")) return;
+    const res = await fetch(`/api/chat/chats/${chat.uuid}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      router.push(basePath);
+    } else {
+      alert("Не удалось удалить чат");
+    }
+  }, [router, basePath, chat.uuid]);
+
   return (
     <>
-      <div className="h-full min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col">
         <ChatWindow
           chat={chat}
           currentUserUuid={currentUserUuid}
@@ -359,6 +404,10 @@ export function ChatView({
           onReactAction={handleReact}
           onForwardAction={openForward}
           onAttachAction={handleAttach}
+          onChatInfoAction={handleChatInfo}
+          onChatSettingsAction={handleChatSettings}
+          onChatLeaveAction={handleLeaveChat}
+          onChatDeleteAction={handleDeleteChat}
         />
       </div>
 

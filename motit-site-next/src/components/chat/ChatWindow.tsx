@@ -30,6 +30,7 @@ type ChatWindowProps = {
   hasMore?: boolean;
   isOnlineAction?: (userUuid: string) => boolean;
   typingUsers?: string[];
+
   // Управление сообщениями
   replyTo?: ChatMessageItem | null;
   onReplyAction?: (message: ChatMessageItem) => void;
@@ -43,6 +44,14 @@ type ChatWindowProps = {
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
   onAttachAction?: (files: File[]) => Promise<void>;
+
+  // Действия меню хедера
+  onChatInfoAction?: () => void;
+  onChatSettingsAction?: () => void;
+  onChatAddMembersAction?: () => void;
+  onChatToggleMuteAction?: () => void;
+  onChatLeaveAction?: () => void;
+  onChatDeleteAction?: () => void;
 };
 
 export function ChatWindow({
@@ -67,6 +76,12 @@ export function ChatWindow({
   onReactAction,
   onForwardAction,
   onAttachAction,
+  onChatInfoAction,
+  onChatSettingsAction,
+  onChatAddMembersAction,
+  onChatToggleMuteAction,
+  onChatLeaveAction,
+  onChatDeleteAction,
 }: ChatWindowProps) {
   const typingNames = typingUsers
     .filter((uuid) => uuid !== currentUserUuid)
@@ -81,6 +96,12 @@ export function ChatWindow({
         chat={chat}
         currentUserUuid={currentUserUuid}
         isOnlineAction={isOnlineAction}
+        onInfoAction={onChatInfoAction}
+        onSettingsAction={onChatSettingsAction}
+        onAddMembersAction={onChatAddMembersAction}
+        onToggleMuteAction={onChatToggleMuteAction}
+        onLeaveAction={onChatLeaveAction}
+        onDeleteAction={onChatDeleteAction}
       />
 
       <MessageList

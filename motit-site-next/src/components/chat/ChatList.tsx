@@ -44,9 +44,9 @@ export function ChatList({
   }, [filtered]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Заголовок + поиск */}
-      <div className="p-4 border-b border-(--border)">
+      <div className="shrink-0 p-4 border-b border-(--border)">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold text-(--text-primary)">Чаты</h2>
         <div className="flex items-center gap-1">
@@ -88,7 +88,7 @@ export function ChatList({
       </div>
 
       {/* Список */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 min-h-0 overflow-y-auto p-2">
         {filtered.length === 0 ? (
           <div className="text-center py-8 text-sm text-(--text-muted)">
             {search ? "Ничего не найдено" : "Пока нет чатов"}

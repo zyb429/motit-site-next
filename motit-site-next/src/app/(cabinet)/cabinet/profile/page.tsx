@@ -25,7 +25,7 @@ export default async function ProfilePage() {
   if (!dbUser) return null;
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-8 max-w-2xl flex-1 min-h-0 overflow-y-auto">
       <h1 className="text-2xl font-bold text-(--text-primary)">Профиль</h1>
       <p className="text-(--text-secondary) text-sm mt-1">
         Обновите свои данные. Логин и email изменить нельзя.

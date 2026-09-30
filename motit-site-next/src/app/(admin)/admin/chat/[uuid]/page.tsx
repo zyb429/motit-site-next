@@ -23,6 +23,7 @@ export default async function ChatPage({
 
   return (
     <ChatView
+      key={chat.uuid}
       chat={{
         uuid: chat.uuid,
         kind: chat.kind,
@@ -34,6 +35,7 @@ export default async function ChatPage({
       }}
       currentUserUuid={user.uuid}
       initialMessages={[...messages].reverse()}
+      basePath="/admin/chat"
     />
   );
 }

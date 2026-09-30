@@ -5,7 +5,7 @@ export function TypingIndicator({ names }: { names: string[] }) {
   if (names.length === 0) return null;
 
   return (
-    <div className="px-4 py-1 text-xs text-(--text-muted) italic flex items-center gap-1">
+    <div className="shrink-0 px-4 py-1 text-xs text-(--text-muted) italic flex items-center gap-1">
       <span className="inline-flex gap-0.5">
         <span className="animate-bounce">·</span>
         <span className="animate-bounce" style={{ animationDelay: "0.15s" }}>

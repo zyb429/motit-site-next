@@ -2,8 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {  useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import {
   Inbox,
   MessageSquare,
@@ -12,6 +12,7 @@ import {
   FolderTree,
   Settings,
   Home,
+  Globe,
   Plus,
   Users,
   ChevronLeft,
@@ -56,16 +57,17 @@ const GROUPS: NavGroup[] = [
   {
     title: "Тикеты",
     items: [
-      { href: "/admin/tickets", label: "Обращения", icon: Inbox },
+      { href: "/admin/tickets", label: "Обращения", icon: Inbox, exact: true },
+      { href: "/admin/tickets?segment=clients", label: "Клиентские", icon: Users },
+      { href: "/admin/tickets?segment=site", label: "Заявки с сайта", icon: Globe },
+      { href: "/admin/tickets?segment=internal", label: "Внутренние", icon: Building2 },
       { href: "/admin/tickets/new", label: "Новое обращение", icon: Plus },
       { href: "/admin/ticket-categories", label: "Категории обращений", icon: FolderTree },
     ],
   },
   {
     title: "Сообщения",
-    items: [
-      { href: "/admin/chat", label: "Чаты", icon: MessageSquare },
-    ],
+    items: [{ href: "/admin/chat", label: "Чаты", icon: MessageSquare }],
   },
 ];
 
@@ -73,6 +75,9 @@ const STORAGE_KEY = "admin-sidebar-collapsed";
 
 export function AdminSidebar({ user }: { user: CurrentUser }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentQuery = searchParams.toString();
+
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -94,9 +99,28 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
     });
   };
 
+  /**
+   * Активность ссылки с учётом query-параметров.
+   *  - /admin/tickets               → активна, только если query пустой
+   *  - /admin/tickets?slug=x        → активна, только если query точно совпадает
+   *  - /admin/tickets/new (exact)   → активна при точном pathname
+   */
   const isActive = (href: string, exact?: boolean) => {
-    if (exact) return pathname === href;
-    return pathname === href || pathname.startsWith(href + "/");
+    const [hrefPath, hrefQuery] = href.split("?");
+
+    const baseActive = exact
+      ? pathname === hrefPath
+      : pathname === hrefPath || pathname.startsWith(hrefPath + "/");
+
+    if (!baseActive) return false;
+
+    if (hrefQuery) {
+      return currentQuery === hrefQuery;
+    }
+
+    // Ссылка без query — активна, только если query пустой
+    // (иначе «Обращения» подсветится одновременно с «Заявки с сайта»)
+    return currentQuery === "";
   };
 
   return (
@@ -163,7 +187,6 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
                         : "text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-dim)"
                     } ${collapsed ? "justify-center" : ""}`}
                   >
-                    {/* Индикатор активного слева */}
                     {active && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r bg-(--accent)" />
                     )}
@@ -211,7 +234,6 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
           </div>
         ) : (
           <>
-            {/* Учётка */}
             <div className="px-3 mb-2 truncate">
               <div className="text-xs text-(--text-muted) truncate">
                 @{user.username}
@@ -223,10 +245,8 @@ export function AdminSidebar({ user }: { user: CurrentUser }) {
               )}
             </div>
 
-            {/* Дивайдер */}
             <div className="border-t border-(--border) mb-2" />
 
-            {/* Кнопки */}
             <div className="flex items-center justify-between px-1">
               <LogoutButton variant="full" />
               <ThemeToggle />

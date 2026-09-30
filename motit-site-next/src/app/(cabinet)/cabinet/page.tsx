@@ -31,7 +31,7 @@ export default async function CabinetPage() {
   ]);
 
   return (
-    <div className="p-8">
+    <div className="p-8 flex-1 min-h-0 overflow-y-auto">
       <h1 className="text-2xl font-bold text-(--text-primary)">
         Личный кабинет
       </h1>

@@ -5,7 +5,13 @@ import { randomUUID } from "crypto";
 // --------------------------------------------
 // Типы
 // --------------------------------------------
-export type ChatKind = "direct" | "group" | "channel" | "private_channel" | "ticket";
+export type ChatKind =
+  | "direct"
+  | "group"
+  | "channel"
+  | "private_channel"
+  | "ticket"
+  | "saved";
 export type ChatMemberRole = "owner" | "admin" | "member";
 export type MessageKind = "text" | "file" | "system" | "status_change";
 
@@ -96,7 +102,13 @@ export async function listChatsForUser(userUuid: string): Promise<ChatListItem[]
           members: {
             include: {
               user: {
-                select: { uuid: true, full_name: true, username: true, avatar_url: true },
+                select: {
+                  uuid: true,
+                  full_name: true,
+                  username: true,
+                  avatar_url: true,
+                  avatar: { select: { url: true } },
+                },
               },
             },
           },
@@ -139,7 +151,12 @@ export async function listChatsForUser(userUuid: string): Promise<ChatListItem[]
         : null,
       members: m.chat.members.map((cm) => ({
         uuid: cm.uuid,
-        user: cm.user,
+        user: {
+          uuid: cm.user.uuid,
+          full_name: cm.user.full_name,
+          username: cm.user.username,
+          avatar_url: cm.user.avatar_url ?? cm.user.avatar?.url ?? null,
+        },
       })),
     };
   });
@@ -148,19 +165,70 @@ export async function listChatsForUser(userUuid: string): Promise<ChatListItem[]
 // --------------------------------------------
 // Детали чата
 // --------------------------------------------
-export async function getChatByUuid(uuid: string, userUuid: string) {
+export type ChatDetailMember = {
+  uuid: string;
+  user: {
+    uuid: string;
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  };
+  role: ChatMemberRole;
+  is_muted: boolean;
+  is_pinned: boolean;
+  joined_at: Date | null;
+};
+
+export type ChatDetail = {
+  uuid: string;
+  kind: ChatKind;
+  name: string | null;
+  description: string | null;
+  avatar_url: string | null;
+  is_archived: boolean;
+  created_at: Date | null;
+  updated_at: Date | null;
+  last_message_at: Date | null;
+
+  // свойства ТЕКУЩЕГО пользователя (из его membership)
+  role: ChatMemberRole;
+  is_muted: boolean;
+  is_pinned: boolean;
+  last_read_at: Date | null;
+  unread_count: number;
+
+  created_by_uuid: string | null;
+  created_by: {
+    uuid: string;
+    full_name: string | null;
+    username: string | null;
+  } | null;
+
+  members: ChatDetailMember[];
+};
+
+export async function getChatByUuid(
+  uuid: string,
+  userUuid: string,
+): Promise<ChatDetail | null> {
   const membership = await prisma.chat_members.findUnique({
     where: { chat_uuid_user_uuid: { chat_uuid: uuid, user_uuid: userUuid } },
   });
   if (!membership) return null;
 
-  return prisma.chats.findUnique({
+  const chat = await prisma.chats.findUnique({
     where: { uuid },
     include: {
       members: {
         include: {
           user: {
-            select: { uuid: true, full_name: true, username: true, avatar_url: true },
+            select: {
+              uuid: true,
+              full_name: true,
+              username: true,
+              avatar_url: true,
+              avatar: { select: { url: true } },
+            },
           },
         },
       },
@@ -169,7 +237,46 @@ export async function getChatByUuid(uuid: string, userUuid: string) {
       },
     },
   });
-};
+
+  if (!chat) return null;
+
+  return {
+    uuid: chat.uuid,
+    kind: chat.kind as ChatKind,
+    name: chat.name,
+    description: chat.description,
+    avatar_url: chat.avatar_url,
+    is_archived: chat.is_archived,
+    created_at: chat.created_at,
+    updated_at: chat.updated_at,
+    last_message_at: chat.last_message_at,
+
+    // свойства текущего пользователя
+    role: membership.role as ChatMemberRole,
+    is_muted: membership.is_muted,
+    is_pinned: membership.is_pinned,
+    last_read_at: membership.last_read_at,
+    unread_count: membership.unread_count,
+
+    created_by_uuid: chat.created_by_uuid,
+    created_by: chat.created_by,
+
+    members: chat.members.map((m) => ({
+      uuid: m.uuid,
+      user: {
+        uuid: m.user.uuid,
+        full_name: m.user.full_name,
+        username: m.user.username,
+        // Приоритет: avatar_url → files.url
+        avatar_url: m.user.avatar_url ?? m.user.avatar?.url ?? null,
+      },
+      role: m.role as ChatMemberRole,
+      is_muted: m.is_muted,
+      is_pinned: m.is_pinned,
+      joined_at: m.joined_at,
+    })),
+  };
+}
 
 // --------------------------------------------
 // ЛС: создать или получить существующий
@@ -318,7 +425,7 @@ export async function getMessages(
     take: limit,
     include: {
       user: {
-        select: { uuid: true, full_name: true, username: true, avatar_url: true },
+        select: { uuid: true, full_name: true, username: true, avatar_url: true, avatar: { select: { url: true } } },
       },
       attachments: {
         include: {
@@ -345,7 +452,14 @@ export async function getMessages(
     edited_at: m.edited_at,
     deleted_at: m.deleted_at,
     created_at: m.created_at,
-    user: m.user,
+    user: m.user
+      ? {
+          uuid: m.user.uuid,
+          full_name: m.user.full_name,
+          username: m.user.username,
+          avatar_url: m.user.avatar_url ?? m.user.avatar?.url ?? null,
+        }
+      : null,
     attachments: m.attachments.map((a) => ({
       uuid: a.uuid,
       file: a.file,
@@ -408,7 +522,13 @@ export async function sendMessage(params: {
       },
       include: {
         user: {
-          select: { uuid: true, full_name: true, username: true, avatar_url: true },
+          select: {
+            uuid: true,
+            full_name: true,
+            username: true,
+            avatar_url: true,
+            avatar: { select: { url: true } },
+          },
         },
         attachments: {
           include: {
@@ -449,7 +569,15 @@ export async function sendMessage(params: {
       edited_at: message.edited_at,
       deleted_at: message.deleted_at,
       created_at: message.created_at,
-      user: message.user,
+      user: message.user
+        ? {
+            uuid: message.user.uuid,
+            full_name: message.user.full_name,
+            username: message.user.username,
+            avatar_url:
+              message.user.avatar_url ?? message.user.avatar?.url ?? null,
+          }
+        : null,
       attachments: message.attachments.map((a) => ({ uuid: a.uuid, file: a.file })),
       reactions: message.reactions,
       read_receipts: message.read_receipts,
@@ -558,7 +686,13 @@ export async function forwardMessage(params: {
       },
       include: {
         user: {
-          select: { uuid: true, full_name: true, username: true, avatar_url: true },
+          select: {
+            uuid: true,
+            full_name: true,
+            username: true,
+            avatar_url: true,
+            avatar: { select: { url: true } },
+          },
         },
         attachments: {
           include: {
@@ -630,6 +764,36 @@ export async function markChatAsRead(chatUuid: string, userUuid: string) {
 }
 
 // --------------------------------------------
+// Проверка прав на управление участником
+// --------------------------------------------
+type ActorRole = ChatMemberRole;
+
+function canManageMember(
+  actor: ActorRole,
+  target: ActorRole,
+): { allowed: boolean; reason?: string } {
+  // Только owner и admin могут управлять
+  if (actor === "member") {
+    return { allowed: false, reason: "Недостаточно прав" };
+  }
+
+  // Владельца не трогает никто
+  if (target === "owner") {
+    return { allowed: false, reason: "Нельзя изменять владельца чата" };
+  }
+
+  // Админ не управляет другими админами
+  if (actor === "admin" && target === "admin") {
+    return {
+      allowed: false,
+      reason: "Админ не может управлять другими админами",
+    };
+  }
+
+  return { allowed: true };
+}
+
+// --------------------------------------------
 // Участники
 // --------------------------------------------
 export async function addChatMember(chatUuid: string, userUuid: string, byUuid: string) {
@@ -652,18 +816,38 @@ export async function addChatMember(chatUuid: string, userUuid: string, byUuid: 
   });
 }
 
-export async function removeChatMember(chatUuid: string, userUuid: string, byUuid: string) {
-  const by = await prisma.chat_members.findUnique({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: byUuid } },
-  });
-  if (!by || (by.role !== "owner" && by.role !== "admin")) {
-    throw new Error("Только owner или admin может удалять участников");
+export async function removeChatMember(
+  chatUuid: string,
+  targetUuid: string,
+  byUuid: string,
+) {
+  const [by, target] = await Promise.all([
+    prisma.chat_members.findUnique({
+      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: byUuid } },
+    }),
+    prisma.chat_members.findUnique({
+      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid } },
+    }),
+  ]);
+
+  if (!by) throw new Error("Вы не участник этого чата");
+  if (!target) throw new Error("Пользователь не найден в чате");
+
+  if (targetUuid === byUuid) {
+    throw new Error("Чтобы выйти из чата, используйте «Покинуть чат»");
   }
 
-  return prisma.chat_members.delete({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+  const check = canManageMember(by.role as ActorRole, target.role as ActorRole);
+  if (!check.allowed) {
+    throw new Error(check.reason ?? "Недостаточно прав");
+  }
+
+  await prisma.chat_members.delete({
+    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid } },
   });
-};
+
+  return { removed: true };
+}
 
 // --------------------------------------------
 // Реакции
@@ -727,6 +911,7 @@ export async function searchUsersForChat(
       full_name: true,
       email: true,
       avatar_url: true,
+      avatar: { select: { url: true } },
     },
     take: limit,
     orderBy: { full_name: "asc" },
@@ -767,5 +952,193 @@ export async function getOrCreateSavedChat(userUuid: string) {
     });
 
     return chat;
+  });
+}
+
+// --------------------------------------------
+// Обновление чата (название, описание, аватар)
+// --------------------------------------------
+export async function updateChat(params: {
+  chatUuid: string;
+  byUuid: string;
+  name?: string | null;
+  description?: string | null;
+  avatar_url?: string | null;
+}) {
+  const { chatUuid, byUuid, name, description, avatar_url } = params;
+
+  const by = await prisma.chat_members.findUnique({
+    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: byUuid } },
+  });
+  if (!by || (by.role !== "owner" && by.role !== "admin")) {
+    throw new Error("Нет прав на редактирование чата");
+  }
+
+  const chat = await prisma.chats.findUnique({
+    where: { uuid: chatUuid },
+    select: { kind: true },
+  });
+  if (!chat || chat.kind === "direct" || chat.kind === "saved") {
+    throw new Error("Этот чат нельзя редактировать");
+  }
+
+  return prisma.chats.update({
+    where: { uuid: chatUuid },
+    data: {
+      ...(name !== undefined ? { name: name?.trim() || null } : {}),
+      ...(description !== undefined
+        ? { description: description?.trim() || null }
+        : {}),
+      ...(avatar_url !== undefined ? { avatar_url } : {}),
+      updated_at: new Date(),
+    },
+  });
+}
+
+// --------------------------------------------
+// Удаление чата (только владелец)
+// --------------------------------------------
+export async function deleteChat(chatUuid: string, userUuid: string) {
+  const membership = await prisma.chat_members.findUnique({
+    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+  });
+  if (!membership) throw new Error("Нет доступа");
+
+  if (membership.role !== "owner") {
+    throw new Error("Только владелец может удалить чат");
+  }
+
+  const chat = await prisma.chats.findUnique({
+    where: { uuid: chatUuid },
+    select: { kind: true },
+  });
+  if (!chat || chat.kind === "direct" || chat.kind === "saved") {
+    throw new Error("Этот чат нельзя удалить");
+  }
+
+  await prisma.chats.delete({ where: { uuid: chatUuid } });
+  return { deleted: true };
+}
+
+// --------------------------------------------
+// Mute / Pin (у текущего пользователя)
+// --------------------------------------------
+export async function toggleMuteChat(chatUuid: string, userUuid: string) {
+  const membership = await prisma.chat_members.findUnique({
+    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+  });
+  if (!membership) throw new Error("Нет доступа");
+
+  return prisma.chat_members.update({
+    where: { id: membership.id },
+    data: { is_muted: !membership.is_muted },
+  });
+}
+
+export async function togglePinChat(chatUuid: string, userUuid: string) {
+  const membership = await prisma.chat_members.findUnique({
+    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+  });
+  if (!membership) throw new Error("Нет доступа");
+
+  return prisma.chat_members.update({
+    where: { id: membership.id },
+    data: { is_pinned: !membership.is_pinned },
+  });
+}
+
+// --------------------------------------------
+// Смена роли участника (только владелец)
+// --------------------------------------------
+export async function changeMemberRole(params: {
+  chatUuid: string;
+  targetUuid: string;
+  byUuid: string;
+  role: Exclude<ChatMemberRole, "owner">;
+}) {
+  const { chatUuid, targetUuid, byUuid, role } = params;
+
+  const [by, target] = await Promise.all([
+    prisma.chat_members.findUnique({
+      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: byUuid } },
+    }),
+    prisma.chat_members.findUnique({
+      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid } },
+    }),
+  ]);
+
+  if (!by) throw new Error("Вы не участник этого чата");
+  if (!target) throw new Error("Пользователь не найден в чате");
+
+  if (targetUuid === byUuid) {
+    throw new Error("Нельзя изменить свою роль");
+  }
+
+  if ((role as string) === "owner") {
+    throw new Error("Передача владения возможна только через отдельную операцию");
+  }
+
+  const check = canManageMember(by.role as ActorRole, target.role as ActorRole);
+  if (!check.allowed) {
+    throw new Error(check.reason ?? "Недостаточно прав");
+  }
+
+  // admin не может снять админа (понизить до member)
+  if (by.role === "admin" && target.role === "admin" && role === "member") {
+    throw new Error("Админ не может снять другого админа");
+  }
+
+  return prisma.chat_members.update({
+    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid } },
+    data: { role },
+  });
+}
+
+// --------------------------------------------
+// Передача владения (только текущий владелец)
+// --------------------------------------------
+export async function transferOwnership(params: {
+  chatUuid: string;
+  fromUuid: string;
+  toUuid: string;
+}) {
+  const { chatUuid, fromUuid, toUuid } = params;
+
+  if (fromUuid === toUuid) {
+    throw new Error("Нельзя передать владение самому себе");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const [from, to] = await Promise.all([
+      tx.chat_members.findUnique({
+        where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: fromUuid } },
+      }),
+      tx.chat_members.findUnique({
+        where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: toUuid } },
+      }),
+    ]);
+
+    if (!from) throw new Error("Вы не участник этого чата");
+    if (!to) throw new Error("Новый владелец не является участником чата");
+
+    if (from.role !== "owner") {
+      throw new Error("Передать владение может только текущий владелец");
+    }
+
+    // Старый владелец → admin, новый → owner
+    await tx.chat_members.update({
+      where: { id: from.id },
+      data: { role: "admin" },
+    });
+    await tx.chat_members.update({
+      where: { id: to.id },
+      data: { role: "owner" },
+    });
+
+    return {
+      fromUuid,
+      toUuid,
+      newOwner: { uuid: to.uuid, user_uuid: to.user_uuid, role: "owner" as const },
+    };
   });
 }
