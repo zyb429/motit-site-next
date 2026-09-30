@@ -4,6 +4,7 @@ import { PrismaClient } from "@generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 const url = new URL(process.env.DATABASE_URL!);
+const params = new URLSearchParams(url.search);
 
 const adapter = new PrismaMariaDb({
   host: url.hostname,
@@ -12,6 +13,7 @@ const adapter = new PrismaMariaDb({
   password: decodeURIComponent(url.password),
   database: url.pathname.slice(1),
   connectionLimit: 5,
+  charset: params.get("charset") || "utf8mb4",
 });
 
 export const prisma = new PrismaClient({
