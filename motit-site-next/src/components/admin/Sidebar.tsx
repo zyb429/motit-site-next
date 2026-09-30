@@ -71,27 +71,31 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-const STORAGE_KEY = "admin-sidebar-collapsed";
+const COOKIE_KEY = "admin-sidebar-collapsed";
 
-export function AdminSidebar({ user }: { user: CurrentUser }) {
+export function AdminSidebar({
+  user,
+  initialCollapsed = false,
+}: {
+  user: CurrentUser;
+  initialCollapsed?: boolean;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentQuery = searchParams.toString();
 
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem(STORAGE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
+  // Значение приходит с сервера (из cookie) — нет hydration mismatch и мигания
+  const [collapsed, setCollapsed] = useState<boolean>(initialCollapsed);
 
   const toggleCollapsed = () => {
     setCollapsed((v) => {
       const next = !v;
       try {
-        localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+        const value = next ? "1" : "0";
+        // Пишем в cookie — чтобы сервер при следующем рендере сразу знал состояние
+        document.cookie = `${COOKIE_KEY}=${value}; path=/; max-age=31536000; samesite=lax`;
+        // Дублируем в localStorage — на случай, если cookies отключены
+        localStorage.setItem(COOKIE_KEY, value);
       } catch {
         // ignore
       }
