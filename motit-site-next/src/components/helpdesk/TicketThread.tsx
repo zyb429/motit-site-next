@@ -1,9 +1,9 @@
 // src/components/helpdesk/TicketThread.tsx
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { SyntheticEvent, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Paperclip, Upload, X } from "lucide-react";
+import { Paperclip, Upload, X, Lock } from "lucide-react";
 
 interface FileRecord {
   id: number;
@@ -47,6 +47,7 @@ interface Props {
   ticketUuid: string;
   initialComments: Comment[];
   canPostInternal?: boolean;
+  canPostExternal?: boolean;
 }
 
 const ACCEPT = [
@@ -70,11 +71,12 @@ export function TicketThread({
   ticketUuid,
   initialComments,
   canPostInternal = false,
+  canPostExternal = true,
 }: Props) {
   const router = useRouter();
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [text, setText] = useState("");
-  const [isInternal, setIsInternal] = useState(false);
+  const [isInternal, setIsInternal] = useState(!canPostExternal);
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -91,7 +93,7 @@ export function TicketThread({
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
   }
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
@@ -122,7 +124,7 @@ export function TicketThread({
       const res = await fetch(`/api/tickets/${ticketUuid}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text, isInternal, attachmentFileIds }),
+        body: JSON.stringify({ content: text, isInternal: canPostExternal ? isInternal : true, attachmentFileIds }),
       });
 
       if (!res.ok) {
@@ -141,13 +143,14 @@ export function TicketThread({
     } finally {
       setSending(false);
       setUploading(false);
+      setIsInternal(!canPostExternal);
     }
   }
 
   return (
     <div className="mt-8 space-y-4">
       <h2 className="text-sm font-medium text-(--text-muted) uppercase tracking-wider">
-        Переписка
+        {canPostExternal ? "Переписка" : "Внутренние заметки"}
       </h2>
 
       <ul className="space-y-3">
@@ -222,7 +225,11 @@ export function TicketThread({
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={4}
-          placeholder="Ваше сообщение..."
+          placeholder={
+            canPostExternal
+              ? "Ваше сообщение..."
+              : "Внутренняя заметка (клиент не увидит)..."
+          }
           className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none resize-y"
         />
 
@@ -261,7 +268,8 @@ export function TicketThread({
             />
           </label>
 
-          {canPostInternal && (
+          {/* Чекбокс «Внутренняя заметка» — только если можно писать внешние */}
+          {canPostInternal && canPostExternal && (
             <label className="flex items-center gap-2 text-sm text-(--text-secondary)">
               <input
                 type="checkbox"
@@ -271,6 +279,14 @@ export function TicketThread({
               />
               Внутренняя заметка
             </label>
+          )}
+
+          {/* Подсказка для анонимных заявок */}
+          {canPostInternal && !canPostExternal && (
+            <span className="inline-flex items-center gap-2 text-sm text-yellow-400/80">
+              <Lock size={13} />
+              Только внутренние заметки (анонимная заявка)
+            </span>
           )}
         </div>
 

@@ -33,7 +33,7 @@ export default function Contact() {
         <div className="mb-12 md:mb-16">
           <span className="section-label block mb-3">КОНТАКТЫ</span>
           <h2 className="section-title mb-4">Свяжитесь с нами</h2>
-          <p className="section-subtitle max-w-[600px]">Готовы обсудить ваши задачи и предложить оптимальное решение</p>
+          <p className="section-subtitle max-w-150">Готовы обсудить ваши задачи и предложить оптимальное решение</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 lg:gap-16">
@@ -53,7 +53,7 @@ export default function Contact() {
                   }}
                 >
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                     style={{ backgroundColor: 'rgba(45, 212, 191, 0.12)' }}
                   >
                     <Icon size={20} style={{ color: '#2dd4bf' }} />

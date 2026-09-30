@@ -10,6 +10,7 @@ import {
   Calendar,
   Tag,
   MessageSquare,
+  Globe,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import {
@@ -43,6 +44,8 @@ export default async function AdminTicketPage({
   const { uuid } = await params;
   const ticket = await getTicket(uuid, user);
   if (!ticket) notFound();
+  const isSiteRequest =
+    !ticket.client_uuid && (ticket.contact_email || ticket.contact_name);
 
   const agents = await prisma.users.findMany({
     where: {
@@ -60,12 +63,15 @@ export default async function AdminTicketPage({
     listPriorities(),
   ]);
 
-  const isSelfCreated = ticket.created_by?.uuid === ticket.client_uuid;
-  const creatorLabel = isSelfCreated
-    ? "клиент"
-    : ticket.created_by
-      ? ticket.created_by.full_name || ticket.created_by.username || "—"
-      : "—";
+  const isSelfCreated = ticket.created_by?.uuid != null && ticket.created_by.uuid === ticket.client_uuid;
+  const creatorLabel = (() => {
+    if (isSelfCreated) return "клиент";
+    if (ticket.created_by) {
+      return `${ticket.created_by.full_name || ticket.created_by.username || "—"} (сотрудник)`;
+    }
+    if (isSiteRequest) return "форма на сайте";
+    return "—";
+  })();
 
   const orgText = clientOrganization(ticket.client, ticket.organization);
 
@@ -96,11 +102,18 @@ export default async function AdminTicketPage({
             className="mt-2"
           />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-(--text-muted) mt-1.5">
-            {ticket.ticket_category && (
-              <span className="inline-flex items-center gap-1">
-                <Tag size={11} />
-                {ticket.ticket_category.icon} {ticket.ticket_category.name}
+            {isSiteRequest ? (
+              <span className="inline-flex items-center gap-1 text-(--accent)">
+                <Globe size={11} />
+                с сайта
               </span>
+            ) : (
+              ticket.ticket_category && (
+                <span className="inline-flex items-center gap-1">
+                  <Tag size={11} />
+                  {ticket.ticket_category.name}
+                </span>
+              )
             )}
             <span className="inline-flex items-center gap-1">
               <Calendar size={11} />
@@ -137,7 +150,7 @@ export default async function AdminTicketPage({
       />
 
       {/* Ссылка на чат тикета */}
-      {ticket.chat && (
+      {ticket.chat && !isSiteRequest && (
         <Link
           href={`/admin/chat/${ticket.chat.uuid}`}
           className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-(--border) hover:border-(--accent) text-(--text-secondary) hover:text-(--accent) text-sm transition-colors"
@@ -247,11 +260,15 @@ export default async function AdminTicketPage({
       {/* Вложения к заявке */}
       <TicketAttachments attachments={ticket.attachments ?? []} />
 
-      {/* Переписка с возможностью внутренних заметок */}
+      {/*
+        Для анонимных заявок с сайта — только внутренние заметки.
+        Для остальных — полноценная переписка + возможность внутренних заметок.
+      */}
       <TicketThread
         ticketUuid={ticket.uuid}
         initialComments={ticket.ticket_comments ?? []}
         canPostInternal={true}
+        canPostExternal={!isSiteRequest}
       />
     </div>
   );

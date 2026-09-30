@@ -121,6 +121,8 @@ export async function listTickets(params: {
   assigneeId?: number | "me" | "unassigned";
   clientUuid?: string;
   categoryUuid?: string;
+  categorySlug?: string;
+  segment?: "all" | "clients" | "site" | "internal";
   search?: string;
   sort?: "created" | "updated" | "priority" | "deadline";
   dir?: "asc" | "desc";
@@ -134,6 +136,8 @@ export async function listTickets(params: {
     assigneeId,
     clientUuid,
     categoryUuid,
+    categorySlug,
+    segment = "all",
     search,
     sort = "updated",
     dir = "desc",
@@ -152,6 +156,30 @@ export async function listTickets(params: {
           ? { id: assigneeId }
           : undefined;
 
+  // — сегментация: site / clients / internal —
+  let segmentFilter: Prisma.ticketsWhereInput = {};
+  if (isAgent && segment !== "all") {
+    const staffUuids = await getStaffUuids();
+
+    if (segment === "site") {
+      segmentFilter = {
+        client_uuid: null,
+        OR: [
+          { contact_email: { not: null } },
+          { contact_name: { not: null } },
+        ],
+      };
+    } else if (segment === "clients") {
+      segmentFilter = {
+        client_uuid: { not: null, notIn: staffUuids },
+      };
+    } else if (segment === "internal") {
+      segmentFilter = {
+        client_uuid: { in: staffUuids },
+      };
+    }
+  }
+
   const where: Prisma.ticketsWhereInput = {
     ...(isAgent
       ? clientUuid
@@ -165,7 +193,12 @@ export async function listTickets(params: {
         ? { assigned_to_uuid: null }
         : { assignee: assigneeFilter as Prisma.usersWhereInput }
       : {}),
-    ...(categoryUuid ? { category_uuid: categoryUuid } : {}),
+    ...(categoryUuid
+      ? { category_uuid: categoryUuid }
+      : categorySlug
+        ? { ticket_category: { slug: categorySlug } }
+        : {}),
+    ...segmentFilter,
     ...(search
       ? {
           OR: [
@@ -622,4 +655,67 @@ export async function getTicketStats() {
     overdue: Number(r.overdue),
     unassigned: Number(r.unassigned),
   };
+}
+
+// --------------------------------------------
+// Сегментация: сотрудники
+// --------------------------------------------
+let staffUuidsCache: { uuids: string[]; at: number } | null = null;
+const STAFF_CACHE_TTL = 60_000; // 1 минута
+
+export async function getStaffUuids(): Promise<string[]> {
+  if (staffUuidsCache && Date.now() - staffUuidsCache.at < STAFF_CACHE_TTL) {
+    return staffUuidsCache.uuids;
+  }
+
+  const users = await prisma.users.findMany({
+    where: {
+      users_role_lnk: {
+        some: { roles: { name: { in: ["admin", "worker"] } } },
+      },
+      blocked: false,
+    },
+    select: { uuid: true },
+  });
+
+  const uuids = users.map((u) => u.uuid);
+  staffUuidsCache = { uuids, at: Date.now() };
+  return uuids;
+}
+
+// --------------------------------------------
+// Сегментация: счётчики
+// --------------------------------------------
+export async function getSegmentCounts(user: {
+  id: number;
+  uuid: string;
+  role: string | null;
+}) {
+  const isAgent = user.role === "admin" || user.role === "worker";
+  if (!isAgent) {
+    return { all: 0, clients: 0, site: 0, internal: 0 };
+  }
+
+  const staffUuids = await getStaffUuids();
+
+  const [all, site, clients, internal] = await Promise.all([
+    prisma.tickets.count(),
+    prisma.tickets.count({
+      where: {
+        client_uuid: null,
+        OR: [
+          { contact_email: { not: null } },
+          { contact_name: { not: null } },
+        ],
+      },
+    }),
+    prisma.tickets.count({
+      where: { client_uuid: { not: null, notIn: staffUuids } },
+    }),
+    prisma.tickets.count({
+      where: { client_uuid: { in: staffUuids } },
+    }),
+  ]);
+
+  return { all, clients, site, internal };
 }

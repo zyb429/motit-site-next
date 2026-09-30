@@ -31,6 +31,13 @@ export function TicketFilters({
       if (value === null || value === "") params.delete(key);
       else params.set(key, value);
       params.delete("page"); // сбрасываем страницу при смене фильтра
+
+      // При смене category через селект — убираем старый categorySlug,
+      // чтобы фильтр не «залипал» на slug, когда пользователь выбрал uuid
+      if (key === "category") {
+        params.delete("categorySlug");
+      }
+
       startTransition(() => {
         router.push(`${basePath}?${params.toString()}`);
       });
@@ -47,6 +54,7 @@ export function TicketFilters({
     searchParams.has("priority") ||
     searchParams.has("assigneeId") ||
     searchParams.has("category") ||
+    searchParams.has("categorySlug") ||
     searchParams.has("search");
 
   return (
@@ -58,10 +66,10 @@ export function TicketFilters({
           className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted)"
         />
         <input
+          key={searchParams.get("search") ?? ""}
           defaultValue={searchParams.get("search") ?? ""}
           onChange={(e) => {
             const value = e.target.value;
-            // дебаунс через setTimeout
             const t = setTimeout(() => update("search", value), 300);
             return () => clearTimeout(t);
           }}
