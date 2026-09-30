@@ -55,7 +55,6 @@ body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
   font-size: 16px;
   line-height: 1.6;
   transition:
@@ -325,6 +324,19 @@ textarea:focus::placeholder {
 }
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
+}
+
+/* ============================================
+   Полностью скрытый скроллбар (прокрутка работает)
+   ============================================ */
+.no-scrollbar {
+  scrollbar-width: none;         /* Firefox */
+  -ms-overflow-style: none;      /* IE, Edge legacy */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;                 /* Chrome, Safari, Edge (Chromium) */
+  width: 0;
+  height: 0;
 }
 
 /* ============================================
