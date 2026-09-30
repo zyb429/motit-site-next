@@ -81,6 +81,24 @@ body {
   background: var(--accent);
 }
 
+/* Защита от горизонтального оверфлоу на мобилке */
+html, body {
+  max-width: 100%;
+  overflow-x: clip;   /* clip — лучше hidden, не создаёт scroll context */
+}
+
+/* Длинные слова не рвут layout */
+.break-anywhere {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Длинные email / URL */
+.break-long {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 /* ============================================
    Типографика
    ============================================ */
@@ -369,5 +387,29 @@ textarea:focus::placeholder {
   .content-container {
     padding-left: 16px;
     padding-right: 16px;
+  }
+}
+
+/* Планшет: 481–767px — уплотняем стили */
+@media (min-width: 481px) and (max-width: 767px) {
+  :root, .dark {
+    --section-padding: 72px;
+  }
+  .section-title {
+    font-size: clamp(1.6rem, 5vw, 2.2rem) !important;
+  }
+  .section-subtitle {
+    font-size: 1rem;
+  }
+  .btn-primary, .btn-secondary {
+    padding: 12px 22px;
+    font-size: 14px;
+  }
+  .card, .card-dark {
+    padding: 22px;
+  }
+  .content-container {
+    padding-left: 28px;
+    padding-right: 28px;
   }
 }
