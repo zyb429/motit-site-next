@@ -2,6 +2,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { listChatsForUser } from "@/lib/db/chat";
 import { ChatListSidebar } from "@/components/chat/ChatListSidebar";
+import { ChatLayoutShell } from "@/components/chat/ChatLayoutShell";
 
 export const dynamic = "force-dynamic";
 
@@ -16,15 +17,17 @@ export default async function CabinetChatLayout({
   const chats = await listChatsForUser(user.uuid);
 
   return (
-    <div className="flex-1 min-h-0 flex">
-      <aside className="w-80 border-r border-(--border) shrink-0 h-full flex flex-col overflow-hidden">
+    <ChatLayoutShell
+      basePath="/cabinet/chat"
+      sidebar={
         <ChatListSidebar
           initialChats={chats}
           currentUserUuid={user.uuid}
           basePath="/cabinet/chat"
         />
-      </aside>
-      <main className="flex-1 min-h-0 overflow-hidden flex flex-col">{children}</main>
-    </div>
+      }
+    >
+      {children}
+    </ChatLayoutShell>
   );
 }

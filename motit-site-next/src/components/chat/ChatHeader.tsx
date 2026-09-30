@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Users,
   Hash,
@@ -14,6 +15,7 @@ import {
   Trash2,
   Settings,
   Info,
+  ArrowLeft,
 } from "lucide-react";
 
 type ChatHeaderProps = {
@@ -52,6 +54,11 @@ export function ChatHeader({
   onDeleteAction,
   onInfoAction,
 }: ChatHeaderProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  // "/cabinet/chat/<uuid>" → "/cabinet/chat"
+  const basePath = pathname.split("/").slice(0, -1).join("/");
+
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -74,10 +81,23 @@ export function ChatHeader({
     };
   }, [menuOpen]);
 
+  // Кнопка «Назад» к списку чатов — только на мобилке
+  const backButton = (
+    <button
+      type="button"
+      onClick={() => router.push(basePath)}
+      className="lg:hidden p-2 -ml-2 rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--accent-dim) transition-colors shrink-0"
+      aria-label="Назад к списку чатов"
+    >
+      <ArrowLeft size={20} />
+    </button>
+  );
+
   // Saved Messages — особый вид, без меню
   if (chat.kind === "saved") {
     return (
       <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-(--border) bg-(--bg-card)">
+        {backButton}
         <div className="w-9 h-9 rounded-full bg-(--accent-dim) flex items-center justify-center shrink-0">
           <Bookmark size={18} className="text-(--accent)" />
         </div>
@@ -137,6 +157,8 @@ export function ChatHeader({
   return (
     <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-(--border) bg-(--bg-card)">
       <div className="flex items-center gap-3 min-w-0">
+        {backButton}
+
         <div className="w-9 h-9 rounded-full bg-(--bg-primary) border border-(--border) flex items-center justify-center shrink-0 overflow-hidden relative">
           {otherMember?.user.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element

@@ -2,10 +2,11 @@
 import { getCurrentUser } from "@/lib/auth";
 import { listChatsForUser } from "@/lib/db/chat";
 import { ChatListSidebar } from "@/components/chat/ChatListSidebar";
+import { ChatLayoutShell } from "@/components/chat/ChatLayoutShell";
 
 export const dynamic = "force-dynamic";
 
-export default async function ChatLayout({
+export default async function AdminChatLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -16,15 +17,17 @@ export default async function ChatLayout({
   const chats = await listChatsForUser(user.uuid);
 
   return (
-    <div className="flex-1 min-h-0 flex">
-      <aside className="w-80 border-r border-(--border) shrink-0 h-full flex flex-col overflow-hidden">
+    <ChatLayoutShell
+      basePath="/admin/chat"
+      sidebar={
         <ChatListSidebar
           initialChats={chats}
           currentUserUuid={user.uuid}
           basePath="/admin/chat"
         />
-      </aside>
-      <main className="flex-1 min-h-0 overflow-hidden flex flex-col">{children}</main>
-    </div>
+      }
+    >
+      {children}
+    </ChatLayoutShell>
   );
 }
