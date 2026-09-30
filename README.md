@@ -125,7 +125,7 @@ bun run dev
 
 ## Архитектура
 
-"```"
+```
 src/
 ├── app/
 │   ├── (admin)/admin/    # Админка
@@ -143,7 +143,7 @@ src/
     ├── prisma.ts         # Prisma Client (singleton)
     ├── s3.ts             # S3 client
     └── db/               # Функции доступа к данным
-"```"
+```
 
 ## Роли
 
