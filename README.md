@@ -22,7 +22,7 @@
 
 ## Структура репозитория
 
-"```"
+```
 motit-site-next/            ← корень монорепы
 ├── motit-site-next/        ← Next.js приложение
 │   ├── prisma/
@@ -31,7 +31,7 @@ motit-site-next/            ← корень монорепы
 │   └── .env.example
 ├── docker-compose.yml      ← MySQL + MinIO
 └── README.md
-"```"
+```
 
 ## Быстрый старт
 
