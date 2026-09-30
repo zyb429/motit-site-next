@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, auth } from "@/lib/auth";
 import { AdminSidebar } from "@/components/admin/Sidebar";
 import { ClearStaleSession } from "./clear-stale-session";
+import { MobileMenuButton } from "@/components/mobile-menu/MobileMenuButton";
 
 export const dynamic = "force-dynamic";
 
@@ -45,8 +46,17 @@ export default async function AdminLayout({
       >
         <AdminSidebar user={user} initialCollapsed={initialCollapsed} />
       </Suspense>
+
       <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
-        {children}
+        {/* Верхняя панель — только на мобилке */}
+        <div className="shrink-0 h-14 flex items-center px-3 border-b border-(--border) lg:hidden">
+          <MobileMenuButton />
+        </div>
+
+        {/* Контент страницы */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {children}
+        </div>
       </main>
     </div>
   );
