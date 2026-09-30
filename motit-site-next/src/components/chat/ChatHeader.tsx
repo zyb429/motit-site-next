@@ -227,7 +227,7 @@ export function ChatHeader({
           {menuOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-full mt-1 z-50 min-w-56 py-1 rounded-lg bg-(--bg-card) border border-(--border) shadow-lg"
+              className="absolute right-0 top-full mt-1 z-50 min-w-56 max-w-[calc(100vw-2rem)] py-1 rounded-lg bg-(--bg-card) border border-(--border) shadow-lg"
             >
               {onInfoAction && (
                 <MenuItem

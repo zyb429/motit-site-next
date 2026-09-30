@@ -172,7 +172,7 @@ async function createTicketFromContact(p: ContactPayload): Promise<string> {
     });
 
     // Чат, привязанный к тикету
-    await tx.chats.create({
+    const chat = await tx.chats.create({
       data: {
         uuid: randomUUID(),
         kind: "ticket",
@@ -182,6 +182,31 @@ async function createTicketFromContact(p: ContactPayload): Promise<string> {
         updated_at: now,
       },
     });
+
+    // Добавляем админов и воркеров как участников,
+    // чтобы они могли отвечать на заявку с сайта
+    const staff = await tx.users.findMany({
+      where: {
+        users_role_lnk: {
+          some: { roles: { name: { in: ["admin", "worker"] } } },
+        },
+        blocked: false,
+      },
+      select: { uuid: true },
+    });
+
+    if (staff.length > 0) {
+      await tx.chat_members.createMany({
+        data: staff.map((u) => ({
+          uuid: randomUUID(),
+          chat_uuid: chat.uuid,
+          user_uuid: u.uuid,
+          role: "member",
+          joined_at: now,
+        })),
+        skipDuplicates: true,
+      });
+    }
 
     // История статусов
     if (status?.uuid) {
