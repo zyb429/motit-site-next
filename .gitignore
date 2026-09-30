@@ -47,3 +47,6 @@ structure.txt
 
 # Prisma Client (генерируется автоматически)
 motit-site-next/generated/
+changes.diff
+changes.txt
+*.diff
