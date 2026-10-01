@@ -6,6 +6,7 @@ import { redis } from "@/lib/redis";
 
 const schema = z.object({
   userUuid: z.uuid(),
+  showHistory: z.boolean().default(true),
 });
 
 export async function POST(
@@ -27,6 +28,7 @@ export async function POST(
       uuid,
       parsed.data.userUuid,
       user.uuid,
+      { showHistory: parsed.data.showHistory },
     );
 
     await redis.publish(`chat:${uuid}:messages`, JSON.stringify(systemMessage));

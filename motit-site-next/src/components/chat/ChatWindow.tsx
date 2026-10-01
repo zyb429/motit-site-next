@@ -46,6 +46,7 @@ type ChatWindowProps = {
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
   onAttachAction?: (files: File[], content: string) => Promise<void>;
+  inputDisabled?: boolean;
 
   // Действия меню хедера
   onChatInfoAction?: () => void;
@@ -78,6 +79,7 @@ export function ChatWindow({
   onReactAction,
   onForwardAction,
   onAttachAction,
+  inputDisabled,
   onPreviewFileAction,
   onChatInfoAction,
   onChatSettingsAction,
@@ -133,6 +135,7 @@ export function ChatWindow({
         editing={editing}
         onCancelEditAction={onCancelEditAction}
         onEditSubmitAction={onEditSubmitAction}
+        disabled={inputDisabled}
       />
     </div>
   );

@@ -533,6 +533,8 @@ model chat_members {
   chat            chats     @relation(fields: [chat_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_members_chat")
   user            users     @relation(fields: [user_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_members_user")
 
+  history_visible_from DateTime? @db.Timestamp(0)
+
   @@unique([chat_uuid, user_uuid], map: "idx_chat_members_unique")
   @@index([user_uuid], map: "idx_chat_members_user")
   @@index([chat_uuid], map: "idx_chat_members_chat")

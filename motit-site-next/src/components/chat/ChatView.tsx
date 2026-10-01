@@ -54,6 +54,7 @@ export function ChatView({
   const [deleting, setDeleting] = useState<ChatMessageItem | null>(null);
   const [forwarding, setForwarding] = useState<ChatMessageItem | null>(null);
   const [chatList, setChatList] = useState<ChatListItemType[]>([]);
+  const [readOnly, setReadOnly] = useState(false);
 
   const isSaved = chat.kind === "saved";
 
@@ -211,7 +212,8 @@ export function ChatView({
     onChatRemovedAction: useCallback(
       (payload: { event: "chat:removed"; chatUuid: string }) => {
         if (payload.chatUuid === chat.uuid) {
-          router.push(basePath);
+          setReadOnly(true);
+          setTimeout(() => router.push(basePath), 100);
         }
       },
       [chat.uuid, router, basePath],
@@ -230,7 +232,15 @@ export function ChatView({
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(typeof d.error === "string" ? d.error : "Ошибка");
+        const msg = typeof d.error === "string" ? d.error : "Ошибка";
+
+        if (res.status === 403 || msg.includes("Нет доступа")) {
+          setReadOnly(true);
+          router.push(basePath);
+          return;
+        }
+
+        throw new Error(msg);
       }
       const data = await res.json();
       if (!data?.data?.uuid) return;
@@ -238,7 +248,7 @@ export function ChatView({
       lastMarkedCountRef.current = messages.length + 1;
       setReplyTo(null);
     },
-    [chat.uuid, replyTo, messages.length, addMessages],
+    [chat.uuid, replyTo, messages.length, addMessages, router, basePath],
   );
 
   const handleAttach = useCallback(
@@ -461,6 +471,7 @@ export function ChatView({
           onChatLeaveAction={handleLeaveChat}
           onChatDeleteAction={handleDeleteChat}
           onPreviewFileAction={openPreview}
+          inputDisabled={readOnly}
         />
       </div>
 

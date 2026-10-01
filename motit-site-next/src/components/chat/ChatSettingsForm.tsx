@@ -526,6 +526,7 @@ function AddMemberDialog({
     }>
   >([]);
   const [loading, setLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(true);
 
   async function handleSearch(value: string) {
     setQuery(value);
@@ -551,7 +552,7 @@ function AddMemberDialog({
     const res = await fetch(`/api/chat/chats/${chatUuid}/members`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userUuid }),
+      body: JSON.stringify({ userUuid, showHistory }),
     });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
@@ -595,6 +596,17 @@ function AddMemberDialog({
             placeholder="Поиск по имени, логину или email…"
             className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
           />
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showHistory}
+              onChange={(e) => setShowHistory(e.target.checked)}
+              className="w-4 h-4 rounded border-(--border) accent-(--accent)"
+            />
+            <span className="text-(--text-secondary)">
+              Показать историю сообщений
+            </span>
+          </label>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2">

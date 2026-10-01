@@ -413,16 +413,27 @@ export async function getMessages(
   userUuid: string,
   opts: { before?: string; limit?: number } = {},
 ): Promise<ChatMessageItem[]> {
-  await assertChatMember(chatUuid, userUuid);
+  const membership = await assertChatMember(chatUuid, userUuid);
 
   const { before, limit = 50 } = opts;
+
+  // Объединяем оба условия в один объект, иначе второй спред затрёт первый
+  const createdAtFilter: { gte?: Date; lt?: Date } = {};
+  if (membership.history_visible_from) {
+    createdAtFilter.gte = membership.history_visible_from;
+  }
+  if (before) {
+    createdAtFilter.lt = new Date(before);
+  }
 
   const rows = await prisma.chat_messages.findMany({
     where: {
       chat_uuid: chatUuid,
       deleted_at: null,
       deletions: { none: { user_uuid: userUuid } },
-      ...(before ? { created_at: { lt: new Date(before) } } : {}),
+      ...(Object.keys(createdAtFilter).length > 0
+        ? { created_at: createdAtFilter }
+        : {}),
     },
     orderBy: { created_at: "desc" },
     take: limit,
@@ -473,7 +484,7 @@ export async function getMessages(
     forwarded_from_chat_uuid: m.forwarded_from_chat_uuid,
     forwarded_from_user_uuid: m.forwarded_from_user_uuid,
   }));
-};
+}
 
 // --------------------------------------------
 // Отправить сообщение
@@ -823,7 +834,14 @@ function canManageMember(
 // --------------------------------------------
 // Участники
 // --------------------------------------------
-export async function addChatMember(chatUuid: string, userUuid: string, byUuid: string) {
+export async function addChatMember(
+  chatUuid: string,
+  userUuid: string,
+  byUuid: string,
+  options: { showHistory?: boolean } = {},
+) {
+  const { showHistory = true } = options;
+
   const by = await prisma.chat_members.findUnique({
     where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: byUuid } },
   });
@@ -831,13 +849,16 @@ export async function addChatMember(chatUuid: string, userUuid: string, byUuid: 
     throw new Error("Только owner или admin может добавлять участников");
   }
 
+  const now = new Date();
+
   const member = await prisma.chat_members.create({
     data: {
       uuid: randomUUID(),
       chat_uuid: chatUuid,
       user_uuid: userUuid,
       role: "member",
-      joined_at: new Date(),
+      joined_at: now,
+      history_visible_from: showHistory ? null : now,
     },
   });
 
