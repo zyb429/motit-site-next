@@ -1,7 +1,7 @@
 // src/components/chat/ChatListSidebar.tsx
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChatList } from "./ChatList";
 import { NewChatDialog } from "./NewChatDialog";
@@ -34,36 +34,80 @@ export function ChatListSidebar({
   }, [currentUserUuid]);
 
   // Слушаем персональное событие: удалён из чата / чат удалён
-  useChatSocket({
-    userUuid: currentUserUuid,
-    chatUuids: [],
-    onChatRemovedAction: useCallback(
-      (payload: { event: "chat:removed"; chatUuid: string }) => {
-        setChats((prev) => prev.filter((c) => c.uuid !== payload.chatUuid));
-        if (
-          typeof window !== "undefined" &&
-          window.location.pathname.includes(payload.chatUuid)
-        ) {
-          router.push(basePath);
-        }
-      },
-      [router, basePath],
-    ),
-    onChatUpdatedAction: useCallback(
-      (payload: {
-        event: "chat:updated";
-        chatUuid: string;
-        patch: Partial<{ is_muted: boolean; is_pinned: boolean }>;
-      }) => {
-        setChats((prev) =>
-          prev.map((c) =>
-            c.uuid === payload.chatUuid ? { ...c, ...payload.patch } : c,
-          ),
-        );
-      },
-      [],
-    ),
-  });
+  const chatUuids = useMemo(() => chats.map((c) => c.uuid), [chats]);
+
+useChatSocket({
+  userUuid: currentUserUuid,
+  chatUuids,
+  onMessageAction: useCallback(
+    (msg: {
+      uuid: string;
+      chat_uuid: string;
+      content: string;
+      kind: string;
+      created_at: string;
+      user: {
+        uuid: string;
+        full_name: string | null;
+        username: string | null;
+        avatar_url: string | null;
+      } | null;
+    }) => {
+      if (msg.user?.uuid === currentUserUuid) return;
+
+      setChats((prev) =>
+        prev.map((c) =>
+          c.uuid === msg.chat_uuid
+            ? {
+                ...c,
+                unread_count: c.unread_count + 1,
+                last_message: {
+                  content: msg.content,
+                  kind: msg.kind as "text" | "file" | "system" | "status_change",
+                  created_at: msg.created_at as unknown as Date,
+                  user: msg.user,
+                },
+              }
+            : c,
+        ),
+      );
+    },
+    [currentUserUuid],
+  ),
+  onChatRemovedAction: useCallback(
+    (payload: { event: "chat:removed"; chatUuid: string }) => {
+      setChats((prev) => prev.filter((c) => c.uuid !== payload.chatUuid));
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname.includes(payload.chatUuid)
+      ) {
+        router.push(basePath);
+      }
+    },
+    [router, basePath],
+  ),
+  onChatUpdatedAction: useCallback(
+    (payload: {
+      event: "chat:updated";
+      chatUuid: string;
+      patch: Partial<{ is_muted: boolean; is_pinned: boolean }>;
+    }) => {
+      setChats((prev) =>
+        prev.map((c) =>
+          c.uuid === payload.chatUuid ? { ...c, ...payload.patch } : c,
+        ),
+      );
+    },
+    [],
+  ),
+  onChatCreatedAction: useCallback(
+  () => {
+      // Просто перезапросить список с сервера
+      refreshChats();
+    },
+    [],
+  ),
+});
 
   async function refreshChats() {
     const res = await fetch("/api/chat/chats");
