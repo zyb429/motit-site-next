@@ -144,7 +144,7 @@ export function ChatHeader({
   const canAddMembers =
     chat.kind === "group" || chat.kind === "private_channel";
   const canLeave = chat.kind !== "direct" && chat.kind !== "saved";
-  const canDelete = chat.kind !== "direct" && chat.kind !== "saved";
+  const canDelete = chat.kind !== "saved";
 
   const hasMenuItems =
     onInfoAction ||

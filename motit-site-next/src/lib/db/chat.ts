@@ -97,7 +97,11 @@ async function assertChatMember(chatUuid: string, userUuid: string) {
 // --------------------------------------------
 export async function listChatsForUser(userUuid: string): Promise<ChatListItem[]> {
   const memberships = await prisma.chat_members.findMany({
-    where: { user_uuid: userUuid, chat: { is_archived: false } },
+    where: {
+      user_uuid: userUuid,
+      hidden_at: null,
+      chat: { is_archived: false },
+    },
     include: {
       chat: {
         include: {
@@ -1091,20 +1095,29 @@ export async function deleteChat(chatUuid: string, userUuid: string) {
   });
   if (!membership) throw new Error("Нет доступа");
 
-  if (membership.role !== "owner") {
-    throw new Error("Только владелец может удалить чат");
-  }
-
   const chat = await prisma.chats.findUnique({
     where: { uuid: chatUuid },
     select: { kind: true },
   });
-  if (!chat || chat.kind === "direct" || chat.kind === "saved") {
-    throw new Error("Этот чат нельзя удалить");
+  if (!chat) throw new Error("Чат не найден");
+
+  const isGroup =
+    chat.kind === "group" ||
+    chat.kind === "channel" ||
+    chat.kind === "private_channel";
+
+  // Владелец группы/канала — удалить для всех
+  if (isGroup && membership.role === "owner") {
+    await prisma.chats.delete({ where: { uuid: chatUuid } });
+    return { deleted: true, scope: "everyone" as const };
   }
 
-  await prisma.chats.delete({ where: { uuid: chatUuid } });
-  return { deleted: true };
+  // Все остальные — скрыть у себя
+  await prisma.chat_members.update({
+    where: { id: membership.id },
+    data: { hidden_at: new Date() },
+  });
+  return { deleted: true, scope: "self" as const };
 }
 
 // --------------------------------------------

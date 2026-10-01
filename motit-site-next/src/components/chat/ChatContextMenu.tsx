@@ -82,7 +82,7 @@ export function ChatContextMenu({
     chat.kind === "channel" ||
     chat.kind === "private_channel";
 
-  const canDelete = isGroup && chat.role === "owner";
+  const canDelete = chat.kind !== "saved";
   const canLeave = isGroup && chat.role !== "owner";
 
   return (
