@@ -140,7 +140,7 @@ export function ChatView({
               chat_uuid: msg.chat_uuid,
               kind: msg.kind as ChatMessageItem["kind"],
               content: msg.content,
-              reply_to_uuid: null,
+              reply_to_uuid: msg.reply_to_uuid ?? null,
               edited_at: null,
               deleted_at: null,
               created_at: msg.created_at as unknown as Date,
