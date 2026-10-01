@@ -41,6 +41,8 @@ sub.on("pmessage", (_pattern: string, channel: string, message: string) => {
         io.to(`chat:${chatUuid}`).emit("message:read", payload);
       } else if (payload.event === "message:deleted") {
         io.to(`chat:${chatUuid}`).emit("message:deleted", payload);
+      } else if (payload.event === "message:edited") {
+        io.to(`chat:${chatUuid}`).emit("message:edited", payload);
       } else {
         io.to(`chat:${chatUuid}`).emit("message:new", payload);
       }

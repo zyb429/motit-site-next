@@ -39,6 +39,15 @@ export async function PATCH(
     },
   });
 
+  // Broadcast в чат
+  await redis.publish(
+    `chat:${message.chat_uuid}:messages`,
+    JSON.stringify({
+      event: "message:edited",
+      message: updated,
+    }),
+  );
+
   return NextResponse.json({ data: updated });
 }
 

@@ -12,6 +12,7 @@ import {
   type NewMessageHandler,
   type TypingHandler,
   type MessageReadHandler,
+  type MessageEditedPayload,
 } from "@/hooks/useChatSocket";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import type {
@@ -208,6 +209,18 @@ export function ChatView({
                 content: "",
                 deleted_by: payload.deletedBy ?? null,
               }
+              : m,
+          ),
+        );
+      },
+      [],
+    ),
+    onEditedAction: useCallback(
+      (payload: MessageEditedPayload) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.uuid === payload.message.uuid
+              ? { ...m, ...payload.message, edited_at: new Date(payload.message.edited_at) }
               : m,
           ),
         );
