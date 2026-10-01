@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChatList } from "./ChatList";
 import { NewChatDialog } from "./NewChatDialog";
 import { ChatContextMenu } from "./ChatContextMenu";
-import { useChatSocket, type ChatRemovedHandler } from "@/hooks/useChatSocket";
+import { useChatSocket } from "@/hooks/useChatSocket";
 import type { ChatListItem } from "@/lib/db/chat";
 
 export function ChatListSidebar({
@@ -37,8 +37,8 @@ export function ChatListSidebar({
   useChatSocket({
     userUuid: currentUserUuid,
     chatUuids: [],
-    onChatRemovedAction: useCallback<ChatRemovedHandler>(
-      (payload) => {
+    onChatRemovedAction: useCallback(
+      (payload: { event: "chat:removed"; chatUuid: string }) => {
         setChats((prev) => prev.filter((c) => c.uuid !== payload.chatUuid));
         if (
           typeof window !== "undefined" &&
@@ -48,6 +48,20 @@ export function ChatListSidebar({
         }
       },
       [router, basePath],
+    ),
+    onChatUpdatedAction: useCallback(
+      (payload: {
+        event: "chat:updated";
+        chatUuid: string;
+        patch: Partial<{ is_muted: boolean; is_pinned: boolean }>;
+      }) => {
+        setChats((prev) =>
+          prev.map((c) =>
+            c.uuid === payload.chatUuid ? { ...c, ...payload.patch } : c,
+          ),
+        );
+      },
+      [],
     ),
   });
 

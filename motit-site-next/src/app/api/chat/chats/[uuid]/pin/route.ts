@@ -1,7 +1,7 @@
-// src/app/api/chat/chats/[uuid]/pin/route.ts
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { togglePinChat } from "@/lib/db/chat";
+import { redis } from "@/lib/redis";
 
 export async function POST(
   _req: Request,
@@ -14,6 +14,16 @@ export async function POST(
 
   try {
     const result = await togglePinChat(uuid, user.uuid);
+
+    await redis.publish(
+      `user:${user.uuid}:chats`,
+      JSON.stringify({
+        event: "chat:updated",
+        chatUuid: uuid,
+        patch: { is_pinned: result.is_pinned },
+      }),
+    );
+
     return NextResponse.json({ success: true, is_pinned: result.is_pinned });
   } catch (e) {
     return NextResponse.json(

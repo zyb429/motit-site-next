@@ -60,6 +60,12 @@ export type ChatRemovedHandler = (payload: {
   chatUuid: string;
 }) => void;
 
+export type ChatUpdatedHandler = (payload: {
+  event: "chat:updated";
+  chatUuid: string;
+  patch: Partial<{ is_muted: boolean; is_pinned: boolean }>;
+}) => void;
+
 export function useChatSocket({
   userUuid,
   chatUuids,
@@ -69,6 +75,7 @@ export function useChatSocket({
   onReadAction,
   onDeletedAction,
   onChatRemovedAction,
+  onChatUpdatedAction,
 }: {
   userUuid: string;
   chatUuids: string[];
@@ -78,6 +85,7 @@ export function useChatSocket({
   onReadAction?: MessageReadHandler;
   onDeletedAction?: MessageDeletedHandler;
   onChatRemovedAction?: ChatRemovedHandler;
+  onChatUpdatedAction?: ChatUpdatedHandler;
 }) {
   useEffect(() => {
     const socket = getSocket(userUuid);
@@ -88,6 +96,7 @@ export function useChatSocket({
     const handleRead: MessageReadHandler = (p) => onReadAction?.(p);
     const handleDeleted: MessageDeletedHandler = (p) => onDeletedAction?.(p);
     const handleChatRemoved: ChatRemovedHandler = (p) => onChatRemovedAction?.(p);
+    const handleChatUpdated: ChatUpdatedHandler = (p) => onChatUpdatedAction?.(p);
 
     socket.on("message:new", handleMessage);
     socket.on("typing", handleTyping);
@@ -95,6 +104,7 @@ export function useChatSocket({
     socket.on("message:read", handleRead);
     socket.on("message:deleted", handleDeleted);
     socket.on("chat:removed", handleChatRemoved);
+    socket.on("chat:updated", handleChatUpdated);
 
     const join = () => {
       chatUuids.forEach((uuid) => socket.emit("chat:join", uuid));
@@ -112,6 +122,7 @@ export function useChatSocket({
       socket.off("message:read", handleRead);
       socket.off("message:deleted", handleDeleted);
       socket.off("chat:removed", handleChatRemoved);
+      socket.off("chat:updated", handleChatUpdated);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUuid, chatUuids.join(",")]);

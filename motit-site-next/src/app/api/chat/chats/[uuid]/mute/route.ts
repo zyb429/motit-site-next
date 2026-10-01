@@ -1,7 +1,7 @@
-// src/app/api/chat/chats/[uuid]/mute/route.ts
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { toggleMuteChat } from "@/lib/db/chat";
+import { redis } from "@/lib/redis";
 
 export async function POST(
   _req: Request,
@@ -14,6 +14,17 @@ export async function POST(
 
   try {
     const result = await toggleMuteChat(uuid, user.uuid);
+
+    // Broadcast всем вкладкам этого пользователя
+    await redis.publish(
+      `user:${user.uuid}:chats`,
+      JSON.stringify({
+        event: "chat:updated",
+        chatUuid: uuid,
+        patch: { is_muted: result.is_muted },
+      }),
+    );
+
     return NextResponse.json({ success: true, is_muted: result.is_muted });
   } catch (e) {
     return NextResponse.json(
