@@ -14,6 +14,7 @@ export function ChatList({
   onNewChatAction,
   onSavedAction,
   onContextMenuAction,
+  onChatClickAction,
 }: {
   chats: ChatListItemType[];
   currentUserUuid: string;
@@ -25,6 +26,7 @@ export function ChatList({
     x: number,
     y: number,
   ) => void;
+  onChatClickAction?: (chat: ChatListItemType) => void;
 }) {
   const [search, setSearch] = useState("");
   const pathname = usePathname();
@@ -114,6 +116,7 @@ export function ChatList({
                     href={`${basePath}/${c.uuid}`}
                     isActive={pathname === `${basePath}/${c.uuid}`}
                     onContextMenuAction={onContextMenuAction}
+                    onChatClickAction={onChatClickAction}
                   />
                 ))}
               </>
@@ -133,6 +136,7 @@ export function ChatList({
                 href={`${basePath}/${c.uuid}`}
                 isActive={pathname === `${basePath}/${c.uuid}`}
                 onContextMenuAction={onContextMenuAction}
+                onChatClickAction={onChatClickAction}
               />
             ))}
           </>

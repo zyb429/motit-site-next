@@ -79,7 +79,12 @@ export function ChatView({
 
   const markAsRead = useCallback(() => {
     if (typeof document !== "undefined" && !document.hasFocus()) return;
-    if (messages.length <= lastMarkedCountRef.current) return;
+    if (
+      messages.length <= lastMarkedCountRef.current &&
+      lastMarkedCountRef.current > 0
+    ) {
+      return;
+    }
 
     if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
     markReadTimerRef.current = setTimeout(async () => {

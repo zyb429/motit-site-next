@@ -8,6 +8,7 @@ import {
   Bell,
   BellOff,
   MailCheck,
+  MailOpen,
   Trash2,
   LogOut,
 } from "lucide-react";
@@ -21,6 +22,7 @@ export function ChatContextMenu({
   onPinAction,
   onMuteAction,
   onMarkUnreadAction,
+  onMarkReadAction,
   onDeleteAction,
   onLeaveAction,
 }: {
@@ -31,6 +33,7 @@ export function ChatContextMenu({
   onPinAction: () => void;
   onMuteAction: () => void;
   onMarkUnreadAction: () => void;
+  onMarkReadAction: () => void;
   onDeleteAction: () => void;
   onLeaveAction?: () => void;
 }) {
@@ -101,11 +104,19 @@ export function ChatContextMenu({
           label={chat.is_muted ? "Включить уведомления" : "Отключить уведомления"}
           onClickAction={() => run(onMuteAction)}
         />
-        <MenuItem
-          icon={<MailCheck size={14} />}
-          label="Отметить как непрочитанное"
-          onClickAction={() => run(onMarkUnreadAction)}
-        />
+        {chat.unread_count > 0 ? (
+          <MenuItem
+            icon={<MailOpen size={14} />}
+            label="Пометить как прочитанное"
+            onClickAction={() => run(onMarkReadAction)}
+          />
+        ) : (
+          <MenuItem
+            icon={<MailCheck size={14} />}
+            label="Пометить как непрочитанное"
+            onClickAction={() => run(onMarkUnreadAction)}
+          />
+        )}
         {canDelete && (
           <MenuItem
             icon={<Trash2 size={14} />}

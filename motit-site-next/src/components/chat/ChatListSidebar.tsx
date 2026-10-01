@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChatList } from "./ChatList";
 import { NewChatDialog } from "./NewChatDialog";
 import { ChatContextMenu } from "./ChatContextMenu";
-import { useChatSocket } from "@/hooks/useChatSocket";
+import { useChatSocket, type ChatRemovedHandler } from "@/hooks/useChatSocket";
 import type { ChatListItem } from "@/lib/db/chat";
 
 export function ChatListSidebar({
@@ -37,7 +37,7 @@ export function ChatListSidebar({
   useChatSocket({
     userUuid: currentUserUuid,
     chatUuids: [],
-    onChatRemovedAction: useCallback(
+    onChatRemovedAction: useCallback<ChatRemovedHandler>(
       (payload) => {
         setChats((prev) => prev.filter((c) => c.uuid !== payload.chatUuid));
         if (
@@ -130,6 +130,22 @@ export function ChatListSidebar({
     }
   }
 
+  async function handleMarkRead(chat: ChatListItem) {
+    setChats((prev) =>
+      prev.map((c) => (c.uuid === chat.uuid ? { ...c, unread_count: 0 } : c)),
+    );
+    const res = await fetch(`/api/chat/chats/${chat.uuid}/read`, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      setChats((prev) =>
+        prev.map((c) =>
+          c.uuid === chat.uuid ? { ...c, unread_count: chat.unread_count } : c,
+        ),
+      );
+    }
+  }
+
   async function handleDelete(chat: ChatListItem) {
     if (!confirm(`Удалить чат «${chat.name ?? "без названия"}»?`)) return;
     const res = await fetch(`/api/chat/chats/${chat.uuid}`, {
@@ -165,6 +181,15 @@ export function ChatListSidebar({
     }
   }
 
+  function handleChatClick(chat: ChatListItem) {
+    // Локально сбрасываем бейдж сразу — не ждём ответа сервера
+    if (chat.unread_count > 0) {
+      setChats((prev) =>
+        prev.map((c) => (c.uuid === chat.uuid ? { ...c, unread_count: 0 } : c)),
+      );
+    }
+  }
+
   return (
     <>
       <ChatList
@@ -174,6 +199,7 @@ export function ChatListSidebar({
         onNewChatAction={() => setShowNewDialog(true)}
         onSavedAction={openSaved}
         onContextMenuAction={(chat, x, y) => setMenu({ chat, x, y })}
+        onChatClickAction={handleChatClick}
       />
 
       {showNewDialog && (
@@ -192,6 +218,7 @@ export function ChatListSidebar({
           onCloseAction={() => setMenu(null)}
           onPinAction={() => handlePin(menu.chat)}
           onMuteAction={() => handleMute(menu.chat)}
+          onMarkReadAction={() => handleMarkRead(menu.chat)}
           onMarkUnreadAction={() => handleMarkUnread(menu.chat)}
           onDeleteAction={() => handleDelete(menu.chat)}
           onLeaveAction={() => handleLeave(menu.chat)}

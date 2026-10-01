@@ -27,6 +27,7 @@ export function ChatListItem({
   href,
   isActive,
   onContextMenuAction,
+  onChatClickAction,
 }: {
   chat: ChatListItemType;
   currentUserUuid: string;
@@ -37,6 +38,7 @@ export function ChatListItem({
     x: number,
     y: number,
   ) => void;
+  onChatClickAction?: (chat: ChatListItemType) => void;
 }) {
   const otherMember = chat.members.find((m) => m.user.uuid !== currentUserUuid);
   const displayName =
@@ -56,6 +58,7 @@ export function ChatListItem({
   return (
     <Link
       href={href}
+      onClick={() => onChatClickAction?.(chat)}
       onContextMenu={(e) => {
         e.preventDefault();
         onContextMenuAction?.(chat, e.clientX, e.clientY);
@@ -131,10 +134,19 @@ export function ChatListItem({
       </div>
 
       {/* Badge непрочитанных */}
-      {chat.unread_count > 0 && !chat.is_muted && (
-        <div className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-(--accent) text-(--bg-card) text-[10px] font-semibold flex items-center justify-center">
-          {chat.unread_count > 99 ? "99+" : chat.unread_count}
-        </div>
+      {chat.unread_count > 0 &&
+        (chat.is_muted ? (
+          // Маленький кружок без числа — для замьюченных
+          <div
+            className="shrink-0 w-2.5 h-2.5 rounded-full bg-(--accent)"
+            aria-label="Непрочитанные"
+          />
+        ) : (
+          // Кружок с числом — обычный непрочитанный
+          <div className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-(--accent) text-(--bg-card) text-[10px] font-semibold flex items-center justify-center">
+            {chat.unread_count > 99 ? "99+" : chat.unread_count}
+          </div>
+        )
       )}
     </Link>
   );
