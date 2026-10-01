@@ -26,6 +26,7 @@ export type ChatListItem = {
   unread_count: number;
   is_pinned: boolean;
   is_muted: boolean;
+  role: ChatMemberRole;
   // последнее сообщение
   last_message: {
     content: string;
@@ -141,6 +142,7 @@ export async function listChatsForUser(userUuid: string): Promise<ChatListItem[]
       unread_count: m.unread_count,
       is_pinned: m.is_pinned,
       is_muted: m.is_muted,
+      role: m.role as ChatMemberRole,
       last_message: last
         ? {
             content: last.content,
@@ -760,6 +762,21 @@ export async function markChatAsRead(chatUuid: string, userUuid: string) {
     }
 
     return { markedCount: unread.length };
+  });
+}
+
+// --------------------------------------------
+// Отметить чат непрочитанным
+// --------------------------------------------
+export async function markChatAsUnread(chatUuid: string, userUuid: string) {
+  const membership = await prisma.chat_members.findUnique({
+    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+  });
+  if (!membership) throw new Error("Нет доступа");
+
+  return prisma.chat_members.update({
+    where: { id: membership.id },
+    data: { unread_count: Math.max(membership.unread_count, 1) },
   });
 }
 
