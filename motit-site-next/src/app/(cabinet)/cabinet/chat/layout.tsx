@@ -21,6 +21,7 @@ export default async function CabinetChatLayout({
       basePath="/cabinet/chat"
       sidebar={
         <ChatListSidebar
+          key={user.uuid}
           initialChats={chats}
           currentUserUuid={user.uuid}
           basePath="/cabinet/chat"

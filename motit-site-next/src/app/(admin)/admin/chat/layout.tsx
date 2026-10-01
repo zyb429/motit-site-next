@@ -21,6 +21,7 @@ export default async function AdminChatLayout({
       basePath="/admin/chat"
       sidebar={
         <ChatListSidebar
+          key={user.uuid}
           initialChats={chats}
           currentUserUuid={user.uuid}
           basePath="/admin/chat"
