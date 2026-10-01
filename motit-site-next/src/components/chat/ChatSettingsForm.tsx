@@ -1,9 +1,8 @@
 // src/components/chat/ChatSettingsForm.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useChatSocket } from "@/hooks/useChatSocket";
 import {
   Bell,
   BellOff,
@@ -112,22 +111,11 @@ export function ChatSettingsForm({
     userName: string;
   } | null>(null);
 
-  useChatSocket({
-    userUuid: currentUserUuid ?? "",
-    chatUuids: [],
-    onChatUpdatedAction: useCallback(
-      (payload: {
-        event: "chat:updated";
-        chatUuid: string;
-        patch: Partial<{ is_muted: boolean; is_pinned: boolean }>;
-      }) => {
-        if (payload.chatUuid !== chat.uuid) return;
-        if (payload.patch.is_muted !== undefined) setMuted(payload.patch.is_muted);
-        if (payload.patch.is_pinned !== undefined) setPinned(payload.patch.is_pinned);
-      },
-      [chat.uuid],
-    ),
-  });
+  // Синхронизация mute/pin с родительским RSC при возврате на страницу
+  useEffect(() => {
+    setMuted(isMuted);
+    setPinned(isPinned);
+  }, [isMuted, isPinned]);
 
   // ---------- Сохранение ----------
   async function handleSave() {
