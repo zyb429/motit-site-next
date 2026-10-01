@@ -71,7 +71,7 @@ sub.on("pmessage", (_pattern: string, channel: string, message: string) => {
   }
 });
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   const userUuid = socket.handshake.auth?.userUuid as string | undefined;
 
   if (!userUuid) {
@@ -83,6 +83,19 @@ io.on("connection", (socket) => {
   socket.join(`user:${userUuid}`);
 
   console.log(`[ws] + ${userUuid} (${socket.id})`);
+
+  // Сообщаем новому клиенту, кто уже онлайн
+  try {
+    const keys = await presence.keys("presence:*");
+    for (const key of keys) {
+      const uuid = key.replace("presence:", "");
+      if (uuid !== userUuid) {
+        socket.emit("presence:update", { userUuid: uuid, status: "online" });
+      }
+    }
+  } catch (err) {
+    console.error("[ws] failed to load online users", err);
+  }
 
   presence.set(`presence:${userUuid}`, "1", "EX", 60);
   pub.publish(

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChatWindow } from "./ChatWindow";
 import { DeleteMessageDialog } from "./DeleteMessageDialog";
 import { ForwardDialog } from "./ForwardDialog";
+import { usePresence } from "@/hooks/usePresence";
 import { MediaPreviewModal, type PreviewFile } from "./MediaPreviewModal";
 import {
   useChatSocket,
@@ -74,6 +75,7 @@ export function ChatView({
   );
 
   const { signalTyping } = useTypingIndicator(currentUserUuid, chat.uuid);
+  const { isOnline } = usePresence(currentUserUuid);
 
   const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMarkedCountRef = useRef<number>(0);
@@ -468,6 +470,7 @@ export function ChatView({
         <ChatWindow
           chat={chat}
           currentUserUuid={currentUserUuid}
+          isOnlineAction={isOnline}
           messages={messages}
           onSendMessageAction={handleSend}
           onTypingAction={signalTyping}
