@@ -8,6 +8,8 @@ import {
   createGroupChat,
   createChannel,
 } from "@/lib/db/chat";
+import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -36,6 +38,29 @@ const createSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
+/**
+ * Оповещает всех новых участников (кроме создателя) о новом чате
+ * через персональный канал user:<uuid>:chats
+ */
+async function notifyNewChat(chatUuid: string, createdByUuid: string) {
+  const members = await prisma.chat_members.findMany({
+    where: {
+      chat_uuid: chatUuid,
+      user_uuid: { not: createdByUuid },
+    },
+    select: { user_uuid: true },
+  });
+
+  await Promise.all(
+    members.map((m) =>
+      redis.publish(
+        `user:${m.user_uuid}:chats`,
+        JSON.stringify({ event: "chat:created", chatUuid }),
+      ),
+    ),
+  );
+}
+
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
@@ -50,6 +75,7 @@ export async function POST(req: Request) {
 
     if (data.kind === "direct") {
       const chat = await getOrCreateDirectChat(user.uuid, data.userUuid);
+      await notifyNewChat(chat.uuid, user.uuid);
       return NextResponse.json({ data: chat }, { status: 201 });
     }
 
@@ -60,6 +86,7 @@ export async function POST(req: Request) {
         creatorUuid: user.uuid,
         memberUuids: data.memberUuids,
       });
+      await notifyNewChat(chat.uuid, user.uuid);
       return NextResponse.json({ data: chat }, { status: 201 });
     }
 
@@ -70,6 +97,7 @@ export async function POST(req: Request) {
         creatorUuid: user.uuid,
         isPrivate: data.isPrivate,
       });
+      await notifyNewChat(chat.uuid, user.uuid);
       return NextResponse.json({ data: chat }, { status: 201 });
     }
   } catch (err) {

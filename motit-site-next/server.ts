@@ -59,6 +59,8 @@ sub.on("pmessage", (_pattern: string, channel: string, message: string) => {
       if (kind === "chats") {
         if (payload.event === "chat:updated") {
           io.to(`user:${userUuid}`).emit("chat:updated", payload);
+        } else if (payload.event === "chat:created") {
+          io.to(`user:${userUuid}`).emit("chat:created", payload);
         } else {
           io.to(`user:${userUuid}`).emit("chat:removed", payload);
         }
