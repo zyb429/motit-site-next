@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:all": "bun run ws & bun run dev",
+    "dev:all": "concurrently -n ws,next -c blue,green \"bun run ws\" \"bun run dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -107,6 +107,7 @@
     "@types/slate-react": "^0.50.1",
     "@types/socket.io": "^3.0.2",
     "autoprefixer": "^10.4.23",
+    "concurrently": "^10.0.5",
     "eslint": "^9.39.1",
     "eslint-config-next": "^16.3.1",
     "eslint-formatter-compact": "^9.0.1",

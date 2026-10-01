@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendMessage } from "@/lib/db/chat";
 import { uploadToS3 } from "@/lib/s3";
+import { redis } from "@/lib/redis";                          // ← добавлено
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,6 +74,9 @@ export async function POST(
     replyToUuid,
     attachmentFileIds: fileIds.length > 0 ? fileIds : undefined,
   });
+
+  // Broadcast через Redis — как в POST /messages
+  await redis.publish(`chat:${chatUuid}:messages`, JSON.stringify(message));   // ← добавлено
 
   return NextResponse.json({ data: [message] });
 }

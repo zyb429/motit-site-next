@@ -121,7 +121,9 @@ export function ChatView({
     onMessageAction: useCallback(
       (msg: Parameters<NewMessageHandler>[0]) => {
         if (!msg?.uuid) return;
-        if (msg.user?.uuid === currentUserUuid) return;
+        if (msg.user?.uuid === currentUserUuid) {
+          return;
+        }
         setMessages((prev) =>
           addMessages(prev, [
             {
@@ -134,12 +136,12 @@ export function ChatView({
               deleted_at: null,
               created_at: msg.created_at as unknown as Date,
               user: msg.user,
-              attachments: [],
+              attachments: msg.attachments ?? [],
               reactions: [],
               read_receipts: [],
-              forwarded_from_message_uuid: null,
-              forwarded_from_chat_uuid: null,
-              forwarded_from_user_uuid: null,
+              forwarded_from_message_uuid: msg.forwarded_from_message_uuid ?? null,
+              forwarded_from_chat_uuid: msg.forwarded_from_chat_uuid ?? null,
+              forwarded_from_user_uuid: msg.forwarded_from_user_uuid ?? null,
             },
           ]),
         );

@@ -10,6 +10,21 @@ export type NewMessageHandler = (msg: {
   content: string;
   kind: string;
   created_at: string;
+  reply_to_uuid?: string | null;
+  forwarded_from_message_uuid?: string | null;
+  forwarded_from_chat_uuid?: string | null;
+  forwarded_from_user_uuid?: string | null;
+  attachments?: Array<{
+    uuid: string;
+    file: {
+      id: number;
+      uuid: string;
+      name: string;
+      url: string;
+      mime: string | null;
+      size: number | null;
+    };
+  }>;
   user: {
     uuid: string;
     full_name: string | null;
@@ -59,7 +74,9 @@ export function useChatSocket({
   useEffect(() => {
     const socket = getSocket(userUuid);
 
-    const handleMessage: NewMessageHandler = (msg) => onMessageAction?.(msg);
+    const handleMessage: NewMessageHandler = (msg) => {
+      onMessageAction?.(msg);
+    };
     const handleTyping: TypingHandler = (p) => onTypingAction?.(p);
     const handlePresence: PresenceHandler = (p) => onPresenceAction?.(p);
     const handleRead: MessageReadHandler = (p) => onReadAction?.(p);
@@ -71,9 +88,21 @@ export function useChatSocket({
     socket.on("message:read", handleRead);
     socket.on("message:deleted", handleDeleted);
 
-    chatUuids.forEach((uuid) => socket.emit("chat:join", uuid));
+    // Join chat rooms — обязательно ПОСЛЕ connect,
+    // иначе при перезагрузке/реконнекте комнаты не подтвердятся
+    const join = () => {
+      chatUuids.forEach((uuid) => {
+        socket.emit("chat:join", uuid);
+      });
+    };
+
+    if (socket.connected) {
+      join();
+    }
+    socket.on("connect", join);
 
     return () => {
+      socket.off("connect", join);
       chatUuids.forEach((uuid) => socket.emit("chat:leave", uuid));
       socket.off("message:new", handleMessage);
       socket.off("typing", handleTyping);
