@@ -29,8 +29,11 @@ export async function POST(
 
   const form = await req.formData();
   const files = form.getAll("files") as File[];
-  if (files.length === 0) {
-    return NextResponse.json({ error: "Нет файлов" }, { status: 400 });
+  const content = ((form.get("content") as string) ?? "").trim();
+  const replyToUuid = (form.get("replyToUuid") as string) || undefined;
+
+  if (files.length === 0 && !content) {
+    return NextResponse.json({ error: "Пустое сообщение" }, { status: 400 });
   }
 
   const fileIds: number[] = [];
@@ -65,9 +68,10 @@ export async function POST(
   const message = await sendMessage({
     chatUuid,
     userUuid: user.uuid,
-    content: "",
-    kind: "file",
-    attachmentFileIds: fileIds,
+    content,
+    kind: files.length > 0 ? "file" : "text",
+    replyToUuid,
+    attachmentFileIds: fileIds.length > 0 ? fileIds : undefined,
   });
 
   return NextResponse.json({ data: [message] });

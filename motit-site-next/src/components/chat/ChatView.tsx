@@ -224,9 +224,11 @@ export function ChatView({
   );
 
   const handleAttach = useCallback(
-    async (files: File[]) => {
+    async (files: File[], content: string) => {
       const form = new FormData();
       for (const f of files) form.append("files", f);
+      form.append("content", content);
+      if (replyTo) form.append("replyToUuid", replyTo.uuid);
 
       const res = await fetch(`/api/chat/chats/${chat.uuid}/attachments`, {
         method: "POST",
@@ -244,8 +246,9 @@ export function ChatView({
       const list = (data?.data ?? []).filter((m: ChatMessageItem) => m?.uuid);
       if (list.length === 0) return;
       setMessages((prev) => addMessages(prev, list));
+      setReplyTo(null);
     },
-    [chat.uuid, addMessages],
+    [chat.uuid, replyTo, addMessages],
   );
 
   const handleEditSubmit = useCallback(

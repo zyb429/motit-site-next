@@ -45,7 +45,7 @@ type ChatWindowProps = {
   onCopyAction?: (message: ChatMessageItem) => void;
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
-  onAttachAction?: (files: File[]) => Promise<void>;
+  onAttachAction?: (files: File[], content: string) => Promise<void>;
 
   // Действия меню хедера
   onChatInfoAction?: () => void;
