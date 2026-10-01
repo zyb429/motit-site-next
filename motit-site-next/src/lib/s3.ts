@@ -14,7 +14,7 @@ export const s3 = new S3Client({
 
 export const S3_BUCKET = process.env.S3_BUCKET || "motit-uploads";
 export const S3_PUBLIC_URL =
-  process.env.S3_PUBLIC_URL || "http://localhost:9000/motit-uploads";
+  process.env.S3_PUBLIC_URL || "/files";
 
 export function publicUrl(key: string): string {
   return `${S3_PUBLIC_URL.replace(/\/+$/, "")}/${key.replace(/^\/+/, "")}`;

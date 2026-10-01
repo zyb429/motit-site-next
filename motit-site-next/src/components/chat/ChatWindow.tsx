@@ -6,6 +6,7 @@ import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { TypingIndicator } from "./TypingIndicator";
 import type { ChatMessageItem } from "@/lib/db/chat";
+import type { PreviewFile } from "./MediaPreviewModal";
 
 type ChatWindowProps = {
   chat: {
@@ -30,6 +31,7 @@ type ChatWindowProps = {
   hasMore?: boolean;
   isOnlineAction?: (userUuid: string) => boolean;
   typingUsers?: string[];
+  onPreviewFileAction?: (file: PreviewFile, allFiles: PreviewFile[]) => void;
 
   // Управление сообщениями
   replyTo?: ChatMessageItem | null;
@@ -76,6 +78,7 @@ export function ChatWindow({
   onReactAction,
   onForwardAction,
   onAttachAction,
+  onPreviewFileAction,
   onChatInfoAction,
   onChatSettingsAction,
   onChatAddMembersAction,
@@ -115,6 +118,7 @@ export function ChatWindow({
         onDeleteAction={onDeleteAction}
         onReactAction={onReactAction}
         onForwardAction={onForwardAction}
+        onPreviewFileAction={onPreviewFileAction}
       />
 
       <TypingIndicator names={typingNames} />

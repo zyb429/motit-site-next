@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useCallback } from "react";
 import type { ChatMessageItem } from "@/lib/db/chat";
+import type { PreviewFile } from "./MediaPreviewModal";
 import { MessageBubble } from "./MessageBubble";
 
 export function MessageList({
@@ -16,6 +17,7 @@ export function MessageList({
   onDeleteAction,
   onReactAction,
   onForwardAction,
+  onPreviewFileAction,
 }: {
   messages: ChatMessageItem[];
   currentUserUuid: string;
@@ -27,6 +29,7 @@ export function MessageList({
   onDeleteAction?: (message: ChatMessageItem) => void;
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
+  onPreviewFileAction?: (file: PreviewFile, allFiles: PreviewFile[]) => void;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -132,6 +135,7 @@ export function MessageList({
                 onReactAction={onReactAction}
                 onForwardAction={onForwardAction}
                 onJumpToReplyAction={jumpToMessage}
+                onPreviewFileAction={onPreviewFileAction}
               />
             </div>
           ))}

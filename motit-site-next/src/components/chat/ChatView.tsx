@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChatWindow } from "./ChatWindow";
 import { DeleteMessageDialog } from "./DeleteMessageDialog";
 import { ForwardDialog } from "./ForwardDialog";
+import { MediaPreviewModal, type PreviewFile } from "./MediaPreviewModal";
 import {
   useChatSocket,
   type NewMessageHandler,
@@ -382,6 +383,27 @@ export function ChatView({
     }
   }, [router, basePath, chat.uuid]);
 
+  const [previewFiles, setPreviewFiles] = useState<PreviewFile[]>([]);
+  const [previewIndex, setPreviewIndex] = useState<number>(-1);
+
+  const openPreview = useCallback(
+    (file: PreviewFile, allFiles: PreviewFile[]) => {
+      setPreviewFiles(allFiles);
+      const idx = allFiles.findIndex((f) => f.uuid === file.uuid);
+      setPreviewIndex(idx >= 0 ? idx : 0);
+    },
+    [],
+  );
+
+  const closePreview = useCallback(() => {
+    setPreviewIndex(-1);
+    setPreviewFiles([]);
+  }, []);
+
+  const navigatePreview = useCallback((index: number) => {
+    setPreviewIndex(index);
+  }, []);
+
   return (
     <>
       <div className="flex-1 min-h-0 flex flex-col">
@@ -408,6 +430,7 @@ export function ChatView({
           onChatSettingsAction={handleChatSettings}
           onChatLeaveAction={handleLeaveChat}
           onChatDeleteAction={handleDeleteChat}
+          onPreviewFileAction={openPreview}
         />
       </div>
 
@@ -425,6 +448,16 @@ export function ChatView({
           currentUserUuid={currentUserUuid}
           onCloseAction={() => setForwarding(null)}
           onForwardAction={handleForward}
+        />
+      )}
+
+      {previewIndex >= 0 && previewFiles[previewIndex] && (
+        <MediaPreviewModal
+          file={previewFiles[previewIndex]}
+          siblings={previewFiles}
+          currentIndex={previewIndex}
+          onCloseAction={closePreview}
+          onNavigateAction={navigatePreview}
         />
       )}
     </>

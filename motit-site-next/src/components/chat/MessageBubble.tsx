@@ -5,6 +5,7 @@ import { useState, useSyncExternalStore, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { Check, CheckCheck, CornerUpLeft, Forward } from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
+import type { PreviewFile } from "./MediaPreviewModal";
 import { MessageContextMenu } from "./MessageContextMenu";
 
 function formatTime(date: Date | string | null): string {
@@ -24,6 +25,7 @@ export function MessageBubble({
   onReactAction,
   onForwardAction,
   onJumpToReplyAction,
+  onPreviewFileAction,
 }: {
   message: ChatMessageItem;
   currentUserUuid: string;
@@ -35,6 +37,7 @@ export function MessageBubble({
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
   onJumpToReplyAction?: (messageUuid: string) => void;
+  onPreviewFileAction?: (file: PreviewFile, allFiles: PreviewFile[]) => void;
 }) {
   const isOwn = message.user?.uuid === currentUserUuid;
   const isSystem = message.kind === "system" || message.kind === "status_change";
@@ -71,6 +74,16 @@ export function MessageBubble({
 
   const isRead =
     isOwn && message.read_receipts.some((r) => r.user_uuid !== currentUserUuid);
+
+  // Все файлы этого сообщения — для навигации ← → в модалке
+  const filesInMessage: PreviewFile[] = message.attachments.map((a) => ({
+    id: a.file.id,
+    uuid: a.file.uuid,
+    name: a.file.name,
+    url: a.file.url,
+    mime: a.file.mime,
+    size: a.file.size,
+  }));
 
   function handleContextMenu(e: MouseEvent<HTMLDivElement>) {
     e.preventDefault();
@@ -183,13 +196,20 @@ export function MessageBubble({
               <div className="mt-2 space-y-1">
                 {message.attachments.map((a) => {
                   const isImage = a.file.mime?.startsWith("image/");
+                  const file: PreviewFile = {
+                    id: a.file.id,
+                    uuid: a.file.uuid,
+                    name: a.file.name,
+                    url: a.file.url,
+                    mime: a.file.mime,
+                    size: a.file.size,
+                  };
                   return (
-                    <a
+                    <button
                       key={a.uuid}
-                      href={a.file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`block rounded-lg overflow-hidden ${
+                      type="button"
+                      onClick={() => onPreviewFileAction?.(file, filesInMessage)}
+                      className={`block w-full text-left rounded-lg overflow-hidden cursor-zoom-in ${
                         isOwn ? "bg-black/10" : "bg-(--bg-card)"
                       }`}
                     >
@@ -205,7 +225,7 @@ export function MessageBubble({
                           📎 {a.file.name}
                         </div>
                       )}
-                    </a>
+                    </button>
                   );
                 })}
               </div>
