@@ -26,20 +26,24 @@ export function ChatListItem({
   currentUserUuid,
   href,
   isActive,
+  onContextMenuAction,
 }: {
   chat: ChatListItemType;
   currentUserUuid: string;
   href: string;
   isActive: boolean;
+  onContextMenuAction?: (
+    chat: ChatListItemType,
+    x: number,
+    y: number,
+  ) => void;
 }) {
-  // Для direct-чата — имя собеседника
   const otherMember = chat.members.find((m) => m.user.uuid !== currentUserUuid);
   const displayName =
     chat.kind === "direct"
       ? otherMember?.user.full_name ?? otherMember?.user.username ?? "Без имени"
       : chat.name ?? "Без названия";
 
-  // Иконка по типу чата (порядок важен: private_channel раньше channel)
   const KindIcon =
     chat.kind === "private_channel"
       ? Lock
@@ -52,6 +56,10 @@ export function ChatListItem({
   return (
     <Link
       href={href}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onContextMenuAction?.(chat, e.clientX, e.clientY);
+      }}
       className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
         isActive
           ? "bg-(--accent-dim) border border-(--accent)"
