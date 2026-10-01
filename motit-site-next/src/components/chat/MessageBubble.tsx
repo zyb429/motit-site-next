@@ -63,10 +63,13 @@ export function MessageBubble({
 
   // Удалённые сообщения — плашка вместо пузыря
   if (message.deleted_at) {
+    const deleter = message.deleted_by;
+    const isMe = deleter?.uuid === currentUserUuid;
+    const name = deleter?.full_name ?? deleter?.username;
     return (
       <div className="text-center py-1">
         <span className="text-xs text-(--text-muted) italic px-2 py-0.5 rounded-full bg-(--bg-primary)">
-          Сообщение удалено
+          {isMe || !name ? "Сообщение удалено" : `${name} удалил(а) сообщение`}
         </span>
       </div>
     );

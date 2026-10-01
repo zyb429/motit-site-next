@@ -7,9 +7,6 @@ const PORT = Number(process.env.WS_PORT ?? 3001);
 const REDIS_URL = process.env.REDIS_URL ?? "redis://127.0.0.1:6379";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-// ============================================
-// Socket.IO server
-// ============================================
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
@@ -19,18 +16,17 @@ const io = new Server(httpServer, {
   transports: ["websocket", "polling"],
 });
 
-// ============================================
-// Redis clients
-// ============================================
 const pub = new Redis(REDIS_URL);
 const sub = new Redis(REDIS_URL);
 const presence = new Redis(REDIS_URL);
 
-// Подписки на каналы:
+// Подписки:
 //   chat:{chatUuid}:messages  — новое сообщение
+//   chat:{chatUuid}:read      — прочитано
 //   typing:{chatUuid}         — печатает / перестал
 //   presence:{userUuid}       — онлайн / оффлайн
-sub.psubscribe("chat:*", "typing:*", "presence:*");
+//   user:{userUuid}:chats     — персональные события чата (removed)
+sub.psubscribe("chat:*", "typing:*", "presence:*", "user:*");
 
 sub.on("pmessage", (_pattern: string, channel: string, message: string) => {
   try {
@@ -53,15 +49,20 @@ sub.on("pmessage", (_pattern: string, channel: string, message: string) => {
       io.to(`chat:${chatUuid}`).emit("typing", payload);
     } else if (channel.startsWith("presence:")) {
       io.emit("presence:update", payload);
+    } else if (channel.startsWith("user:")) {
+      const parts = channel.split(":");
+      const userUuid = parts[1];
+      const kind = parts[2];
+
+      if (kind === "chats") {
+        io.to(`user:${userUuid}`).emit("chat:removed", payload);
+      }
     }
   } catch (err) {
     console.error("[ws] failed to parse redis message", err);
   }
 });
 
-// ============================================
-// Socket connections
-// ============================================
 io.on("connection", (socket) => {
   const userUuid = socket.handshake.auth?.userUuid as string | undefined;
 
@@ -70,23 +71,21 @@ io.on("connection", (socket) => {
     return;
   }
 
+  // Персональная комната пользователя — для адресных событий
+  socket.join(`user:${userUuid}`);
+
   console.log(`[ws] + ${userUuid} (${socket.id})`);
 
-  // Presence: онлайн
   presence.set(`presence:${userUuid}`, "1", "EX", 60);
   pub.publish(
     `presence:${userUuid}`,
     JSON.stringify({ userUuid, status: "online" }),
   );
 
-  // Heartbeat каждые 30 секунд (TTL 60 — двойной запас)
   const heartbeat = setInterval(() => {
     presence.set(`presence:${userUuid}`, "1", "EX", 60);
   }, 30_000);
 
-  // ============================================
-  // Комнаты чатов
-  // ============================================
   socket.on("chat:join", (chatUuid: string) => {
     socket.join(`chat:${chatUuid}`);
   });
@@ -95,9 +94,6 @@ io.on("connection", (socket) => {
     socket.leave(`chat:${chatUuid}`);
   });
 
-  // ============================================
-  // «Печатает…»
-  // ============================================
   socket.on(
     "typing:start",
     ({ chatUuid }: { chatUuid: string }) => {
@@ -118,9 +114,6 @@ io.on("connection", (socket) => {
     },
   );
 
-  // ============================================
-  // Disconnect
-  // ============================================
   socket.on("disconnect", () => {
     clearInterval(heartbeat);
     presence.del(`presence:${userUuid}`);
@@ -132,14 +125,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// ============================================
-// Start
-// ============================================
 httpServer.listen(PORT, () => {
   console.log(`[ws] listening on :${PORT}`);
 });
 
-// Graceful shutdown
 process.on("SIGINT", async () => {
   console.log("[ws] shutting down...");
   await pub.quit();

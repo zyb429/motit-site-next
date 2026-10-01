@@ -1,5 +1,5 @@
 // src/app/(admin)/admin/chat/[uuid]/page.tsx
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getChatByUuid, getMessages } from "@/lib/db/chat";
 import { ChatView } from "@/components/chat/ChatView";
@@ -17,7 +17,9 @@ export default async function ChatPage({
   const { uuid } = await params;
 
   const chat = await getChatByUuid(uuid, user.uuid);
-  if (!chat) notFound();
+  if (!chat) {
+    redirect("/admin/chat");
+  }
 
   const messages = await getMessages(uuid, user.uuid, { limit: 50 });
 

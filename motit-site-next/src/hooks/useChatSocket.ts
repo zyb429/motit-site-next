@@ -52,6 +52,12 @@ export type MessageReadHandler = (payload: {
 
 export type MessageDeletedHandler = (payload: {
   messageUuid: string;
+  deletedBy?: { uuid: string; full_name: string | null; username: string | null };
+}) => void;
+
+export type ChatRemovedHandler = (payload: {
+  event: "chat:removed";
+  chatUuid: string;
 }) => void;
 
 export function useChatSocket({
@@ -62,6 +68,7 @@ export function useChatSocket({
   onPresenceAction,
   onReadAction,
   onDeletedAction,
+  onChatRemovedAction,
 }: {
   userUuid: string;
   chatUuids: string[];
@@ -70,35 +77,30 @@ export function useChatSocket({
   onPresenceAction?: PresenceHandler;
   onReadAction?: MessageReadHandler;
   onDeletedAction?: MessageDeletedHandler;
+  onChatRemovedAction?: ChatRemovedHandler;
 }) {
   useEffect(() => {
     const socket = getSocket(userUuid);
 
-    const handleMessage: NewMessageHandler = (msg) => {
-      onMessageAction?.(msg);
-    };
+    const handleMessage: NewMessageHandler = (msg) => onMessageAction?.(msg);
     const handleTyping: TypingHandler = (p) => onTypingAction?.(p);
     const handlePresence: PresenceHandler = (p) => onPresenceAction?.(p);
     const handleRead: MessageReadHandler = (p) => onReadAction?.(p);
     const handleDeleted: MessageDeletedHandler = (p) => onDeletedAction?.(p);
+    const handleChatRemoved: ChatRemovedHandler = (p) => onChatRemovedAction?.(p);
 
     socket.on("message:new", handleMessage);
     socket.on("typing", handleTyping);
     socket.on("presence:update", handlePresence);
     socket.on("message:read", handleRead);
     socket.on("message:deleted", handleDeleted);
+    socket.on("chat:removed", handleChatRemoved);
 
-    // Join chat rooms — обязательно ПОСЛЕ connect,
-    // иначе при перезагрузке/реконнекте комнаты не подтвердятся
     const join = () => {
-      chatUuids.forEach((uuid) => {
-        socket.emit("chat:join", uuid);
-      });
+      chatUuids.forEach((uuid) => socket.emit("chat:join", uuid));
     };
 
-    if (socket.connected) {
-      join();
-    }
+    if (socket.connected) join();
     socket.on("connect", join);
 
     return () => {
@@ -109,6 +111,7 @@ export function useChatSocket({
       socket.off("presence:update", handlePresence);
       socket.off("message:read", handleRead);
       socket.off("message:deleted", handleDeleted);
+      socket.off("chat:removed", handleChatRemoved);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUuid, chatUuids.join(",")]);

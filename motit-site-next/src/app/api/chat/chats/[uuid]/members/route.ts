@@ -1,8 +1,8 @@
-// src/app/api/chat/chats/[uuid]/members/route.ts
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { addChatMember } from "@/lib/db/chat";
+import { redis } from "@/lib/redis";
 
 const schema = z.object({
   userUuid: z.uuid(),
@@ -23,7 +23,14 @@ export async function POST(
   }
 
   try {
-    const member = await addChatMember(uuid, parsed.data.userUuid, user.uuid);
+    const { member, systemMessage } = await addChatMember(
+      uuid,
+      parsed.data.userUuid,
+      user.uuid,
+    );
+
+    await redis.publish(`chat:${uuid}:messages`, JSON.stringify(systemMessage));
+
     return NextResponse.json({ success: true, data: member });
   } catch (e) {
     return NextResponse.json(

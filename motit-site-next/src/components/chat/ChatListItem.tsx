@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Users, Hash, Lock } from "lucide-react";
+import { Users, Hash, Lock, Pin, BellOff } from "lucide-react";
 import type { ChatListItem as ChatListItemType } from "@/lib/db/chat";
 
 function formatTime(date: Date | string | null): string {
@@ -97,11 +97,19 @@ export function ChatListItem({
           <div className="text-sm font-medium text-(--text-primary) truncate">
             {displayName}
           </div>
-          {chat.last_message && (
-            <div className="text-[10px] text-(--text-muted) shrink-0">
-              {formatTime(chat.last_message.created_at)}
-            </div>
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {chat.is_muted && (
+              <BellOff size={12} className="text-(--text-muted)" />
+            )}
+            {chat.is_pinned && (
+              <Pin size={12} className="text-(--text-muted)" />
+            )}
+            {chat.last_message && (
+              <div className="text-[10px] text-(--text-muted)">
+                {formatTime(chat.last_message.created_at)}
+              </div>
+            )}
+          </div>
         </div>
         {chat.last_message && (
           <div className="flex items-center gap-1 mt-0.5">

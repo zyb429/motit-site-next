@@ -1,8 +1,10 @@
+// src/app/api/chat/messages/[uuid]/route.ts
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
+import { deleteMessageForUser } from "@/lib/db/chat";
 
 const patchSchema = z.object({
   content: z.string().min(1).max(10_000),
@@ -51,52 +53,25 @@ export async function DELETE(
   const url = new URL(req.url);
   const scope = url.searchParams.get("scope") === "everyone" ? "everyone" : "self";
 
-  const message = await prisma.chat_messages.findUnique({
-    where: { uuid },
-    select: { user_uuid: true, chat_uuid: true },
-  });
-  if (!message) return NextResponse.json({ error: "Не найдено" }, { status: 404 });
+  try {
+    const result = await deleteMessageForUser(uuid, user.uuid, scope);
 
-  if (scope === "everyone") {
-    if (message.user_uuid !== user.uuid) {
-      return NextResponse.json(
-        { error: "Только автор может удалить для всех" },
-        { status: 403 },
+    if (scope === "everyone" && result.deletedBy) {
+      await redis.publish(
+        `chat:${result.chatUuid}:messages`,
+        JSON.stringify({
+          event: "message:deleted",
+          messageUuid: uuid,
+          deletedBy: result.deletedBy,
+        }),
       );
     }
 
-    await prisma.chat_messages.update({
-      where: { uuid },
-      data: { deleted_at: new Date(), content: "" },
-    });
-
-    // Оповещаем чат через WebSocket
-    await redis.publish(
-      `chat:${message.chat_uuid}:messages`,
-      JSON.stringify({
-        event: "message:deleted",
-        messageUuid: uuid,
-      }),
+    return NextResponse.json({ data: { scope } });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Ошибка" },
+      { status: 400 },
     );
-
-    return NextResponse.json({ data: { scope: "everyone" } });
   }
-
-  // scope === "self" — создаём запись удаления
-  await prisma.chat_message_deletions.upsert({
-    where: {
-      message_uuid_user_uuid: {
-        message_uuid: uuid,
-        user_uuid: user.uuid,
-      },
-    },
-    create: {
-      message_uuid: uuid,
-      user_uuid: user.uuid,
-      created_at: new Date(),
-    },
-    update: {},
-  });
-
-  return NextResponse.json({ data: { scope: "self" } });
 }

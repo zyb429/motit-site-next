@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { removeChatMember, changeMemberRole } from "@/lib/db/chat";
+import { redis } from "@/lib/redis";
 
 export async function DELETE(
   _req: Request,
@@ -14,7 +15,17 @@ export async function DELETE(
   const { uuid, userUuid } = await params;
 
   try {
-    await removeChatMember(uuid, userUuid, user.uuid);
+    const { systemMessage } = await removeChatMember(uuid, userUuid, user.uuid);
+
+    // System message в чат (для всех, кто ещё в нём)
+    await redis.publish(`chat:${uuid}:messages`, JSON.stringify(systemMessage));
+
+    // Персональное событие удалённому пользователю
+    await redis.publish(
+      `user:${userUuid}:chats`,
+      JSON.stringify({ event: "chat:removed", chatUuid: uuid }),
+    );
+
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json(

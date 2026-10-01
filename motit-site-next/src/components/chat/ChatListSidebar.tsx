@@ -1,11 +1,12 @@
 // src/components/chat/ChatListSidebar.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChatList } from "./ChatList";
 import { NewChatDialog } from "./NewChatDialog";
 import { ChatContextMenu } from "./ChatContextMenu";
+import { useChatSocket } from "@/hooks/useChatSocket";
 import type { ChatListItem } from "@/lib/db/chat";
 
 export function ChatListSidebar({
@@ -25,6 +26,30 @@ export function ChatListSidebar({
     x: number;
     y: number;
   } | null>(null);
+
+  // Свежие роли при заходе на страницу:
+  // initialChats из RSC могут быть устаревшими (stale role)
+  useEffect(() => {
+    refreshChats();
+  }, [currentUserUuid]);
+
+  // Слушаем персональное событие: удалён из чата / чат удалён
+  useChatSocket({
+    userUuid: currentUserUuid,
+    chatUuids: [],
+    onChatRemovedAction: useCallback(
+      (payload) => {
+        setChats((prev) => prev.filter((c) => c.uuid !== payload.chatUuid));
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname.includes(payload.chatUuid)
+        ) {
+          router.push(basePath);
+        }
+      },
+      [router, basePath],
+    ),
+  });
 
   async function refreshChats() {
     const res = await fetch("/api/chat/chats");

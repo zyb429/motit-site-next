@@ -189,16 +189,32 @@ export function ChatView({
       [currentUserUuid],
     ),
     onDeletedAction: useCallback(
-      (payload: { messageUuid: string }) => {
+      (payload: {
+        messageUuid: string;
+        deletedBy?: { uuid: string; full_name: string | null; username: string | null };
+      }) => {
         setMessages((prev) =>
           prev.map((m) =>
             m.uuid === payload.messageUuid && !m.deleted_at
-              ? { ...m, deleted_at: new Date(), content: "" }
+              ? {
+                ...m,
+                deleted_at: new Date(),
+                content: "",
+                deleted_by: payload.deletedBy ?? null,
+              }
               : m,
           ),
         );
       },
       [],
+    ),
+    onChatRemovedAction: useCallback(
+      (payload: { event: "chat:removed"; chatUuid: string }) => {
+        if (payload.chatUuid === chat.uuid) {
+          router.push(basePath);
+        }
+      },
+      [chat.uuid, router, basePath],
     ),
   });
 
@@ -294,7 +310,16 @@ export function ChatView({
         setMessages((prev) =>
           prev.map((m) =>
             m.uuid === deleting.uuid && !m.deleted_at
-              ? { ...m, deleted_at: new Date(), content: "" }
+              ? {
+                ...m,
+                deleted_at: new Date(),
+                content: "",
+                deleted_by: {
+                  uuid: currentUserUuid,
+                  full_name: null,
+                  username: null,
+                },
+              }
               : m,
           ),
         );
@@ -302,7 +327,7 @@ export function ChatView({
 
       setDeleting(null);
     },
-    [deleting],
+    [deleting, currentUserUuid],
   );
 
   const openForward = useCallback(
