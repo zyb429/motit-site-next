@@ -81,6 +81,20 @@ export type ChatMessageItem = {
   forwarded_from_user_uuid: string | null;
 };
 
+export type PinnedMessageScope = "self" | "everyone";
+
+export type PinnedMessageItem = {
+  uuid: string;
+  scope: PinnedMessageScope;
+  message: ChatMessageItem;
+  pinned_by: {
+    uuid: string;
+    full_name: string | null;
+    username: string | null;
+  } | null;
+  pinned_at: Date | null;
+};
+
 // --------------------------------------------
 // Проверка доступа
 // --------------------------------------------
@@ -835,6 +849,25 @@ function canManageMember(
   return { allowed: true };
 }
 
+function canPinForEveryone(
+  chatKind: ChatKind,
+  memberRole: ChatMemberRole,
+): { allowed: boolean; reason?: string } {
+  if (chatKind === "saved") {
+    return { allowed: false, reason: "В Saved Messages закрепление недоступно" };
+  }
+  if (chatKind === "direct" || chatKind === "ticket") {
+    return { allowed: true };
+  }
+  if (memberRole === "owner" || memberRole === "admin") {
+    return { allowed: true };
+  }
+  return {
+    allowed: false,
+    reason: "Закреплять для всех может только владелец или админ",
+  };
+}
+
 // --------------------------------------------
 // Участники
 // --------------------------------------------
@@ -1089,7 +1122,11 @@ export async function updateChat(params: {
 // --------------------------------------------
 // Удаление чата (только владелец)
 // --------------------------------------------
-export async function deleteChat(chatUuid: string, userUuid: string) {
+export async function deleteChat(
+  chatUuid: string,
+  userUuid: string,
+  scope?: "self" | "everyone",
+) {
   const membership = await prisma.chat_members.findUnique({
     where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
   });
@@ -1106,13 +1143,29 @@ export async function deleteChat(chatUuid: string, userUuid: string) {
     chat.kind === "channel" ||
     chat.kind === "private_channel";
 
-  // Владелец группы/канала — удалить для всех
-  if (isGroup && membership.role === "owner") {
+  const canDeleteForEveryone = isGroup && membership.role === "owner";
+
+  // Если scope не передан — сохраняем старое поведение:
+  // owner группы → удалить для всех, остальные → скрыть у себя.
+  // Если scope передан — уважаем выбор, но «everyone» разрешён
+  // только владельцу группы/канала.
+  let effectiveScope: "self" | "everyone";
+  if (scope === "everyone") {
+    if (!canDeleteForEveryone) {
+      throw new Error("Удалить для всех может только владелец");
+    }
+    effectiveScope = "everyone";
+  } else if (scope === "self") {
+    effectiveScope = "self";
+  } else {
+    effectiveScope = canDeleteForEveryone ? "everyone" : "self";
+  }
+
+  if (effectiveScope === "everyone") {
     await prisma.chats.delete({ where: { uuid: chatUuid } });
     return { deleted: true, scope: "everyone" as const };
   }
 
-  // Все остальные — скрыть у себя
   await prisma.chat_members.update({
     where: { id: membership.id },
     data: { hidden_at: new Date() },
@@ -1241,6 +1294,278 @@ export async function transferOwnership(params: {
       newOwner: { uuid: to.uuid, user_uuid: to.user_uuid, role: "owner" as const },
     };
   });
+}
+
+// Тип строки, как её возвращает Prisma с нужными include
+type MessageRow = {
+  uuid: string;
+  chat_uuid: string;
+  kind: string;
+  content: string;
+  reply_to_uuid: string | null;
+  edited_at: Date | null;
+  deleted_at: Date | null;
+  created_at: Date | null;
+  forwarded_from_message_uuid: string | null;
+  forwarded_from_chat_uuid: string | null;
+  forwarded_from_user_uuid: string | null;
+  user: {
+    uuid: string;
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+    avatar?: { url: string } | null;
+  } | null;
+  attachments: Array<{
+    uuid: string;
+    file: {
+      id: number;
+      uuid: string;
+      name: string;
+      url: string;
+      mime: string | null;
+      size: number | null;
+    };
+  }>;
+  reactions: Array<{ emoji: string; user_uuid: string }>;
+  read_receipts: Array<{ user_uuid: string; read_at: Date | null }>;
+};
+
+function mapRowToChatMessage(row: MessageRow): ChatMessageItem {
+  return {
+    uuid: row.uuid,
+    chat_uuid: row.chat_uuid,
+    kind: row.kind as MessageKind,
+    content: row.content,
+    reply_to_uuid: row.reply_to_uuid,
+    edited_at: row.edited_at,
+    deleted_at: row.deleted_at,
+    created_at: row.created_at,
+    user: row.user
+      ? {
+          uuid: row.user.uuid,
+          full_name: row.user.full_name,
+          username: row.user.username,
+          avatar_url: row.user.avatar_url ?? row.user.avatar?.url ?? null,
+        }
+      : null,
+    attachments: row.attachments.map((a) => ({ uuid: a.uuid, file: a.file })),
+    reactions: row.reactions,
+    read_receipts: row.read_receipts,
+    forwarded_from_message_uuid: row.forwarded_from_message_uuid,
+    forwarded_from_chat_uuid: row.forwarded_from_chat_uuid,
+    forwarded_from_user_uuid: row.forwarded_from_user_uuid,
+  };
+}
+
+export async function pinMessage(params: {
+  messageUuid: string;
+  userUuid: string;
+  scope: PinnedMessageScope;
+}): Promise<PinnedMessageItem> {
+  const { messageUuid, userUuid, scope } = params;
+
+  const message = await prisma.chat_messages.findUnique({
+    where: { uuid: messageUuid },
+    include: {
+      user: {
+        select: {
+          uuid: true,
+          full_name: true,
+          username: true,
+          avatar_url: true,
+          avatar: { select: { url: true } },
+        },
+      },
+      attachments: {
+        include: {
+          file: {
+            select: { id: true, uuid: true, name: true, url: true, mime: true, size: true },
+          },
+        },
+      },
+      reactions: { select: { emoji: true, user_uuid: true } },
+      read_receipts: { select: { user_uuid: true, read_at: true } },
+    },
+  });
+  if (!message) throw new Error("Сообщение не найдено");
+  if (message.deleted_at) throw new Error("Нельзя закрепить удалённое сообщение");
+
+  const member = await prisma.chat_members.findUnique({
+    where: { chat_uuid_user_uuid: { chat_uuid: message.chat_uuid, user_uuid: userUuid } },
+    include: { chat: { select: { kind: true } } },
+  });
+  if (!member) throw new Error("Нет доступа к чату");
+
+  if (scope === "everyone") {
+    const check = canPinForEveryone(
+      member.chat.kind as ChatKind,
+      member.role as ChatMemberRole,
+    );
+    if (!check.allowed) throw new Error(check.reason ?? "Недостаточно прав");
+  }
+
+  const now = new Date();
+
+  if (scope === "everyone") {
+    await prisma.chat_pinned_messages.upsert({
+      where: {
+        chat_uuid_message_uuid: {
+          chat_uuid: message.chat_uuid,
+          message_uuid: messageUuid,
+        },
+      },
+      create: {
+        chat_uuid: message.chat_uuid,
+        message_uuid: messageUuid,
+        pinned_by_uuid: userUuid,
+        created_at: now,
+      },
+      update: {
+        pinned_by_uuid: userUuid,
+        created_at: now,
+      },
+    });
+  } else {
+    await prisma.user_pinned_messages.upsert({
+      where: {
+        chat_uuid_message_uuid_user_uuid: {
+          chat_uuid: message.chat_uuid,
+          message_uuid: messageUuid,
+          user_uuid: userUuid,
+        },
+      },
+      create: {
+        chat_uuid: message.chat_uuid,
+        message_uuid: messageUuid,
+        user_uuid: userUuid,
+        created_at: now,
+      },
+      update: { created_at: now },
+    });
+  }
+
+  const pinnedBy =
+    scope === "everyone"
+      ? await prisma.users.findUnique({
+          where: { uuid: userUuid },
+          select: { uuid: true, full_name: true, username: true },
+        })
+      : null;
+
+  return {
+    uuid: messageUuid,
+    scope,
+    message: mapRowToChatMessage(message),
+    pinned_by: pinnedBy,
+    pinned_at: now,
+  };
+}
+
+export async function unpinMessage(params: {
+  messageUuid: string;
+  userUuid: string;
+  scope: PinnedMessageScope;
+}): Promise<{ chatUuid: string; scope: PinnedMessageScope }> {
+  const { messageUuid, userUuid, scope } = params;
+
+  const message = await prisma.chat_messages.findUnique({
+    where: { uuid: messageUuid },
+    select: { chat_uuid: true },
+  });
+  if (!message) throw new Error("Сообщение не найдено");
+
+  const member = await prisma.chat_members.findUnique({
+    where: { chat_uuid_user_uuid: { chat_uuid: message.chat_uuid, user_uuid: userUuid } },
+    include: { chat: { select: { kind: true } } },
+  });
+  if (!member) throw new Error("Нет доступа к чату");
+
+  if (scope === "everyone") {
+    const check = canPinForEveryone(
+      member.chat.kind as ChatKind,
+      member.role as ChatMemberRole,
+    );
+    if (!check.allowed) throw new Error(check.reason ?? "Недостаточно прав");
+
+    await prisma.chat_pinned_messages.deleteMany({
+      where: { chat_uuid: message.chat_uuid, message_uuid: messageUuid },
+    });
+  } else {
+    await prisma.user_pinned_messages.deleteMany({
+      where: {
+        chat_uuid: message.chat_uuid,
+        message_uuid: messageUuid,
+        user_uuid: userUuid,
+      },
+    });
+  }
+
+  return { chatUuid: message.chat_uuid, scope };
+}
+
+export async function listPinnedMessages(
+  chatUuid: string,
+  userUuid: string,
+): Promise<PinnedMessageItem[]> {
+  await assertChatMember(chatUuid, userUuid);
+
+  const includeMessage = {
+    user: {
+      select: {
+        uuid: true,
+        full_name: true,
+        username: true,
+        avatar_url: true,
+        avatar: { select: { url: true } },
+      },
+    },
+    attachments: {
+      include: {
+        file: {
+          select: { id: true, uuid: true, name: true, url: true, mime: true, size: true },
+        },
+      },
+    },
+    reactions: { select: { emoji: true, user_uuid: true } },
+    read_receipts: { select: { user_uuid: true, read_at: true } },
+  } as const;
+
+  const [globalPins, personalPins] = await Promise.all([
+    prisma.chat_pinned_messages.findMany({
+      where: { chat_uuid: chatUuid },
+      orderBy: { created_at: "desc" },
+      include: {
+        pinned_by: { select: { uuid: true, full_name: true, username: true } },
+        message: { include: includeMessage },
+      },
+    }),
+    prisma.user_pinned_messages.findMany({
+      where: { chat_uuid: chatUuid, user_uuid: userUuid },
+      orderBy: { created_at: "desc" },
+      include: {
+        message: { include: includeMessage },
+      },
+    }),
+  ]);
+
+  const global: PinnedMessageItem[] = globalPins.map((p) => ({
+    uuid: p.uuid,
+    scope: "everyone",
+    message: mapRowToChatMessage(p.message),
+    pinned_by: p.pinned_by,
+    pinned_at: p.created_at,
+  }));
+
+  const personal: PinnedMessageItem[] = personalPins.map((p) => ({
+    uuid: p.uuid,
+    scope: "self",
+    message: mapRowToChatMessage(p.message),
+    pinned_by: null,
+    pinned_at: p.created_at,
+  }));
+
+  return [...global, ...personal];
 }
 
 export async function createSystemMessage(params: {
