@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:webpack": "next dev --webpack",
     "dev:all": "concurrently -n ws,next -c blue,green \"bun run ws\" \"bun run dev\"",
     "build": "next build",
     "start": "next start",

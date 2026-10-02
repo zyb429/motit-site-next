@@ -17,10 +17,11 @@ services:
       --collation-server=utf8mb4_unicode_520_ci
       --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-umotit_user", "-pMotitSecure2024!"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot_local_dev"]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   minio:
     image: quay.io/minio/minio:latest
@@ -30,26 +31,30 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # Web console
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
-  # создаёт бакет при старте
   minio-init:
     image: quay.io/minio/mc:latest
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      until (mc alias set local http://minio:9000 minioadmin minioadmin) do sleep 1; done;
+      mc alias set local http://minio:9000 minioadmin minioadmin;
       mc mb --ignore-existing local/motit-uploads;
       mc anonymous set download local/motit-uploads;
       echo 'MinIO ready';
       "
 
-  # Redis для pub/sub и presence в чатах
   redis:
     image: redis:7-alpine
     container_name: motit-redis
@@ -64,6 +69,84 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  app:
+    build:
+      context: ./motit-site-next
+      dockerfile: Dockerfile
+    container_name: motit-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    env_file:
+      - ./motit-site-next/.env
+    environment:
+      # Перебиваем хосты на имена сервисов в docker-сети.
+      # Остальные переменные — из .env (env_file выше).
+      DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site"
+      SHADOW_DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site_shadow"
+      REDIS_URL: "redis://redis:6379"
+      S3_ENDPOINT: "http://minio:9000"
+      S3_PROXY_TARGET: "http://minio:9000/motit-uploads"
+      NODE_ENV: development
+      RAYON_NUM_THREADS: "4"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./motit-site-next:/app
+      - /app/node_modules
+      - /app/.next
+      - /app/generated
+    working_dir: /app
+    ulimits:
+      nproc:
+        soft: 30000
+        hard: 30000
+    mem_limit: 4g
+    command: >
+      sh -c "
+      bunx prisma generate &&
+      bunx prisma migrate deploy &&
+      bun run dev:webpack
+      "
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
+  ws:
+    build:
+      context: ./motit-site-next
+      dockerfile: Dockerfile
+    container_name: motit-ws
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - ./motit-site-next/.env
+    environment:
+      REDIS_URL: "redis://redis:6379"
+      WS_PORT: 3001
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./motit-site-next:/app
+      - /app/node_modules
+      - /app/generated
+    working_dir: /app
+    command: >
+      sh -c "
+      bun run server.ts
+      "
 
 volumes:
   mysql_data:
