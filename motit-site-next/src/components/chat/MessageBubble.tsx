@@ -3,7 +3,7 @@
 
 import { useState, useSyncExternalStore, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { Check, CheckCheck, CornerUpLeft, Forward } from "lucide-react";
+import { Check, CheckCheck, CornerUpLeft, Forward, Pin } from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
 import type { PreviewFile } from "./MediaPreviewModal";
 import { MessageContextMenu } from "./MessageContextMenu";
@@ -14,24 +14,28 @@ export function MessageBubble({
   message,
   currentUserUuid,
   replyToMessage,
+  isPinned,
   onReplyAction,
   onCopyAction,
   onEditAction,
   onDeleteAction,
   onReactAction,
   onForwardAction,
+  onPinAction,
   onJumpToReplyAction,
   onPreviewFileAction,
 }: {
   message: ChatMessageItem;
   currentUserUuid: string;
   replyToMessage?: ChatMessageItem | null;
+  isPinned?: boolean;
   onReplyAction?: (message: ChatMessageItem) => void;
   onCopyAction?: (message: ChatMessageItem) => void;
   onEditAction?: (message: ChatMessageItem) => void;
-  onDeleteAction?: (message: ChatMessageItem) => void;
+  onDeleteAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
+  onPinAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
   onJumpToReplyAction?: (messageUuid: string) => void;
   onPreviewFileAction?: (file: PreviewFile, allFiles: PreviewFile[]) => void;
 }) {
@@ -39,14 +43,12 @@ export function MessageBubble({
   const isSystem = message.kind === "system" || message.kind === "status_change";
 
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
-  // Подписка на "мы на клиенте" — работает без setState и ESLint-ошибок
   const mounted = useSyncExternalStore(
     () => () => {},
-    () => true,   // client snapshot
-    () => false,  // server snapshot
+    () => true,
+    () => false,
   );
 
-  // Системные сообщения (вход/выход, смена статуса)
   if (isSystem) {
     return (
       <div className="text-center py-1">
@@ -57,7 +59,6 @@ export function MessageBubble({
     );
   }
 
-  // Удалённые сообщения — плашка вместо пузыря
   if (message.deleted_at) {
     const deleter = message.deleted_by;
     const isMe = deleter?.uuid === currentUserUuid;
@@ -74,7 +75,6 @@ export function MessageBubble({
   const isRead =
     isOwn && message.read_receipts.some((r) => r.user_uuid !== currentUserUuid);
 
-  // Все файлы этого сообщения — для навигации ← → в модалке
   const filesInMessage: PreviewFile[] = message.attachments.map((a) => ({
     id: a.file.id,
     uuid: a.file.uuid,
@@ -89,7 +89,6 @@ export function MessageBubble({
     setMenu({ x: e.clientX, y: e.clientY });
   }
 
-  // Группировка реакций по эмодзи
   const reactionGroups = message.reactions.reduce<
     Record<string, { count: number; mine: boolean }>
   >((acc, r) => {
@@ -105,7 +104,6 @@ export function MessageBubble({
         className={`flex gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
         onContextMenu={handleContextMenu}
       >
-        {/* Аватар (только для чужих) */}
         {!isOwn && (
           <div className="w-8 h-8 rounded-full bg-(--bg-primary) border border-(--border) flex items-center justify-center shrink-0 overflow-hidden">
             {message.user?.avatar_url ? (
@@ -125,13 +123,11 @@ export function MessageBubble({
           </div>
         )}
 
-        {/* Пузырь */}
         <div
           className={`max-w-[70%] ${
             isOwn ? "items-end" : "items-start"
           } flex flex-col`}
         >
-          {/* Имя автора (только для чужих, в группах) */}
           {!isOwn && message.user && (
             <div className="text-xs text-(--text-muted) mb-0.5 px-1">
               {message.user.full_name ?? message.user.username ?? "—"}
@@ -145,7 +141,6 @@ export function MessageBubble({
                 : "bg-(--bg-primary) text-(--text-primary) rounded-bl-sm"
             }`}
           >
-            {/* Метка «Переслано» */}
             {message.forwarded_from_message_uuid && (
               <div
                 className={`flex items-center gap-1 text-[10px] mb-1 italic ${
@@ -156,7 +151,6 @@ export function MessageBubble({
                   Переслано
               </div>
             )}
-            {/* Reply preview */}
             {message.reply_to_uuid && replyToMessage && (
               <button
                 type="button"
@@ -190,7 +184,6 @@ export function MessageBubble({
               </div>
             )}
 
-            {/* Вложения */}
             {message.attachments.length > 0 && (
               <div className="mt-2 space-y-1">
                 {message.attachments.map((a) => {
@@ -231,7 +224,6 @@ export function MessageBubble({
             )}
           </div>
 
-          {/* Реакции */}
           {Object.keys(reactionGroups).length > 0 && (
             <div className={`flex flex-wrap gap-1 mt-1 ${isOwn ? "justify-end" : "justify-start"}`}>
               {Object.entries(reactionGroups).map(([emoji, { count, mine }]) => (
@@ -251,12 +243,16 @@ export function MessageBubble({
             </div>
           )}
 
-          {/* Время и статус прочтения */}
           <div
             className={`flex items-center gap-1 mt-0.5 px-1 text-[10px] text-(--text-muted) ${
               isOwn ? "flex-row-reverse" : ""
             }`}
           >
+            {isPinned && (
+              <span title="Закреплено" className="text-(--accent)">
+                <Pin size={12} />
+              </span>
+            )}
             <span>
               <ClientOnly>{formatMessageTime(message.created_at)}</ClientOnly>
             </span>
@@ -273,7 +269,6 @@ export function MessageBubble({
         </div>
       </div>
 
-      {/* Контекстное меню */}
       {menu && mounted && createPortal (
         <MessageContextMenu
           x={menu.x}
@@ -283,8 +278,13 @@ export function MessageBubble({
           onReplyAction={() => onReplyAction?.(message)}
           onCopyAction={() => onCopyAction?.(message)}
           onEditAction={() => onEditAction?.(message)}
-          onDeleteAction={() => onDeleteAction?.(message)}
+          onDeleteAction={
+            onDeleteAction ? (scope) => onDeleteAction(message, scope) : undefined
+          }
           onForwardAction={() => onForwardAction?.(message)}
+          onPinAction={
+            onPinAction ? (scope) => onPinAction(message, scope) : undefined
+          }
           onReactAction={(emoji) => {
             if (emoji !== "more") onReactAction?.(message, emoji);
           }}

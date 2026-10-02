@@ -4,7 +4,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChatWindow } from "./ChatWindow";
-import { DeleteMessageDialog } from "./DeleteMessageDialog";
 import { ForwardDialog } from "./ForwardDialog";
 import { usePresence } from "@/hooks/usePresence";
 import { MediaPreviewModal, type PreviewFile } from "./MediaPreviewModal";
@@ -14,11 +13,14 @@ import {
   type TypingHandler,
   type MessageReadHandler,
   type MessageEditedPayload,
+  type MessagePinnedPayload,
+  type MessageUnpinnedPayload,
 } from "@/hooks/useChatSocket";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import type {
   ChatListItem as ChatListItemType,
   ChatMessageItem,
+  PinnedMessageItem,
 } from "@/lib/db/chat";
 
 type Chat = {
@@ -53,12 +55,17 @@ export function ChatView({
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [replyTo, setReplyTo] = useState<ChatMessageItem | null>(null);
   const [editing, setEditing] = useState<ChatMessageItem | null>(null);
-  const [deleting, setDeleting] = useState<ChatMessageItem | null>(null);
   const [forwarding, setForwarding] = useState<ChatMessageItem | null>(null);
+  const [pinned, setPinned] = useState<PinnedMessageItem[]>([]);
   const [chatList, setChatList] = useState<ChatListItemType[]>([]);
   const [readOnly, setReadOnly] = useState(false);
 
   const isSaved = chat.kind === "saved";
+
+  const pinnedUuids = useMemo(
+    () => new Set(pinned.map((p) => p.message.uuid)),
+    [pinned],
+  );
 
   const addMessages = useCallback(
     (prev: ChatMessageItem[], incoming: ChatMessageItem[]) => {
@@ -121,6 +128,19 @@ export function ChatView({
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [markAsRead]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/chat/chats/${chat.uuid}/pinned`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setPinned(d.data ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [chat.uuid]);
 
   const chatUuids = useMemo(() => [chat.uuid], [chat.uuid]);
 
@@ -206,11 +226,11 @@ export function ChatView({
           prev.map((m) =>
             m.uuid === payload.messageUuid && !m.deleted_at
               ? {
-                ...m,
-                deleted_at: new Date(),
-                content: "",
-                deleted_by: payload.deletedBy ?? null,
-              }
+                  ...m,
+                  deleted_at: new Date(),
+                  content: "",
+                  deleted_by: payload.deletedBy ?? null,
+                }
               : m,
           ),
         );
@@ -224,6 +244,34 @@ export function ChatView({
             m.uuid === payload.message.uuid
               ? { ...m, ...payload.message, edited_at: new Date(payload.message.edited_at) }
               : m,
+          ),
+        );
+      },
+      [],
+    ),
+    onPinnedAction: useCallback(
+      (payload: MessagePinnedPayload) => {
+        setPinned((prev) => {
+          const filtered = prev.filter(
+            (p) => !(p.scope === "everyone" && p.message.uuid === payload.messageUuid),
+          );
+          const newPin: PinnedMessageItem = {
+            uuid: payload.messageUuid,
+            scope: "everyone",
+            message: payload.message as unknown as ChatMessageItem,
+            pinned_by: null,
+            pinned_at: new Date(payload.pinnedAt),
+          };
+          return [newPin, ...filtered];
+        });
+      },
+      [],
+    ),
+    onUnpinnedAction: useCallback(
+      (payload: MessageUnpinnedPayload) => {
+        setPinned((prev) =>
+          prev.filter(
+            (p) => !(p.scope === "everyone" && p.message.uuid === payload.messageUuid),
           ),
         );
       },
@@ -320,44 +368,41 @@ export function ChatView({
   );
 
   const handleDelete = useCallback(
-    async (scope: "self" | "everyone") => {
-      if (!deleting) return;
-
-      const res = await fetch(
-        `/api/chat/messages/${deleting.uuid}?scope=${scope}`,
-        { method: "DELETE" },
-      );
-
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        console.error("delete failed:", d);
-        return;
-      }
-
-      if (scope === "self") {
-        setMessages((prev) => prev.filter((m) => m.uuid !== deleting.uuid));
-      } else {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.uuid === deleting.uuid && !m.deleted_at
-              ? {
-                ...m,
-                deleted_at: new Date(),
-                content: "",
-                deleted_by: {
-                  uuid: currentUserUuid,
-                  full_name: null,
-                  username: null,
-                },
-              }
-              : m,
-          ),
+    async (message: ChatMessageItem, scope: "self" | "everyone") => {
+      try {
+        const res = await fetch(
+          `/api/chat/messages/${message.uuid}?scope=${scope}`,
+          { method: "DELETE" },
         );
-      }
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          alert(typeof d.error === "string" ? d.error : "Не удалось удалить");
+          return;
+        }
 
-      setDeleting(null);
+        if (scope === "self") {
+          setMessages((prev) => prev.filter((m) => m.uuid !== message.uuid));
+        } else {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.uuid === message.uuid && !m.deleted_at
+                ? {
+                    ...m,
+                    deleted_at: new Date(),
+                    content: "",
+                    deleted_by: {
+                      uuid: currentUserUuid,
+                      full_name: null,
+                      username: null,
+                    },
+                  }
+                : m,
+            ),
+          );
+        }
+      } catch {}
     },
-    [deleting, currentUserUuid],
+    [currentUserUuid],
   );
 
   const openForward = useCallback(
@@ -408,6 +453,61 @@ export function ChatView({
     },
     [],
   );
+
+  const handlePin = useCallback(
+    async (message: ChatMessageItem, scope: "self" | "everyone") => {
+      try {
+        const res = await fetch(`/api/chat/messages/${message.uuid}/pin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scope }),
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          alert(typeof d.error === "string" ? d.error : "Не удалось закрепить");
+          return;
+        }
+        const data = await res.json();
+        setPinned((prev) => {
+          const filtered = prev.filter(
+            (p) => !(p.scope === scope && p.message.uuid === message.uuid),
+          );
+          return [data.data, ...filtered];
+        });
+      } catch {}
+    },
+    [],
+  );
+
+  const handleUnpin = useCallback(
+    async (messageUuid: string, scope: "self" | "everyone") => {
+      try {
+        const res = await fetch(
+          `/api/chat/messages/${messageUuid}/pin?scope=${scope}`,
+          { method: "DELETE" },
+        );
+        if (!res.ok) return;
+        setPinned((prev) =>
+          prev.filter(
+            (p) => !(p.scope === scope && p.message.uuid === messageUuid),
+          ),
+        );
+      } catch {}
+    },
+    [],
+  );
+
+  const handleJumpToPinned = useCallback((messageUuid: string) => {
+    const el = document.querySelector(
+      `[data-message-uuid="${messageUuid}"]`,
+    ) as HTMLElement | null;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-(--accent)", "rounded-2xl");
+    setTimeout(() => {
+      el.classList.remove("ring-2", "ring-(--accent)", "rounded-2xl");
+    }, 1500);
+  }, []);
 
   // ---------- Обработчики меню хедера ----------
 
@@ -482,10 +582,11 @@ export function ChatView({
           onEditAction={setEditing}
           onCancelEditAction={() => setEditing(null)}
           onEditSubmitAction={handleEditSubmit}
-          onDeleteAction={(message) => setDeleting(message)}
+          onDeleteAction={handleDelete}
           onCopyAction={handleCopy}
           onReactAction={handleReact}
           onForwardAction={openForward}
+          onPinAction={handlePin}
           onAttachAction={handleAttach}
           onChatInfoAction={handleChatInfo}
           onChatSettingsAction={handleChatSettings}
@@ -493,16 +594,12 @@ export function ChatView({
           onChatDeleteAction={handleDeleteChat}
           onPreviewFileAction={openPreview}
           inputDisabled={readOnly}
+          pinned={pinned}
+          pinnedUuids={pinnedUuids}
+          onJumpToPinnedAction={handleJumpToPinned}
+          onUnpinAction={handleUnpin}
         />
       </div>
-
-      {deleting && (
-        <DeleteMessageDialog
-          isOwn={deleting.user?.uuid === currentUserUuid}
-          onCancelAction={() => setDeleting(null)}
-          onDeleteAction={handleDelete}
-        />
-      )}
 
       {forwarding && (
         <ForwardDialog

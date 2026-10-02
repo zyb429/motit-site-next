@@ -204,14 +204,22 @@ useChatSocket({
     }
   }
 
-  async function handleDelete(chat: ChatListItem) {
-    if (!confirm(`Удалить чат «${chat.name ?? "без названия"}»?`)) return;
-    const res = await fetch(`/api/chat/chats/${chat.uuid}`, {
+  async function handleDelete(chat: ChatListItem, scope: "self" | "everyone") {
+    const label =
+      scope === "everyone"
+        ? `Удалить чат «${chat.name ?? "без названия"}» у всех?`
+        : `Удалить чат «${chat.name ?? "без названия"}» у себя?`;
+    if (!confirm(label)) return;
+
+    const res = await fetch(`/api/chat/chats/${chat.uuid}?scope=${scope}`, {
       method: "DELETE",
     });
     if (res.ok) {
       setChats((prev) => prev.filter((c) => c.uuid !== chat.uuid));
-      if (typeof window !== "undefined" && window.location.pathname.includes(chat.uuid)) {
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname.includes(chat.uuid)
+      ) {
         router.push(basePath);
       }
     } else {
@@ -278,7 +286,7 @@ useChatSocket({
           onMuteAction={() => handleMute(menu.chat)}
           onMarkReadAction={() => handleMarkRead(menu.chat)}
           onMarkUnreadAction={() => handleMarkUnread(menu.chat)}
-          onDeleteAction={() => handleDelete(menu.chat)}
+          onDeleteAction={(scope) => handleDelete(menu.chat, scope)}
           onLeaveAction={() => handleLeave(menu.chat)}
         />
       )}

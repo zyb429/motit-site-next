@@ -1,7 +1,7 @@
 // src/components/chat/ChatContextMenu.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Pin,
   PinOff,
@@ -13,6 +13,7 @@ import {
   LogOut,
 } from "lucide-react";
 import type { ChatListItem } from "@/lib/db/chat";
+import { useFloatingPosition } from "@/hooks/useFloatingPosition";
 
 export function ChatContextMenu({
   chat,
@@ -34,26 +35,11 @@ export function ChatContextMenu({
   onMuteAction: () => void;
   onMarkUnreadAction: () => void;
   onMarkReadAction: () => void;
-  onDeleteAction: () => void;
+  onDeleteAction: (scope: "self" | "everyone") => void;
   onLeaveAction?: () => void;
 }) {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [adjusted, setAdjusted] = useState({ x, y });
-
-  useEffect(() => {
-    const menu = menuRef.current;
-    if (!menu) return;
-    const rect = menu.getBoundingClientRect();
-    const winW = window.innerWidth;
-    const winH = window.innerHeight;
-    let nx = x;
-    let ny = y;
-    if (x + rect.width > winW - 8) nx = winW - rect.width - 8;
-    if (y + rect.height > winH - 8) ny = winH - rect.height - 8;
-    if (nx < 8) nx = 8;
-    if (ny < 8) ny = 8;
-    setAdjusted({ x: nx, y: ny });
-  }, [x, y]);
+  const { ref: menuRef, pos } = useFloatingPosition({ x, y });
+  const [deleteSubmenu, setDeleteSubmenu] = useState(false);
 
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
@@ -70,7 +56,7 @@ export function ChatContextMenu({
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [onCloseAction]);
+  }, [onCloseAction, menuRef]);
 
   function run(fn: () => void) {
     fn();
@@ -84,13 +70,14 @@ export function ChatContextMenu({
 
   const canDelete = chat.kind !== "saved";
   const canLeave = isGroup && chat.role !== "owner";
+  const canDeleteForEveryone = isGroup && chat.role === "owner";
 
   return (
     <div
       ref={menuRef}
       role="menu"
       className="fixed z-100 min-w-52 rounded-xl border border-(--border) bg-(--bg-card) shadow-2xl overflow-hidden"
-      style={{ left: adjusted.x, top: adjusted.y }}
+      style={{ left: pos.x, top: pos.y }}
       onContextMenu={(e) => e.preventDefault()}
     >
       <div className="py-1">
@@ -117,14 +104,37 @@ export function ChatContextMenu({
             onClickAction={() => run(onMarkUnreadAction)}
           />
         )}
+
         {canDelete && (
-          <MenuItem
-            icon={<Trash2 size={14} />}
-            label="Удалить чат"
-            onClickAction={() => run(onDeleteAction)}
-            danger
-          />
+          <>
+            <MenuItem
+              icon={<Trash2 size={14} />}
+              label="Удалить чат"
+              onClickAction={() => setDeleteSubmenu((v) => !v)}
+              trailing={deleteSubmenu ? "▾" : "▸"}
+              danger
+            />
+            {deleteSubmenu && (
+              <div className="pl-3">
+                <MenuItem
+                  icon={<Trash2 size={12} />}
+                  label="У себя"
+                  onClickAction={() => run(() => onDeleteAction("self"))}
+                  danger
+                />
+                {canDeleteForEveryone && (
+                  <MenuItem
+                    icon={<Trash2 size={12} />}
+                    label="У всех"
+                    onClickAction={() => run(() => onDeleteAction("everyone"))}
+                    danger
+                  />
+                )}
+              </div>
+            )}
+          </>
         )}
+
         {canLeave && onLeaveAction && (
           <MenuItem
             icon={<LogOut size={14} />}
@@ -143,11 +153,13 @@ function MenuItem({
   label,
   onClickAction,
   danger,
+  trailing,
 }: {
   icon: React.ReactNode;
   label: string;
   onClickAction: () => void;
   danger?: boolean;
+  trailing?: string;
 }) {
   return (
     <button
@@ -162,7 +174,8 @@ function MenuItem({
       <span className={danger ? "text-red-400" : "text-(--text-muted)"}>
         {icon}
       </span>
-      <span>{label}</span>
+      <span className="flex-1 text-left">{label}</span>
+      {trailing && <span className="text-(--text-muted)">{trailing}</span>}
     </button>
   );
 }

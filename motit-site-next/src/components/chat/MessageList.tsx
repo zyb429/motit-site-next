@@ -13,31 +13,34 @@ export function MessageList({
   currentUserUuid,
   onLoadMoreAction,
   hasMore,
+  pinnedUuids,
   onReplyAction,
   onCopyAction,
   onEditAction,
   onDeleteAction,
   onReactAction,
   onForwardAction,
+  onPinAction,
   onPreviewFileAction,
 }: {
   messages: ChatMessageItem[];
   currentUserUuid: string;
   onLoadMoreAction?: () => void;
   hasMore?: boolean;
+  pinnedUuids?: Set<string>;
   onReplyAction?: (message: ChatMessageItem) => void;
   onCopyAction?: (message: ChatMessageItem) => void;
   onEditAction?: (message: ChatMessageItem) => void;
-  onDeleteAction?: (message: ChatMessageItem) => void;
+  onDeleteAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
+  onPinAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
   onPreviewFileAction?: (file: PreviewFile, allFiles: PreviewFile[]) => void;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
 
-  // Защита от дубликатов по uuid
   const uniqueMessages = useMemo(() => {
     const seen = new Set<string>();
     return messages.filter((m) => {
@@ -48,25 +51,11 @@ export function MessageList({
     });
   }, [messages]);
 
-  // Индекс uuid → message для быстрого поиска replyTo
   const messagesByUuid = useMemo(
     () => new Map(uniqueMessages.map((m) => [m.uuid, m])),
     [uniqueMessages],
   );
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const isNearBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-
-    if (isNearBottom) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [uniqueMessages.length]);
-
-  // Группировка по дням с разделителями дат
   type RenderItem =
     | { kind: "divider"; key: string; date: Date }
     | { kind: "message"; key: string; message: ChatMessageItem };
@@ -90,6 +79,18 @@ export function MessageList({
 
     return items;
   }, [uniqueMessages]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const isNearBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+
+    if (isNearBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [uniqueMessages.length]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -153,6 +154,7 @@ export function MessageList({
                 <MessageBubble
                   message={item.message}
                   currentUserUuid={currentUserUuid}
+                  isPinned={pinnedUuids?.has(item.message.uuid)}
                   replyToMessage={
                     item.message.reply_to_uuid
                       ? messagesByUuid.get(item.message.reply_to_uuid) ?? null
@@ -164,6 +166,7 @@ export function MessageList({
                   onDeleteAction={onDeleteAction}
                   onReactAction={onReactAction}
                   onForwardAction={onForwardAction}
+                  onPinAction={onPinAction}
                   onJumpToReplyAction={jumpToMessage}
                   onPreviewFileAction={onPreviewFileAction}
                 />

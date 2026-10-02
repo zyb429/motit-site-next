@@ -1,9 +1,10 @@
 // src/components/chat/MessageContextMenu.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Reply, Copy, Pencil, Trash2, Forward } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Reply, Copy, Pencil, Trash2, Forward, Pin } from "lucide-react";
 import { EmojiPickerButton } from "./EmojiPickerButton";
+import { useFloatingPosition } from "@/hooks/useFloatingPosition";
 
 export type MessageContextMenuProps = {
   x: number;
@@ -13,9 +14,10 @@ export type MessageContextMenuProps = {
   onReplyAction?: () => void;
   onCopyAction?: () => void;
   onEditAction?: () => void;
-  onDeleteAction?: () => void;
+  onDeleteAction?: (scope: "self" | "everyone") => void;
   onReactAction?: (emoji: string) => void;
   onForwardAction?: () => void;
+  onPinAction?: (scope: "self" | "everyone") => void;
 };
 
 const QUICK_EMOJI = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
@@ -31,31 +33,12 @@ export function MessageContextMenu({
   onDeleteAction,
   onReactAction,
   onForwardAction,
+  onPinAction,
 }: MessageContextMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [adjusted, setAdjusted] = useState({ x, y });
+  const { ref: menuRef, pos } = useFloatingPosition({ x, y });
+  const [pinSubmenu, setPinSubmenu] = useState(false);
+  const [deleteSubmenu, setDeleteSubmenu] = useState(false);
 
-  // Подгоняем позицию, чтобы меню не вылезало за границы окна
-  useEffect(() => {
-    const menu = menuRef.current;
-    if (!menu) return;
-
-    const rect = menu.getBoundingClientRect();
-    const winW = window.innerWidth;
-    const winH = window.innerHeight;
-
-    let nx = x;
-    let ny = y;
-
-    if (x + rect.width > winW - 8) nx = winW - rect.width - 8;
-    if (y + rect.height > winH - 8) ny = winH - rect.height - 8;
-    if (nx < 8) nx = 8;
-    if (ny < 8) ny = 8;
-
-    setAdjusted({ x: nx, y: ny });
-  }, [x, y]);
-
-  // Закрытие по клику вне и Escape
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -73,7 +56,7 @@ export function MessageContextMenu({
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [onCloseAction]);
+  }, [onCloseAction, menuRef]);
 
   function run(fn?: () => void) {
     fn?.();
@@ -85,10 +68,9 @@ export function MessageContextMenu({
       ref={menuRef}
       role="menu"
       className="fixed z-100 min-w-50 rounded-xl border border-(--border) bg-(--bg-card) shadow-2xl overflow-hidden"
-      style={{ left: adjusted.x, top: adjusted.y }}
+      style={{ left: pos.x, top: pos.y }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Быстрые эмодзи */}
       {onReactAction && (
         <div className="flex items-center gap-0.5 px-2 py-2 border-b border-(--border)">
           {QUICK_EMOJI.map((emoji) => (
@@ -103,7 +85,6 @@ export function MessageContextMenu({
             </button>
           ))}
 
-          {/* ← Полный пикер вместо "more" */}
           <EmojiPickerButton
             variant="menu"
             onEmojiAction={(emoji) => run(() => onReactAction(emoji))}
@@ -111,7 +92,6 @@ export function MessageContextMenu({
         </div>
       )}
 
-      {/* Основные действия */}
       <div className="py-1">
         {onReplyAction && (
           <MenuItem
@@ -127,6 +107,32 @@ export function MessageContextMenu({
             onClickAction={() => run(onForwardAction)}
           />
         )}
+
+        {onPinAction && (
+          <>
+            <MenuItem
+              icon={<Pin size={14} />}
+              label="Закрепить"
+              onClickAction={() => setPinSubmenu((v) => !v)}
+              trailing={pinSubmenu ? "▾" : "▸"}
+            />
+            {pinSubmenu && (
+              <div className="pl-3">
+                <MenuItem
+                  icon={<Pin size={12} />}
+                  label="Для себя"
+                  onClickAction={() => run(() => onPinAction("self"))}
+                />
+                <MenuItem
+                  icon={<Pin size={12} />}
+                  label="Для всех"
+                  onClickAction={() => run(() => onPinAction("everyone"))}
+                />
+              </div>
+            )}
+          </>
+        )}
+
         {onCopyAction && (
           <MenuItem
             icon={<Copy size={14} />}
@@ -141,13 +147,35 @@ export function MessageContextMenu({
             onClickAction={() => run(onEditAction)}
           />
         )}
-        {isOwn && onDeleteAction && (
-          <MenuItem
-            icon={<Trash2 size={14} />}
-            label="Удалить"
-            onClickAction={() => run(onDeleteAction)}
-            danger
-          />
+
+        {onDeleteAction && (
+          <>
+            <MenuItem
+              icon={<Trash2 size={14} />}
+              label="Удалить"
+              onClickAction={() => setDeleteSubmenu((v) => !v)}
+              trailing={deleteSubmenu ? "▾" : "▸"}
+              danger
+            />
+            {deleteSubmenu && (
+              <div className="pl-3">
+                <MenuItem
+                  icon={<Trash2 size={12} />}
+                  label="У себя"
+                  onClickAction={() => run(() => onDeleteAction("self"))}
+                  danger
+                />
+                {isOwn && (
+                  <MenuItem
+                    icon={<Trash2 size={12} />}
+                    label="У всех"
+                    onClickAction={() => run(() => onDeleteAction("everyone"))}
+                    danger
+                  />
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -159,11 +187,13 @@ function MenuItem({
   label,
   onClickAction,
   danger,
+  trailing,
 }: {
   icon: React.ReactNode;
   label: string;
   onClickAction: () => void;
   danger?: boolean;
+  trailing?: string;
 }) {
   return (
     <button
@@ -178,7 +208,8 @@ function MenuItem({
       <span className={danger ? "text-red-400" : "text-(--text-muted)"}>
         {icon}
       </span>
-      <span>{label}</span>
+      <span className="flex-1 text-left">{label}</span>
+      {trailing && <span className="text-(--text-muted)">{trailing}</span>}
     </button>
   );
 }

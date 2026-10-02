@@ -5,8 +5,9 @@ import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { TypingIndicator } from "./TypingIndicator";
-import type { ChatMessageItem } from "@/lib/db/chat";
+import type { ChatMessageItem, PinnedMessageItem } from "@/lib/db/chat";
 import type { PreviewFile } from "./MediaPreviewModal";
+import { PinnedBanner } from "./PinnedBanner";
 
 type ChatWindowProps = {
   chat: {
@@ -33,7 +34,6 @@ type ChatWindowProps = {
   typingUsers?: string[];
   onPreviewFileAction?: (file: PreviewFile, allFiles: PreviewFile[]) => void;
 
-  // Управление сообщениями
   replyTo?: ChatMessageItem | null;
   onReplyAction?: (message: ChatMessageItem) => void;
   onCancelReplyAction?: () => void;
@@ -41,14 +41,18 @@ type ChatWindowProps = {
   onEditAction?: (message: ChatMessageItem) => void;
   onCancelEditAction?: () => void;
   onEditSubmitAction?: (messageUuid: string, content: string) => Promise<void>;
-  onDeleteAction?: (message: ChatMessageItem) => void;
+  onDeleteAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
   onCopyAction?: (message: ChatMessageItem) => void;
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
+  onPinAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
   onAttachAction?: (files: File[], content: string) => Promise<void>;
   inputDisabled?: boolean;
+  pinned?: PinnedMessageItem[];
+  pinnedUuids?: Set<string>;
+  onJumpToPinnedAction?: (messageUuid: string) => void;
+  onUnpinAction?: (messageUuid: string, scope: "self" | "everyone") => void;
 
-  // Действия меню хедера
   onChatInfoAction?: () => void;
   onChatSettingsAction?: () => void;
   onChatAddMembersAction?: () => void;
@@ -78,9 +82,14 @@ export function ChatWindow({
   onCopyAction,
   onReactAction,
   onForwardAction,
+  onPinAction,
   onAttachAction,
   inputDisabled,
   onPreviewFileAction,
+  pinned,
+  pinnedUuids,
+  onJumpToPinnedAction,
+  onUnpinAction,
   onChatInfoAction,
   onChatSettingsAction,
   onChatAddMembersAction,
@@ -109,17 +118,27 @@ export function ChatWindow({
         onDeleteAction={onChatDeleteAction}
       />
 
+      {pinned && pinned.length > 0 && onJumpToPinnedAction && onUnpinAction && (
+        <PinnedBanner
+          pinned={pinned}
+          onJumpAction={onJumpToPinnedAction}
+          onUnpinAction={onUnpinAction}
+        />
+      )}
+
       <MessageList
         messages={messages}
         currentUserUuid={currentUserUuid}
         onLoadMoreAction={onLoadMoreAction}
         hasMore={hasMore}
+        pinnedUuids={pinnedUuids}
         onReplyAction={onReplyAction}
         onCopyAction={onCopyAction}
         onEditAction={onEditAction}
         onDeleteAction={onDeleteAction}
         onReactAction={onReactAction}
         onForwardAction={onForwardAction}
+        onPinAction={onPinAction}
         onPreviewFileAction={onPreviewFileAction}
       />
 
