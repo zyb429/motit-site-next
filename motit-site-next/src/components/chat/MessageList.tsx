@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useCallback } from "react";
 import type { ChatMessageItem } from "@/lib/db/chat";
 import type { PreviewFile } from "./MediaPreviewModal";
 import { MessageBubble } from "./MessageBubble";
+import { dayKey } from "@/lib/format-time";
+import { DateDivider } from "./DateDivider";
 
 export function MessageList({
   messages,
@@ -64,6 +66,31 @@ export function MessageList({
     }
   }, [uniqueMessages.length]);
 
+  // Группировка по дням с разделителями дат
+  type RenderItem =
+    | { kind: "divider"; key: string; date: Date }
+    | { kind: "message"; key: string; message: ChatMessageItem };
+
+  const renderItems = useMemo<RenderItem[]>(() => {
+    const items: RenderItem[] = [];
+    let lastDay: string | null = null;
+
+    for (const m of uniqueMessages) {
+      if (!m.created_at) continue;
+      const d =
+        typeof m.created_at === "string" ? new Date(m.created_at) : m.created_at;
+      const key = dayKey(d);
+
+      if (key !== lastDay) {
+        items.push({ kind: "divider", key: `divider-${key}`, date: d });
+        lastDay = key;
+      }
+      items.push({ kind: "message", key: m.uuid, message: m });
+    }
+
+    return items;
+  }, [uniqueMessages]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -118,27 +145,31 @@ export function MessageList({
         </div>
       ) : (
         <>
-          {uniqueMessages.map((m) => (
-            <div key={m.uuid} data-message-uuid={m.uuid}>
-              <MessageBubble
-                message={m}
-                currentUserUuid={currentUserUuid}
-                replyToMessage={
-                  m.reply_to_uuid
-                    ? messagesByUuid.get(m.reply_to_uuid) ?? null
-                    : null
-                }
-                onReplyAction={onReplyAction}
-                onCopyAction={onCopyAction}
-                onEditAction={onEditAction}
-                onDeleteAction={onDeleteAction}
-                onReactAction={onReactAction}
-                onForwardAction={onForwardAction}
-                onJumpToReplyAction={jumpToMessage}
-                onPreviewFileAction={onPreviewFileAction}
-              />
-            </div>
-          ))}
+          {renderItems.map((item) =>
+            item.kind === "divider" ? (
+              <DateDivider key={item.key} date={item.date} />
+            ) : (
+              <div key={item.key} data-message-uuid={item.message.uuid}>
+                <MessageBubble
+                  message={item.message}
+                  currentUserUuid={currentUserUuid}
+                  replyToMessage={
+                    item.message.reply_to_uuid
+                      ? messagesByUuid.get(item.message.reply_to_uuid) ?? null
+                      : null
+                  }
+                  onReplyAction={onReplyAction}
+                  onCopyAction={onCopyAction}
+                  onEditAction={onEditAction}
+                  onDeleteAction={onDeleteAction}
+                  onReactAction={onReactAction}
+                  onForwardAction={onForwardAction}
+                  onJumpToReplyAction={jumpToMessage}
+                  onPreviewFileAction={onPreviewFileAction}
+                />
+              </div>
+            ),
+          )}
         </>
       )}
 

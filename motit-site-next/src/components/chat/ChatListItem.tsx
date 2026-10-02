@@ -4,17 +4,8 @@
 import Link from "next/link";
 import { Users, Hash, Lock, Pin, BellOff } from "lucide-react";
 import type { ChatListItem as ChatListItemType } from "@/lib/db/chat";
-
-function formatTime(date: Date | string | null): string {
-  if (!date) return "";
-  const d = typeof date === "string" ? new Date(date) : date;
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
-  if (isToday) {
-    return d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-  }
-  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
-}
+import { ClientOnly } from "@/components/ClientOnly";
+import { formatChatListTime } from "@/lib/format-time";
 
 function preview(text: string, max = 50): string {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -109,7 +100,7 @@ export function ChatListItem({
             )}
             {chat.last_message && (
               <div className="text-[10px] text-(--text-muted)">
-                {formatTime(chat.last_message.created_at)}
+                <ClientOnly>{formatChatListTime(chat.last_message.created_at)}</ClientOnly>
               </div>
             )}
           </div>

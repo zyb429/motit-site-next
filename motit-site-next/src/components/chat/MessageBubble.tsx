@@ -7,12 +7,8 @@ import { Check, CheckCheck, CornerUpLeft, Forward } from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
 import type { PreviewFile } from "./MediaPreviewModal";
 import { MessageContextMenu } from "./MessageContextMenu";
-
-function formatTime(date: Date | string | null): string {
-  if (!date) return "";
-  const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-}
+import { ClientOnly } from "@/components/ClientOnly";
+import { formatMessageTime } from "@/lib/format-time";
 
 export function MessageBubble({
   message,
@@ -261,7 +257,9 @@ export function MessageBubble({
               isOwn ? "flex-row-reverse" : ""
             }`}
           >
-            <span>{formatTime(message.created_at)}</span>
+            <span>
+              <ClientOnly>{formatMessageTime(message.created_at)}</ClientOnly>
+            </span>
             {isOwn && (
               <span title={isRead ? "Прочитано" : "Отправлено"}>
                 {isRead ? (
