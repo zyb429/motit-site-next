@@ -1,6 +1,7 @@
 // prisma/seed.ts
-import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient } from "../generated/prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import bcrypt from "bcryptjs";
 
 const url = new URL(process.env.DATABASE_URL!);
 
@@ -87,6 +88,44 @@ async function main() {
     },
   });
 
+  // --- admin user ---
+  const adminEmail = "admin@local.dev";
+  const adminPassword = "admin123";
+
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+
+  const admin = await prisma.users.upsert({
+    where: { email: adminEmail },
+    update: {
+      password_hash: adminPasswordHash,
+      is_active: true,
+      confirmed: true,
+    },
+    create: {
+      email: adminEmail,
+      username: "admin",
+      password_hash: adminPasswordHash,
+      full_name: "Администратор",
+      is_active: true,
+      confirmed: true,
+      locale: "ru",
+    },
+  });
+
+  const adminRole = await prisma.roles.findUnique({ where: { name: "admin" } });
+  if (!adminRole) {
+    throw new Error("Role 'admin' not found after createMany — check seed order.");
+  }
+
+  await prisma.users_role_lnk.upsert({
+    where: {
+      user_id_role_id: { user_id: admin.id, role_id: adminRole.id },
+    },
+    update: {},
+    create: { user_id: admin.id, role_id: adminRole.id },
+  });
+
+  console.log(`✓ Admin user ready: ${admin.email} (password: ${adminPassword})`);
   console.log("✓ Seeds applied");
 }
 

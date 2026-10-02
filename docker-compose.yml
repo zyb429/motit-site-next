@@ -24,7 +24,7 @@ services:
       start_period: 30s
 
   minio:
-    image: quay.io/minio/minio:latest
+    image: bigbeartechworld/big-bear-minio:latest
     container_name: motit-minio
     restart: unless-stopped
     environment:
@@ -37,13 +37,13 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
       interval: 5s
       timeout: 3s
       retries: 10
 
   minio-init:
-    image: quay.io/minio/mc:latest
+    image: netvark/mc:latest
     depends_on:
       minio:
         condition: service_healthy
