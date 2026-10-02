@@ -51,7 +51,9 @@ docker compose up --build
 
 После старта (контейнер app должен быть healthy):
 
+```
 docker compose exec app bunx prisma db seed
+```
 
 Это создаст справочники (роли, статусы, приоритеты, категории тикетов, MIME-настройки) и admin-пользователя.
 
