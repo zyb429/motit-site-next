@@ -43,6 +43,10 @@ sub.on("pmessage", (_pattern: string, channel: string, message: string) => {
         io.to(`chat:${chatUuid}`).emit("message:deleted", payload);
       } else if (payload.event === "message:edited") {
         io.to(`chat:${chatUuid}`).emit("message:edited", payload);
+      } else if (payload.event === "message:pinned") {
+        io.to(`chat:${chatUuid}`).emit("message:pinned", payload);
+      } else if (payload.event === "message:unpinned") {
+        io.to(`chat:${chatUuid}`).emit("message:unpinned", payload);
       } else {
         io.to(`chat:${chatUuid}`).emit("message:new", payload);
       }

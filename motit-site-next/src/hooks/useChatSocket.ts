@@ -84,6 +84,34 @@ export type MessageEditedPayload = {
 
 export type MessageEditedHandler = (payload: MessageEditedPayload) => void;
 
+export type MessagePinnedPayload = {
+  event: "message:pinned";
+  scope: "everyone";
+  chatUuid: string;
+  messageUuid: string;
+  pinnedByUuid: string;
+  pinnedAt: string;
+  message: {
+    uuid: string;
+    chat_uuid: string;
+    content: string;
+    kind: string;
+    created_at: string;
+    [key: string]: unknown;
+  };
+};
+
+export type MessageUnpinnedPayload = {
+  event: "message:unpinned";
+  scope: "everyone";
+  chatUuid: string;
+  messageUuid: string;
+  unpinnedByUuid: string;
+};
+
+export type MessagePinnedHandler = (payload: MessagePinnedPayload) => void;
+export type MessageUnpinnedHandler = (payload: MessageUnpinnedPayload) => void;
+
 export function useChatSocket({
   userUuid,
   chatUuids,
@@ -96,6 +124,8 @@ export function useChatSocket({
   onChatUpdatedAction,
   onEditedAction,
   onChatCreatedAction,
+  onPinnedAction,
+  onUnpinnedAction,
 }: {
   userUuid: string;
   chatUuids: string[];
@@ -108,6 +138,8 @@ export function useChatSocket({
   onChatUpdatedAction?: ChatUpdatedHandler;
   onEditedAction?: MessageEditedHandler;
   onChatCreatedAction?: ChatCreatedHandler;
+  onPinnedAction?: MessagePinnedHandler;
+  onUnpinnedAction?: MessageUnpinnedHandler;
 }) {
   useEffect(() => {
     const socket = getSocket(userUuid);
@@ -121,6 +153,8 @@ export function useChatSocket({
     const handleChatUpdated: ChatUpdatedHandler = (p) => onChatUpdatedAction?.(p);
     const handleEdited: MessageEditedHandler = (p) => onEditedAction?.(p);
     const handleChatCreated: ChatCreatedHandler = (p) => onChatCreatedAction?.(p);
+    const handlePinned: MessagePinnedHandler = (p) => onPinnedAction?.(p);
+    const handleUnpinned: MessageUnpinnedHandler = (p) => onUnpinnedAction?.(p);
 
     socket.on("message:new", handleMessage);
     socket.on("typing", handleTyping);
@@ -131,6 +165,8 @@ export function useChatSocket({
     socket.on("chat:updated", handleChatUpdated);
     socket.on("message:edited", handleEdited);
     socket.on("chat:created", handleChatCreated);
+    socket.on("message:pinned", handlePinned);
+    socket.on("message:unpinned", handleUnpinned);
 
     const join = () => {
       chatUuids.forEach((uuid) => socket.emit("chat:join", uuid));
@@ -151,6 +187,8 @@ export function useChatSocket({
       socket.off("chat:updated", handleChatUpdated);
       socket.off("message:edited", handleEdited);
       socket.off("chat:created", handleChatCreated);
+      socket.off("message:pinned", handlePinned);
+      socket.off("message:unpinned", handleUnpinned);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUuid, chatUuids.join(",")]);
