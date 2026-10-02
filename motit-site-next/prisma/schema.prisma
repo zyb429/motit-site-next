@@ -448,6 +448,9 @@ model users {
   users_role_lnk        users_role_lnk[]
   workers               workers?
 
+  chat_pinned_messages chat_pinned_messages[]
+  user_pinned_messages user_pinned_messages[]
+
   @@index([avatar_id], map: "idx_users_avatar_id")
   @@index([document_id], map: "idx_users_document_id")
 }
@@ -509,6 +512,9 @@ model chats {
   members         chat_members[]
   messages        chat_messages[]
 
+  pinned_messages      chat_pinned_messages[]
+  user_pinned_messages user_pinned_messages[]
+
   @@index([kind], map: "idx_chats_kind")
   @@index([last_message_at], map: "idx_chats_last_message")
 }
@@ -568,6 +574,9 @@ model chat_messages {
   reactions       chat_reactions[]
   read_receipts   chat_read_receipts[]
   deletions       chat_message_deletions[]
+
+  pinned_in_chats   chat_pinned_messages[]
+  pinned_by_users   user_pinned_messages[]
 
   @@index([chat_uuid, created_at], map: "idx_chat_messages_chat_created")
   @@index([user_uuid], map: "idx_chat_messages_user")
@@ -629,4 +638,42 @@ model chat_read_receipts {
 
   @@unique([message_uuid, user_uuid], map: "idx_chat_read_receipts_unique")
   @@index([user_uuid, read_at], map: "idx_chat_read_receipts_user")
+}
+
+// Общие закрепления — видны всем участникам чата
+model chat_pinned_messages {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid           String    @unique(map: "idx_chat_pinned_messages_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+
+  chat_uuid      String    @db.Char(36)
+  message_uuid   String    @db.Char(36)
+  pinned_by_uuid String    @db.Char(36)
+  created_at     DateTime? @default(now()) @db.Timestamp(0)
+
+  chat      chats         @relation(fields: [chat_uuid],      references: [uuid], onDelete: Cascade,  onUpdate: NoAction, map: "fk_cpm_chat")
+  message   chat_messages @relation(fields: [message_uuid],   references: [uuid], onDelete: Cascade,  onUpdate: NoAction, map: "fk_cpm_message")
+  pinned_by users         @relation(fields: [pinned_by_uuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction, map: "fk_cpm_user")
+
+  @@unique([chat_uuid, message_uuid], map: "idx_cpm_unique")
+  @@index([chat_uuid], map: "idx_cpm_chat")
+  @@index([message_uuid], map: "idx_cpm_message")
+}
+
+// Персональные закрепления — видны только владельцу
+model user_pinned_messages {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid           String    @unique(map: "idx_user_pinned_messages_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+
+  chat_uuid      String    @db.Char(36)
+  message_uuid   String    @db.Char(36)
+  user_uuid      String    @db.Char(36)
+  created_at     DateTime? @default(now()) @db.Timestamp(0)
+
+  chat      chats         @relation(fields: [chat_uuid],    references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_upm_chat")
+  message   chat_messages @relation(fields: [message_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_upm_message")
+  user      users         @relation(fields: [user_uuid],    references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_upm_user")
+
+  @@unique([chat_uuid, message_uuid, user_uuid], map: "idx_upm_unique")
+  @@index([chat_uuid, user_uuid], map: "idx_upm_chat_user")
+  @@index([message_uuid], map: "idx_upm_message")
 }
