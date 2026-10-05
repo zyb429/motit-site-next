@@ -229,6 +229,23 @@ export default async function BlogPostPage({
           </div>
         </header>
 
+        {post.featuredImage?.url && (
+          <div className="mb-8 rounded-lg overflow-hidden border border-[rgba(45,212,191,0.08)]">
+            <Image
+              src={
+                getSafeImageUrl(post.featuredImage.url) ??
+                post.featuredImage.url
+              }
+              alt={post.title || "Превью поста"}
+              width={1200}
+              height={630}
+              className="w-full h-auto object-cover"
+              priority
+              sizes="(max-width: 768px) 100vw, 768px"
+            />
+          </div>
+        )}
+
         <div className="prose prose-invert max-w-none prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-p:text-gray-300 prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:border-[#2dd4bf] prose-blockquote:text-gray-400">
           {hasSlateContent && content ? (
             <RenderSlate nodes={content} />

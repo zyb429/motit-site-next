@@ -67,6 +67,7 @@ const postSchema = z.object({
   excerpt: z.string().max(300, "Максимум 300 символов").optional(),
   categoryId: z.number().nullable(),
   content: z.string().min(1, "Содержание обязательно"),
+  post_status: z.enum(["draft", "published"]).default("published"),
 });
 
 type PostFormData = z.infer<typeof postSchema>;
@@ -126,10 +127,12 @@ export default memo(function CreatePostClient({
       excerpt: "",
       categoryId: null,
       content: "",
+      post_status: "published",
     },
   });
 
   const excerptValue = watch("excerpt") || "";
+  const postStatusValue = watch("post_status");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -185,6 +188,7 @@ export default memo(function CreatePostClient({
         setValue("title", post.title || "");
         setValue("excerpt", post.excerpt || "");
         setValue("categoryId", post.categories?.[0]?.id ?? null);
+        setValue("post_status", post.post_status === "draft" ? "draft" : "published");
 
         if (post.content) {
           try {
@@ -296,6 +300,7 @@ export default memo(function CreatePostClient({
             slug: string;
             content: unknown;
             excerpt: string;
+            post_status?: "draft" | "published";
             categories?: string[];
             featured_image?: number;
           };
@@ -313,6 +318,7 @@ export default memo(function CreatePostClient({
             })()
             : data.content,
             excerpt: data.excerpt || "",
+            post_status: data.post_status ?? "published",
           };
 
           if (categoryDocId) {
@@ -354,13 +360,16 @@ export default memo(function CreatePostClient({
 
           const result = await response.json();
           const resultSlug = result?.data?.slug || slug;
-          if (resultSlug) {
+          const resultStatus = result?.data?.post_status || data.post_status;
+
+          if (resultStatus === "draft") {
+            router.push("/admin/posts");
+          } else if (resultSlug) {
             router.push(`/blog/${resultSlug}`);
-            router.refresh();
           } else {
             router.push("/admin/posts");
-            router.refresh();
           }
+          router.refresh();
         } catch (error) {
           console.error(
             isEditMode ? "❌ Update error:" : "❌ Create error:",
@@ -452,13 +461,21 @@ export default memo(function CreatePostClient({
                         ? "Загрузка..."
                         : isEditMode
                           ? "Сохранение..."
-                          : "Публикация..."}
+                          : postStatusValue === "draft"
+                            ? "Сохранение черновика..."
+                            : "Публикация..."}
                     </span>
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    <span>{isEditMode ? "Сохранить" : "Опубликовать"}</span>
+                    <span>
+                      {isEditMode
+                        ? "Сохранить"
+                        : postStatusValue === "draft"
+                          ? "Сохранить черновик"
+                          : "Опубликовать"}
+                    </span>
                   </>
                 )}
               </button>
@@ -537,8 +554,9 @@ export default memo(function CreatePostClient({
 
             <div className="space-y-4">
               {featuredImagePreview ? (
-                <div className="relative">
-                  <Image
+                <div className="relative w-full h-64">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={featuredImagePreview}
                     alt="Preview"
                     className="w-full h-64 object-cover rounded-lg border border-(--border)"
@@ -547,7 +565,7 @@ export default memo(function CreatePostClient({
                     type="button"
                     onClick={handleRemoveImage}
                     disabled={isDisabled}
-                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors z-10"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -598,6 +616,28 @@ export default memo(function CreatePostClient({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Публикация */}
+          <div className={cardClass}>
+            <div className={cardHeaderClass}>
+              <FileText className="w-5 h-5 text-(--accent)" />
+              <h2 className="text-lg font-semibold">Публикация</h2>
+            </div>
+
+            <select
+              id="post_status"
+              {...register("post_status")}
+              className={inputClass}
+              disabled={isDisabled}
+            >
+              <option value="published">Опубликовать сразу</option>
+              <option value="draft">Сохранить как черновик</option>
+            </select>
+
+            <p className="text-sm text-(--text-muted) mt-2">
+              Черновики видны только в админке. Опубликованные посты сразу появляются на сайте.
+            </p>
           </div>
 
           {/* Содержание */}
