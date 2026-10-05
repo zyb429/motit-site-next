@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { SupportSidebar } from "@/components/helpdesk/Sidebar";
-import { ThemeForce } from "@/components/ui/ThemeForce";
+import { ThemedProviders } from "@/components/ThemedProviders";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +23,11 @@ export default async function SupportLayout({
   }
 
   return (
-    <>
-      <ThemeForce theme="dark" />
+    <ThemedProviders>
       <div className="min-h-screen bg-(--bg-primary) flex">
         <SupportSidebar user={user} />
         <main className="flex-1 min-w-0">{children}</main>
       </div>
-    </>
+    </ThemedProviders>
   );
 }

@@ -51,9 +51,18 @@ const THEME_INIT_SCRIPT = `
 (function() {
   try {
     var path = window.location.pathname;
-    // Тёмная тема для всех зон, КРОМЕ /admin
-    var isAdmin = path.startsWith("/admin");
-    if (!isAdmin) {
+    // Зоны, где тема управляется пользователем (next-themes).
+    // Везде остальное — жёстко тёмная тема.
+    var userThemeZones = [
+      "/admin",
+      "/cabinet",
+      "/stats",
+      "/support"
+    ];
+    var isUserTheme = userThemeZones.some(function(prefix) {
+      return path.startsWith(prefix);
+    });
+    if (!isUserTheme) {
       document.documentElement.classList.add("dark");
     }
   } catch (e) {}

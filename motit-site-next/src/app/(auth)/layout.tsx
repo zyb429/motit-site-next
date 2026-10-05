@@ -1,5 +1,3 @@
-import { ThemeForce } from "@/components/ui/ThemeForce";
-
 export default function AuthLayout({
   children,
 }: {
@@ -7,7 +5,6 @@ export default function AuthLayout({
 }) {
   return (
     <>
-      <ThemeForce theme="dark" />
       {children}
     </>
   );
