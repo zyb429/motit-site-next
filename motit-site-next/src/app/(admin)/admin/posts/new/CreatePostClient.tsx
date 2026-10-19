@@ -35,6 +35,7 @@ import type { CustomElement } from "@/types/slate";
 import { EditorSkeleton } from "@/components/editor/EditorSkeleton";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { generateSlug } from "@/lib/utils";
+import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
 import Image from "next/image";
 
 type Category = {
@@ -66,7 +67,7 @@ const postSchema = z.object({
     .max(200, "Максимум 200 символов"),
   excerpt: z.string().max(300, "Максимум 300 символов").optional(),
   categoryId: z.number().nullable(),
-  content: z.string().min(1, "Содержание обязательно"),
+  content: z.string().optional(),
   post_status: z.enum(["draft", "published"]).default("published"),
 });
 
@@ -167,12 +168,6 @@ export default memo(function CreatePostClient({
   }, []);
 
   useEffect(() => {
-    if (content) {
-      setValue("content", JSON.stringify(content));
-    }
-  }, [content, setValue]);
-
-  useEffect(() => {
     if (!isEditMode || !editId) return;
 
     const loadPost = async () => {
@@ -196,11 +191,29 @@ export default memo(function CreatePostClient({
               typeof post.content === "string"
                 ? JSON.parse(post.content)
                 : post.content;
-            const parsed: CustomElement[] = Array.isArray(raw) ? raw : [raw];
-            setContent(parsed);
-            setValue("content", JSON.stringify(parsed));
+
+            // Tiptap ждёт { type: "doc", content: [...] }.
+            // Slate-массивы и прочие форматы приводим к пустому документу.
+            if (
+              raw &&
+              typeof raw === "object" &&
+              !Array.isArray(raw) &&
+              raw.type === "doc"
+            ) {
+              setContent(raw);
+              setValue("content", JSON.stringify(raw));
+            } else {
+              if (Array.isArray(raw)) {
+                console.warn(
+                  "[loadPost] Обнаружен контент в формате Slate — редактор откроется пустым",
+                );
+              }
+              setContent(null);
+              setValue("content", "");
+            }
           } catch {
-            setValue("content", post.content);
+            setContent(null);
+            setValue("content", "");
           }
         }
 
@@ -305,18 +318,27 @@ export default memo(function CreatePostClient({
             featured_image?: number;
           };
 
+          const safeContent = (() => {
+            // Пустой документ Tiptap — валидный JSON
+            const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
+
+            if (!data.content || data.content.trim() === "") {
+              return emptyDoc;
+            }
+            try {
+              const parsed = JSON.parse(data.content);
+              // Если это массив (старый Slate) — тоже заменяем на пустой doc
+              if (Array.isArray(parsed)) return emptyDoc;
+              return parsed;
+            } catch {
+              return emptyDoc;
+            }
+          })();
+
           const payload: PostPayload = {
             title: data.title,
             slug,
-            content: typeof data.content === "string"
-            ? (() => {
-              try {
-                return JSON.parse(data.content);
-              } catch {
-                return data.content;
-              }
-            })()
-            : data.content,
+            content: safeContent,   // ← вместо старой логики
             excerpt: data.excerpt || "",
             post_status: data.post_status ?? "published",
           };
@@ -649,11 +671,13 @@ export default memo(function CreatePostClient({
               </h2>
             </div>
 
-            <SlateEditor
-              initialValue={content}
-              onChange={setContent}
-              readOnly={isDisabled}
-            />
+            <div className="min-w-0 overflow-hidden rounded-lg border border-(--border) bg-(--bg-secondary)">
+              <SimpleEditor
+                initialContent={content}
+                onChange={(json) => setValue("content", JSON.stringify(json))}
+                editable={!isDisabled}
+              />
+            </div>
             {errors.content && (
               <p className="text-red-400 text-sm mt-2">
                 {errors.content.message}

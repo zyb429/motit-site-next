@@ -12,7 +12,8 @@ const adapter = new PrismaMariaDb({
   user: decodeURIComponent(url.username),
   password: decodeURIComponent(url.password),
   database: url.pathname.slice(1),
-  connectionLimit: 5,
+  connectionLimit: 10,           // можно оставить 5 или поднять до 10
+  allowPublicKeyRetrieval: true, // ← КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
   charset: params.get("charset") || "utf8mb4",
 });
 

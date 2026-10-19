@@ -4,12 +4,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getPostBySlugPrisma, getPostsPrisma } from "@/lib/db/posts";
-import RenderSlate from "@/components/editor/RenderSlate";
 import { BlogPostActions } from "@/components/blog/BlogPostActions";
 import { Calendar, User, Clock, ArrowLeft, Tag } from "lucide-react";
-import { Element, Text, type Descendant } from "slate";
-import type { CustomElement } from "@/types/slate";
 import { getSafeImageUrl } from "@/lib/images";
+import { TaskList, TaskItem } from "@tiptap/extension-list";
+import { generateHTML } from "@tiptap/html";
+import StarterKit from "@tiptap/starter-kit";
+import ImageExtension from "@tiptap/extension-image";
+import type { JSONContent } from "@tiptap/core";
+import { TextAlign } from "@tiptap/extension-text-align";
+import { Typography } from "@tiptap/extension-typography";
+import { Highlight } from "@tiptap/extension-highlight";
+import { Subscript } from "@tiptap/extension-subscript";
+import { Superscript } from "@tiptap/extension-superscript";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -64,6 +71,104 @@ export async function generateMetadata({
   }
 }
 
+// Расширения должны совпадать с теми, что используются в SimpleEditor
+const TIPTAP_EXTENSIONS = [
+  StarterKit.configure({
+    link: {
+      openOnClick: false,
+      HTMLAttributes: { class: "text-[#2dd4bf] hover:text-[#14b8a6]" },
+    },
+  }),
+  ImageExtension,
+  TaskList,
+  TaskItem.configure({ nested: true }),
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
+  Typography,
+  Highlight.configure({ multicolor: true }),
+  Superscript,
+  Subscript,
+];
+
+function renderTiptapContent(raw: unknown): string {
+  if (!raw) return "";
+
+  try {
+    let json: JSONContent | null = null;
+
+    // Если контент пришёл строкой — парсим
+    if (typeof raw === "string") {
+      const trimmed = raw.trim();
+      if (!trimmed) return "";
+      // Если это уже HTML-строка (старые посты со Strapi), вернём как есть
+      if (trimmed.startsWith("<")) return trimmed;
+      try {
+        json = JSON.parse(trimmed);
+      } catch {
+        return "";
+      }
+    } else if (typeof raw === "object") {
+      json = raw as JSONContent;
+    }
+
+    if (!json) return "";
+
+    // Slate-массивы Tiptap не понимает — пропускаем, чтобы не упасть
+    if (Array.isArray(json)) {
+      console.warn(
+        "[blog] Обнаружен контент в формате Slate — рендеринг пропущен. " +
+          "Пересохраните пост в новом редакторе.",
+      );
+      return "";
+    }
+
+    // Простейшая валидация: у Tiptap-документа должен быть type "doc"
+    if (json.type !== "doc" && !json.content) {
+      return "";
+    }
+
+    return generateHTML(json, TIPTAP_EXTENSIONS);
+  } catch (error) {
+    console.error("[blog] Failed to render Tiptap content:", error);
+    return "";
+  }
+}
+
+function extractPlainText(raw: unknown): string {
+  if (!raw) return "";
+
+  try {
+    let json: JSONContent | null = null;
+
+    if (typeof raw === "string") {
+      const trimmed = raw.trim();
+      if (trimmed.startsWith("<")) {
+        return trimmed.replace(/<[^>]*>/g, " ");
+      }
+      try {
+        json = JSON.parse(trimmed);
+      } catch {
+        return trimmed;
+      }
+    } else if (typeof raw === "object" && !Array.isArray(raw)) {
+      json = raw as JSONContent;
+    }
+
+    if (!json || Array.isArray(json)) return "";
+
+    const walk = (node: JSONContent): string => {
+      if (node.type === "text" && typeof node.text === "string") {
+        return node.text;
+      }
+      if (!node.content) return "";
+      return node.content.map(walk).join(" ");
+    };
+
+    return walk(json);
+  } catch {
+    return "";
+  }
+}
+
 export default async function BlogPostPage({
   params,
   searchParams = Promise.resolve({}),
@@ -104,30 +209,12 @@ export default async function BlogPostPage({
   const categories = post.categories;
   const author = post.author;
 
-  const content = (post as { content?: CustomElement[] | null }).content ?? null;
-
-  const hasSlateContent =
-    Array.isArray(content) && content.length > 0;
+  const rawContent = (post as { content?: unknown }).content ?? null;
+  const htmlContent = renderTiptapContent(rawContent);
 
   const getReadingTime = () => {
-    let text = "";
-    if (hasSlateContent && content) {
-      const extractText = (nodes: Descendant[]): string => {
-        let result = "";
-        for (const node of nodes) {
-          if (Text.isText(node)) {
-            result += node.text + " ";
-          } else if (Element.isElement(node)) {
-            result += extractText(node.children);
-          }
-        }
-        return result;
-      };
-      text = extractText(content);
-    } else if (post.excerpt) {
-      text = post.excerpt;
-    }
-    const words = text.replace(/<[^>]*>/g, "").split(/\s+/).length;
+    const text = extractPlainText(rawContent) || post.excerpt || "";
+    const words = text.trim().split(/\s+/).filter(Boolean).length;
     const minutes = Math.ceil(words / 200);
     return minutes > 0 ? minutes : 1;
   };
@@ -246,9 +333,9 @@ export default async function BlogPostPage({
           </div>
         )}
 
-        <div className="prose prose-invert max-w-none prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-p:text-gray-300 prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:border-[#2dd4bf] prose-blockquote:text-gray-400">
-          {hasSlateContent && content ? (
-            <RenderSlate nodes={content} />
+        <div className="prose prose-invert max-w-none prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-p:text-gray-300 prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:border-[#2dd4bf] prose-blockquote:text-gray-400 prose-img:rounded-lg">
+          {htmlContent ? (
+            <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           ) : (
             <p className="text-gray-500">Нет содержимого</p>
           )}

@@ -1,6 +1,9 @@
 @import "tailwindcss/theme" layer(theme);
 @import "tailwindcss/preflight" layer(base);
 @import "tailwindcss/utilities" layer(utilities);
+@import "../components/tiptap-templates/simple/simple-editor.scss";
+
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -412,4 +415,14 @@ textarea:focus::placeholder {
     padding-left: 28px;
     padding-right: 28px;
   }
+}
+
+/* Стилизуем контент внутри редактора */
+.tiptap {
+  @apply prose prose-sm sm:prose-base lg:prose-lg dark:prose-invert max-w-none focus:outline-none;
+}
+
+/* Опционально: стили для страницы просмотра поста (блога) */
+.post-content {
+  @apply prose prose-lg dark:prose-invert max-w-none;
 }

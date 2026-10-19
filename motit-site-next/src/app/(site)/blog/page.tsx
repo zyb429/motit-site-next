@@ -11,6 +11,32 @@ import { BlogCategories } from "@/components/blog/BlogCategories";
 import { PaginationClient } from "@/components/blog/PaginationClient";
 import { SearchInput } from "@/components/blog/SearchInput";
 import type { ViewMode } from "@/components/blog/ViewModeToggle";
+import { TaskList, TaskItem } from "@tiptap/extension-list";
+import { TextAlign } from "@tiptap/extension-text-align";
+import { Typography } from "@tiptap/extension-typography";
+import { Highlight } from "@tiptap/extension-highlight";
+import { Subscript } from "@tiptap/extension-subscript";
+import { Superscript } from "@tiptap/extension-superscript";
+import { generateHTML } from "@tiptap/html";
+import StarterKit from "@tiptap/starter-kit";
+import ImageExtension from "@tiptap/extension-image";
+
+const TIPTAP_EXTENSIONS = [
+  StarterKit.configure({
+    link: {
+      openOnClick: false,
+      HTMLAttributes: { class: "text-[#2dd4bf] hover:text-[#14b8a6]" },
+    },
+  }),
+  ImageExtension,
+  TaskList,
+  TaskItem.configure({ nested: true }),
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
+  Typography,
+  Highlight.configure({ multicolor: true }),
+  Superscript,
+  Subscript,
+];
 
 export const revalidate = 3600;
 
