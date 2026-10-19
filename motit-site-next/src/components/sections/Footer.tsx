@@ -5,6 +5,7 @@ import {
   Headphones,
   Phone,
   MapPin,
+  User
 } from "lucide-react";
 import FooterClient from "./FooterClient";
 
@@ -100,6 +101,14 @@ export default function Footer() {
                 <MapPin size={14} className="flex-shrink-0" />
                 <span>г. Минск, ул. Сухаревская, д. 16, п. 71</span>
               </div>
+              {/* Ссылка на форму авторизации */}
+              <a
+                href="/login"
+                className="flex items-center gap-2 text-sm transition-colors duration-100 hover:text-[#2dd4bf]"
+                style={{ color: "rgba(128, 222, 234, 0.6)" }}
+              >
+                <User size={14} /> Личный кабинет
+              </a>
             </div>
           </div>
 
@@ -125,6 +134,7 @@ export default function Footer() {
             >
               <Headphones size={14} className="mr-2" /> Техподдержка
             </a>
+
           </div>
         </div>
 
