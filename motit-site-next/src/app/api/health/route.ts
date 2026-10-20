@@ -1,29 +1,34 @@
 // src/app/api/health/route.ts
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { redis } from "@/lib/redis";
+import { checkAll, isAuthorized, redact } from "@/lib/health";
 
-export async function GET() {
-  const checks: Record<string, "ok" | "fail"> = {};
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    checks.db = "ok";
-  } catch {
-    checks.db = "fail";
+// Короткий in-memory кэш, чтобы мониторинг (Docker + Uptime Kuma) не гонял
+// S3+Redis+pub/sub несколько раз в секунду.
+let cache: { at: number; body: unknown; code: number } | null = null;
+const TTL_MS = 5000;
+
+export async function GET(req: Request) {
+  const headers = { "Cache-Control": "no-store" } as const;
+
+  if (cache && Date.now() - cache.at < TTL_MS) {
+    return NextResponse.json(cache.body, { status: cache.code, headers });
   }
 
-  try {
-    await redis.ping();
-    checks.redis = "ok";
-  } catch {
-    checks.redis = "fail";
-  }
+  const raw = await checkAll();
+  const showDetail = process.env.HEALTH_DETAILS === "1" || isAuthorized(req);
+  const checks = redact(raw, showDetail);
+  const allOk = Object.values(raw).every((c) => c.status === "ok");
 
-  const allOk = Object.values(checks).every((v) => v === "ok");
+  const body = {
+    status: allOk ? "ok" : "degraded",
+    timestamp: new Date().toISOString(),
+    checks,
+  };
+  const code = allOk ? 200 : 503;
 
-  return NextResponse.json(
-    { status: allOk ? "ok" : "degraded", checks },
-    { status: allOk ? 200 : 503 },
-  );
+  cache = { at: Date.now(), body, code };
+  return NextResponse.json(body, { status: code, headers });
 }

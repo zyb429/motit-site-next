@@ -12,7 +12,7 @@
 - **Redis 7** — pub/sub и presence в чатах
 - **Socket.IO** — WebSocket-сервер (отдельный процесс)
 - **Tailwind CSS 4**
-- **Slate** — редактор постов
+- **Tiptap** — редактор постов (Simple Editor)
 
 ## Требования
 
@@ -20,24 +20,27 @@
 - Docker + docker compose
 
 ## Структура репозитория
+
 ```
 motit-site-next/            ← корень монорепы
 ├── motit-site-next/        ← Next.js приложение
 │   ├── prisma/
 │   ├── scripts/
 │   ├── src/
-│   │   └── app/api/health/ ← healthcheck для uptime-мониторинга
+│   │   └── app/api/health/ ← healthcheck: live, ready, smtp, основной
 │   ├── Dockerfile          ← образ на oven/bun:1
 │   ├── .dockerignore
 │   └── .env.example
 ├── docker-compose.yml      ← MySQL + Redis + MinIO + app + ws
 └── README.md
 ```
+
 ## Быстрый старт
 
 Есть два варианта запуска.
 
 ### Вариант A — всё в Docker (проще всего)
+
 ```
 cp motit-site-next/.env.example motit-site-next/.env
 # отредактировать .env при необходимости
@@ -45,6 +48,7 @@ cp motit-site-next/.env.example motit-site-next/.env
 cd ~/Projects/motit-site-next
 docker compose up --build
 ```
+
 Первый запуск — 2–5 минут (bun install, prisma generate, миграции). Дальше — кэш, запуск за секунды.
 
 **Порядок старта контейнеров:** mysql (healthy) → redis (healthy) → minio (healthy) → minio-init (создаёт бакет motit-uploads и завершается) → app (стартует только после service_completed_successfully у minio-init). ws стартует параллельно, ждёт только redis.
@@ -58,33 +62,44 @@ docker compose exec app bunx prisma db seed
 Это создаст справочники (роли, статусы, приоритеты, категории тикетов, MIME-настройки) и admin-пользователя.
 
 - Сайт — http://localhost:3000
-- Health — http://localhost:3000/api/health
+- Health (полный) — http://localhost:3000/api/health
+- Health (liveness) — http://localhost:3000/api/health/live
+- Health (readiness) — http://localhost:3000/api/health/ready
+- Health (SMTP, под Bearer) — http://localhost:3000/api/health/smtp
 - MinIO Console — http://localhost:9001 (minioadmin / minioadmin)
 - WebSocket — http://localhost:3001
 
 Остановить:
+
 ```
 docker compose down           # данные сохранятся
 docker compose down -v        # БД обнулится
 ```
+
 ### Вариант B — инфра в Docker, Next.js на хосте
 
 Для быстрого hot-reload и отладки в IDE.
+
 ```
 cd ~/Projects/motit-site-next
 docker compose up -d mysql redis minio minio-init
 ```
+
 Затем в отдельном терминале:
+
 ```
 cd motit-site-next
 bun install
 bun run dev          # Next.js на :3000
 bun run ws           # WS на :3001 (в отдельном терминале)
 ```
+
 Или одной командой:
+
 ```
 bun run dev:all
 ```
+
 ### Порты
 
 | Сервис | Порт (хост) |
@@ -99,9 +114,11 @@ bun run dev:all
 ## Переменные окружения
 
 Скопируйте шаблон:
+
 ```
 cp motit-site-next/.env.example motit-site-next/.env
 ```
+
 Основные переменные:
 
 | Переменная | Назначение |
@@ -122,6 +139,8 @@ cp motit-site-next/.env.example motit-site-next/.env
 | NEXT_PUBLIC_S3_URL | Публичный URL бакета |
 | SMTP_* | Отправка почты |
 | HESK_* | Help Desk (опционально) |
+| HEALTH_TOKEN | Bearer-токен для /api/health/ready и /api/health/smtp (openssl rand -hex 32) |
+| HEALTH_DETAILS | 1 — отдавать detail (текст ошибок) без токена. Только для локалки |
 
 **Важно:** внутри Docker хосты mysql, redis, minio (имена сервисов). Для запуска на хосте — 127.0.0.1 с портами 3307 / 6379 / 9000.
 
@@ -130,15 +149,18 @@ cp motit-site-next/.env.example motit-site-next/.env
 **HESK_API_TOKEN:** нужно заполнить вручную — получить токен в админ-панели HESK. Без него интеграция Help Desk не заработает.
 
 **Про shadow database:** SHADOW_DATABASE_URL используется только командой prisma migrate dev (запускается с хоста). В контейнере app выполняется prisma migrate deploy, которому shadow database не нужна. База motit_site_shadow автоматически не создаётся — если планируете migrate dev, создайте её вручную и дайте motit_user права:
+
 ```
 docker compose exec mysql mysql -uroot -proot_local_dev -e \
   "CREATE DATABASE IF NOT EXISTS motit_site_shadow; \
    GRANT ALL PRIVILEGES ON motit_site_shadow.* TO 'motit_user'@'%'; \
    FLUSH PRIVILEGES;"
 ```
-**Про .env и секреты:** файл motit-site-next/.env никогда не коммитится — он в .gitignore. В репозитории хранится только .env.example без значений. Реальные секреты (SMTP_PASS, AUTH_SECRET, пароли БД и S3) держите только в локальном .env и в переменных окружения прода.
+
+**Про .env и секреты:** файл motit-site-next/.env никогда не коммитится — он в .gitignore. В репозитории хранится только .env.example без значений. Реальные секреты (SMTP_PASS, AUTH_SECRET, HEALTH_TOKEN, пароли БД и S3) держите только в локальном .env и в переменных окружения прода.
 
 ### Шаблон .env.example
+
 ```
 USE_PRISMA="1"
 
@@ -195,6 +217,12 @@ S3_PROXY_TARGET="http://localhost:9000/motit-uploads"
 REDIS_URL="redis://127.0.0.1:6379"
 WS_PORT=3001
 NEXT_PUBLIC_WS_URL="http://localhost:3001"
+
+# Health-check
+# openssl rand -hex 32
+HEALTH_TOKEN=""
+# 1 — отдавать detail (текст ошибок) без токена. Только для локалки!
+HEALTH_DETAILS="0"
 ```
 
 ## Скрипты
@@ -216,6 +244,7 @@ NEXT_PUBLIC_WS_URL="http://localhost:3001"
 | docker compose exec app bunx prisma db seed | Справочники + admin-пользователь |
 
 ## Архитектура
+
 ```
 src/
 ├── app/
@@ -224,7 +253,7 @@ src/
 │   ├── (site)/           # Публичный сайт
 │   ├── (cabinet)/        # Личный кабинет
 │   └── api/              # Route Handlers
-│       └── health/       # healthcheck
+│       └── health/       # healthcheck: live, ready, smtp, основной
 ├── components/
 │   ├── admin/            # Sidebar, модалки
 │   ├── auth/             # LogoutButton, формы
@@ -232,11 +261,13 @@ src/
 │   └── ui/               # shadcn-компоненты
 └── lib/
     ├── auth.ts           # Auth.js config
+    ├── health.ts         # общие проверки (db, redis, s3, wsPubSub)
     ├── prisma.ts         # Prisma Client (singleton)
-    ├── redis.ts          # Redis client (ioredis)
+    ├── redis.ts          # Redis client (ioredis): redis + pubsub
     ├── s3.ts             # S3 client
     └── db/               # Функции доступа к данным
 ```
+
 ## Роли
 
 | Роль | Доступ |
@@ -260,10 +291,12 @@ src/
 Пароль хэшируется через bcrypt (bcryptjs, 10 раундов) — это соответствует проверке в src/lib/auth.ts, где используется bcrypt.compare. Хэширование через Bun.password.hash (argon2) не подойдёт: алгоритмы несовместимы.
 
 ⚠️ В продакшене сразу после первого запуска смените пароль admin через админку или переопределите seed так, чтобы он брал email/пароль из переменных окружения:
+
 ```
 const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@local.dev";
 const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 ```
+
 ## Медиа
 
 Файлы хранятся в MinIO локально и в S3 на проде.
@@ -274,10 +307,35 @@ const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 - Локально S3 проксируется через /files (S3_PUBLIC_URL="/files", S3_PROXY_TARGET="http://localhost:9000/motit-uploads"), чтобы избежать CORS и проблем с прямыми ссылками на MinIO.
 
 Для исправления Content-Type у старых файлов:
+
 ```
 cd motit-site-next
 bun scripts/fix-content-type.ts
 ```
+
+## Health-check
+
+| Эндпоинт | Проверяет | Кто использует | Авторизация |
+| --- | --- | --- | --- |
+| `GET /api/health/live` | только процесс (uptime) | Docker `HEALTHCHECK` | нет |
+| `GET /api/health` | db, redis, s3, wsPubSub (кэш 5s, без detail) | Внешний uptime-мониторинг | нет |
+| `GET /api/health/ready` | то же, без кэша, с detail | Ручная диагностика | `Bearer $HEALTH_TOKEN` (опц.) |
+| `GET /api/health/smtp` | SMTP-баннер (`220`) | Внутренний монитор почты | `Bearer $HEALTH_TOKEN` |
+
+Переменные:
+
+- `HEALTH_TOKEN` — `openssl rand -hex 32`, включает detail и доступ к `/smtp`.
+- `HEALTH_DETAILS=1` — отдавать detail без токена (только локалка!).
+
+Пример:
+
+```bash
+curl -s http://localhost:3000/api/health | jq
+curl -s -H "Authorization: Bearer $HEALTH_TOKEN" http://localhost:3000/api/health/ready | jq
+```
+
+Поведение при деградации: `/api/health/live` продолжает отдавать `200`, пока жив процесс; `/api/health` и `/api/health/ready` возвращают `503` с `detail` про упавшую зависимость. Поэтому `/live` используется в Docker `HEALTHCHECK` (не рестартует контейнер при падении MinIO/Redis), а `/api/health` — во внешнем мониторинге.
+
 ## Чат
 
 Чат работает через WebSocket (Socket.IO) на отдельном процессе server.ts (порт 3001). Redis используется для pub/sub между инстансами.
@@ -295,6 +353,7 @@ bun scripts/fix-content-type.ts
 ### Prisma v7 + Next.js
 
 В prisma/schema.prisma обязательна опция:
+
 ```
 generator client {
   provider            = "prisma-client"
@@ -302,6 +361,7 @@ generator client {
   importFileExtension = "ts"
 }
 ```
+
 Без importFileExtension = "ts" сгенерированные файлы содержат импорты с .js, и Webpack/Next.js не может их разрешить — приложение падает с Module not found: Can't resolve '@generated/prisma/client'.
 
 ### MinIO: community-образы
@@ -317,17 +377,19 @@ Healthcheck MinIO проверяет HTTP-эндпоинт /minio/health/ready �
 
 - Анонимные volumes: node_modules, .next и generated вынесены в анонимные volumes, чтобы не затирать их при монтировании исходников с хоста (./motit-site-next:/app).
 - Лимиты для app: mem_limit: 4g и ulimits.nproc: 30000/30000 — для стабильной работы Next.js + Prisma во время сборки и dev-режима.
-- Healthcheck app: проверяет http://localhost:3000/api/health с start_period: 120s.
-- Healthcheck ws: отсутствует — для мониторинга используйте docker compose logs ws или внешний пробник на порт 3001.
+- Healthcheck app: проверяет http://127.0.0.1:3000/api/health/live через bun -e fetch (в образе oven/bun:1 нет wget/curl), start_period: 240s, timeout: 30s — запас на первичную компиляцию роута в dev:webpack.
+- Healthcheck ws: TCP-коннект к 127.0.0.1:3001 через bun -e net.connect, start_period: 30s.
 - RAYON_NUM_THREADS: "4" в app.environment — ограничение параллелизма Rust-частей (например, SWC).
 
 ### Пароли в docker-compose.yml
 
 В docker-compose.yml захардкожены:
+
 ```
 MYSQL_ROOT_PASSWORD: root_local_dev
 MYSQL_PASSWORD: MotitSecure2024! (и тот же пароль в DATABASE_URL / SHADOW_DATABASE_URL для app)
 ```
+
 Для локальной разработки это допустимо. Для прода — заменить и вынести в .env / docker secrets.
 
 ## Миграция со Strapi
@@ -341,7 +403,7 @@ MYSQL_PASSWORD: MotitSecure2024! (и тот же пароль в DATABASE_URL / 
 | users-permissions | Своя users + bcrypt |
 | Upload local | MinIO / S3 |
 | documentId в URL | Числовой id |
-| components_blog_* | posts.content (Slate) |
+| components_blog_* | posts.content (Tiptap JSON) |
 | middleware.ts | proxy.ts (Next.js 16) |
 
 ## Продакшен
@@ -349,6 +411,7 @@ MYSQL_PASSWORD: MotitSecure2024! (и тот же пароль в DATABASE_URL / 
 ### 1. S3
 
 Замените MinIO на реальный S3 (AWS, Cloudflare R2, Yandex Object Storage) в прод-.env:
+
 ```
 S3_ENDPOINT="https://s3.amazonaws.com"
 S3_REGION="eu-central-1"
@@ -358,9 +421,11 @@ S3_SECRET_ACCESS_KEY="..."
 S3_PUBLIC_URL="https://motit-uploads.s3.amazonaws.com"
 NEXT_PUBLIC_S3_URL="https://motit-uploads.s3.amazonaws.com"
 ```
+
 ### 2. next.config.ts
 
 Добавьте прод-домен S3 в images.remotePatterns:
+
 ```
 images: {
   remotePatterns: [
@@ -372,23 +437,31 @@ images: {
   ],
 },
 ```
+
 ### 3. .env на проде
+
 ```
 DATABASE_URL="mysql://user:pass@prod-host:3306/motit_site"
 AUTH_SECRET="<openssl rand -base64 32>"
 AUTH_URL="https://motit.by"
 NEXTAUTH_URL="https://motit.by"
 NEXT_PUBLIC_SITE_URL="https://motit.by"
+HEALTH_TOKEN="<openssl rand -hex 32>"
+HEALTH_DETAILS="0"
 ```
+
 ### 4. Сборка и запуск
 
 В проде — не dev, а production-сборка:
+
 ```
 bun install --frozen-lockfile
 bun run build
 bun run start
 ```
+
 В docker-compose.yml для прода замените command в сервисе app на:
+
 ```
     command: >
       sh -c "
@@ -401,19 +474,25 @@ bun run start
     environment:
       NODE_ENV: production
 ```
+
 ⚠️ Важно: prisma db seed в проде создаст пользователя admin@local.dev с паролем admin123. Сразу после первого запуска смените пароль через админку или переопределите seed так, чтобы он брал email/пароль из переменных окружения:
+
 ```
 const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@local.dev";
 const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 ```
+
+В проде healthcheck `app` можно вернуть к более строгим таймингам (`timeout: 10s`, `start_period: 60s`), так как роуты уже скомпилированы `next build`.
+
 ## Безопасность
 
 - .env, .env.local, дампы БД, mysql creds.txt — никогда не коммитить (см. .gitignore).
 - Все секреты — только в .env на сервере.
 - Пароли — bcrypt.
 - Auth.js — JWT с подписью AUTH_SECRET.
-- SMTP_PASS (Gmail App Password) и AUTH_SECRET при утечке — немедленно отозвать и перегенерировать.
+- SMTP_PASS (Gmail App Password), AUTH_SECRET, HEALTH_TOKEN при утечке — немедленно отозвать и перегенерировать.
 - Пароли MySQL (root_local_dev, MotitSecure2024!) захардкожены в docker-compose.yml — для прода заменить и вынести в секреты.
+- Health-check: `detail` (текст ошибок) отдаётся только при `HEALTH_DETAILS=1` или с `Authorization: Bearer $HEALTH_TOKEN`. В проде — `HEALTH_DETAILS=0`.
 
 ## Лицензия
 
