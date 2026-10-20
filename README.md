@@ -321,6 +321,7 @@ bun scripts/fix-content-type.ts
 | `GET /api/health` | db, redis, s3, wsPubSub (кэш 5s, без detail) | Внешний uptime-мониторинг | нет |
 | `GET /api/health/ready` | то же, без кэша, с detail | Ручная диагностика | `Bearer $HEALTH_TOKEN` (опц.) |
 | `GET /api/health/smtp` | SMTP-баннер (`220`) | Внутренний монитор почты | `Bearer $HEALTH_TOKEN` |
+| `GET /api/health/metrics` | Prometheus-метрики (`health_check_status` + `health_check_latency_ms` по каждой проверке) | Grafana / Prometheus-скрейпер | `Bearer $HEALTH_TOKEN` |
 
 Переменные:
 
@@ -332,6 +333,7 @@ bun scripts/fix-content-type.ts
 ```bash
 curl -s http://localhost:3000/api/health | jq
 curl -s -H "Authorization: Bearer $HEALTH_TOKEN" http://localhost:3000/api/health/ready | jq
+curl -s -H "Authorization: Bearer $HEALTH_TOKEN" http://localhost:3000/api/health/metrics
 ```
 
 Поведение при деградации: `/api/health/live` продолжает отдавать `200`, пока жив процесс; `/api/health` и `/api/health/ready` возвращают `503` с `detail` про упавшую зависимость. Поэтому `/live` используется в Docker `HEALTHCHECK` (не рестартует контейнер при падении MinIO/Redis), а `/api/health` — во внешнем мониторинге.
