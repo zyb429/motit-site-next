@@ -6,7 +6,9 @@ import type { JSONContent } from "@tiptap/core"
 
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit"
-import { Image } from "@tiptap/extension-image"
+import Image from "@tiptap/extension-image"
+import { ReactNodeViewRenderer } from "@tiptap/react"
+import { ImageNode } from "@/components/tiptap-node/image-node/image-node"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
 import { TextAlign } from "@tiptap/extension-text-align"
 import { Typography } from "@tiptap/extension-typography"
@@ -259,7 +261,11 @@ export function SimpleEditor({
       TaskList,
       TaskItem.configure({ nested: true }),
       Highlight.configure({ multicolor: true }),
-      Image,
+      Image.extend({
+        addNodeView() {
+          return ReactNodeViewRenderer(ImageNode);
+        },
+      }),
       Typography,
       Superscript,
       Subscript,

@@ -105,3 +105,29 @@ body,
     min-height: 240px;
   }
 }
+
+/* Картинки внутри редактора */
+.simple-editor-content .tiptap.ProseMirror.simple-editor img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+  cursor: default;
+}
+
+.simple-editor-content .tiptap.ProseMirror.simple-editor img.ProseMirror-selectednode {
+  outline: 2px solid var(--accent, #2dd4bf);
+  outline-offset: 2px;
+}
+
+/* Плейсхолдер для пустого image-upload */
+.simple-editor-content .tiptap.ProseMirror.simple-editor [data-type="image-upload"] {
+  display: block;
+  padding: 2rem;
+  margin: 1rem 0;
+  border: 2px dashed var(--border, #334155);
+  border-radius: 0.5rem;
+  text-align: center;
+  color: var(--text-muted, #64748b);
+}

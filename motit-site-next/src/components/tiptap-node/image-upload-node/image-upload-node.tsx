@@ -458,15 +458,15 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
 
       if (isValidPosition(pos)) {
         const imageNodes = urls.map((url, index) => {
-          const filename =
-            files[index]?.name.replace(/\.[^/.]+$/, "") || "unknown"
+          const filename = files[index]?.name.replace(/\.[^/.]+$/, "") || "unknown"
           return {
             type: extension.options.type,
             attrs: {
-              ...extension.options,
               src: url,
               alt: filename,
               title: filename,
+              // НЕ разворачивайте extension.options — там upload, onSuccess, HTMLAttributes и т.п.,
+              // которых нет в схеме Image. Tiptap отбросит их, но может затереть src.
             },
           }
         })

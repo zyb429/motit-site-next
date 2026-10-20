@@ -388,31 +388,39 @@ export function selectionWithinConvertibleTypes(
 export const handleImageUpload = async (
   file: File,
   onProgress?: (event: { progress: number }) => void,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
 ): Promise<string> => {
-  // Validate file
-  if (!file) {
-    throw new Error("No file provided")
-  }
+  if (!file) throw new Error("No file provided");
 
   if (file.size > MAX_FILE_SIZE) {
     throw new Error(
-      `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`
-    )
+      `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`,
+    );
   }
 
-  // For demo/testing: Simulate upload progress. In production, replace the following code
-  // with your own upload implementation.
-  for (let progress = 0; progress <= 100; progress += 10) {
-    if (abortSignal?.aborted) {
-      throw new Error("Upload cancelled")
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    onProgress?.({ progress })
+  const formData = new FormData();
+  formData.append("files", file);
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+    signal: abortSignal,
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Upload failed: ${res.status} ${text}`);
   }
 
-  return "/images/tiptap-ui-placeholder-image.jpg"
-}
+  const data = (await res.json()) as { url?: string }[];
+  const url = data[0]?.url;
+  if (!url) {
+    throw new Error("Upload failed: no url in response");
+  }
+
+  onProgress?.({ progress: 100 });
+  return url;
+};
 
 type ProtocolOptions = {
   /**

@@ -36,3 +36,89 @@
     margin: 0;
   }
 }
+
+.image-node-wrapper {
+  display: block;
+  margin: 2rem 0;
+  line-height: 0;
+}
+
+.image-node-wrapper .tiptap-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--tt-radius-xs, 0.25rem);
+}
+
+.image-node-wrapper .tiptap-image.ProseMirror-selectednode,
+.image-node-wrapper.ProseMirror-selectednode .tiptap-image {
+  outline-color: var(--tt-brand-color-500);
+}
+
+.image-node-wrapper {
+  display: block;
+  margin: 2rem 0;
+  line-height: 0;
+}
+
+.image-node-container {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.image-node-wrapper .tiptap-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--tt-radius-xs, 0.25rem);
+  transition: opacity 0.15s ease;
+}
+
+.image-node-wrapper .tiptap-image:hover {
+  opacity: 0.85;
+}
+
+.image-node-wrapper .tiptap-image.ProseMirror-selectednode,
+.image-node-wrapper.ProseMirror-selectednode .tiptap-image {
+  outline: 2px solid var(--tt-brand-color-500, #2dd4bf);
+  outline-offset: 2px;
+}
+
+.image-node-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: var(--tt-radius-xs, 0.25rem);
+}
+
+.image-node-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: image-node-spin 0.8s linear infinite;
+}
+
+@keyframes image-node-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.image-node-error {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-muted, #64748b);
+  border: 1px dashed var(--border, #334155);
+  border-radius: 0.5rem;
+}
+
+// на случай, если модал рендерится внутри NodeView
+.tiptap-image-edit-modal,
+[class*="rp-image-editor"] {
+  z-index: 9999 !important;
+}
