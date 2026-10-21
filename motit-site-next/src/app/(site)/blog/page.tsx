@@ -73,19 +73,7 @@ function pluralizePosts(n: number): string {
 export default async function BlogPage({
   searchParams,
 }: {
-  searchParams:
-    | Promise<{
-        search?: string;
-        category?: string | string[];
-        page?: string;
-        view?: string;
-      }>
-    | {
-        search?: string;
-        category?: string | string[];
-        page?: string;
-        view?: string;
-      };
+  searchParams: Promise<{ search?: string; category?: string | string[]; page?: string; view?: string }>;
 }) {
   const params = await searchParams;
   const searchQuery = params?.search || "";

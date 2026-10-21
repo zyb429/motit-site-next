@@ -11,7 +11,7 @@ import { parseView } from "@/lib/view";
 
 interface AuthorPageProps {
   params: Promise<{ username: string }>;
-  searchParams?: Promise<{ view?: string }> | { view?: string };
+  searchParams: Promise<{ view?: string }>;
 }
 
 async function getAuthor(username: string) {

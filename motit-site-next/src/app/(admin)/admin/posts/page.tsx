@@ -110,8 +110,7 @@ function getAuthorInfo(post: PostWithAuthor): {
 export default async function AdminPostsPage({
   searchParams,
 }: {
-  searchParams?:
-  Promise<{ q?: string; status?: string }> | { q?: string; status?: string };
+  searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   const params = (await searchParams) || {};
   const query = (params.q || "").toLowerCase().trim();

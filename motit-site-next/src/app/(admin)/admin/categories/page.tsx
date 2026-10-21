@@ -53,7 +53,7 @@ async function getPostsCountByCategory(): Promise<Record<string, number>> {
 export default async function AdminCategoriesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string }> | { q?: string };
+  searchParams: Promise<{ q?: string }>;
 }) {
   const params = (await searchParams) || {};
   const query = (params.q || "").toLowerCase().trim();
