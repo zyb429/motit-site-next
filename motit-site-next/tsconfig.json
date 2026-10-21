@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,14 +23,30 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@components/*": ["./src/components/*"],
-      "@hooks/*": ["./src/hooks/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@ui/*": ["./src/components/ui/*"],
-      "@sections/*": ["./src/components/sections/*"],
-      "@app/*": ["./src/app/*"],
-      "@generated/*": ["./generated/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@components/*": [
+        "./src/components/*"
+      ],
+      "@hooks/*": [
+        "./src/hooks/*"
+      ],
+      "@lib/*": [
+        "./src/lib/*"
+      ],
+      "@ui/*": [
+        "./src/components/ui/*"
+      ],
+      "@sections/*": [
+        "./src/components/sections/*"
+      ],
+      "@app/*": [
+        "./src/app/*"
+      ],
+      "@generated/*": [
+        "./generated/*"
+      ]
     }
   },
   "include": [
@@ -35,7 +55,10 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    ".next/dev/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

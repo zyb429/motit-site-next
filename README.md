@@ -6,7 +6,7 @@
 
 - **Next.js 16.4.2** — App Router, Turbopack (dev) / Webpack (build), React 19.3.1
 - **TypeScript 5.9.3**
-- **MySQL 8** + **Prisma 6.19.3** (`prisma-client-js`, `@prisma/client`)
+- **MySQL 8** + **Prisma 7.10.1** (`prisma-client-js`, `@prisma/client`, `@prisma/adapter-mariadb`)
 - **Auth.js** (`next-auth@5.0.0-beta.32`, `@auth/core@0.41.3`) — Credentials provider
 - **MinIO / S3** — медиа (`@aws-sdk/client-s3@3`, `@aws-sdk/s3-request-presigner`)
 - **Redis 7** — pub/sub и presence в чатах (`ioredis@6`)
@@ -57,7 +57,13 @@ cp motit-site-next/.env.example motit-site-next/.env
 # отредактировать .env при необходимости
 
 cd ~/Projects/motit-site-next
-docker compose up --build
+# Прод
+docker compose --profile prod up -d
+docker compose exec app npx prisma db seed
+
+# Dev (hot-reload)
+docker compose --profile dev up -d
+docker compose exec app-dev npx prisma db seed
 ```
 
 Первый запуск — 2–5 минут (npm ci, prisma generate, миграции). Дальше — кэш, запуск за секунды.
@@ -67,13 +73,18 @@ docker compose up --build
 - `mysql` (healthy, `mysqladmin ping`) → `redis` (healthy, `redis-cli ping`) → `minio` (healthy, HTTP `/minio/health/ready`) → `minio-init` (создаёт бакет `motit-uploads` и делает его публичным на чтение через `mc anonymous set download`, затем завершается) → `app` (стартует только после `service_completed_successfully` у `minio-init`).
 - `ws` стартует параллельно с `app`, ждёт только `redis` (healthy).
 
-**Команда контейнера `app`:**
+**Команды контейнеров:**
 
-```
-npx prisma generate &&
-npx prisma migrate deploy &&
-npm run dev:turbopack
-```
+`app` (профиль `prod`):
+  npx prisma generate &&
+  npx prisma migrate deploy &&
+  npm run build &&
+  npm run start
+
+`app-dev` (профиль `dev`):
+  npx prisma generate &&
+  npx prisma migrate deploy &&
+  npm run dev:turbopack
 
 **Команда контейнера `ws`:**
 
@@ -81,7 +92,10 @@ npm run dev:turbopack
 npx tsx server.ts
 ```
 
-`NODE_ENV: development` для обоих сервисов (app и ws) в текущем compose.
+`NODE_ENV` по профилям:
+- `app` (профиль `prod`): `production` + `npm run build && npm run start`
+- `app-dev` (профиль `dev`): `development` + `npm run dev:turbopack`
+- `ws`: `development` (WS-сервер не зависит от production build)
 
 После старта (контейнер app должен быть healthy):
 
@@ -140,8 +154,6 @@ npm run ws                     # WS на :3001 (в отдельном терми
 npm run dev:all
 ```
 
-> Примечание: `dev:all` внутри использует `bun run ws` / `bun run dev`. На машине без Bun скрипт упадёт с `bun: command not found` — в этом случае запустите `npm run ws` и `npm run dev` в двух терминалах.
-
 ### Порты
 
 | Сервис | Порт (хост) |
@@ -186,14 +198,15 @@ cp motit-site-next/.env.example motit-site-next/.env
 
 **Важно:** внутри Docker хосты mysql, redis, minio (имена сервисов). Для запуска на хосте — 127.0.0.1 с портами 3307 / 6379 / 9000.
 
-**env_file и переопределения:** сервисы `app` и `ws` читают `./motit-site-next/.env` через `env_file`. Дополнительно в `environment` переопределяются:
+**env_file и переопределения:** сервисы `app`, `app-dev` и `ws` читают `./motit-site-next/.env` через `env_file`. Дополнительно в `environment` переопределяются:
 
-- `app`: `DATABASE_URL`, `SHADOW_DATABASE_URL`, `REDIS_URL`, `S3_ENDPOINT`, `S3_PROXY_TARGET` — на имена docker-сервисов (`mysql`, `redis`, `minio`), плюс `NODE_ENV: development` и `RAYON_NUM_THREADS: "4"`;
+- `app` (prod): `DATABASE_URL`, `SHADOW_DATABASE_URL`, `REDIS_URL`, `S3_ENDPOINT`, `S3_PROXY_TARGET` — на имена docker-сервисов (`mysql`, `redis`, `minio`), плюс `NODE_ENV: production`, `RAYON_NUM_THREADS: "4"`, `NODE_OPTIONS: "--max-old-space-size=3072"`;
+- `app-dev` (dev): то же + `NODE_ENV: development`;
 - `ws`: `REDIS_URL`, `WS_PORT`, `NODE_ENV: development`.
 
 **HESK_API_TOKEN:** нужно заполнить вручную — получить токен в админ-панели HESK. Без него интеграция Help Desk не заработает.
 
-**Про shadow database:** SHADOW_DATABASE_URL используется только командой `prisma migrate dev` (запускается с хоста) и объявляется в `prisma/schema.prisma` (`datasource db { shadowDatabaseUrl = env("SHADOW_DATABASE_URL") }`). В контейнере `app` выполняется `prisma migrate deploy`, которому shadow database не нужна. База `motit_site_shadow` автоматически не создаётся — если планируете `migrate dev`, создайте её вручную и дайте `motit_user` права:
+**Про shadow database:** SHADOW_DATABASE_URL используется только командой `prisma migrate dev` (запускается с хоста) и объявляется в `prisma.config.ts` (`datasource.shadowDatabaseUrl`). В `prisma/schema.prisma` его **нет** — Prisma 7 запрещает `url`/`shadowDatabaseUrl` в схеме. В контейнере `app` выполняется `prisma migrate deploy`, которому shadow database не нужна. База `motit_site_shadow` автоматически не создаётся — если планируете `migrate dev`, создайте её вручную и дайте `motit_user` права:
 
 ```
 docker compose exec mysql mysql -uroot -proot_local_dev -e \
@@ -395,7 +408,8 @@ curl -s -H "Authorization: Bearer $HEALTH_TOKEN" http://localhost:3000/api/healt
 
 **Тайминги в `docker-compose.yml`:**
 
-- `app`: `interval: 30s`, `timeout: 30s`, `retries: 5`, `start_period: 240s` — запас на первичную компиляцию роутов в dev-режиме.
+- `app` (prod): `interval: 30s`, `timeout: 30s`, `retries: 5`, `start_period: 240s` — запас на `npm run build` при первом старте (2–5 минут). После первого запуска можно уменьшить до `start_period: 60s`.
+- `app-dev` (dev): те же тайминги — запас на первую компиляцию роутов в Turbopack.
 - `ws`: TCP-коннект к `127.0.0.1:3001`, `interval: 30s`, `timeout: 5s`, `retries: 3`, `start_period: 30s`.
 
 ## Чат
@@ -412,31 +426,50 @@ curl -s -H "Authorization: Bearer $HEALTH_TOKEN" http://localhost:3000/api/healt
 
 ## Особенности реализации
 
-### Prisma v6 + Next.js
+### Prisma v7 + Next.js
 
-Используется стандартный генератор `prisma-client-js` без кастомного output — клиент генерируется в `node_modules/@prisma/client`. Версии — **`prisma` и `@prisma/client` 6.19.3**.
+Используется генератор `prisma-client-js` с кастомным output — клиент генерируется в `generated/prisma`. Версии — **`prisma` и `@prisma/client` 7.10.1**, плюс **`@prisma/adapter-mariadb` 7.10.1** (обязательный driver adapter для MySQL в Prisma 7).
 
-В `prisma/schema.prisma` обязательна опция:
+В `prisma/schema.prisma`:
 
-```
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider          = "mysql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider = "mysql"
 }
-```
+
+**Важно:** в Prisma 7 `url` и `shadowDatabaseUrl` **нельзя** указывать в `schema.prisma` — они перенесены в `prisma.config.ts`:
+
+```ts
+// prisma.config.ts
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+    seed: "npx tsx prisma/seed.ts",
+  },
+  datasource: {
+    url: process.env.DATABASE_URL!,
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
+  },
+});
 
 Импорт в коде:
 
 ```ts
-import { PrismaClient, Prisma } from "@prisma/client";
+// через alias из tsconfig.json
+import { PrismaClient, Prisma } from "@generated/prisma";
+
+// или относительный путь
+// import { PrismaClient, Prisma } from "../../generated/prisma";
 ```
 
-История: проект какое-то время был на Prisma 7 с драйвер-адаптером `@prisma/adapter-mariadb` и кастомным output `src/generated/prisma/`. Из-за нестабильности связки Prisma 7 + adapter + Next.js 16 (проблемы с WASM-компилятором запросов и генерацией) было принято решение откатиться на Prisma 6 + `prisma-client-js`, который стабильно работает с Next.js 16, Turbopack и Webpack.
+История: проект был на Prisma 6 (prisma-client-js, без output), затем мигрировал на **Prisma 7 + driver adapter `@prisma/adapter-mariadb`** с кастомным output `generated/prisma`. Причина миграции — актуальная версия Prisma и прямой контроль над драйвером через adapter. Prisma 7 + Next.js 16 + Turbopack работает стабильно после настройки `prisma.config.ts` (url/shadowDatabaseUrl в `datasource`) и `src/lib/prisma.ts` (adapter).
 
 > Примечание: абзац про `importFileExtension = "ts"` и `Module not found: Can't resolve '@generated/prisma/client'` относится **только к Prisma 7 с кастомным output** и в текущей конфигурации (Prisma 6, `prisma-client-js` без output) неактуален.
 
@@ -475,7 +508,8 @@ Healthcheck — `mysqladmin ping -h 127.0.0.1 -uroot -proot_local_dev`, `interva
   - `COPY package.json package-lock.json ./` → `RUN npm ci`;
   - `EXPOSE 3000 3001`;
   - `CMD ["npm", "run", "dev:turbopack"]` (в compose `app` переопределяет `command`; `ws` использует `npx tsx server.ts`).
-- Анонимные volumes: `node_modules`, `.next` и `generated` вынесены в анонимные volumes, чтобы не затирать их при монтировании исходников с хоста (`./motit-site-next:/app`). Для `ws` — `node_modules` и `generated`.
+- **Prod-профиль `app`**: bind mount **не используется** — код внутри образа (`COPY . .`). Volumes только для persistence (`mysql_data`, `minio_data`, `redis_data`).
+- **Dev-профиль `app-dev`**: bind mount `./motit-site-next:/app` + анонимные volumes для `node_modules`, `.next`, `generated` (чтобы не затирать при монтировании).
 - Лимиты для `app`: `mem_limit: 4g` и `ulimits.nproc: 30000/30000` — для стабильной работы Next.js + Prisma во время сборки и dev-режима.
 - Healthcheck `app`: `node -e fetch(...)`, `start_period: 240s`, `timeout: 30s`.
 - Healthcheck `ws`: TCP-коннект к `127.0.0.1:3001` через `node -e` + `net.connect`, `start_period: 30s`.
@@ -488,6 +522,7 @@ Healthcheck — `mysqladmin ping -h 127.0.0.1 -uroot -proot_local_dev`, `interva
 2. **`HEALTH_TOKEN` в текущем `.env.example` содержит реальное значение** — заменить на пустое и сгенерировать своё.
 3. **`concurrently@10` требует Node `>=22`**, а Next.js 16 — `>=20.9`. Если нужен Node 20, придётся откатить `concurrently` до 9.x или запускать `ws` и `dev` раздельно.
 4. **`dev:all` вызывает `bun run ws` / `bun run dev`** — на машине без Bun скрипт упадёт; используйте `npm run ws` и `npm run dev` раздельно.
+5. **`experimental.devMemoryThresholdRestart` не поддерживается** в Next.js 16 — в логах `⨯ devMemoryThresholdRestart`. Не добавлять в `next.config.ts` (игнорируется). Для стабильности — prod-профиль (`next start`), а не dev.
 
 ### Пароли в docker-compose.yml
 
@@ -570,19 +605,10 @@ npm run build
 npm run start
 ```
 
-В `docker-compose.yml` для прода замените `command` в сервисе `app` на:
+В `docker-compose.yml` **уже есть** prod-профиль `app` с правильным `command` и `NODE_ENV: production`. Достаточно:
 
 ```
-    command: >
-      sh -c "
-      npx prisma generate &&
-      npx prisma migrate deploy &&
-      npx prisma db seed &&
-      npm run build &&
-      npm run start
-      "
-    environment:
-      NODE_ENV: production
+docker compose --profile prod up -d
 ```
 
 ⚠️ Важно: `prisma db seed` в проде создаст пользователя `admin@local.dev` с паролем `admin123`. Сразу после первого запуска смените пароль через админку или переопределите seed так, чтобы он брал email/пароль из переменных окружения:
