@@ -1,23 +1,14 @@
 // src/lib/prisma.ts
-import "./bigint";
-import { PrismaClient } from "@generated/prisma/client";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaClient } from '@prisma/client'
 
-const url = new URL(process.env.DATABASE_URL!);
-const params = new URLSearchParams(url.search);
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
 
-const adapter = new PrismaMariaDb({
-  host: url.hostname,
-  port: Number(url.port || 3306),
-  user: decodeURIComponent(url.username),
-  password: decodeURIComponent(url.password),
-  database: url.pathname.slice(1),
-  connectionLimit: 10,           // можно оставить 5 или поднять до 10
-  allowPublicKeyRetrieval: true, // ← КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
-  charset: params.get("charset") || "utf8mb4",
-});
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  })
 
-export const prisma = new PrismaClient({
-  adapter,
-  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-});
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { categories } from '@generated/prisma/client';
+import type { categories } from '@prisma/client';
 
 type CategoryInput = Pick<
   categories,
