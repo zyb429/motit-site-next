@@ -471,8 +471,6 @@ import { PrismaClient, Prisma } from "@generated/prisma";
 
 История: проект был на Prisma 6 (prisma-client-js, без output), затем мигрировал на **Prisma 7 + driver adapter `@prisma/adapter-mariadb`** с кастомным output `generated/prisma`. Причина миграции — актуальная версия Prisma и прямой контроль над драйвером через adapter. Prisma 7 + Next.js 16 + Turbopack работает стабильно после настройки `prisma.config.ts` (url/shadowDatabaseUrl в `datasource`) и `src/lib/prisma.ts` (adapter).
 
-> Примечание: абзац про `importFileExtension = "ts"` и `Module not found: Can't resolve '@generated/prisma/client'` относится **только к Prisma 7 с кастомным output** и в текущей конфигурации (Prisma 6, `prisma-client-js` без output) неактуален.
-
 ### MinIO: community-образы
 
 Официальные образы `minio/minio` и `minio/mc` были удалены с Docker Hub и Quay.io. В проекте используются форки:
