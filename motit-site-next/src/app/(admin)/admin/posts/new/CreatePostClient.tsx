@@ -71,7 +71,8 @@ const postSchema = z.object({
   post_status: z.enum(["draft", "published"]).default("published"),
 });
 
-type PostFormData = z.infer<typeof postSchema>;
+type PostFormInput = z.input<typeof postSchema>;   // для useForm
+type PostFormData = z.output<typeof postSchema>;   // для onSubmit (полный тип с обязательным post_status)
 type CreatePostProps = {
   initialUser: User | null;
   initialCategories: Category[];
@@ -121,7 +122,7 @@ export default memo(function CreatePostClient({
     setValue,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<PostFormData>({
+  } = useForm<PostFormInput, any, PostFormData>({
     resolver: zodResolver(postSchema),
     defaultValues: {
       title: "",

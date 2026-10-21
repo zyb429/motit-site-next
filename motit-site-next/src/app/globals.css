@@ -1,7 +1,7 @@
+@import "../components/tiptap-templates/simple/simple-editor.scss";
 @import "tailwindcss/theme" layer(theme);
 @import "tailwindcss/preflight" layer(base);
 @import "tailwindcss/utilities" layer(utilities);
-@import "../components/tiptap-templates/simple/simple-editor.scss";
 
 @plugin "@tailwindcss/typography";
 
@@ -53,7 +53,7 @@ html {
 }
 
 body {
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-inter), "Inter", sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
