@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { updateChat, deleteChat } from "@/lib/db/chat";
 import { redis } from "@/lib/redis";
 import { prisma } from "@/lib/prisma";
+import { serialize } from "@/lib/serialize";
 
 export async function PATCH(
   req: Request,
@@ -23,7 +24,7 @@ export async function PATCH(
       description: body.description,
       avatar_url: body.avatar_url,
     });
-    return NextResponse.json({ success: true, data: chat });
+    return NextResponse.json({ success: true, data: serialize(chat) });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Ошибка" },

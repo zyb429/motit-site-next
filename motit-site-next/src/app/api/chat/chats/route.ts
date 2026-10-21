@@ -10,13 +10,14 @@ import {
 } from "@/lib/db/chat";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
+import { serialize } from "@/lib/serialize";
 
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const chats = await listChatsForUser(user.uuid);
-  return NextResponse.json({ data: chats });
+  return NextResponse.json({ data: serialize(chats) });
 }
 
 const createSchema = z.discriminatedUnion("kind", [
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
     if (data.kind === "direct") {
       const chat = await getOrCreateDirectChat(user.uuid, data.userUuid);
       await notifyNewChat(chat.uuid, user.uuid);
-      return NextResponse.json({ data: chat }, { status: 201 });
+      return NextResponse.json({ data: serialize(chat) }, { status: 201 });
     }
 
     if (data.kind === "group") {
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
         memberUuids: data.memberUuids,
       });
       await notifyNewChat(chat.uuid, user.uuid);
-      return NextResponse.json({ data: chat }, { status: 201 });
+      return NextResponse.json({ data: serialize(chat) }, { status: 201 });
     }
 
     if (data.kind === "channel") {
@@ -98,10 +99,11 @@ export async function POST(req: Request) {
         isPrivate: data.isPrivate,
       });
       await notifyNewChat(chat.uuid, user.uuid);
-      return NextResponse.json({ data: chat }, { status: 201 });
+      return NextResponse.json({ data: serialize(chat) }, { status: 201 });
     }
   } catch (err) {
+    console.error("[api/chat/chats] create failed", err);
     const msg = err instanceof Error ? err.message : "Ошибка создания чата";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

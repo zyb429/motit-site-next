@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { serialize } from "@/lib/serialize";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -59,7 +60,7 @@ export async function PATCH(
       data,
     });
 
-    return NextResponse.json({ organization: org });
+    return NextResponse.json({ organization: serialize(org) });
   } catch (error) {
     console.error("[api/admin/organizations/:uuid] PATCH error:", error);
     return NextResponse.json(

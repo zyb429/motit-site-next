@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createTicket, listTickets } from "@/lib/db/tickets";
+import { serialize } from "@/lib/serialize";
 
 const createSchema = z.object({
   title: z.string().min(3).max(255),
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
     pageSize: Math.min(Number(url.searchParams.get("pageSize") ?? 20), 100),
   });
 
-  return NextResponse.json(result);
+  return NextResponse.json(serialize(result));
 }
 
 export async function POST(req: Request) {
@@ -53,7 +54,6 @@ export async function POST(req: Request) {
 
   const isAgent = user.isAdmin || user.isWorker;
 
-  // Кто будет клиентом заявки
   let clientUuid = user.uuid;
 
   if (isAgent) {
@@ -70,10 +70,8 @@ export async function POST(req: Request) {
     clientUuid = client.uuid;
   }
 
-  // Проверка организации
   if (parsed.data.organizationUuid) {
     if (isAgent) {
-      // Для агента: организация должна быть привязана к выбранному клиенту
       const link = await prisma.client_organizations.findFirst({
         where: {
           client_user_uuid: clientUuid,
@@ -87,7 +85,6 @@ export async function POST(req: Request) {
         );
       }
     } else {
-      // Для клиента: организация должна быть привязана к нему
       const link = await prisma.client_organizations.findFirst({
         where: {
           client_user_uuid: user.uuid,
@@ -110,5 +107,5 @@ export async function POST(req: Request) {
     createdByUuid: user.uuid,
   });
 
-  return NextResponse.json({ data: ticket }, { status: 201 });
+  return NextResponse.json({ data: serialize(ticket) }, { status: 201 });
 }
