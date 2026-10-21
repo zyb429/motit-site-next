@@ -1,11 +1,11 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma/"
-  importFileExtension = "ts"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model categories {
