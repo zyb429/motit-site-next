@@ -25,7 +25,8 @@
       "@lib/*": ["./src/lib/*"],
       "@ui/*": ["./src/components/ui/*"],
       "@sections/*": ["./src/components/sections/*"],
-      "@app/*": ["./src/app/*"]
+      "@app/*": ["./src/app/*"],
+      "@generated/*": ["./generated/*"]
     }
   },
   "include": [
