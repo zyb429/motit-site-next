@@ -1,4 +1,7 @@
 services:
+  # ============================================
+  # ИНФРАСТРУКТУРА (общая для dev и prod)
+  # ============================================
   mysql:
     image: mysql:8.0
     container_name: motit-mysql
@@ -70,12 +73,16 @@ services:
       timeout: 3s
       retries: 10
 
+  # ============================================
+  # APP — PROD (по умолчанию, npm run build && npm run start)
+  # ============================================
   app:
     build:
       context: ./motit-site-next
       dockerfile: Dockerfile
     container_name: motit-app
     restart: unless-stopped
+    profiles: ["prod"]
     depends_on:
       mysql:
         condition: service_healthy
@@ -86,8 +93,62 @@ services:
     env_file:
       - ./motit-site-next/.env
     environment:
-      # Перебиваем хосты на имена сервисов в docker-сети.
-      # Остальные переменные — из .env (env_file выше).
+      DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site"
+      SHADOW_DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site_shadow"
+      REDIS_URL: "redis://redis:6379"
+      S3_ENDPOINT: "http://minio:9000"
+      S3_PROXY_TARGET: "http://minio:9000/motit-uploads"
+      NODE_ENV: production
+      RAYON_NUM_THREADS: "4"
+      NODE_OPTIONS: "--max-old-space-size=3072"
+    ports:
+      - "3000:3000"
+    working_dir: /app
+    ulimits:
+      nproc:
+        soft: 30000
+        hard: 30000
+    mem_limit: 4g
+    command: >
+      sh -c "
+      npx prisma generate &&
+      npx prisma migrate deploy &&
+      npm run build &&
+      npm run start
+      "
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 240s
+
+  # ============================================
+  # APP — DEV (hot-reload, bind mount)
+  # ============================================
+  app-dev:
+    build:
+      context: ./motit-site-next
+      dockerfile: Dockerfile
+    container_name: motit-app-dev
+    restart: unless-stopped
+    profiles: ["dev"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    env_file:
+      - ./motit-site-next/.env
+    environment:
       DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site"
       SHADOW_DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site_shadow"
       REDIS_URL: "redis://redis:6379"
@@ -95,6 +156,7 @@ services:
       S3_PROXY_TARGET: "http://minio:9000/motit-uploads"
       NODE_ENV: development
       RAYON_NUM_THREADS: "4"
+      NODE_OPTIONS: "--max-old-space-size=3072"
     ports:
       - "3000:3000"
     volumes:
@@ -127,6 +189,9 @@ services:
       retries: 5
       start_period: 240s
 
+  # ============================================
+  # WS (общий)
+  # ============================================
   ws:
     build:
       context: ./motit-site-next
