@@ -110,15 +110,15 @@ services:
     mem_limit: 4g
     command: >
       sh -c "
-      bunx prisma generate &&
-      bunx prisma migrate deploy &&
-      bun run dev:turbopack
+      npx prisma generate &&
+      npx prisma migrate deploy &&
+      npm run dev:turbopack
       "
     healthcheck:
       test:
         [
           "CMD",
-          "bun",
+          "node",
           "-e",
           "fetch('http://127.0.0.1:3000/api/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
@@ -151,13 +151,13 @@ services:
     working_dir: /app
     command: >
       sh -c "
-      bun run server.ts
+      npx tsx server.ts
       "
     healthcheck:
       test:
         [
           "CMD",
-          "bun",
+          "node",
           "-e",
           "const s=require('net').connect(3001,'127.0.0.1');s.on('connect',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1))",
         ]
