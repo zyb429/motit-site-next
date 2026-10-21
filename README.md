@@ -363,9 +363,8 @@ curl -s -H "Authorization: Bearer $HEALTH_TOKEN" http://localhost:3000/api/healt
 
 ```
 generator client {
-  provider            = "prisma-client"
-  output              = "../generated/prisma/"
-  importFileExtension = "ts"
+  provider = "prisma-client-js"
+  output   = "../generated/prisma/"
 }
 ```
 
