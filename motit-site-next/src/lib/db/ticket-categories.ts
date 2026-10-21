@@ -1,27 +1,28 @@
 // src/lib/db/ticket-categories.ts
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
+import { serialize } from "@/lib/serialize";
 
 export async function listTicketCategories(params?: {
   includeInactive?: boolean;
 }) {
-  return prisma.ticket_categories.findMany({
+  return serialize(await prisma.ticket_categories.findMany({
     where: params?.includeInactive ? {} : { is_active: true },
     orderBy: [{ sort_order: "asc" }, { name: "asc" }],
     include: {
       _count: { select: { tickets: true } },
     },
-  });
+  }));
 }
 
 export async function getTicketCategoryBySlug(slug: string) {
-  return prisma.ticket_categories.findFirst({
+  return serialize(await prisma.ticket_categories.findFirst({
     where: { slug, is_active: true },
-  });
+  }));
 }
 
 export async function getTicketCategoryByUuid(uuid: string) {
-  return prisma.ticket_categories.findUnique({ where: { uuid } });
+  return serialize(await prisma.ticket_categories.findUnique({ where: { uuid } }));
 }
 
 export async function createTicketCategory(params: {
@@ -31,7 +32,7 @@ export async function createTicketCategory(params: {
   icon?: string | null;
   sortOrder?: number;
 }) {
-  return prisma.ticket_categories.create({
+  return serialize(await prisma.ticket_categories.create({
     data: {
       uuid: randomUUID(),
       name: params.name,
@@ -43,7 +44,7 @@ export async function createTicketCategory(params: {
       created_at: new Date(),
       updated_at: new Date(),
     },
-  });
+  }));
 }
 
 export async function updateTicketCategory(
@@ -57,7 +58,7 @@ export async function updateTicketCategory(
     isActive?: boolean;
   },
 ) {
-  return prisma.ticket_categories.update({
+  return serialize(await prisma.ticket_categories.update({
     where: { uuid },
     data: {
       ...(data.name !== undefined && { name: data.name }),
@@ -68,9 +69,9 @@ export async function updateTicketCategory(
       ...(data.isActive !== undefined && { is_active: data.isActive }),
       updated_at: new Date(),
     },
-  });
+  }));
 }
 
 export async function deleteTicketCategory(uuid: string) {
-  return prisma.ticket_categories.delete({ where: { uuid } });
+  return serialize(await prisma.ticket_categories.delete({ where: { uuid } }));
 }

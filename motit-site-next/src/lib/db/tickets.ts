@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
+import { serialize } from "@/lib/serialize";
 
 const ticketInclude = {
   statuses: true,
@@ -36,9 +37,9 @@ const ticketInclude = {
     },
   },
   ticket_category: {
-    select: { id: true, uuid: true, name: true, slug: true, icon: true },
+    select: { id: true, uuid: true, name: true, slug: true, icon: true },  // ticket_category.id — BigInt
   },
-  organization: { select: { id: true, uuid: true, name: true, inn: true } },
+  organization: { select: { id: true, uuid: true, name: true, inn: true } }, // organizations.id — BigInt
   attachments: { where: { comment_uuid: null }, include: { files: true } },
   _count: { select: { ticket_comments: true, attachments: true } },
 } satisfies Prisma.ticketsInclude;
@@ -252,14 +253,14 @@ export async function listTickets(params: {
 
   const itemsWithCreators = await attachCreators(items);
 
-  return {
+  return serialize({
     items: itemsWithCreators,
     total,
     statusCounts,
     page,
     pageSize,
     totalPages: Math.ceil(total / pageSize),
-  };
+  });
 }
 
 // --------------------------------------------
@@ -300,7 +301,7 @@ export async function getTicket(
   if (!ticket) return null;
 
   const [withCreator] = await attachCreators([ticket]);
-  return withCreator;
+  return serialize(withCreator);
 }
 
 // --------------------------------------------
@@ -411,7 +412,7 @@ export async function createTicket(params: {
       })),
     });
 
-    return created;
+    return serialize(created);
   });
 }
 
@@ -468,7 +469,7 @@ export async function addComment(params: {
     data: { updated_at: new Date() },
   });
 
-  return comment;
+  return serialize(comment);
 }
 
 // --------------------------------------------
@@ -550,7 +551,7 @@ export async function changeStatus(params: {
       }
     }
 
-    return updated;
+    return serialize(updated);
   });
 }
 
@@ -598,7 +599,7 @@ export async function assignTicket(params: {
       }
     }
 
-    return updated;
+    return serialize(updated);
   });
 }
 
@@ -614,22 +615,28 @@ export async function changePriority(params: {
     where: { code: priorityCode },
   });
 
-  return prisma.tickets.update({
-    where: { uuid: ticketUuid },
-    data: { priority_uuid: priority.uuid, updated_at: new Date() },
-    include: ticketInclude,
-  });
+  return serialize(
+    await prisma.tickets.update({
+      where: { uuid: ticketUuid },
+      data: { priority_uuid: priority.uuid, updated_at: new Date() },
+      include: ticketInclude,
+    }),
+  );
 }
 
 // --------------------------------------------
 // Справочники
 // --------------------------------------------
 export async function listStatuses() {
-  return prisma.statuses.findMany({ orderBy: { sort_order: "asc" } });
+  return serialize(
+    await prisma.statuses.findMany({ orderBy: { sort_order: "asc" } }),
+  );
 }
 
 export async function listPriorities() {
-  return prisma.priorities.findMany({ orderBy: { level: "asc" } });
+  return serialize(
+    await prisma.priorities.findMany({ orderBy: { level: "asc" } }),
+  );
 }
 
 // --------------------------------------------
