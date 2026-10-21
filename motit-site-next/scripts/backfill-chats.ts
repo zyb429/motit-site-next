@@ -1,6 +1,6 @@
 // scripts/backfill-chats.ts
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@generated/prisma';
 import { randomUUID } from "crypto";
 
 const prisma = new PrismaClient();

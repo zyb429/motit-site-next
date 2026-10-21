@@ -26,8 +26,8 @@
     "@base-ui/react": "^1.9.0",
     "@floating-ui/react": "^0.27.20",
     "@hookform/resolvers": "^5.9.1",
-    "@prisma/adapter-mariadb": "^7.10.1",
-    "@prisma/client": "^7.10.1",
+    "@prisma/adapter-mariadb": "6.19.0",
+    "@prisma/client": "6.19.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
@@ -138,7 +138,7 @@
     "eslint-config-next": "16.4.2",
     "eslint-formatter-compact": "^9.0.1",
     "postcss": "^8.5.6",
-    "prisma": "^7.10.1",
+    "prisma": "6.19.0",
     "sass": "^1.105.2",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
@@ -154,9 +154,9 @@
     "workerd"
   ],
   "allowScripts": {
-    "prisma@7.10.1": true,
-    "@prisma/engines@7.10.1": true,
-    "@prisma/client@7.10.1": true,
+    "prisma@6.19.0": true,
+    "@prisma/engines@6.19.0": true,
+    "@prisma/client@6.19.0": true,
     "unrs-resolver": true,
     "@parcel/watcher@2.6.0": true,
     "esbuild@0.28.2": true

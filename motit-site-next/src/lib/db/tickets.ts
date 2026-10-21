@@ -1,7 +1,7 @@
 // src/lib/db/tickets.ts
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@generated/prisma";
 import { serialize } from "@/lib/serialize";
 
 const ticketInclude = {

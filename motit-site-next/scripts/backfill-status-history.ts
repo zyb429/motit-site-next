@@ -1,6 +1,6 @@
 // scripts/backfill-status-history.ts
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@generated/prisma';
 
 const prisma = new PrismaClient();
 
