@@ -6,7 +6,7 @@
     "dev": "next dev",
     "dev:webpack": "next dev --webpack",
     "dev:turbopack": "next dev --turbopack",
-    "dev:all": "concurrently -n ws,next -c blue,green \"bun run ws\" \"bun run dev\"",
+    "dev:all": "concurrently -n ws,next -c blue,green \"npm run ws\" \"npm run dev\"",
     "build": "prisma generate && next build --webpack",
     "start": "next start",
     "lint": "eslint",
@@ -16,9 +16,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "backfill:status-history": "bun run scripts/backfill-status-history.ts",
-    "backfill:chats": "bun run scripts/backfill-chats.ts",
-    "ws": "bun run server.ts"
+    "backfill:status-history": "npx tsx scripts/backfill-status-history.ts",
+    "backfill:chats": "npx tsx scripts/backfill-chats.ts",
+    "ws": "npx tsx server.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1135.0",
@@ -141,6 +141,7 @@
     "sass": "^1.105.2",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.3"
   },
   "trustedDependencies": [
@@ -156,11 +157,16 @@
     "@prisma/engines@6.19.3": true,
     "@prisma/client@6.19.3": true,
     "unrs-resolver": true,
-    "@parcel/watcher@2.6.0": true
+    "@parcel/watcher@2.6.0": true,
+    "esbuild@0.28.2": true
   },
   "overrides": {
-    "next-auth": { "nodemailer": "^9.0.5" },
-    "@auth/core": { "nodemailer": "^9.0.5" },
+    "next-auth": {
+      "nodemailer": "^9.0.5"
+    },
+    "@auth/core": {
+      "nodemailer": "^9.0.5"
+    },
     "deepmerge-ts": "^8.0.0"
   }
 }
