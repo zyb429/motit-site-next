@@ -1,6 +1,7 @@
 // src/lib/db/chat.ts
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
+import { serialize } from "@/lib/serialize";
 
 // --------------------------------------------
 // Типы
@@ -313,7 +314,7 @@ export async function getOrCreateDirectChat(userA: string, userB: string) {
   const existing = await prisma.chats.findUnique({
     where: { direct_key: directKey },
   });
-  if (existing) return existing;
+  if (existing) return serialize(existing);
 
   return prisma.$transaction(async (tx) => {
     const chat = await tx.chats.create({
@@ -334,7 +335,7 @@ export async function getOrCreateDirectChat(userA: string, userB: string) {
       ],
     });
 
-    return chat;
+    return serialize(chat);
   });
 };
 
@@ -380,7 +381,7 @@ export async function createGroupChat(params: {
       ],
     });
 
-    return chat;
+    return serialize(chat);
   });
 };
 
@@ -419,7 +420,7 @@ export async function createChannel(params: {
       },
     });
 
-    return chat;
+    return serialize(chat);
   });
 };
 
@@ -813,10 +814,10 @@ export async function markChatAsUnread(chatUuid: string, userUuid: string) {
   });
   if (!membership) throw new Error("Нет доступа");
 
-  return prisma.chat_members.update({
+  return serialize(await prisma.chat_members.update({
     where: { id: membership.id },
     data: { unread_count: Math.max(membership.unread_count, 1) },
-  });
+  }));
 }
 
 // --------------------------------------------
@@ -918,7 +919,7 @@ export async function addChatMember(
     content: `${actorName} добавил(а) ${targetName}`,
   });
 
-  return { member, systemMessage };
+  return { member: serialize(member), systemMessage };
 }
 
 export async function removeChatMember(
@@ -1051,7 +1052,7 @@ export async function getOrCreateSavedChat(userUuid: string) {
   const existing = await prisma.chats.findUnique({
     where: { direct_key: directKey },
   });
-  if (existing) return existing;
+  if (existing) return serialize(existing);
 
   return prisma.$transaction(async (tx) => {
     const chat = await tx.chats.create({
@@ -1075,7 +1076,7 @@ export async function getOrCreateSavedChat(userUuid: string) {
       },
     });
 
-    return chat;
+    return serialize(chat);
   });
 }
 
@@ -1106,7 +1107,7 @@ export async function updateChat(params: {
     throw new Error("Этот чат нельзя редактировать");
   }
 
-  return prisma.chats.update({
+  return serialize(await prisma.chats.update({
     where: { uuid: chatUuid },
     data: {
       ...(name !== undefined ? { name: name?.trim() || null } : {}),
@@ -1116,7 +1117,7 @@ export async function updateChat(params: {
       ...(avatar_url !== undefined ? { avatar_url } : {}),
       updated_at: new Date(),
     },
-  });
+  }));
 }
 
 // --------------------------------------------
@@ -1182,10 +1183,10 @@ export async function toggleMuteChat(chatUuid: string, userUuid: string) {
   });
   if (!membership) throw new Error("Нет доступа");
 
-  return prisma.chat_members.update({
+  return serialize(await prisma.chat_members.update({
     where: { id: membership.id },
     data: { is_muted: !membership.is_muted },
-  });
+  }));
 }
 
 export async function togglePinChat(chatUuid: string, userUuid: string) {
@@ -1194,10 +1195,10 @@ export async function togglePinChat(chatUuid: string, userUuid: string) {
   });
   if (!membership) throw new Error("Нет доступа");
 
-  return prisma.chat_members.update({
+  return serialize(await prisma.chat_members.update({
     where: { id: membership.id },
     data: { is_pinned: !membership.is_pinned },
-  });
+  }));
 }
 
 // --------------------------------------------
@@ -1241,10 +1242,10 @@ export async function changeMemberRole(params: {
     throw new Error("Админ не может снять другого админа");
   }
 
-  return prisma.chat_members.update({
+  return serialize(await prisma.chat_members.update({
     where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid } },
     data: { role },
-  });
+  }));
 }
 
 // --------------------------------------------
