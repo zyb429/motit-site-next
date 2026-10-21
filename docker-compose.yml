@@ -112,7 +112,7 @@ services:
       sh -c "
       bunx prisma generate &&
       bunx prisma migrate deploy &&
-      bun run dev:webpack
+      bun run dev:turbopack
       "
     healthcheck:
       test:

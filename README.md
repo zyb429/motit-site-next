@@ -90,9 +90,14 @@ docker compose up -d mysql redis minio minio-init
 ```
 cd motit-site-next
 bun install
-bun run dev          # Next.js на :3000
-bun run ws           # WS на :3001 (в отдельном терминале)
+bun run dev:turbopack          # Next.js на :3000
+bun run ws                     # WS на :3001 (в отдельном терминале)
 ```
+
+"dev": "next dev",
+"dev:webpack": "next dev --webpack",
+"dev:turbopack": "next dev --turbopack",
+"dev:all": "concurrently -n ws,next -c blue,green \"bun run ws\" \"bun run dev\"",
 
 Или одной командой:
 

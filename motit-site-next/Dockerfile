@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 3000 3001
 
-CMD ["bun", "run", "dev:webpack"]
+CMD ["bun", "run", "dev:turbopack"]
