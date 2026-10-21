@@ -1,0 +1,3 @@
+* text=auto
+*.lock text eol=lf
+bun.lock text eol=lf
