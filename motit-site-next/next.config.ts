@@ -5,7 +5,11 @@ const nextConfig: NextConfig = {
 
   transpilePackages: ["three", "gsap", "@studio-freight/lenis"],
 
-  serverExternalPackages: ["@prisma/client", ".prisma/client"],
+  serverExternalPackages: [
+    "@prisma/client",
+    "@prisma/adapter-mariadb",
+    "mariadb",
+  ],
 
   compress: true,
   poweredByHeader: false,
@@ -14,14 +18,12 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     remotePatterns: [
-      // S3 / MinIO локально
       {
         protocol: "http",
         hostname: "localhost",
         port: "9000",
         pathname: "/motit-uploads/**",
       },
-      // Для прода — замени на реальный домен S3/CDN
       {
         protocol: "https",
         hostname: "your-s3-domain.com",
