@@ -109,7 +109,7 @@ export default async function TicketsPage() {
                 : "—";
 
             return (
-              <li key={t.id}>
+              <li key={t.uuid}>
                 <Link
                   href={`/cabinet/tickets/${t.uuid}`}
                   className="block p-4 rounded-xl bg-(--bg-card) border border-(--border) hover:border-(--accent) transition-colors"

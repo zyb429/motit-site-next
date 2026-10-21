@@ -12,7 +12,22 @@ export default async function OrganizationsPage() {
 
   const organizations = await prisma.client_organizations.findMany({
     where: { client_user_uuid: user.uuid },
-    include: { organizations: true },
+    select: {
+      organization_uuid: true,
+      role_in_company: true,
+      is_primary: true,
+      organizations: {
+        select: {
+          uuid: true,
+          name: true,
+          inn: true,
+          is_active: true,
+          email: true,
+          phone: true,
+          address: true,
+        },
+      },
+    },
     orderBy: [{ is_primary: "desc" }, { joined_at: "desc" }],
   });
 
