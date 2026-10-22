@@ -17,6 +17,29 @@ import { Typography } from "@tiptap/extension-typography";
 import { Highlight } from "@tiptap/extension-highlight";
 import { Subscript } from "@tiptap/extension-subscript";
 import { Superscript } from "@tiptap/extension-superscript";
+import "./post-content.scss";
+import { CustomBlockquote } from "@/components/tiptap-node/blockquote-node/blockquote-extension"
+import { TableKit } from "@tiptap/extension-table"
+
+const TIPTAP_EXTENSIONS = [
+  StarterKit.configure({
+    blockquote: false, // отключаем стандартный blockquote
+    link: {
+      openOnClick: false,
+      HTMLAttributes: { class: "text-[#2dd4bf] hover:text-[#14b8a6]" },
+    },
+  }),
+  CustomBlockquote,
+  TableKit.configure({ table: { resizable: true } }),
+  ImageExtension,
+  TaskList,
+  TaskItem.configure({ nested: true }),
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
+  Typography,
+  Highlight.configure({ multicolor: true }),
+  Superscript,
+  Subscript,
+]
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -70,24 +93,6 @@ export async function generateMetadata({
     return { title: "Пост не найден" };
   }
 }
-
-// Расширения должны совпадать с теми, что используются в SimpleEditor
-const TIPTAP_EXTENSIONS = [
-  StarterKit.configure({
-    link: {
-      openOnClick: false,
-      HTMLAttributes: { class: "text-[#2dd4bf] hover:text-[#14b8a6]" },
-    },
-  }),
-  ImageExtension,
-  TaskList,
-  TaskItem.configure({ nested: true }),
-  TextAlign.configure({ types: ["heading", "paragraph"] }),
-  Typography,
-  Highlight.configure({ multicolor: true }),
-  Superscript,
-  Subscript,
-];
 
 function renderTiptapContent(raw: unknown): string {
   if (!raw) return "";
@@ -333,7 +338,7 @@ export default async function BlogPostPage({
           </div>
         )}
 
-        <div className="prose prose-invert max-w-none prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-p:text-gray-300 prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:border-[#2dd4bf] prose-blockquote:text-gray-400 prose-img:rounded-lg">
+        <div className="prose prose-invert max-w-none post-content prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-p:text-gray-300 prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:border-[#2dd4bf] prose-blockquote:text-gray-400 prose-img:rounded-lg">
           {htmlContent ? (
             <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           ) : (

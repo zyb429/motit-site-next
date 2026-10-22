@@ -1,4 +1,4 @@
-// app/admin/posts/new/CreatePostClient.tsx
+// src/app/(admin)/admin/posts/new/CreatePostClient.tsx
 "use client";
 
 import {
@@ -15,7 +15,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -24,74 +23,51 @@ import {
   Loader2,
   FileText,
   Tag,
-  AlignLeft,
   Image as ImageIcon,
   Upload,
   Trash2,
-  PlusCircle,
+  Settings2,
 } from "lucide-react";
-import type { CustomElement } from "@/types/slate";
+import { openEditorModal } from "@rageshpikalmunde/rp-image-editor";
 
-import { EditorSkeleton } from "@/components/editor/EditorSkeleton";
+import type { CustomElement } from "@/types/slate";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { generateSlug } from "@/lib/utils";
 import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
-import Image from "next/image";
 
 type Category = {
   id: number;
   documentId?: string;
   name: string;
   slug: string;
-  description?: string | null;
-  icon?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-  publishedAt?: string;
 };
 
 type User = {
   id: number;
-  documentId?: string;
   username: string;
   email: string;
   firstname?: string;
-  lastname?: string;
   full_name?: string;
 };
 
 const postSchema = z.object({
-  title: z
-    .string()
-    .min(1, "Заголовок обязателен")
-    .max(200, "Максимум 200 символов"),
+  title: z.string().min(1, "Заголовок обязателен").max(200, "Максимум 200 символов"),
   excerpt: z.string().max(300, "Максимум 300 символов").optional(),
   categoryId: z.number().nullable(),
   content: z.string().optional(),
   post_status: z.enum(["draft", "published"]).default("published"),
 });
 
-type PostFormInput = z.input<typeof postSchema>;   // для useForm
-type PostFormData = z.output<typeof postSchema>;   // для onSubmit (полный тип с обязательным post_status)
+type PostFormInput = z.input<typeof postSchema>;
+type PostFormData = z.output<typeof postSchema>;
+
 type CreatePostProps = {
   initialUser: User | null;
   initialCategories: Category[];
 };
 
-const SlateEditor = dynamic(() => import("@/components/editor/SlateEditor"), {
-  ssr: false,
-  loading: () => <EditorSkeleton />,
-});
-
-// Общие классы для инпутов / селектов / textarea
 const inputClass =
-  "w-full px-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none transition-colors";
-
-const cardClass =
-  "bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border)] p-6";
-
-const cardHeaderClass =
-  "flex items-center gap-2 mb-4 text-[var(--text-primary)]";
+  "w-full px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none transition-colors text-sm";
 
 export default memo(function CreatePostClient({
   initialUser,
@@ -110,10 +86,9 @@ export default memo(function CreatePostClient({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPost, setIsLoadingPost] = useState(isEditMode);
   const [featuredImage, setFeaturedImage] = useState<File | null>(null);
-  const [featuredImagePreview, setFeaturedImagePreview] = useState<
-    string | null
-  >(null);
+  const [featuredImagePreview, setFeaturedImagePreview] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isEditingCover, setIsEditingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -133,8 +108,10 @@ export default memo(function CreatePostClient({
     },
   });
 
+  const titleValue = watch("title");
   const excerptValue = watch("excerpt") || "";
   const postStatusValue = watch("post_status");
+  const categoryValue = watch("categoryId");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -160,7 +137,6 @@ export default memo(function CreatePostClient({
         }
       }
     };
-
     fetchData();
   }, [initialUser, initialCategories]);
 
@@ -174,7 +150,7 @@ export default memo(function CreatePostClient({
     const loadPost = async () => {
       try {
         const res = await fetch(
-          `/api/posts/${editId}?populate[]=categories&populate[]=featured_image`,
+          `/api/posts/${editId}?populate[]=categories&populate[]=featured_image`
         );
         if (!res.ok) throw new Error("Не удалось загрузить пост");
 
@@ -184,7 +160,10 @@ export default memo(function CreatePostClient({
         setValue("title", post.title || "");
         setValue("excerpt", post.excerpt || "");
         setValue("categoryId", post.categories?.[0]?.id ?? null);
-        setValue("post_status", post.post_status === "draft" ? "draft" : "published");
+        setValue(
+          "post_status",
+          post.post_status === "draft" ? "draft" : "published"
+        );
 
         if (post.content) {
           try {
@@ -192,9 +171,6 @@ export default memo(function CreatePostClient({
               typeof post.content === "string"
                 ? JSON.parse(post.content)
                 : post.content;
-
-            // Tiptap ждёт { type: "doc", content: [...] }.
-            // Slate-массивы и прочие форматы приводим к пустому документу.
             if (
               raw &&
               typeof raw === "object" &&
@@ -204,11 +180,6 @@ export default memo(function CreatePostClient({
               setContent(raw);
               setValue("content", JSON.stringify(raw));
             } else {
-              if (Array.isArray(raw)) {
-                console.warn(
-                  "[loadPost] Обнаружен контент в формате Slate — редактор откроется пустым",
-                );
-              }
               setContent(null);
               setValue("content", "");
             }
@@ -228,7 +199,6 @@ export default memo(function CreatePostClient({
         setIsLoadingPost(false);
       }
     };
-
     loadPost();
   }, [isEditMode, editId, setValue]);
 
@@ -254,8 +224,47 @@ export default memo(function CreatePostClient({
   const handleRemoveImage = () => {
     setFeaturedImage(null);
     setFeaturedImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Открывает тот же редактор, что используется в ImageNode (в теле поста)
+  const handleEditCover = async () => {
+    if (!featuredImagePreview || isEditingCover) return;
+    try {
+      setIsEditingCover(true);
+
+      // 1. Загружаем текущее изображение как File
+      const res = await fetch(featuredImagePreview);
+      if (!res.ok) throw new Error("Не удалось загрузить изображение");
+      const blob = await res.blob();
+      const file = new File([blob], "cover.jpg", {
+        type: blob.type || "image/jpeg",
+      });
+
+      // 2. Открываем модал редактора
+      const result = await openEditorModal({
+        image: file,
+        config: {
+          exportFormat: "jpeg",
+          exportQuality: 0.92,
+          maxUndoSteps: 30,
+          language: "en",
+        },
+      });
+
+      if (!result?.file) return;
+
+      // 3. Мгновенное превью (blob URL) — не ждём загрузки на сервер
+      const newPreviewUrl = URL.createObjectURL(result.file);
+      setFeaturedImagePreview(newPreviewUrl);
+
+      // 4. Сохраняем File для последующей загрузки на сервер при submit
+      setFeaturedImage(result.file);
+    } catch (err) {
+      console.error("Cover edit error:", err);
+      alert(err instanceof Error ? err.message : "Не удалось отредактировать");
+    } finally {
+      setIsEditingCover(false);
     }
   };
 
@@ -265,14 +274,11 @@ export default memo(function CreatePostClient({
       setIsUploadingImage(true);
       const formData = new FormData();
       formData.append("files", featuredImage);
-
       const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
-
       if (!response.ok) throw new Error("Failed to upload image");
-
       const data = await response.json();
       const file = Array.isArray(data) ? data[0] : data?.data?.[0];
       return file?.id ?? null;
@@ -301,34 +307,17 @@ export default memo(function CreatePostClient({
           const categoryId = Number.isFinite(data.categoryId)
             ? data.categoryId
             : null;
-
           const categoryDocId = categoryId
             ? categories.find((c) => c.id === categoryId)?.documentId
             : null;
-
           const generatedSlug = generateSlug(data.title);
           const slug = generatedSlug || `post-${Date.now()}`;
 
-          type PostPayload = {
-            title: string;
-            slug: string;
-            content: unknown;
-            excerpt: string;
-            post_status?: "draft" | "published";
-            categories?: string[];
-            featured_image?: number;
-          };
-
           const safeContent = (() => {
-            // Пустой документ Tiptap — валидный JSON
             const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
-
-            if (!data.content || data.content.trim() === "") {
-              return emptyDoc;
-            }
+            if (!data.content || data.content.trim() === "") return emptyDoc;
             try {
               const parsed = JSON.parse(data.content);
-              // Если это массив (старый Slate) — тоже заменяем на пустой doc
               if (Array.isArray(parsed)) return emptyDoc;
               return parsed;
             } catch {
@@ -336,24 +325,18 @@ export default memo(function CreatePostClient({
             }
           })();
 
-          const payload: PostPayload = {
+          const payload: any = {
             title: data.title,
             slug,
-            content: safeContent,   // ← вместо старой логики
+            content: safeContent,
             excerpt: data.excerpt || "",
             post_status: data.post_status ?? "published",
           };
 
-          if (categoryDocId) {
-            payload.categories = [categoryDocId];
-          }
-
-          if (featuredImageId) {
-            payload.featured_image = featuredImageId;
-          }
+          if (categoryDocId) payload.categories = [categoryDocId];
+          if (featuredImageId) payload.featured_image = featuredImageId;
 
           let response: Response;
-
           if (isEditMode && editId) {
             response = await fetch(`/api/posts/${editId}`, {
               method: "PUT",
@@ -364,11 +347,7 @@ export default memo(function CreatePostClient({
             response = await fetch("/api/posts", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                data: {
-                  ...payload,
-                },
-              }),
+              body: JSON.stringify({ data: payload }),
             });
           }
 
@@ -376,14 +355,14 @@ export default memo(function CreatePostClient({
             const error = await response.json().catch(() => ({}));
             throw new Error(
               error.error?.message ||
-              error.error ||
-              (isEditMode ? "Ошибка обновления" : "Ошибка создания"),
+                error.error ||
+                (isEditMode ? "Ошибка обновления" : "Ошибка создания")
             );
           }
 
           const result = await response.json();
           const resultSlug = result?.data?.slug || slug;
-          const resultStatus = result?.data?.post_status || data.post_status;
+          const resultStatus = result.data?.post_status || data.post_status;
 
           if (resultStatus === "draft") {
             router.push("/admin/posts");
@@ -394,25 +373,19 @@ export default memo(function CreatePostClient({
           }
           router.refresh();
         } catch (error) {
-          console.error(
-            isEditMode ? "❌ Update error:" : "❌ Create error:",
-            error,
-          );
+          console.error("❌ Error:", error);
           alert(error instanceof Error ? error.message : "Произошла ошибка");
         }
       });
     },
-    [user, router, featuredImage, isEditMode, editId, categories, uploadImage],
+    [user, router, featuredImage, isEditMode, editId, categories, uploadImage]
   );
 
   const categoryOptions = useMemo(() => {
-    return categories.map((cat) => ({
-      value: cat.id,
-      label: cat.name,
-    }));
+    return categories.map((cat) => ({ value: cat.id, label: cat.name }));
   }, [categories]);
 
-  const isDisabled = isPending || isSubmitting || isUploadingImage;
+  const isDisabled = isPending || isSubmitting || isUploadingImage || isEditingCover;
 
   if (!isClient || isLoading || (isEditMode && isLoadingPost)) {
     return <PageSkeleton />;
@@ -420,7 +393,7 @@ export default memo(function CreatePostClient({
 
   if (!user) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center bg-(--bg-primary) p-4">
+      <div className="flex-1 min-h-0 flex items-center justify-center bg-[var(--bg-primary)] p-4">
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-6 py-4 rounded-lg max-w-md">
           <p className="font-medium">Доступ запрещен</p>
           <p className="text-sm mt-1">
@@ -436,257 +409,226 @@ export default memo(function CreatePostClient({
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
-      <header className="shrink-0 bg-(--bg-card) border-b border-(--border)">
-        <div className="px-4 sm:px-6 py-4 max-w-6xl mx-auto w-full">
-          <div className="flex items-center justify-between gap-3 min-w-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <Link
-                href="/admin"
-                className="text-(--text-muted) hover:text-(--text-primary) transition-colors shrink-0"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
-                  <PlusCircle className="w-5 h-5 sm:w-6 sm:h-6 text-(--accent)" />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-base sm:text-xl font-bold text-(--text-primary) truncate">
-                    {isEditMode ? "Редактировать пост" : "Создать пост"}
-                  </h1>
-                  <p className="text-xs sm:text-sm text-(--text-secondary) truncate">
-                    Автор: {user.full_name || user.firstname || user.username}
-                  </p>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                disabled={isDisabled}
-                className="px-4 py-2 text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-secondary) rounded-lg transition-colors flex items-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                <span className="hidden sm:inline">Отмена</span>
-              </button>
-              <button
-                type="submit"
-                form="post-form"
-                disabled={isDisabled}
-                className="px-6 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-sm hover:shadow font-medium"
-              >
-                {isPending || isSubmitting || isUploadingImage ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>
-                      {isUploadingImage
-                        ? "Загрузка..."
-                        : isEditMode
-                          ? "Сохранение..."
-                          : postStatusValue === "draft"
-                            ? "Сохранение черновика..."
-                            : "Публикация..."}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    <span>
-                      {isEditMode
-                        ? "Сохранить"
-                        : postStatusValue === "draft"
-                          ? "Сохранить черновик"
-                          : "Опубликовать"}
-                    </span>
-                  </>
-                )}
-              </button>
-            </div>
+    <div className="flex flex-col h-screen bg-[var(--bg-primary)] overflow-hidden font-sans">
+      {/* ВЕРХНЯЯ ПАНЕЛЬ */}
+      <header className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/80 backdrop-blur-md z-20">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin/posts"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-2 rounded-full hover:bg-[var(--bg-secondary)]"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="text-sm font-semibold text-[var(--text-primary)]">
+              {isEditMode ? "Редактирование поста" : "Новый пост"}
+            </h1>
+            <p className="text-xs text-[var(--text-muted)]">
+              {postStatusValue === "draft" ? "Черновик" : "Публикация"}
+            </p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            disabled={isDisabled}
+            className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+          >
+            Отмена
+          </button>
+          <button
+            type="submit"
+            form="post-form"
+            disabled={isDisabled}
+            className="px-5 py-2 bg-[var(--accent)] text-[var(--bg-primary)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-sm font-medium text-sm"
+          >
+            {isPending || isSubmitting || isUploadingImage ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Сохранение...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>
+                  {postStatusValue === "draft"
+                    ? "Сохранить черновик"
+                    : "Опубликовать"}
+                </span>
+              </>
+            )}
+          </button>
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="max-w-6xl mx-auto w-full">
+      {/* ОСНОВНАЯ ОБЛАСТЬ */}
+      <main className="flex-1 flex overflow-hidden">
         <form
           id="post-form"
           onSubmit={handleSubmit(onSubmit)}
-          className="space-y-6"
+          className="flex-1 flex overflow-hidden"
         >
-          {/* Заголовок */}
-          <div className={cardClass}>
-            <div className={cardHeaderClass}>
-              <FileText className="w-5 h-5 text-(--accent)" />
-              <h2 className="text-lg font-semibold">Основная информация</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="title"
-                  className="block text-sm font-medium text-(--text-primary) mb-1"
-                >
-                  Заголовок <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="title"
-                  type="text"
-                  {...register("title")}
-                  className={`${inputClass} ${errors.title ? "border-red-500" : ""
-                    }`}
-                  disabled={isDisabled}
-                  placeholder="Введите заголовок поста..."
-                />
-                {errors.title && (
-                  <p className="text-red-400 text-sm mt-1">
-                    {errors.title.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="excerpt"
-                  className="block text-sm font-medium text-(--text-primary) mb-1"
-                >
-                  Краткое описание
-                </label>
-                <input
-                  id="excerpt"
-                  type="text"
-                  {...register("excerpt")}
-                  className={inputClass}
-                  disabled={isDisabled}
-                  placeholder="Краткое описание поста (до 300 символов)..."
-                  maxLength={300}
-                />
-                <p className="text-sm text-(--text-muted) mt-1">
-                  {excerptValue.length}/300 символов
+          {/* ЛЕВАЯ КОЛОНКА: РЕДАКТОР */}
+          <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] overflow-y-auto">
+            <div className="w-full px-8 py-10 flex flex-col gap-6 min-h-full">
+              {/* Заголовок */}
+              <input
+                id="title"
+                type="text"
+                {...register("title")}
+                disabled={isDisabled}
+                placeholder="Заголовок поста..."
+                className="w-full bg-transparent text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border-none resize-none"
+              />
+              {errors.title && (
+                <p className="text-red-400 text-sm -mt-4">
+                  {errors.title.message}
                 </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Превью */}
-          <div className={cardClass}>
-            <div className={cardHeaderClass}>
-              <ImageIcon className="w-5 h-5 text-(--accent)" />
-              <h2 className="text-lg font-semibold">Превью поста</h2>
-            </div>
-
-            <div className="space-y-4">
-              {featuredImagePreview ? (
-                <div className="relative w-full h-64">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={featuredImagePreview}
-                    alt="Preview"
-                    className="w-full h-64 object-cover rounded-lg border border-(--border)"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    disabled={isDisabled}
-                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors z-10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-(--border) rounded-lg p-8 text-center cursor-pointer hover:border-(--accent) hover:bg-(--accent-dim) transition-colors"
-                >
-                  <Upload className="w-12 h-12 text-(--text-muted) mx-auto mb-2" />
-                  <p className="text-(--text-primary) font-medium">
-                    Нажмите для загрузки изображения
-                  </p>
-                  <p className="text-sm text-(--text-muted) mt-1">
-                    PNG, JPG, WEBP до 5MB
-                  </p>
-                </div>
               )}
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-                disabled={isDisabled}
-              />
+              {/* Редактор */}
+              <div className="flex-1 flex flex-col rounded-xl border border-[var(--border)]/50 bg-[var(--bg-secondary)]/30 relative">
+                <SimpleEditor
+                  initialContent={content}
+                  onChange={(json) =>
+                    setValue("content", JSON.stringify(json))
+                  }
+                  editable={!isDisabled}
+                />
+              </div>
+              {errors.content && (
+                <p className="text-red-400 text-sm">
+                  {errors.content.message}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Категория */}
-          <div className={cardClass}>
-            <div className={cardHeaderClass}>
-              <Tag className="w-5 h-5 text-(--accent)" />
-              <h2 className="text-lg font-semibold">Категория</h2>
+          {/* ПРАВАЯ КОЛОНКА: НАСТРОЙКИ */}
+          <aside className="w-80 shrink-0 border-l border-[var(--border)] bg-[var(--bg-card)] flex flex-col relative z-10">
+            <div className="p-5 border-b border-[var(--border)] flex items-center gap-2 text-[var(--text-primary)] font-medium shrink-0">
+              <Settings2 className="w-4 h-4" />
+              <span>Настройки поста</span>
             </div>
 
-            <select
-              id="category"
-              {...register("categoryId", { valueAsNumber: true })}
-              className={inputClass}
-              disabled={isDisabled}
-            >
-              <option value="">Без категории</option>
-              {categoryOptions.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="flex-1 overflow-y-auto overflow-x-visible">
+              <div className="p-5 space-y-6">
+                {/* Статус публикации */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                    Публикация
+                  </label>
+                  <select
+                    id="post_status"
+                    {...register("post_status")}
+                    className={inputClass}
+                    disabled={isDisabled}
+                  >
+                    <option value="published">Опубликовать</option>
+                    <option value="draft">Черновик</option>
+                  </select>
+                </div>
 
-          {/* Публикация */}
-          <div className={cardClass}>
-            <div className={cardHeaderClass}>
-              <FileText className="w-5 h-5 text-(--accent)" />
-              <h2 className="text-lg font-semibold">Публикация</h2>
+                {/* Категория */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1">
+                    <Tag className="w-3 h-3" /> Категория
+                  </label>
+                  <select
+                    id="category"
+                    {...register("categoryId", { valueAsNumber: true })}
+                    className={inputClass}
+                    disabled={isDisabled}
+                  >
+                    <option value="">Без категории</option>
+                    {categoryOptions.map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Краткое описание */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1">
+                    <FileText className="w-3 h-3" /> Краткое описание
+                  </label>
+                  <textarea
+                    id="excerpt"
+                    {...register("excerpt")}
+                    className={`${inputClass} min-h-[100px] resize-y`}
+                    disabled={isDisabled}
+                    placeholder="Пара предложений о чём пост..."
+                    maxLength={300}
+                  />
+                  <p className="text-right text-xs text-[var(--text-muted)]">
+                    {excerptValue.length}/300
+                  </p>
+                </div>
+
+                {/* Обложка */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1">
+                    <ImageIcon className="w-3 h-3" /> Обложка
+                  </label>
+                  {featuredImagePreview ? (
+                    <div className="relative group rounded-lg overflow-hidden border border-[var(--border)]">
+                      <img
+                        src={featuredImagePreview}
+                        alt="Cover"
+                        className="w-full h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={handleEditCover}
+                      />
+                      {isEditingCover && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                          <Loader2 className="w-6 h-6 animate-spin text-white" />
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveImage();
+                        }}
+                        disabled={isDisabled}
+                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isDisabled}
+                      className="w-full border-2 border-dashed border-[var(--border)] rounded-lg p-6 text-center hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors group"
+                    >
+                      <Upload className="w-6 h-6 text-[var(--text-muted)] mx-auto mb-2 group-hover:text-[var(--accent)]" />
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        Загрузить обложку
+                      </p>
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    disabled={isDisabled}
+                  />
+                </div>
+              </div>
             </div>
 
-            <select
-              id="post_status"
-              {...register("post_status")}
-              className={inputClass}
-              disabled={isDisabled}
-            >
-              <option value="published">Опубликовать сразу</option>
-              <option value="draft">Сохранить как черновик</option>
-            </select>
-
-            <p className="text-sm text-(--text-muted) mt-2">
-              Черновики видны только в админке. Опубликованные посты сразу появляются на сайте.
-            </p>
-          </div>
-
-          {/* Содержание */}
-          <div className={cardClass}>
-            <div className={cardHeaderClass}>
-              <AlignLeft className="w-5 h-5 text-(--accent)" />
-              <h2 className="text-lg font-semibold">
-                Содержание <span className="text-red-500">*</span>
-              </h2>
+            <div className="shrink-0 p-5 border-t border-[var(--border)] text-xs text-[var(--text-muted)] text-center bg-[var(--bg-card)]">
+              Автор: {user.full_name || user.firstname || user.username}
             </div>
-
-            <div className="min-w-0 overflow-hidden rounded-lg border border-(--border) bg-(--bg-secondary)">
-              <SimpleEditor
-                initialContent={content}
-                onChange={(json) => setValue("content", JSON.stringify(json))}
-                editable={!isDisabled}
-              />
-            </div>
-            {errors.content && (
-              <p className="text-red-400 text-sm mt-2">
-                {errors.content.message}
-              </p>
-            )}
-          </div>
+          </aside>
         </form>
-        </div>
       </main>
     </div>
   );

@@ -1,68 +1,35 @@
-body {
-  --tt-toolbar-height: 44px;
-  --tt-theme-text: var(--tt-gray-light-900);
+/* Обертка редактора */
+.simple-editor-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  min-height: 400px;
+  background: var(--tt-bg-color);
+  border-radius: 0.75rem;
+  position: relative;
+}
 
-  .dark & {
-    --tt-theme-text: var(--tt-gray-dark-900);
+/* Тулбар: прилипает к верху и имеет эффект стекла */
+.simple-editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--tt-toolbar-bg-color);
+  background: color-mix(in srgb, var(--tt-toolbar-bg-color) 85%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--tt-toolbar-border-color);
+  border-radius: 0.75rem 0.75rem 0 0;
+  padding: 0 0.5rem;
+  overflow-x: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
-body {
-  font-family: var(--font-inter), "Inter", sans-serif;
-  color: var(--tt-theme-text);
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
-  padding: 0;
-  overscroll-behavior-y: none;
-}
-
-html,
-body {
-  overscroll-behavior-x: none;
-}
-
-html,
-body,
-#root,
-#app {
-  height: 100%;
-  background-color: var(--tt-bg-color);
-}
-
-::-webkit-scrollbar {
-  width: 0.25rem;
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--tt-scrollbar-color) transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: var(--tt-scrollbar-color);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.tiptap.ProseMirror {
-  font-family: var(--font-dm-sans), "DM Sans", sans-serif;
-}
-
-/* Обёртка редактора: больше не растягивается на весь экран */
-.simple-editor-wrapper {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  min-height: 360px;
-  overflow: visible;
-  border-radius: 0.5rem;
-}
-
-/* Панель поиска и замены: оставляем фиксированной, но привязываем к карточке */
+/* Панель поиска и замены */
 .simple-editor-search-and-replace {
   position: fixed;
   top: calc(var(--tt-toolbar-height) + 0.5rem);
@@ -71,26 +38,278 @@ body,
   max-height: calc(100dvh - var(--tt-toolbar-height) - 1rem);
 }
 
-/* Контент: убираем центрирование и ограничение 648px */
+/* Контент */
 .simple-editor-content {
-  max-width: 100%;
-  width: 100%;
-  margin: 0;
-  height: auto;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  overflow: visible;
 }
 
-/* Внутренние отступы: адекватные для встроенного редактора */
+/* Сам Tiptap */
 .simple-editor-content .tiptap.ProseMirror.simple-editor {
   flex: 1;
-  padding: 1rem 1.25rem;
-  min-height: 280px;
+  padding: 2rem 3rem;
+  min-height: 300px;
   outline: none;
+  color: var(--tt-theme-text);
+  font-size: 1.05rem;
+  line-height: 1.7;
+
+  /* Заголовки */
+  h1 { font-size: 2rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; }
+  h2 { font-size: 1.5rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+
+  /* Параграфы */
+  p { margin-bottom: 0.75rem; }
+
+  /* Обычные списки (не таск-листы) */
+  ul:not([data-type="taskList"]),
+  ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  li:not([data-type="taskItem"]) {
+    margin-bottom: 0.25rem;
+  }
+
+  /* =====================
+     TASK LIST
+     ===================== */
+  ul[data-type="taskList"] {
+    padding-left: 0 !important;
+    margin: 1.5em 0 !important;
+    list-style: none !important;
+
+    /* Tiptap оборачивает li в div.react-renderer — стилизуем именно его */
+    > .react-renderer {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: flex-start !important;
+      margin-bottom: 0.5rem !important;
+      padding-left: 0 !important;
+      list-style: none !important;
+    }
+
+    /* li внутри обертки делаем "прозрачным" (display: contents) */
+    > .react-renderer > li,
+    > .react-renderer > [data-type="taskItem"] {
+      display: contents !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      list-style: none !important;
+    }
+
+    /* Зачёркивание для выполненных */
+    li[data-checked="true"] > div > p,
+    .react-renderer:has(li[data-checked="true"]) p {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+
+    label {
+      flex: 0 0 auto !important;
+      display: flex !important;
+      align-items: center !important;
+      padding: 0 !important;
+      margin: 0.35rem 0.5rem 0 0 !important;
+      cursor: pointer !important;
+    }
+
+    /* Стилизуем сам input */
+    input[type="checkbox"] {
+      all: unset !important; /* Сбрасывает Tailwind, sr-only и appearance */
+      display: inline-block !important;
+      width: 1.15em !important;
+      height: 1.15em !important;
+      min-width: 1.15em !important;
+      min-height: 1.15em !important;
+      border: 1.5px solid #94a3b8 !important;
+      border-radius: 0.25rem !important;
+      background-color: #f8fafc !important;
+      cursor: pointer !important;
+      box-sizing: border-box !important;
+      vertical-align: middle !important;
+      position: relative !important;
+
+      /* Галочка через SVG */
+      &:checked {
+        background-color: #2dd4bf !important;
+        border-color: #2dd4bf !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        background-size: 70% !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+      }
+    }
+
+    /* Тёмная тема */
+    .dark & input[type="checkbox"] {
+      border-color: #475569 !important;
+      background-color: #1e293b !important;
+
+      &:checked {
+        background-color: #2dd4bf !important;
+        border-color: #2dd4bf !important;
+      }
+    }
+
+    .task-item-content,
+    .react-renderer > li > .task-item-content {
+      flex: 1 1 0% !important;
+      min-width: 0 !important;
+      p { margin: 0 !important; }
+    }
+  }
+
+  /* Цитаты */
+  blockquote {
+    border-left: 3px solid var(--accent, #2dd4bf);
+    padding: 0.75rem 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    border-radius: 0 0.5rem 0.5rem 0;
+
+    color: #374151;
+    background: #f3f4f6;
+
+    .dark & {
+      color: #e5e7eb;
+      background: #1f2937;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  /* =====================
+     ТАБЛИЦЫ
+     ===================== */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    margin: 1.5rem 0 !important;
+    table-layout: fixed !important;
+
+    td, th {
+      border: 1px solid #475569 !important;
+      padding: 0.5rem 0.75rem !important;
+      vertical-align: top !important;
+      min-width: 2em;
+      position: relative;
+
+      p {
+        margin: 0 !important;
+      }
+    }
+
+    th {
+      background: #1e293b !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+      color: #e5e7eb !important;
+    }
+
+    /* Подсветка выделенных ячеек */
+    .selectedCell::after {
+      content: "" !important;
+      position: absolute !important;
+      inset: 0 !important;
+      background: rgba(45, 212, 191, 0.2) !important;
+      pointer-events: none !important;
+    }
+
+    /* Ручка для изменения ширины колонок */
+    .column-resize-handle {
+      background-color: #2dd4bf !important;
+      width: 3px !important;
+      position: absolute !important;
+      right: -1px !important;
+      top: 0 !important;
+      bottom: 0 !important;
+      pointer-events: none !important;
+      z-index: 10 !important;
+    }
+  }
+
+  /* Код (блок) */
+  pre {
+    background: #f8fafc;
+    border: 1px solid var(--tt-toolbar-border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: monospace;
+    margin: 1rem 0;
+
+    .dark & {
+      background: #0f172a;
+    }
+  }
+
+  /* Инлайн код */
+  code {
+    background: #e5e7eb;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.9em;
+    color: var(--accent, #2dd4bf);
+
+    .dark & {
+      background: #1e293b;
+    }
+  }
+
+  /* Ссылки */
+  a {
+    color: var(--accent, #2dd4bf);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    &:hover { opacity: 0.8; }
+  }
+
+  /* Картинки */
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.5rem auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+
+  /* Плейсхолдер для пустого image-upload */
+  [data-type="image-upload"] {
+    display: block;
+    padding: 2rem;
+    margin: 1rem 0;
+    border: 2px dashed var(--tt-toolbar-border-color);
+    border-radius: 0.5rem;
+    text-align: center;
+    color: #64748b;
+
+    .dark & {
+      color: #94a3b8;
+    }
+  }
 }
 
-@media screen and (max-width: 480px) {
+/* Мобильная адаптация */
+@media screen and (max-width: 640px) {
+  .simple-editor-toolbar {
+    border-radius: 0;
+    padding: 0.5rem;
+  }
+
+  .simple-editor-content .tiptap.ProseMirror.simple-editor {
+    padding: 1.5rem 1rem;
+    font-size: 1rem;
+  }
+
   .simple-editor-search-and-replace {
     top: 0.5rem;
     left: 0.5rem;
@@ -98,34 +317,8 @@ body,
     max-height: calc(100dvh - 1rem);
   }
 
-  .simple-editor-content .tiptap.ProseMirror.simple-editor {
-    padding: 0.75rem 1rem;
-    min-height: 240px;
+  /* Чекбоксы не сжимаются на мобилке */
+  ul[data-type="taskList"] li label {
+    flex: 0 0 auto !important;
   }
-}
-
-/* Картинки внутри редактора */
-.simple-editor-content .tiptap.ProseMirror.simple-editor img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  margin: 1rem 0;
-  border-radius: 0.5rem;
-  cursor: default;
-}
-
-.simple-editor-content .tiptap.ProseMirror.simple-editor img.ProseMirror-selectednode {
-  outline: 2px solid var(--accent, #2dd4bf);
-  outline-offset: 2px;
-}
-
-/* Плейсхолдер для пустого image-upload */
-.simple-editor-content .tiptap.ProseMirror.simple-editor [data-type="image-upload"] {
-  display: block;
-  padding: 2rem;
-  margin: 1rem 0;
-  border: 2px dashed var(--border, #334155);
-  border-radius: 0.5rem;
-  text-align: center;
-  color: var(--text-muted, #64748b);
 }

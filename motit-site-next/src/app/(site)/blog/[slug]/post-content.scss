@@ -1,0 +1,123 @@
+/* =====================
+   TASK LIST
+   ===================== */
+.post-content {
+  ul[data-type="taskList"] {
+    padding-left: 0 !important;
+    margin: 1.5em 0 !important;
+    list-style: none !important;
+
+    li {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: flex-start !important;
+      margin-bottom: 0.5rem !important;
+      padding-left: 0 !important;
+      list-style: none !important;
+
+      &[data-checked="true"] > div > p {
+        opacity: 0.5;
+        text-decoration: line-through;
+      }
+    }
+
+    label {
+      flex: 0 0 auto !important;
+      display: flex !important;
+      align-items: center !important;
+      padding: 0 !important;
+      margin: 0.35rem 0.5rem 0 0 !important;
+      pointer-events: none; /* Отключаем клики на странице поста */
+    }
+
+    input[type="checkbox"] {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      display: block !important;
+      width: 1.15em !important;
+      height: 1.15em !important;
+      border: 1.5px solid #475569 !important;
+      border-radius: 0.25rem !important;
+      background-color: #1e293b !important;
+      position: relative !important;
+      box-sizing: border-box !important;
+      margin: 0 !important;
+      clip: auto !important;
+
+      &:checked {
+        background-color: #2dd4bf !important;
+        border-color: #2dd4bf !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        background-size: 70% !important;
+        background-position: center !important;
+      }
+    }
+
+    div {
+      flex: 1 1 0% !important;
+      min-width: 0 !important;
+
+      p {
+        margin: 0 !important;
+      }
+    }
+  }
+}
+
+/* =====================
+   ЦИТАТЫ С АВТОРОМ
+   ===================== */
+.post-content {
+  blockquote {
+    border-left: 3px solid #2dd4bf;
+    padding: 0.75rem 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    border-radius: 0 0.5rem 0.5rem 0;
+    color: #e5e7eb;
+    background: #1f2937;
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Автор цитаты */
+    &[data-author]::after {
+      content: "— " attr(data-author);
+      display: block;
+      text-align: right;
+      font-style: normal;
+      font-size: 0.9em;
+      color: #94a3b8;
+      margin-top: 0.5rem;
+    }
+  }
+}
+
+/* =====================
+   ТАБЛИЦЫ
+   ===================== */
+.post-content {
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.5rem 0;
+
+    td,
+    th {
+      border: 1px solid #475569;
+      padding: 0.5rem 0.75rem;
+      vertical-align: top;
+
+      p {
+        margin: 0;
+      }
+    }
+
+    th {
+      background: #1e293b;
+      font-weight: 600;
+      text-align: left;
+    }
+  }
+}

@@ -1,15 +1,19 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
+import {
+  EditorContent,
+  EditorContext,
+  useEditor,
+  ReactNodeViewRenderer,
+  useCurrentEditor,
+} from "@tiptap/react"
 import type { JSONContent } from "@tiptap/core"
-import "@/styles/_variables.scss";
+import "@/styles/_variables.scss"
 
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit"
 import Image from "@tiptap/extension-image"
-import { ReactNodeViewRenderer } from "@tiptap/react"
-import { ImageNode } from "@/components/tiptap-node/image-node/image-node"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
 import { TextAlign } from "@tiptap/extension-text-align"
 import { Typography } from "@tiptap/extension-typography"
@@ -18,6 +22,7 @@ import { Subscript } from "@tiptap/extension-subscript"
 import { Superscript } from "@tiptap/extension-superscript"
 import { FindAndReplace } from "@tiptap/extension-find-and-replace"
 import { Selection } from "@tiptap/extensions"
+import { TableKit } from "@tiptap/extension-table"
 
 // --- UI Primitives ---
 import { Button } from "@/components/tiptap-ui-primitive/button"
@@ -31,6 +36,9 @@ import {
 // --- Tiptap Node ---
 import { ImageUploadNode } from "@/components/tiptap-node/image-upload-node/image-upload-node-extension"
 import { HorizontalRule } from "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node-extension"
+import { TaskItemNode } from "@/components/tiptap-node/task-item/task-item-node"
+import { ImageNode } from "@/components/tiptap-node/image-node/image-node"
+import { CustomBlockquote } from "@/components/tiptap-node/blockquote-node/blockquote-extension"
 import "@/components/tiptap-node/blockquote-node/blockquote-node.scss"
 import "@/components/tiptap-node/code-block-node/code-block-node.scss"
 import "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node.scss"
@@ -50,11 +58,7 @@ import {
   ColorHighlightPopoverContent,
   ColorHighlightPopoverButton,
 } from "@/components/tiptap-ui/color-highlight-popover"
-import {
-  LinkPopover,
-  LinkContent,
-  LinkButton,
-} from "@/components/tiptap-ui/link-popover"
+import { LinkContent, LinkButton } from "@/components/tiptap-ui/link-popover"
 import { MarkButton } from "@/components/tiptap-ui/mark-button"
 import { TextAlignButton } from "@/components/tiptap-ui/text-align-button"
 import { UndoRedoButton } from "@/components/tiptap-ui/undo-redo-button"
@@ -62,16 +66,16 @@ import {
   SearchAndReplace,
   SearchAndReplaceButton,
 } from "@/components/tiptap-ui/search-and-replace"
+import { TableControls } from "@/components/tiptap-ui/table-controls"
 
 // --- Icons ---
 import { ArrowLeftIcon } from "@/components/tiptap-icons/arrow-left-icon"
 import { HighlighterIcon } from "@/components/tiptap-icons/highlighter-icon"
-import { LinkIcon } from "@/components/tiptap-icons/link-icon"
+import { Table, Quote } from "lucide-react"
 
 // --- Hooks ---
 import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
-import { useWindowSize } from "@/hooks/use-window-size"
-import { useCursorVisibility } from "@/hooks/use-cursor-visibility"
+import { useLinkPopoverFloating } from "@/hooks/use-link-popover-floating"
 
 // --- Components ---
 import { ThemeToggle } from "@/components/tiptap-templates/simple/theme-toggle"
@@ -81,6 +85,7 @@ import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
 
 // --- Styles ---
 import "@/components/tiptap-templates/simple/simple-editor.scss"
+import "@/components/tiptap-node/list-node/list-node.scss"
 
 const SEARCH_AND_REPLACE_SCROLL_OPTIONS: ScrollIntoViewOptions = {
   block: "center",
@@ -101,6 +106,8 @@ const MainToolbarContent = ({
   searchAndReplaceButtonRef: React.RefObject<HTMLButtonElement | null>
   isMobile: boolean
 }) => {
+  const { editor } = useCurrentEditor()
+
   return (
     <>
       <Spacer />
@@ -120,6 +127,44 @@ const MainToolbarContent = ({
         />
         <BlockquoteButton />
         <CodeBlockButton />
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() =>
+            editor
+              ?.chain()
+              .focus()
+              .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+              .run()
+          }
+          title="Вставить таблицу"
+        >
+          <Table className="tiptap-button-icon" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            if (!editor) return
+            if (!editor.isActive("blockquote")) {
+              alert("Поставьте курсор в цитату, чтобы добавить автора")
+              return
+            }
+            const current = editor.getAttributes("blockquote").author || ""
+            const author = window.prompt("Автор цитаты:", current)
+            if (author === null) return
+            editor
+              .chain()
+              .focus()
+              .updateAttributes("blockquote", {
+                author: author.trim() || null,
+              })
+              .run()
+          }}
+          title="Автор цитаты"
+        >
+          <Quote className="tiptap-button-icon" />
+        </Button>
       </ToolbarGroup>
 
       <ToolbarSeparator />
@@ -135,7 +180,7 @@ const MainToolbarContent = ({
         ) : (
           <ColorHighlightPopoverButton onClick={onHighlighterClick} />
         )}
-        {!isMobile ? <LinkPopover /> : <LinkButton onClick={onLinkClick} />}
+        <LinkButton onClick={onLinkClick} />
       </ToolbarGroup>
 
       <ToolbarSeparator />
@@ -181,28 +226,20 @@ const MobileToolbarContent = ({
   type,
   onBack,
 }: {
-  type: "highlighter" | "link"
+  type: "highlighter"
   onBack: () => void
 }) => (
   <>
     <ToolbarGroup>
       <Button variant="ghost" onClick={onBack}>
         <ArrowLeftIcon className="tiptap-button-icon" />
-        {type === "highlighter" ? (
-          <HighlighterIcon className="tiptap-button-icon" />
-        ) : (
-          <LinkIcon className="tiptap-button-icon" />
-        )}
+        <HighlighterIcon className="tiptap-button-icon" />
       </Button>
     </ToolbarGroup>
 
     <ToolbarSeparator />
 
-    {type === "highlighter" ? (
-      <ColorHighlightPopoverContent />
-    ) : (
-      <LinkContent />
-    )}
+    <ColorHighlightPopoverContent />
   </>
 )
 
@@ -229,13 +266,13 @@ export function SimpleEditor({
   editable = true,
 }: SimpleEditorProps) {
   const isMobile = useIsBreakpoint()
-  const { height } = useWindowSize()
-  const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">(
-    "main"
-  )
+  const [mobileView, setMobileView] = useState<"main" | "highlighter">("main")
   const [isSearchAndReplaceOpen, setIsSearchAndReplaceOpen] = useState(false)
-  const toolbarRef = useRef<HTMLDivElement>(null)
   const searchAndReplaceButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Ссылки на editor и linkPopover для handleClick
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+  const linkPopoverRef = useRef<ReturnType<typeof useLinkPopoverFloating> | null>(null)
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -248,23 +285,51 @@ export function SimpleEditor({
         "aria-label": "Main content area, start typing to enter text.",
         class: "simple-editor",
       },
+      handleClick: (view, pos, event) => {
+        const target = event.target as HTMLElement
+        const linkElement = target.closest("a")
+
+        if (linkElement && view.dom.contains(linkElement)) {
+          // Откладываем, чтобы Tiptap успел обновить selection
+          setTimeout(() => {
+            const ed = editorRef.current
+            const lp = linkPopoverRef.current
+            if (ed && lp) {
+              ed.chain().focus().extendMarkRange("link").run()
+              lp.open()
+            }
+          }, 0)
+          return false
+        }
+
+        return false
+      },
     },
     extensions: [
       StarterKit.configure({
         horizontalRule: false,
+        blockquote: false,
         link: {
           openOnClick: false,
           enableClickSelection: true,
         },
       }),
+      CustomBlockquote,
+      TableKit.configure({
+        table: { resizable: true },
+      }),
       HorizontalRule,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TaskList,
-      TaskItem.configure({ nested: true }),
+      TaskItem.extend({
+        addNodeView() {
+          return ReactNodeViewRenderer(TaskItemNode)
+        },
+      }).configure({ nested: true }),
       Highlight.configure({ multicolor: true }),
       Image.extend({
         addNodeView() {
-          return ReactNodeViewRenderer(ImageNode);
+          return ReactNodeViewRenderer(ImageNode)
         },
       }),
       Typography,
@@ -289,32 +354,33 @@ export function SimpleEditor({
     },
   })
 
-  // При первом монтировании без initialContent отдаём наружу пустой документ,
-  // чтобы форма не осталась с пустой строкой в поле content.
+  const linkPopover = useLinkPopoverFloating({ editor })
+
+  // Сохраняем актуальные ссылки
+  useEffect(() => {
+    editorRef.current = editor
+  }, [editor])
+
+  useEffect(() => {
+    linkPopoverRef.current = linkPopover
+  }, [linkPopover])
+
   useEffect(() => {
     if (editor && !initialContent) {
       onChange?.(editor.getJSON())
     }
   }, [editor, initialContent, onChange])
 
-  // Обновляем editable при изменении пропса
   useEffect(() => {
     if (editor) editor.setEditable(editable)
   }, [editor, editable])
 
-  // Синхронизируем контент, когда initialContent меняется извне (например,
-  // при загрузке поста в режиме редактирования). Только валидный Tiptap-doc.
   useEffect(() => {
     if (!editor) return
     if (isValidTiptapDoc(initialContent)) {
       editor.commands.setContent(initialContent, { emitUpdate: false })
     }
   }, [editor, initialContent])
-
-  const rect = useCursorVisibility({
-    editor,
-    overlayHeight: toolbarRef.current?.getBoundingClientRect().height ?? 0,
-  })
 
   useEffect(() => {
     if (!isMobile && mobileView !== "main") {
@@ -340,23 +406,19 @@ export function SimpleEditor({
     openSearchAndReplace()
   }, [closeSearchAndReplace, isSearchAndReplaceOpen, openSearchAndReplace])
 
+  const handleLinkClick = useCallback(() => {
+    setMobileView("main")
+    linkPopover.open()
+  }, [linkPopover])
+
   return (
     <div className="simple-editor-wrapper">
       <EditorContext.Provider value={{ editor }}>
-        <Toolbar
-          ref={toolbarRef}
-          style={{
-            ...(isMobile
-              ? {
-                  bottom: `calc(100% - ${height - rect.y}px)`,
-                }
-              : {}),
-          }}
-        >
+        <Toolbar variant="fixed" className="simple-editor-toolbar">
           {mobileView === "main" ? (
             <MainToolbarContent
               onHighlighterClick={() => setMobileView("highlighter")}
-              onLinkClick={() => setMobileView("link")}
+              onLinkClick={handleLinkClick}
               onSearchAndReplaceClick={toggleSearchAndReplace}
               isSearchAndReplaceOpen={isSearchAndReplaceOpen}
               searchAndReplaceButtonRef={searchAndReplaceButtonRef}
@@ -364,11 +426,14 @@ export function SimpleEditor({
             />
           ) : (
             <MobileToolbarContent
-              type={mobileView === "highlighter" ? "highlighter" : "link"}
+              type="highlighter"
               onBack={() => setMobileView("main")}
             />
           )}
         </Toolbar>
+
+        {/* Панель управления таблицей */}
+        <TableControls />
 
         <SearchAndReplace
           className="simple-editor-search-and-replace"
@@ -377,6 +442,15 @@ export function SimpleEditor({
           onClose={closeSearchAndReplace}
           scrollIntoViewOptions={SEARCH_AND_REPLACE_SCROLL_OPTIONS}
         />
+
+        {linkPopover.isOpen && (
+          <div
+            ref={linkPopover.setFloatingRef}
+            style={{ ...linkPopover.floatingStyles, zIndex: 50 }}
+          >
+            <LinkContent editor={editor} />
+          </div>
+        )}
 
         <EditorContent
           editor={editor}
