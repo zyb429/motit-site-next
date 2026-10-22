@@ -1,15 +1,33 @@
+/* =====================
+   GLOBAL TOKENS
+   ===================== */
 :root {
   --tt-toolbar-height: 2.75rem;
   --tt-safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --tt-toolbar-bg-color: var(--white);
+  --tt-toolbar-bg-color: #ffffff;
   --tt-toolbar-border-color: var(--tt-gray-light-a-100);
 }
 
+/* Глобальная тёмная тема админки (оставляем, чтобы не сломать остальную UI) */
 .dark {
-  --tt-toolbar-bg-color: var(--black);
+  --tt-toolbar-bg-color: #000000;
   --tt-toolbar-border-color: var(--tt-gray-dark-a-50);
 }
 
+/* Локальные темы редактора — перебивают глобальную */
+.simple-editor-wrapper.light {
+  --tt-toolbar-bg-color: #ffffff;
+  --tt-toolbar-border-color: #e2e8f0;
+}
+
+.simple-editor-wrapper.dark {
+  --tt-toolbar-bg-color: #111827;
+  --tt-toolbar-border-color: #334155;
+}
+
+/* =====================
+   TOOLBAR
+   ===================== */
 .tiptap-toolbar {
   display: flex;
   align-items: center;
@@ -98,4 +116,72 @@
       box-shadow: none;
     }
   }
+}
+
+/* =====================
+   ФИКС КНОПОК ТУЛБАРА
+   Привязка цветов кнопок к локальной теме редактора,
+   независимо от глобальной темы админки
+   ===================== */
+
+/* Светлая тема редактора */
+.simple-editor-wrapper.light .tiptap-button {
+  --tt-button-default-bg-color: transparent;
+  --tt-button-hover-bg-color: #f1f5f9;
+  --tt-button-active-bg-color: #e2e8f0;
+  --tt-button-active-bg-color-emphasized: #ccfbf1;
+  --tt-button-active-hover-bg-color: #e2e8f0;
+
+  --tt-button-default-text-color: #475569;
+  --tt-button-hover-text-color: #0f172a;
+  --tt-button-active-text-color: #0f172a;
+
+  --tt-button-default-icon-color: #475569;
+  --tt-button-hover-icon-color: #0f172a;
+  --tt-button-active-icon-color: #0d9488;
+  --tt-button-active-icon-color-emphasized: #0f766e;
+  --tt-button-active-icon-color-subdued: #0f172a;
+
+  --tt-button-default-icon-sub-color: #94a3b8;
+  --tt-button-hover-icon-sub-color: #64748b;
+  --tt-button-active-icon-sub-color: #94a3b8;
+
+  --tt-button-default-dropdown-arrows-color: #475569;
+  --tt-button-hover-dropdown-arrows-color: #0f172a;
+  --tt-button-active-dropdown-arrows-color: #475569;
+
+  --tt-button-disabled-bg-color: transparent;
+  --tt-button-disabled-text-color: #cbd5e1;
+  --tt-button-disabled-icon-color: #cbd5e1;
+}
+
+/* Тёмная тема редактора */
+.simple-editor-wrapper.dark .tiptap-button {
+  --tt-button-default-bg-color: transparent;
+  --tt-button-hover-bg-color: #1e293b;
+  --tt-button-active-bg-color: #334155;
+  --tt-button-active-bg-color-emphasized: #134e4a;
+  --tt-button-active-hover-bg-color: #334155;
+
+  --tt-button-default-text-color: #cbd5e1;
+  --tt-button-hover-text-color: #f8fafc;
+  --tt-button-active-text-color: #f8fafc;
+
+  --tt-button-default-icon-color: #cbd5e1;
+  --tt-button-hover-icon-color: #f8fafc;
+  --tt-button-active-icon-color: #2dd4bf;
+  --tt-button-active-icon-color-emphasized: #5eead4;
+  --tt-button-active-icon-color-subdued: #f8fafc;
+
+  --tt-button-default-icon-sub-color: #64748b;
+  --tt-button-hover-icon-sub-color: #94a3b8;
+  --tt-button-active-icon-sub-color: #64748b;
+
+  --tt-button-default-dropdown-arrows-color: #cbd5e1;
+  --tt-button-hover-dropdown-arrows-color: #f8fafc;
+  --tt-button-active-dropdown-arrows-color: #cbd5e1;
+
+  --tt-button-disabled-bg-color: transparent;
+  --tt-button-disabled-text-color: #475569;
+  --tt-button-disabled-icon-color: #475569;
 }

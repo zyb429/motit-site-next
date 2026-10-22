@@ -473,31 +473,31 @@ export default memo(function CreatePostClient({
           {/* ЛЕВАЯ КОЛОНКА: РЕДАКТОР */}
           <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] overflow-y-auto">
             <div className="w-full px-8 py-10 flex flex-col gap-6 min-h-full">
-              {/* Заголовок */}
-              <input
-                id="title"
-                type="text"
-                {...register("title")}
-                disabled={isDisabled}
-                placeholder="Заголовок поста..."
-                className="w-full bg-transparent text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border-none resize-none"
-              />
-              {errors.title && (
-                <p className="text-red-400 text-sm -mt-4">
-                  {errors.title.message}
-                </p>
-              )}
+            {/* Заголовок */}
+            <input
+              id="title"
+              type="text"
+              {...register("title")}
+              disabled={isDisabled}
+              placeholder="Заголовок поста..."
+              className="w-full bg-[#0b1f26] text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border border-[var(--border)]/50 rounded-xl px-6 py-4 focus:border-[var(--accent)] transition-colors"
+            />
+            {errors.title && (
+              <p className="text-red-400 text-sm -mt-4">
+                {errors.title.message}
+              </p>
+            )}
 
-              {/* Редактор */}
-              <div className="flex-1 flex flex-col rounded-xl border border-[var(--border)]/50 bg-[var(--bg-secondary)]/30 relative">
-                <SimpleEditor
-                  initialContent={content}
-                  onChange={(json) =>
-                    setValue("content", JSON.stringify(json))
-                  }
-                  editable={!isDisabled}
-                />
-              </div>
+            {/* Редактор */}
+            <div className="flex-1 flex flex-col rounded-xl border border-[var(--border)]/50 relative overflow-hidden bg-[#0b1f26]">
+              <SimpleEditor
+                initialContent={content}
+                onChange={(json) =>
+                  setValue("content", JSON.stringify(json))
+                }
+                editable={!isDisabled}
+              />
+            </div>
               {errors.content && (
                 <p className="text-red-400 text-sm">
                   {errors.content.message}

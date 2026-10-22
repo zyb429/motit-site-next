@@ -28,6 +28,30 @@
   max-width: 100%;
 }
 
+/* Локальная тёмная тема редактора: работает независимо от темы админки */
+.simple-editor-wrapper.dark .tiptap-search-replace {
+  --tiptap-search-replace-count-color: var(--tt-gray-dark-a-400);
+  --tiptap-search-replace-option-text-color: var(--tt-gray-dark-a-600);
+  --tiptap-search-replace-option-icon-color: var(--tt-gray-dark-a-500);
+  --tiptap-search-replace-option-hover-bg-color: var(--tt-gray-dark-a-200);
+  --tiptap-search-replace-kbd-bg: var(--tt-gray-dark-a-50);
+  --tiptap-search-replace-kbd-border: var(--tt-gray-dark-a-200);
+  --tiptap-search-replace-kbd-color: var(--tt-gray-dark-a-500);
+  --tiptap-search-replace-help-bg: var(--tt-gray-dark-100);
+  --tiptap-search-replace-help-label-color: var(--tt-gray-dark-a-500);
+  --tiptap-search-replace-code-bg: var(--tt-gray-dark-a-100);
+  --tiptap-search-replace-code-border: var(--tt-gray-dark-a-200);
+  --tiptap-search-replace-code-color: var(--tt-gray-dark-a-700);
+  --tiptap-search-replace-focus-border: var(--tt-brand-color-400);
+  --tiptap-search-replace-focus-ring: color-mix(
+    in srgb,
+    var(--tt-brand-color-400) 25%,
+    transparent
+  );
+}
+
+/* Глобальная тёмная тема (на случай, если админка тоже тёмная) —
+   оставляем, но теперь он ниже по приоритету, чем .simple-editor-wrapper.dark */
 .dark .tiptap-search-replace {
   --tiptap-search-replace-count-color: var(--tt-gray-dark-a-400);
   --tiptap-search-replace-option-text-color: var(--tt-gray-dark-a-600);

@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
+import "highlight.js/styles/github-dark.css";
 import Script from "next/script";
 import { Providers } from "./providers";
 
@@ -59,25 +60,12 @@ export const metadata: Metadata = {
   },
 };
 
-// Скрипт до гидратации — вынесен в константу, чтобы не путался в JSX
+// Всегда ставим dark, чтобы избежать вспышки светлой темы при загрузке
 const THEME_INIT_SCRIPT = `
 (function() {
   try {
-    var path = window.location.pathname;
-    // Зоны, где тема управляется пользователем (next-themes).
-    // Везде остальное — жёстко тёмная тема.
-    var userThemeZones = [
-      "/admin",
-      "/cabinet",
-      "/stats",
-      "/support"
-    ];
-    var isUserTheme = userThemeZones.some(function(prefix) {
-      return path.startsWith(prefix);
-    });
-    if (!isUserTheme) {
-      document.documentElement.classList.add("dark");
-    }
+    // Принудительно включаем темную тему (как на основном сайте)
+    document.documentElement.classList.add("dark");
   } catch (e) {}
 })();
 `;
