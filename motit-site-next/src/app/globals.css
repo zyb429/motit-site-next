@@ -27,6 +27,8 @@
   --card-radius: 16px;
   --section-padding: 100px;
   --content-max-width: 1280px;
+  --selection-bg: #b3d4fc;
+  --selection-color: #000000;
 }
 
 /* ============================================
@@ -46,6 +48,8 @@
   --border: rgba(45, 212, 191, 0.1);
   --border-hover: rgba(45, 212, 191, 0.25);
   --card-shadow: rgba(0, 0, 0, 0.3);
+  --selection-bg: #264f78;
+  --selection-color: #ffffff;
 }
 
 html {
@@ -65,9 +69,15 @@ body {
     color 0.2s ease;
 }
 
+/* Глобальное выделение — работает везде, включая редактор */
 ::selection {
-  background-color: var(--accent);
-  color: var(--bg-primary);
+  background-color: var(--selection-bg);
+  color: var(--selection-color);
+}
+
+::-moz-selection {
+  background-color: var(--selection-bg);
+  color: var(--selection-color);
 }
 
 ::-webkit-scrollbar {
@@ -87,7 +97,7 @@ body {
 /* Защита от горизонтального оверфлоу на мобилке */
 html, body {
   max-width: 100%;
-  overflow-x: clip;   /* clip — лучше hidden, не создаёт scroll context */
+  overflow-x: clip;
 }
 
 /* Длинные слова не рвут layout */
@@ -96,7 +106,6 @@ html, body {
   overflow-wrap: anywhere;
 }
 
-/* Длинные email / URL */
 .break-long {
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -293,33 +302,15 @@ textarea:focus::placeholder {
   opacity: 1;
   transform: translateY(0);
 }
-.reveal-d1 {
-  transition-delay: 0.08s;
-}
-.reveal-d2 {
-  transition-delay: 0.16s;
-}
-.reveal-d3 {
-  transition-delay: 0.24s;
-}
-.reveal-d4 {
-  transition-delay: 0.32s;
-}
-.reveal-d5 {
-  transition-delay: 0.4s;
-}
-.reveal-d6 {
-  transition-delay: 0.48s;
-}
-.reveal-d7 {
-  transition-delay: 0.56s;
-}
-.reveal-d8 {
-  transition-delay: 0.64s;
-}
-.reveal-d9 {
-  transition-delay: 0.72s;
-}
+.reveal-d1 { transition-delay: 0.08s; }
+.reveal-d2 { transition-delay: 0.16s; }
+.reveal-d3 { transition-delay: 0.24s; }
+.reveal-d4 { transition-delay: 0.32s; }
+.reveal-d5 { transition-delay: 0.4s; }
+.reveal-d6 { transition-delay: 0.48s; }
+.reveal-d7 { transition-delay: 0.56s; }
+.reveal-d8 { transition-delay: 0.64s; }
+.reveal-d9 { transition-delay: 0.72s; }
 
 .hero-animate {
   opacity: 0;
@@ -348,14 +339,14 @@ textarea:focus::placeholder {
 }
 
 /* ============================================
-   Полностью скрытый скроллбар (прокрутка работает)
+   Полностью скрытый скроллбар
    ============================================ */
 .no-scrollbar {
-  scrollbar-width: none;         /* Firefox */
-  -ms-overflow-style: none;      /* IE, Edge legacy */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .no-scrollbar::-webkit-scrollbar {
-  display: none;                 /* Chrome, Safari, Edge (Chromium) */
+  display: none;
   width: 0;
   height: 0;
 }
@@ -393,7 +384,6 @@ textarea:focus::placeholder {
   }
 }
 
-/* Планшет: 481–767px — уплотняем стили */
 @media (min-width: 481px) and (max-width: 767px) {
   :root, .dark {
     --section-padding: 72px;
@@ -417,9 +407,32 @@ textarea:focus::placeholder {
   }
 }
 
-/* Стилизуем контент внутри редактора */
+/* ============================================
+   Редактор Tiptap
+   ============================================ */
 .tiptap {
   @apply prose prose-sm sm:prose-base lg:prose-lg dark:prose-invert max-w-none focus:outline-none;
+}
+
+/*
+ * Выделение в редакторе.
+ *
+ * ВАЖНО: мы НЕ переопределяем ::selection с !important внутри .ProseMirror,
+ * потому что ProseMirror использует класс .ProseMirror-hideselection,
+ * чтобы скрыть нативное выделение при выделении целых узлов (списки,
+ * картинки и т.д.). Если форсировать фон через !important, текст станет
+ * невидимым (фон прозрачный от ProseMirror, цвет текста — наш контрастный).
+ *
+ * Глобальное ::selection выше уже применяется к тексту внутри редактора,
+ * потому что ProseMirror не блокирует его для обычного выделения мышью.
+ * Для расширения Selection (выделение после потери фокуса) стилизуем
+ * класс .selection отдельно.
+ */
+
+/* Расширение Selection: выделение после потери фокуса редактором */
+.selection {
+  background-color: var(--selection-bg) !important;
+  color: var(--selection-color) !important;
 }
 
 /* Опционально: стили для страницы просмотра поста (блога) */
