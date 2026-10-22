@@ -416,26 +416,27 @@ textarea:focus::placeholder {
 
 /*
  * Выделение в редакторе.
- *
- * ВАЖНО: мы НЕ переопределяем ::selection с !important внутри .ProseMirror,
- * потому что ProseMirror использует класс .ProseMirror-hideselection,
- * чтобы скрыть нативное выделение при выделении целых узлов (списки,
- * картинки и т.д.). Если форсировать фон через !important, текст станет
- * невидимым (фон прозрачный от ProseMirror, цвет текста — наш контрастный).
- *
- * Глобальное ::selection выше уже применяется к тексту внутри редактора,
- * потому что ProseMirror не блокирует его для обычного выделения мышью.
- * Для расширения Selection (выделение после потери фокуса) стилизуем
- * класс .selection отдельно.
+ * Специфичность (0,3,0) — та же, что была у правила из simple-editor.scss,
+ * которое мы удалили. Это гарантирует, что наши цвета применятся.
+ * Условие :not(.ProseMirror-hideselection) не даёт тексту исчезнуть,
+ * когда ProseMirror скрывает фон при выделении целых узлов (списки, картинки).
  */
-
-/* Расширение Selection: выделение после потери фокуса редактором */
-.selection {
+.tiptap.ProseMirror:not(.readonly):not(.ProseMirror-hideselection) ::selection {
   background-color: var(--selection-bg) !important;
   color: var(--selection-color) !important;
 }
 
-/* Опционально: стили для страницы просмотра поста (блога) */
-.post-content {
-  @apply prose prose-lg dark:prose-invert max-w-none;
+.tiptap.ProseMirror:not(.readonly):not(.ProseMirror-hideselection) ::-moz-selection {
+  background-color: var(--selection-bg) !important;
+  color: var(--selection-color) !important;
+}
+
+/*
+ * Расширение Selection из @tiptap/extensions добавляет класс .selection
+ * к выделенному тексту после потери фокуса редактором.
+ * Стилизуем отдельно, потому что нативное ::selection здесь не работает.
+ */
+.selection {
+  background-color: var(--selection-bg) !important;
+  color: var(--selection-color) !important;
 }
