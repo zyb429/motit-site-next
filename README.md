@@ -4,9 +4,9 @@
 
 ## Стек
 
-- **Next.js 16.4.2** — App Router, Turbopack (dev) / Webpack (build), React 19.3.1
+- **Next.js 16.4.2** — App Router, Turbopack (dev на хосте) / Webpack (build и dev в Docker), React 19.3.1
 - **TypeScript 5.9.3**
-- **MySQL 8** + **Prisma 7.10.1** (`prisma-client-js`, `@prisma/client`, `@prisma/adapter-mariadb`)
+- **MySQL 8** + **Prisma 6.19.0** (`prisma-client-js`, `@prisma/client`, `@prisma/adapter-mariadb`)
 - **Auth.js** (`next-auth@5.0.0-beta.32`, `@auth/core@0.41.3`) — Credentials provider
 - **MinIO / S3** — медиа (`@aws-sdk/client-s3@3`, `@aws-sdk/s3-request-presigner`)
 - **Redis 7** — pub/sub и presence в чатах (`ioredis@6`)
@@ -52,7 +52,7 @@ motit-site-next/ ← корень монорепы
 
 ### Вариант A — всё в Docker (проще всего)
 
-```
+```bash
 cp motit-site-next/.env.example motit-site-next/.env
 # отредактировать .env при необходимости
 
@@ -62,7 +62,7 @@ docker compose --profile prod up -d
 docker compose exec app npx prisma db seed
 
 # Dev (hot-reload)
-docker compose --profile dev up -d
+docker compose --profile dev watch
 docker compose exec app-dev npx prisma db seed
 ```
 
@@ -88,18 +88,18 @@ docker compose exec app-dev npx prisma db seed
 
 **Команда контейнера `ws`:**
 
-```
+```bash
 npx tsx server.ts
 ```
 
 `NODE_ENV` по профилям:
 - `app` (профиль `prod`): `production` + `npm run build && npm run start`
-- `app-dev` (профиль `dev`): `development` + `npm run dev:turbopack`
+- `app-dev` (профиль `dev`): `development` + `npm run dev:webpack`
 - `ws`: `development` (WS-сервер не зависит от production build)
 
 После старта (контейнер app должен быть healthy):
 
-```
+```bash
 docker compose exec app npx prisma db seed
 ```
 
@@ -115,7 +115,7 @@ docker compose exec app npx prisma db seed
 
 Остановить:
 
-```
+```bash
 docker compose down           # данные сохранятся
 docker compose down -v        # БД обнулится
 ```
@@ -124,14 +124,14 @@ docker compose down -v        # БД обнулится
 
 Для быстрого hot-reload и отладки в IDE.
 
-```
+```bash
 cd ~/Projects/motit-site-next
 docker compose up -d mysql redis minio minio-init
 ```
 
 Затем в отдельном терминале:
 
-```
+```bash
 cd motit-site-next
 npm install
 npm run dev:turbopack          # Next.js на :3000
@@ -150,7 +150,7 @@ npm run ws                     # WS на :3001 (в отдельном терми
 
 Или одной командой (нужен установленный **Bun**):
 
-```
+```bash
 npm run dev:all
 ```
 
@@ -165,11 +165,45 @@ npm run dev:all
 | MinIO API (S3) | 9000 |
 | MinIO Console | 9001 |
 
+## Hot-reload в Docker (dev-профиль)
+
+В dev-профиле (app-dev) используется docker compose watch + polling, чтобы не пересобирать контейнер при изменении CSS или JS.
+
+Что настроено в `docker-compose.yml`:
+
+```yml
+app-dev:
+  environment:
+    WATCHPACK_POLLING: "true"
+    CHOKIDAR_USEPOLLING: "true"
+  develop:
+    watch:
+      - action: sync
+        path: ./motit-site-next
+        target: /app
+        ignore:
+          - node_modules/
+          - .next/
+          - generated/
+      - action: rebuild
+        path: ./motit-site-next/package.json
+```
+Почему Webpack, а не Turbopack: Turbopack в Next.js 16 внутри Docker на Windows не подхватывает изменения файлов даже с polling. Для dev-профиля в контейнере используется `npm run dev:webpack` (Webpack), который корректно работает с `WATCHPACK_POLLING`.
+
+Как запускать:
+```bash
+docker compose --profile dev watch
+```
+
+При сохранении `globals.css` или любого `.tsx` файла Compose синхронизирует его в /app, Webpack обнаруживает изменение и обновляет страницу. Если меняется `package.json`, Compose пересобирает образ.
+
+> Для запуска на хосте (Вариант B) polling не нужен — используйте `npm run dev:turbopack`.
+
 ## Переменные окружения
 
 Скопируйте шаблон:
 
-```
+```bash
 cp motit-site-next/.env.example motit-site-next/.env
 ```
 
@@ -201,14 +235,14 @@ cp motit-site-next/.env.example motit-site-next/.env
 **env_file и переопределения:** сервисы `app`, `app-dev` и `ws` читают `./motit-site-next/.env` через `env_file`. Дополнительно в `environment` переопределяются:
 
 - `app` (prod): `DATABASE_URL`, `SHADOW_DATABASE_URL`, `REDIS_URL`, `S3_ENDPOINT`, `S3_PROXY_TARGET` — на имена docker-сервисов (`mysql`, `redis`, `minio`), плюс `NODE_ENV: production`, `RAYON_NUM_THREADS: "4"`, `NODE_OPTIONS: "--max-old-space-size=3072"`;
-- `app-dev` (dev): то же + `NODE_ENV: development`;
+- `app-dev` (dev): то же + `NODE_ENV: development`, `WATCHPACK_POLLING: "true"`, `CHOKIDAR_USEPOLLING: "true"`;
 - `ws`: `REDIS_URL`, `WS_PORT`, `NODE_ENV: development`.
 
 **HESK_API_TOKEN:** нужно заполнить вручную — получить токен в админ-панели HESK. Без него интеграция Help Desk не заработает.
 
-**Про shadow database:** SHADOW_DATABASE_URL используется только командой `prisma migrate dev` (запускается с хоста) и объявляется в `prisma.config.ts` (`datasource.shadowDatabaseUrl`). В `prisma/schema.prisma` его **нет** — Prisma 7 запрещает `url`/`shadowDatabaseUrl` в схеме. В контейнере `app` выполняется `prisma migrate deploy`, которому shadow database не нужна. База `motit_site_shadow` автоматически не создаётся — если планируете `migrate dev`, создайте её вручную и дайте `motit_user` права:
+**Про shadow database:** `SHADOW_DATABASE_URL` используется только командой `prisma migrate dev` (запускается с хоста). В `prisma/schema.prisma` `url` указывается в `datasource`, `shadowDatabaseUrl` в схеме не нужен. `prisma.config.ts` в проекте отсутствует — проект на **Prisma 6.19.0**. В контейнере `app` выполняется `prisma migrate deploy`, которому shadow database не нужна. База `motit_site_shadow` автоматически не создаётся — если планируете `migrate dev`, создайте её вручную и дайте `motit_user` права:
 
-```
+```bash
 docker compose exec mysql mysql -uroot -proot_local_dev -e \
   "CREATE DATABASE IF NOT EXISTS motit_site_shadow; \
    GRANT ALL PRIVILEGES ON motit_site_shadow.* TO 'motit_user'@'%'; \
@@ -359,7 +393,7 @@ src/
 
 ⚠️ В продакшене сразу после первого запуска смените пароль admin через админку или переопределите seed так, чтобы он брал email/пароль из переменных окружения:
 
-```
+```ts
 const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@local.dev";
 const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 ```
@@ -376,7 +410,7 @@ const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 
 Для исправления Content-Type у старых файлов:
 
-```
+```bash
 cd motit-site-next
 npx tsx scripts/fix-content-type.ts
 ```
@@ -426,38 +460,26 @@ curl -s -H "Authorization: Bearer $HEALTH_TOKEN" http://localhost:3000/api/healt
 
 ## Особенности реализации
 
-### Prisma v7 + Next.js
+### Prisma v6 + кастомный output
 
-Используется генератор `prisma-client-js` с кастомным output — клиент генерируется в `generated/prisma`. Версии — **`prisma` и `@prisma/client` 7.10.1**, плюс **`@prisma/adapter-mariadb` 7.10.1** (обязательный driver adapter для MySQL в Prisma 7).
+Используется генератор `prisma-client-js` с кастомным output — клиент генерируется в `generated/prisma`. Версии — **`prisma` и `@prisma/client` 6.19.0**, плюс **`@prisma/adapter-mariadb` 6.19.0** (обязательный driver adapter для MySQL).
 
 В `prisma/schema.prisma`:
 
+```prisma
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
+```
 
-**Важно:** в Prisma 7 `url` и `shadowDatabaseUrl` **нельзя** указывать в `schema.prisma` — они перенесены в `prisma.config.ts`:
-
-```ts
-// prisma.config.ts
-import { defineConfig } from "prisma/config";
-
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-    seed: "npx tsx prisma/seed.ts",
-  },
-  datasource: {
-    url: process.env.DATABASE_URL!,
-    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
-  },
-});
+**Важно:** в Prisma 6.19.0 `url` указывается в `schema.prisma`. `prisma.config.ts` в проекте удалён — в версии 6 он не нужен, и его наличие может конфликтовать с **datasource** в схеме. Импорт клиента в коде — **только из** `@generated/prisma` (или относительного пути к `generated/prisma`), не из `@prisma/client`. При кастомном `output` пакет `@prisma/client` не содержит сгенерированных моделей, и импорт из него даёт ошибки `has no exported member`:
 
 Импорт в коде:
 
@@ -469,7 +491,22 @@ import { PrismaClient, Prisma } from "@generated/prisma";
 // import { PrismaClient, Prisma } from "../../generated/prisma";
 ```
 
-История: проект был на Prisma 6 (prisma-client-js, без output), затем мигрировал на **Prisma 7 + driver adapter `@prisma/adapter-mariadb`** с кастомным output `generated/prisma`. Причина миграции — актуальная версия Prisma и прямой контроль над драйвером через adapter. Prisma 7 + Next.js 16 + Turbopack работает стабильно после настройки `prisma.config.ts` (url/shadowDatabaseUrl в `datasource`) и `src/lib/prisma.ts` (adapter).
+`src/lib/prisma.ts` использует драйвер-адаптер:
+```ts
+import { PrismaClient } from "@generated/prisma";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+
+const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
+
+export const prisma = new PrismaClient({
+  adapter,
+  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+});
+```
+
+`previewFeatures = ["driverAdapters"]` в `schema.prisma` включает поддержку адаптера в Prisma 6.19.0. В логах будет предупреждение, что фича устарела, но она не мешает работе.
+
+История: проект был на Prisma 7, но в версии 7.2.0 в Docker обнаружена регрессия — `prisma migrate deploy` не читает `datasource.url` из `prisma.config.ts`, даже если `console.log(process.env.DATABASE_URL)` выводит правильное значение. Официально помечено как «No workaround found». Откат на 6.19.0 обошёл проблему. Если в будущем планируется возврат на 7.x — сначала проверить, исправлена ли регрессия.
 
 ### MinIO: community-образы
 
@@ -480,7 +517,7 @@ import { PrismaClient, Prisma } from "@generated/prisma";
 
 `minio-init` выполняет:
 
-```
+```bash
 mc alias set local http://minio:9000 minioadmin minioadmin;
 mc mb --ignore-existing local/motit-uploads;
 mc anonymous set download local/motit-uploads;
@@ -503,7 +540,8 @@ Healthcheck — `mysqladmin ping -h 127.0.0.1 -uroot -proot_local_dev`, `interva
 ### Docker: volumes, лимиты, зависимости
 
 - `Dockerfile` (образ `node:22-alpine`):
-  - `COPY package.json package-lock.json ./` → `RUN npm ci`;
+  - `# syntax=docker/dockerfile:1` — директива для поддержки cache mounts;
+  - `COPY package.json package-lock.json ./` → `RUN --mount=type=cache,target=/root/.npm npm ci`;
   - `EXPOSE 3000 3001`;
   - `CMD ["npm", "run", "dev:turbopack"]` (в compose `app` переопределяет `command`; `ws` использует `npx tsx server.ts`).
 - **Prod-профиль `app`**: bind mount **не используется** — код внутри образа (`COPY . .`). Volumes только для persistence (`mysql_data`, `minio_data`, `redis_data`).
@@ -514,6 +552,12 @@ Healthcheck — `mysqladmin ping -h 127.0.0.1 -uroot -proot_local_dev`, `interva
 - `RAYON_NUM_THREADS: "4"` в `app.environment` — ограничение параллелизма Rust-частей (например, SWC).
 - `restart: unless-stopped` у всех сервисов (`mysql`, `minio`, `redis`, `app`, `ws`); у `minio-init` — не нужен (one-shot).
 
+Кэш `npm ci`: `RUN --mount=type=cache,target=/root/.npm npm ci` сохраняет скачанные пакеты между сборками. Первая сборка с новым кэшем такая же по времени, последующие — заметно быстрее. Если меняется `package-lock.json`, кэш переиспользуется для уже скачанных пакетов, скачиваются только новые.
+
+### Выделение текста в редакторе
+
+Цвет выделения текста настраивается в `globals.css` через переменные `--selection-bg` и `--selection-color` для светлой и тёмной темы. Для редактора Tiptap используется глобальное `::selection` (работает для обычного выделения мышью) и `.selection` (для расширения `Selection`, когда редактор теряет фокус). Переопределять `::selection` внутри `.ProseMirror` с `!important` не **нужно** — это ломает выделение списков, потому что ProseMirror скрывает фон через класс `ProseMirror-hideselection`, и текст становится невидимым.
+
 ### ⚠️ Известные проблемы
 
 1. **`NEXT_PUBLIC_SITE_URL` задублирован в текущем `.env.example`** — оставить одну строку (см. исправленный шаблон выше).
@@ -521,12 +565,13 @@ Healthcheck — `mysqladmin ping -h 127.0.0.1 -uroot -proot_local_dev`, `interva
 3. **`concurrently@10` требует Node `>=22`**, а Next.js 16 — `>=20.9`. Если нужен Node 20, придётся откатить `concurrently` до 9.x или запускать `ws` и `dev` раздельно.
 4. **`dev:all` вызывает `bun run ws` / `bun run dev`** — на машине без Bun скрипт упадёт; используйте `npm run ws` и `npm run dev` раздельно.
 5. **`experimental.devMemoryThresholdRestart` не поддерживается** в Next.js 16 — в логах `⨯ devMemoryThresholdRestart`. Не добавлять в `next.config.ts` (игнорируется). Для стабильности — prod-профиль (`next start`), а не dev.
+6. **Turbopack в Docker на Windows не подхватывает изменения файлов** — для dev-профиля в контейнере используется `npm run dev:webpack` с `WATCHPACK_POLLING=true`. На хосте (Вариант B) можно использовать `npm run dev:turbopack`.
 
 ### Пароли в docker-compose.yml
 
 В `docker-compose.yml` захардкожены:
 
-```
+```yml
 MYSQL_ROOT_PASSWORD: root_local_dev
 MYSQL_PASSWORD: MotitSecure2024! (и тот же пароль в DATABASE_URL / SHADOW_DATABASE_URL для app)
 MINIO_ROOT_USER: minioadmin
@@ -555,7 +600,7 @@ MINIO_ROOT_PASSWORD: minioadmin
 
 Замените MinIO на реальный S3 (AWS, Cloudflare R2, Yandex Object Storage) в прод-`.env`:
 
-```
+```dotenv
 S3_ENDPOINT="https://s3.amazonaws.com"
 S3_REGION="eu-central-1"
 S3_BUCKET="motit-uploads"
@@ -583,7 +628,7 @@ images: {
 
 ### 3. .env на проде
 
-```
+```dotenv
 DATABASE_URL="mysql://user:pass@prod-host:3306/motit_site"
 AUTH_SECRET="<openssl rand -base64 32>"
 AUTH_URL="https://motit.by"
@@ -597,7 +642,7 @@ HEALTH_DETAILS="0"
 
 В проде — не dev, а production-сборка:
 
-```
+```bash
 npm ci
 npm run build
 npm run start
@@ -605,13 +650,13 @@ npm run start
 
 В `docker-compose.yml` **уже есть** prod-профиль `app` с правильным `command` и `NODE_ENV: production`. Достаточно:
 
-```
+```bash
 docker compose --profile prod up -d
 ```
 
 ⚠️ Важно: `prisma db seed` в проде создаст пользователя `admin@local.dev` с паролем `admin123`. Сразу после первого запуска смените пароль через админку или переопределите seed так, чтобы он брал email/пароль из переменных окружения:
 
-```
+```tsx
 const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@local.dev";
 const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 ```
