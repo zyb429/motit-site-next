@@ -18,16 +18,27 @@ import { Highlight } from "@tiptap/extension-highlight";
 import { Subscript } from "@tiptap/extension-subscript";
 import { Superscript } from "@tiptap/extension-superscript";
 import "./post-content.scss";
-import { CustomBlockquote } from "@/components/tiptap-node/blockquote-node/blockquote-extension"
-import { TableKit } from "@tiptap/extension-table"
+import { CustomBlockquote } from "@/components/tiptap-node/blockquote-node/blockquote-extension";
+import { TableKit } from "@tiptap/extension-table";
+import * as cheerio from "cheerio";
+import { common, createLowlight } from "lowlight";
+import { toHtml } from "hast-util-to-html";
+import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
+
+const lowlight = createLowlight(common);
 
 const TIPTAP_EXTENSIONS = [
   StarterKit.configure({
-    blockquote: false, // отключаем стандартный blockquote
+    blockquote: false,
+    codeBlock: false, // ← отключаем стандартный
     link: {
       openOnClick: false,
       HTMLAttributes: { class: "text-[#2dd4bf] hover:text-[#14b8a6]" },
     },
+  }),
+  CodeBlockLowlight.configure({
+    lowlight,
+    defaultLanguage: "plaintext",
   }),
   CustomBlockquote,
   TableKit.configure({ table: { resizable: true } }),
@@ -39,7 +50,7 @@ const TIPTAP_EXTENSIONS = [
   Highlight.configure({ multicolor: true }),
   Superscript,
   Subscript,
-]
+];
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -94,17 +105,56 @@ export async function generateMetadata({
   }
 }
 
+function highlightCodeBlocks(html: string): string {
+  if (!html) return html;
+  const $ = cheerio.load(html);
+
+  $("pre").each((_, pre) => {
+    const $pre = $(pre);
+    const $code = $pre.find("code");
+    if (!$code.length) return;
+
+    const className = $code.attr("class") || "";
+    const lang = className.replace("language-", "").split(" ")[0] || "plaintext";
+
+    // Очищаем от невидимых символов, которые JetBrains Mono рендерит как ‘
+    const code = $code
+      .text()
+      .replace(/\u200B/g, "")
+      .replace(/\u2018/g, "'")
+      .replace(/\u2019/g, "'")
+      .replace(/\u201C/g, '"')
+      .replace(/\u201D/g, '"');
+
+    try {
+      const result = lowlight.highlight(lang, code);
+      $code.html(toHtml(result));
+      $code.addClass("hljs");
+    } catch {
+      $code.text(code);
+      $code.addClass("hljs");
+    }
+
+    const $wrapper = $('<div class="code-block-wrapper"></div>');
+    const $header = $(
+      `<div class="code-block-header"><span class="code-block-lang">${lang}</span></div>`
+    );
+    $pre.wrap($wrapper);
+    $pre.before($header);
+  });
+
+  return $.html();
+}
+
 function renderTiptapContent(raw: unknown): string {
   if (!raw) return "";
 
   try {
     let json: JSONContent | null = null;
 
-    // Если контент пришёл строкой — парсим
     if (typeof raw === "string") {
       const trimmed = raw.trim();
       if (!trimmed) return "";
-      // Если это уже HTML-строка (старые посты со Strapi), вернём как есть
       if (trimmed.startsWith("<")) return trimmed;
       try {
         json = JSON.parse(trimmed);
@@ -117,7 +167,6 @@ function renderTiptapContent(raw: unknown): string {
 
     if (!json) return "";
 
-    // Slate-массивы Tiptap не понимает — пропускаем, чтобы не упасть
     if (Array.isArray(json)) {
       console.warn(
         "[blog] Обнаружен контент в формате Slate — рендеринг пропущен. " +
@@ -126,12 +175,11 @@ function renderTiptapContent(raw: unknown): string {
       return "";
     }
 
-    // Простейшая валидация: у Tiptap-документа должен быть type "doc"
     if (json.type !== "doc" && !json.content) {
       return "";
     }
 
-    return generateHTML(json, TIPTAP_EXTENSIONS);
+    return highlightCodeBlocks(generateHTML(json, TIPTAP_EXTENSIONS));
   } catch (error) {
     console.error("[blog] Failed to render Tiptap content:", error);
     return "";

@@ -16,13 +16,14 @@ import { StarterKit } from "@tiptap/starter-kit"
 import Image from "@tiptap/extension-image"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
 import { TextAlign } from "@tiptap/extension-text-align"
-import { Typography } from "@tiptap/extension-typography"
 import { Highlight } from "@tiptap/extension-highlight"
 import { Subscript } from "@tiptap/extension-subscript"
 import { Superscript } from "@tiptap/extension-superscript"
 import { FindAndReplace } from "@tiptap/extension-find-and-replace"
 import { Selection } from "@tiptap/extensions"
 import { TableKit } from "@tiptap/extension-table"
+import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
+import { common, createLowlight } from "lowlight"
 
 // --- UI Primitives ---
 import { Button } from "@/components/tiptap-ui-primitive/button"
@@ -39,6 +40,7 @@ import { HorizontalRule } from "@/components/tiptap-node/horizontal-rule-node/ho
 import { TaskItemNode } from "@/components/tiptap-node/task-item/task-item-node"
 import { ImageNode } from "@/components/tiptap-node/image-node/image-node"
 import { CustomBlockquote } from "@/components/tiptap-node/blockquote-node/blockquote-extension"
+import { CodeBlockNode } from "@/components/tiptap-node/code-block-node/code-block-node"
 import "@/components/tiptap-node/blockquote-node/blockquote-node.scss"
 import "@/components/tiptap-node/code-block-node/code-block-node.scss"
 import "@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node.scss"
@@ -53,6 +55,7 @@ import { ImageUploadButton } from "@/components/tiptap-ui/image-upload-button"
 import { ListDropdownMenu } from "@/components/tiptap-ui/list-dropdown-menu"
 import { BlockquoteButton } from "@/components/tiptap-ui/blockquote-button"
 import { CodeBlockButton } from "@/components/tiptap-ui/code-block-button"
+import { CodeBlockLanguageSelector } from "@/components/tiptap-ui/code-block-language-selector"
 import {
   ColorHighlightPopover,
   ColorHighlightPopoverContent,
@@ -91,6 +94,12 @@ const SEARCH_AND_REPLACE_SCROLL_OPTIONS: ScrollIntoViewOptions = {
   block: "center",
 }
 
+const lowlight = createLowlight(common)
+
+const THEME_STORAGE_KEY = "simple-editor-theme"
+
+type EditorTheme = "light" | "dark"
+
 const MainToolbarContent = ({
   onHighlighterClick,
   onLinkClick,
@@ -98,6 +107,9 @@ const MainToolbarContent = ({
   isSearchAndReplaceOpen,
   searchAndReplaceButtonRef,
   isMobile,
+  isEditorDark,
+  onToggleEditorTheme,
+  editorReady,
 }: {
   onHighlighterClick: () => void
   onLinkClick: () => void
@@ -105,6 +117,9 @@ const MainToolbarContent = ({
   isSearchAndReplaceOpen: boolean
   searchAndReplaceButtonRef: React.RefObject<HTMLButtonElement | null>
   isMobile: boolean
+  isEditorDark: boolean
+  onToggleEditorTheme: () => void
+  editorReady: boolean
 }) => {
   const { editor } = useCurrentEditor()
 
@@ -127,6 +142,7 @@ const MainToolbarContent = ({
         />
         <BlockquoteButton />
         <CodeBlockButton />
+        <CodeBlockLanguageSelector />
         <Button
           type="button"
           variant="ghost"
@@ -216,7 +232,11 @@ const MainToolbarContent = ({
           data-active-state={isSearchAndReplaceOpen ? "on" : "off"}
           onClick={onSearchAndReplaceClick}
         />
-        <ThemeToggle />
+        <ThemeToggle
+          isDark={isEditorDark}
+          onToggle={onToggleEditorTheme}
+          disabled={!editorReady}
+        />
       </ToolbarGroup>
     </>
   )
@@ -270,7 +290,37 @@ export function SimpleEditor({
   const [isSearchAndReplaceOpen, setIsSearchAndReplaceOpen] = useState(false)
   const searchAndReplaceButtonRef = useRef<HTMLButtonElement>(null)
 
-  // Ссылки на editor и linkPopover для handleClick
+  // ✅ Всегда стартуем с "dark" (как на сервере, так и на клиенте)
+  const [editorTheme, setEditorTheme] = useState<EditorTheme>("dark")
+  const [isThemeInitialized, setIsThemeInitialized] = useState(false)
+  const [isSwitchingTheme, setIsSwitchingTheme] = useState(false)
+  const isEditorDark = editorTheme === "dark"
+
+  // ✅ Читаем сохраненную тему из localStorage после монтирования
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(THEME_STORAGE_KEY)
+      if (stored === "light" || stored === "dark") {
+        setEditorTheme(stored)
+      }
+    } catch (e) {}
+    setIsThemeInitialized(true)
+  }, [])
+
+  const toggleEditorTheme = useCallback(() => {
+    setIsSwitchingTheme(true)
+    setEditorTheme((prev) => {
+      const next: EditorTheme = prev === "dark" ? "light" : "dark"
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, next)
+      } catch (e) {}
+      return next
+    })
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setIsSwitchingTheme(false))
+    })
+  }, [])
+
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
   const linkPopoverRef = useRef<ReturnType<typeof useLinkPopoverFloating> | null>(null)
 
@@ -282,6 +332,7 @@ export function SimpleEditor({
         autocomplete: "off",
         autocorrect: "off",
         autocapitalize: "off",
+        spellcheck: "false",
         "aria-label": "Main content area, start typing to enter text.",
         class: "simple-editor",
       },
@@ -290,7 +341,6 @@ export function SimpleEditor({
         const linkElement = target.closest("a")
 
         if (linkElement && view.dom.contains(linkElement)) {
-          // Откладываем, чтобы Tiptap успел обновить selection
           setTimeout(() => {
             const ed = editorRef.current
             const lp = linkPopoverRef.current
@@ -304,15 +354,41 @@ export function SimpleEditor({
 
         return false
       },
+      handleTextInput: (view, from, to, text) => {
+        const { $from } = view.state.selection
+        if ($from.parent.type.name === "codeBlock") {
+          const fixed = text
+            .replace(/[“”]/g, '"')
+            .replace(/[‘’]/g, "'")
+            .replace(/[–—]/g, "-")
+            .replace(/…/g, "...")
+          if (fixed !== text) {
+            view.dispatch(view.state.tr.insertText(fixed, from, to))
+            return true
+          }
+        }
+        return false
+      },
     },
     extensions: [
       StarterKit.configure({
         horizontalRule: false,
         blockquote: false,
+        codeBlock: false,
         link: {
           openOnClick: false,
           enableClickSelection: true,
         },
+      }),
+      CodeBlockLowlight.extend({
+        addNodeView() {
+          return ReactNodeViewRenderer(CodeBlockNode)
+        },
+      }).configure({
+        lowlight,
+        defaultLanguage: "plaintext",
+        enableTabIndentation: true,
+        tabSize: 2,
       }),
       CustomBlockquote,
       TableKit.configure({
@@ -332,7 +408,6 @@ export function SimpleEditor({
           return ReactNodeViewRenderer(ImageNode)
         },
       }),
-      Typography,
       Superscript,
       Subscript,
       Selection,
@@ -356,7 +431,45 @@ export function SimpleEditor({
 
   const linkPopover = useLinkPopoverFloating({ editor })
 
-  // Сохраняем актуальные ссылки
+  useEffect(() => {
+    if (!editor) return
+
+    const cleanCodeBlocks = () => {
+      let needsUpdate = false
+      const { tr } = editor.state
+
+      editor.state.doc.descendants((node, pos) => {
+        if (node.type.name === "codeBlock" && node.textContent) {
+          const original = node.textContent
+          const cleaned = original
+            .replace(/\u200B/g, "")
+            .replace(/\u2018/g, "'")
+            .replace(/\u2019/g, "'")
+            .replace(/\u201C/g, '"')
+            .replace(/\u201D/g, '"')
+
+          if (cleaned !== original) {
+            const start = pos + 1
+            const end = pos + node.nodeSize - 1
+            tr.insertText(cleaned, start, end)
+            needsUpdate = true
+          }
+        }
+      })
+
+      if (needsUpdate) {
+        editor.view.dispatch(tr)
+      }
+    }
+
+    editor.on("update", cleanCodeBlocks)
+    cleanCodeBlocks()
+
+    return () => {
+      editor.off("update", cleanCodeBlocks)
+    }
+  }, [editor])
+
   useEffect(() => {
     editorRef.current = editor
   }, [editor])
@@ -411,8 +524,26 @@ export function SimpleEditor({
     linkPopover.open()
   }, [linkPopover])
 
+  const wrapperClassName = [
+    "simple-editor-wrapper",
+    isEditorDark ? "dark" : "light",
+    isSwitchingTheme ? "is-switching-theme" : "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+
+  // ✅ Пока тема не инициализирована, рендерим заглушку с жестко заданным фоном
+  if (!isThemeInitialized) {
+    return (
+      <div
+        className="simple-editor-wrapper dark"
+        style={{ minHeight: "400px", backgroundColor: "#0b1f26" }}
+      />
+    )
+  }
+
   return (
-    <div className="simple-editor-wrapper">
+    <div className={wrapperClassName}>
       <EditorContext.Provider value={{ editor }}>
         <Toolbar variant="fixed" className="simple-editor-toolbar">
           {mobileView === "main" ? (
@@ -423,6 +554,9 @@ export function SimpleEditor({
               isSearchAndReplaceOpen={isSearchAndReplaceOpen}
               searchAndReplaceButtonRef={searchAndReplaceButtonRef}
               isMobile={isMobile}
+              isEditorDark={isEditorDark}
+              onToggleEditorTheme={toggleEditorTheme}
+              editorReady={!!editor}
             />
           ) : (
             <MobileToolbarContent
@@ -432,25 +566,29 @@ export function SimpleEditor({
           )}
         </Toolbar>
 
-        {/* Панель управления таблицей */}
         <TableControls />
 
-        <SearchAndReplace
-          className="simple-editor-search-and-replace"
-          open={isSearchAndReplaceOpen}
-          onOpen={openSearchAndReplace}
-          onClose={closeSearchAndReplace}
-          scrollIntoViewOptions={SEARCH_AND_REPLACE_SCROLL_OPTIONS}
-        />
+        {/* Оборачиваем floating-компоненты в .dark/.light, чтобы их стили
+            тоже реагировали на локальную тему редактора */}
+        <div className={isEditorDark ? "dark" : "light"}>
+          <SearchAndReplace
+            className="simple-editor-search-and-replace"
+            open={isSearchAndReplaceOpen}
+            onOpen={openSearchAndReplace}
+            onClose={closeSearchAndReplace}
+            scrollIntoViewOptions={SEARCH_AND_REPLACE_SCROLL_OPTIONS}
+          />
 
-        {linkPopover.isOpen && (
-          <div
-            ref={linkPopover.setFloatingRef}
-            style={{ ...linkPopover.floatingStyles, zIndex: 50 }}
-          >
-            <LinkContent editor={editor} />
-          </div>
-        )}
+          {linkPopover.isOpen && (
+            <div
+              ref={linkPopover.setFloatingRef}
+              className={isEditorDark ? "dark" : "light"}
+              style={{ ...linkPopover.floatingStyles, zIndex: 50 }}
+            >
+              <LinkContent editor={editor} />
+            </div>
+          )}
+        </div>
 
         <EditorContent
           editor={editor}

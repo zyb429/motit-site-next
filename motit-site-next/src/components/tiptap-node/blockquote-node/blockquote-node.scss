@@ -1,37 +1,80 @@
 .tiptap.ProseMirror {
-  --blockquote-bg-color: var(--tt-gray-light-900);
+  --blockquote-border-color: var(--accent, #2dd4bf);
+  --blockquote-text-color: #475569;
+  --blockquote-author-color: #64748b;
 
   .dark & {
-    --blockquote-bg-color: var(--tt-gray-dark-900);
+    --blockquote-border-color: var(--accent, #2dd4bf);
+    --blockquote-text-color: #cbd5e1;
+    --blockquote-author-color: #94a3b8;
   }
 }
 
 /* =====================
      BLOCKQUOTE
      ===================== */
-.tiptap.ProseMirror {
-  blockquote {
-    position: relative;
-    padding-left: 1em;
-    padding-top: 0.375em;
-    padding-bottom: 0.375em;
-    margin: 1.5rem 0;
+.tiptap.ProseMirror .blockquote-wrapper {
+  position: relative;
+  margin: 1.5rem 0;
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  background: transparent !important;
+  border: none !important;
+  border-left: 3px solid var(--blockquote-border-color) !important;
+  border-radius: 0 !important;
+
+  /* Стилизуем сам контент (NodeViewContent) */
+  .blockquote-content {
+    font-style: italic;
+    color: var(--blockquote-text-color);
+    line-height: 1.6;
 
     p {
       margin-top: 0;
+      margin-bottom: 0.5rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  /* Поле автора */
+  .blockquote-author {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    font-size: 0.85em;
+    color: var(--blockquote-author-color);
+    font-style: italic;
+  }
+
+  .blockquote-author-dash {
+    opacity: 0.7;
+  }
+
+  .blockquote-author-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.85em;
+    font-style: italic;
+    outline: none;
+    padding: 0;
+
+    &::placeholder {
+      color: var(--blockquote-author-color);
+      opacity: 0.5;
+      font-style: italic;
     }
 
-    &::before,
-    &.is-empty::before {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      top: 0;
-      height: 100%;
-      width: 0.25em;
-      background-color: var(--blockquote-bg-color);
-      content: "";
-      border-radius: 0;
+    &:hover,
+    &:focus {
+      border-bottom-color: var(--blockquote-author-color);
     }
   }
 }

@@ -17,9 +17,12 @@ export const CustomBlockquote = Blockquote.extend({
   },
 
   renderHTML({ HTMLAttributes }) {
+    // Меняем "blockquote" на "div", чтобы не наследовать глобальные стили цитат
     return [
-      "blockquote",
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+      "div",
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        class: "custom-blockquote",
+      }),
       0,
     ]
   },

@@ -1,4 +1,25 @@
 /* =====================
+   ТЕМА ДЛЯ СТРАНИЦЫ ПОСТА
+   ===================== */
+.post-content {
+  --tt-codeblock-bg: #f8fafc;
+  --tt-codeblock-text: #1e293b;
+  --tt-codeblock-border: #e2e8f0;
+  --tt-inline-code-bg-color: #f1f5f9;
+  --tt-inline-code-text-color: #1e293b;
+  --tt-inline-code-border-color: #e2e8f0;
+
+  .dark & {
+    --tt-codeblock-bg: #0f172a;
+    --tt-codeblock-text: #e5e7eb;
+    --tt-codeblock-border: #334155;
+    --tt-inline-code-bg-color: #1e293b;
+    --tt-inline-code-text-color: #e5e7eb;
+    --tt-inline-code-border-color: #334155;
+  }
+}
+
+/* =====================
    TASK LIST
    ===================== */
 .post-content {
@@ -27,7 +48,7 @@
       align-items: center !important;
       padding: 0 !important;
       margin: 0.35rem 0.5rem 0 0 !important;
-      pointer-events: none; /* Отключаем клики на странице поста */
+      pointer-events: none;
     }
 
     input[type="checkbox"] {
@@ -69,27 +90,40 @@
    ===================== */
 .post-content {
   blockquote {
+    position: relative;
     border-left: 3px solid #2dd4bf;
     padding: 0.75rem 1rem;
     margin: 1.5rem 0;
     font-style: italic;
     border-radius: 0 0.5rem 0.5rem 0;
-    color: #e5e7eb;
-    background: #1f2937;
+    color: #1e293b;
+    background: #f1f5f9;
+
+    .dark & {
+      color: #e5e7eb;
+      background: #1f2937;
+    }
+
+    p:last-child:empty {
+      display: none;
+    }
 
     p:last-child {
       margin-bottom: 0;
     }
 
-    /* Автор цитаты */
     &[data-author]::after {
-      content: "— " attr(data-author);
+      content: attr(data-author);
       display: block;
       text-align: right;
       font-style: normal;
       font-size: 0.9em;
-      color: #94a3b8;
+      color: #64748b;
       margin-top: 0.5rem;
+
+      .dark & {
+        color: #94a3b8;
+      }
     }
   }
 }
@@ -105,9 +139,13 @@
 
     td,
     th {
-      border: 1px solid #475569;
+      border: 1px solid #cbd5e1;
       padding: 0.5rem 0.75rem;
       vertical-align: top;
+
+      .dark & {
+        border-color: #475569;
+      }
 
       p {
         margin: 0;
@@ -115,9 +153,103 @@
     }
 
     th {
-      background: #1e293b;
+      background: #f1f5f9;
       font-weight: 600;
       text-align: left;
+
+      .dark & {
+        background: #1e293b;
+        color: #e5e7eb;
+      }
     }
   }
+}
+
+/* =====================
+   CODE BLOCK
+   ===================== */
+.post-content {
+  .code-block-wrapper {
+    margin: 1.5rem 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: var(--tt-codeblock-bg) !important;
+    border: 1px solid var(--tt-codeblock-border) !important;
+
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      padding: 0.4rem 1rem;
+      background: rgba(0, 0, 0, 0.03) !important;
+      border-bottom: 1px solid var(--tt-codeblock-border) !important;
+
+      .dark & {
+        background: rgba(255, 255, 255, 0.05) !important;
+      }
+
+      .code-block-lang {
+        font-size: 0.7rem;
+        color: #64748b !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+
+        .dark & {
+          color: #94a3b8 !important;
+        }
+      }
+    }
+
+    pre {
+      margin: 0 !important;
+      padding: 1rem !important;
+      background: transparent !important;
+      border: none !important;
+      border-radius: 0 !important;
+      overflow-x: auto;
+
+      code {
+        display: block;
+        font-family: "JetBrains Mono NL", monospace;
+        font-size: 0.9em;
+        color: var(--tt-codeblock-text) !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        white-space: pre !important;
+      }
+    }
+  }
+}
+
+/* =====================
+   HLJS — СВЕТЛАЯ ТЕМА (для страницы поста)
+   ===================== */
+html:not(.dark) .post-content .code-block-wrapper .hljs {
+  color: #24292e !important;
+  background: transparent !important;
+}
+html:not(.dark) .post-content .code-block-wrapper .hljs-keyword {
+  color: #d73a49 !important;
+}
+html:not(.dark) .post-content .code-block-wrapper .hljs-string {
+  color: #032f62 !important;
+}
+html:not(.dark) .post-content .code-block-wrapper .hljs-number {
+  color: #005cc5 !important;
+}
+html:not(.dark) .post-content .code-block-wrapper .hljs-comment {
+  color: #6a737d !important;
+}
+html:not(.dark) .post-content .code-block-wrapper .hljs-function {
+  color: #6f42c1 !important;
+}
+html:not(.dark) .post-content .code-block-wrapper .hljs-variable {
+  color: #e36209 !important;
+}
+html:not(.dark) .post-content .code-block-wrapper .hljs-title {
+  color: #6f42c1 !important;
+}
+html:not(.dark) .post-content .code-block-wrapper .hljs-attr {
+  color: #005cc5 !important;
 }
