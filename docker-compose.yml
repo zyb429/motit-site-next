@@ -157,6 +157,8 @@ services:
       NODE_ENV: development
       RAYON_NUM_THREADS: "4"
       NODE_OPTIONS: "--max-old-space-size=3072"
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
     ports:
       - "3000:3000"
     volumes:
@@ -174,7 +176,7 @@ services:
       sh -c "
       npx prisma generate &&
       npx prisma migrate deploy &&
-      npm run dev:turbopack
+      npm run dev:webpack
       "
     healthcheck:
       test:
@@ -188,6 +190,17 @@ services:
       timeout: 30s
       retries: 5
       start_period: 240s
+    develop:
+      watch:
+        - action: sync
+          path: ./motit-site-next
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+            - generated/
+        - action: rebuild
+          path: ./motit-site-next/package.json
 
   # ============================================
   # WS (общий)
