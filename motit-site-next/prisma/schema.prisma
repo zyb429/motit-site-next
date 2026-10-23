@@ -452,6 +452,8 @@ model users {
   users_role_lnk        users_role_lnk[]
   workers               workers?
 
+  global_settings_updated GlobalSettings[] @relation("GlobalSettingsUpdatedBy")
+
   chat_pinned_messages chat_pinned_messages[]
   user_pinned_messages user_pinned_messages[]
 
@@ -710,4 +712,17 @@ model PostVersion {
 
   @@index([post_id, created_at])
   @@index([created_by_id])
+}
+
+model GlobalSettings {
+  id            Int      @id @default(autoincrement())
+  key           String   @unique(map: "idx_global_settings_key") @db.VarChar(50)
+  value         Json
+  updated_by_id Int?     @db.UnsignedInt
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+  updated_at    DateTime @updatedAt @db.Timestamp(0)
+
+  updated_by users? @relation("GlobalSettingsUpdatedBy", fields: [updated_by_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([updated_by_id])
 }

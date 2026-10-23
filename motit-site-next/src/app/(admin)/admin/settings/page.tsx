@@ -14,6 +14,9 @@ import {
   Shield,
   Database,
   Code2,
+  Layout,
+  LayoutList,
+  Home, 
 } from "lucide-react";
 
 const SECTIONS = [
@@ -64,6 +67,24 @@ const SECTIONS = [
     icon: Palette,
     title: "Внешний вид",
     desc: "Логотип, favicon, акцентный цвет",
+  },
+    {
+    href: "/admin/settings/header",
+    icon: Layout,
+    title: "Хедер",
+    desc: "Логотип, меню, кнопка CTA",
+  },
+  {
+    href: "/admin/settings/footer",
+    icon: LayoutList,
+    title: "Футер",
+    desc: "Колонки ссылок, соцсети, копирайт",
+  },
+  {
+    href: "/admin/settings/home",
+    icon: Home,
+    title: "Главная страница",
+    desc: "Hero-секция, контент, SEO",
   },
   {
     href: "/admin/settings/languages",

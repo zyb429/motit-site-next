@@ -1,19 +1,22 @@
 // src/app/(site)/layout.tsx
-import Navigation from "@/components/sections/Navigation";
-import Footer from "@/components/sections/Footer";
-import DraftModeIndicator from "@/components/DraftModeIndicator";
+import { getHeader, getFooter } from "@/lib/globals"
+import Navigation from "@/components/sections/Navigation"
+import Footer from "@/components/sections/Footer"
+import DraftModeIndicator from "@/components/DraftModeIndicator"
 
-export default function SiteLayout({
+export default async function SiteLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
+  const [header, footer] = await Promise.all([getHeader(), getFooter()])
+
   return (
     <>
-      <Navigation />
+      <Navigation data={header} />
       <main className="min-h-screen">{children}</main>
       <DraftModeIndicator />
-      <Footer />
+      <Footer data={footer} />
     </>
-  );
+  )
 }
