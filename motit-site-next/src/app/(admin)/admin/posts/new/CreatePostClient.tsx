@@ -524,7 +524,7 @@ export default memo(function CreatePostClient({
                 categories={categories}
                 categoryId={categoryValue}
                 setCategoryId={(id) => setValue("categoryId", id)}
-                postStatus={postStatusValue}
+                postStatus={postStatusValue || "draft"}
                 setPostStatus={(s) => setValue("post_status", s)}
                 excerpt={excerptValue}
                 setExcerpt={(t) => setValue("excerpt", t)}
@@ -552,7 +552,7 @@ export default memo(function CreatePostClient({
                 categories={categories}
                 categoryId={categoryValue}
                 setCategoryId={(id) => setValue("categoryId", id)}
-                postStatus={postStatusValue}
+                postStatus={postStatusValue || "draft"}
                 setPostStatus={(s) => setValue("post_status", s)}
                 excerpt={excerptValue}
                 setExcerpt={(t) => setValue("excerpt", t)}
