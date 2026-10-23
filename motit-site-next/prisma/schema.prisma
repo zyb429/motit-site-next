@@ -1,12 +1,12 @@
 generator client {
   provider        = "prisma-client-js"
   output          = "../generated/prisma"
-  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model categories {
@@ -678,4 +678,14 @@ model user_pinned_messages {
   @@unique([chat_uuid, message_uuid, user_uuid], map: "idx_upm_unique")
   @@index([chat_uuid, user_uuid], map: "idx_upm_chat_user")
   @@index([message_uuid], map: "idx_upm_message")
+}
+
+model CodeLanguage {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique  // "rust", "go", "python" — имя в highlight.js
+  label     String              // "Rust", "Go", "Python" — отображается в селекте
+  enabled   Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
