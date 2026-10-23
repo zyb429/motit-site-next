@@ -21,13 +21,8 @@ import {
   Save,
   X,
   Loader2,
-  FileText,
-  Tag,
-  Image as ImageIcon,
-  Upload,
-  Trash2,
   Settings2,
-  History
+  History,
 } from "lucide-react";
 import { openEditorModal } from "@rageshpikalmunde/rp-image-editor";
 
@@ -36,6 +31,7 @@ import { PageSkeleton } from "@/components/PageSkeleton";
 import { generateSlug } from "@/lib/utils";
 import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
 import { PostVersionsModal } from "@/components/admin/PostVersionsModal";
+import { PostSettingsFields } from "@/components/admin/PostSettingsFields";
 
 type Category = {
   id: number;
@@ -53,7 +49,10 @@ type User = {
 };
 
 const postSchema = z.object({
-  title: z.string().min(1, "Заголовок обязателен").max(200, "Максимум 200 символов"),
+  title: z
+    .string()
+    .min(1, "Заголовок обязателен")
+    .max(200, "Максимум 200 символов"),
   excerpt: z.string().max(300, "Максимум 300 символов").optional(),
   categoryId: z.number().nullable(),
   content: z.string().optional(),
@@ -88,7 +87,9 @@ export default memo(function CreatePostClient({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPost, setIsLoadingPost] = useState(isEditMode);
   const [featuredImage, setFeaturedImage] = useState<File | null>(null);
-  const [featuredImagePreview, setFeaturedImagePreview] = useState<string | null>(null);
+  const [featuredImagePreview, setFeaturedImagePreview] = useState<
+    string | null
+  >(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isEditingCover, setIsEditingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -111,7 +112,6 @@ export default memo(function CreatePostClient({
     },
   });
 
-  const titleValue = watch("title");
   const excerptValue = watch("excerpt") || "";
   const postStatusValue = watch("post_status");
   const categoryValue = watch("categoryId");
@@ -153,7 +153,7 @@ export default memo(function CreatePostClient({
     const loadPost = async () => {
       try {
         const res = await fetch(
-          `/api/posts/${editId}?populate[]=categories&populate[]=featured_image`
+          `/api/posts/${editId}?populate[]=categories&populate[]=featured_image`,
         );
         if (!res.ok) throw new Error("Не удалось загрузить пост");
 
@@ -165,7 +165,7 @@ export default memo(function CreatePostClient({
         setValue("categoryId", post.categories?.[0]?.id ?? null);
         setValue(
           "post_status",
-          post.post_status === "draft" ? "draft" : "published"
+          post.post_status === "draft" ? "draft" : "published",
         );
 
         if (post.content) {
@@ -230,13 +230,11 @@ export default memo(function CreatePostClient({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Открывает тот же редактор, что используется в ImageNode (в теле поста)
   const handleEditCover = async () => {
     if (!featuredImagePreview || isEditingCover) return;
     try {
       setIsEditingCover(true);
 
-      // 1. Загружаем текущее изображение как File
       const res = await fetch(featuredImagePreview);
       if (!res.ok) throw new Error("Не удалось загрузить изображение");
       const blob = await res.blob();
@@ -244,7 +242,6 @@ export default memo(function CreatePostClient({
         type: blob.type || "image/jpeg",
       });
 
-      // 2. Открываем модал редактора
       const result = await openEditorModal({
         image: file,
         config: {
@@ -257,11 +254,8 @@ export default memo(function CreatePostClient({
 
       if (!result?.file) return;
 
-      // 3. Мгновенное превью (blob URL) — не ждём загрузки на сервер
       const newPreviewUrl = URL.createObjectURL(result.file);
       setFeaturedImagePreview(newPreviewUrl);
-
-      // 4. Сохраняем File для последующей загрузки на сервер при submit
       setFeaturedImage(result.file);
     } catch (err) {
       console.error("Cover edit error:", err);
@@ -359,7 +353,7 @@ export default memo(function CreatePostClient({
             throw new Error(
               error.error?.message ||
                 error.error ||
-                (isEditMode ? "Ошибка обновления" : "Ошибка создания")
+                (isEditMode ? "Ошибка обновления" : "Ошибка создания"),
             );
           }
 
@@ -381,14 +375,11 @@ export default memo(function CreatePostClient({
         }
       });
     },
-    [user, router, featuredImage, isEditMode, editId, categories, uploadImage]
+    [user, router, featuredImage, isEditMode, editId, categories, uploadImage],
   );
 
-  const categoryOptions = useMemo(() => {
-    return categories.map((cat) => ({ value: cat.id, label: cat.name }));
-  }, [categories]);
-
-  const isDisabled = isPending || isSubmitting || isUploadingImage || isEditingCover;
+  const isDisabled =
+    isPending || isSubmitting || isUploadingImage || isEditingCover;
 
   if (!isClient || isLoading || (isEditMode && isLoadingPost)) {
     return <PageSkeleton />;
@@ -413,60 +404,61 @@ export default memo(function CreatePostClient({
 
   return (
     <div className="flex flex-col h-screen bg-[var(--bg-primary)] overflow-hidden font-sans">
-      {/* ВЕРХНЯЯ ПАНЕЛЬ */}
-      <header className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/80 backdrop-blur-md z-20">
-        <div className="flex items-center gap-4">
+      {/* ==================== ХЕДЕР (адаптив) ==================== */}
+      <header className="shrink-0 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-6 py-2 sm:py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/80 backdrop-blur-md z-20">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <Link
             href="/admin/posts"
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-2 rounded-full hover:bg-[var(--bg-secondary)]"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-2 rounded-full hover:bg-[var(--bg-secondary)] shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div>
-            <h1 className="text-sm font-semibold text-[var(--text-primary)]">
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-[var(--text-primary)] truncate">
               {isEditMode ? "Редактирование поста" : "Новый пост"}
             </h1>
-            <p className="text-xs text-[var(--text-muted)]">
+            <p className="text-xs text-[var(--text-muted)] truncate">
               {postStatusValue === "draft" ? "Черновик" : "Публикация"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
           {isEditMode && editId && (
             <button
               type="button"
               onClick={() => setVersionsOpen(true)}
               disabled={isDisabled}
-              className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors flex items-center gap-2"
+              className="px-2 sm:px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors flex items-center gap-1 sm:gap-2"
             >
               <History className="w-4 h-4" />
-              <span>История</span>
+              <span className="hidden sm:inline">История</span>
             </button>
           )}
           <button
             type="button"
             onClick={() => router.back()}
             disabled={isDisabled}
-            className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+            className="px-2 sm:px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
           >
-            Отмена
+            <span className="hidden sm:inline">Отмена</span>
+            <X className="w-4 h-4 sm:hidden" />
           </button>
           <button
             type="submit"
             form="post-form"
             disabled={isDisabled}
-            className="px-5 py-2 bg-[var(--accent)] text-[var(--bg-primary)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-sm font-medium text-sm"
+            className="px-3 sm:px-5 py-2 bg-[var(--accent)] text-[var(--bg-primary)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1 sm:gap-2 shadow-sm font-medium text-sm"
           >
             {isPending || isSubmitting || isUploadingImage ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Сохранение...</span>
+                <span className="hidden sm:inline">Сохранение...</span>
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>
+                <span className="hidden sm:inline">
                   {postStatusValue === "draft"
                     ? "Сохранить черновик"
                     : "Опубликовать"}
@@ -477,16 +469,16 @@ export default memo(function CreatePostClient({
         </div>
       </header>
 
-      {/* ОСНОВНАЯ ОБЛАСТЬ */}
+      {/* ==================== ОСНОВНАЯ ОБЛАСТЬ (адаптив) ==================== */}
       <main className="flex-1 flex overflow-hidden">
         <form
           id="post-form"
           onSubmit={handleSubmit(onSubmit)}
-          className="flex-1 flex overflow-hidden"
+          className="flex-1 flex flex-col lg:flex-row overflow-hidden"
         >
           {/* ЛЕВАЯ КОЛОНКА: РЕДАКТОР */}
           <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] overflow-y-auto">
-            <div className="w-full px-8 py-10 flex flex-col gap-6 min-h-full">
+            <div className="w-full px-4 sm:px-8 py-6 sm:py-10 flex flex-col gap-4 sm:gap-6 min-h-full">
               {/* Заголовок */}
               <input
                 id="title"
@@ -494,19 +486,16 @@ export default memo(function CreatePostClient({
                 {...register("title")}
                 disabled={isDisabled}
                 placeholder="Заголовок поста..."
-                className="w-full bg-[#0b1f26] text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border border-[#1b3a44] rounded-xl px-6 py-4 focus:border-[var(--accent)] transition-colors"
+                className="w-full bg-[#0b1f26] text-2xl sm:text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border border-[#1b3a44] rounded-xl px-4 sm:px-6 py-3 sm:py-4 focus:border-[var(--accent)] transition-colors"
               />
               {errors.title && (
-                <p className="text-red-400 text-sm -mt-4">
+                <p className="text-red-400 text-sm -mt-2 sm:-mt-4">
                   {errors.title.message}
                 </p>
               )}
 
               {/* Редактор */}
-              <div 
-                className="flex-1 flex flex-col relative overflow-hidden rounded-xl border border-[var(--border)] transition-colors focus-within:border-[var(--accent)] bg-[var(--bg-primary)]"
-                style={{ outline: "none", boxShadow: "none" }}
-              >
+              <div className="flex-1 flex flex-col relative overflow-hidden rounded-xl border border-[var(--border)] transition-colors focus-within:border-[var(--accent)] bg-[var(--bg-primary)]">
                 <SimpleEditor
                   initialContent={content}
                   onChange={(json) =>
@@ -515,131 +504,67 @@ export default memo(function CreatePostClient({
                   editable={!isDisabled}
                 />
               </div>
-              
+
               {errors.content && (
                 <p className="text-red-400 text-sm">
                   {errors.content.message}
                 </p>
               )}
-            </div> {/* Закрывает div с классом w-full px-8 py-10 */}
-          </div> {/* Закрывает левую колонку flex-1 */}
+            </div>
+          </div>
 
-          {/* ПРАВАЯ КОЛОНКА: НАСТРОЙКИ */}
-          <aside className="w-80 shrink-0 border-l border-[var(--border)] bg-[var(--bg-card)] flex flex-col relative z-10">
+          {/* ==================== МОБИЛЬНАЯ / ПЛАНШЕТНАЯ ПАНЕЛЬ ==================== */}
+          <details className="lg:hidden border-t border-[var(--border)] bg-[var(--bg-card)]">
+            <summary className="p-4 cursor-pointer flex items-center gap-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors select-none">
+              <Settings2 className="w-4 h-4" />
+              <span>Настройки поста</span>
+            </summary>
+            <div className="max-h-[60vh] overflow-y-auto">
+              <PostSettingsFields
+                categories={categories}
+                categoryId={categoryValue}
+                setCategoryId={(id) => setValue("categoryId", id)}
+                postStatus={postStatusValue}
+                setPostStatus={(s) => setValue("post_status", s)}
+                excerpt={excerptValue}
+                setExcerpt={(t) => setValue("excerpt", t)}
+                featuredImagePreview={featuredImagePreview}
+                isEditingCover={isEditingCover}
+                onCoverEdit={handleEditCover}
+                onCoverRemove={handleRemoveImage}
+                onCoverSelect={handleImageSelect}
+                fileInputRef={fileInputRef}
+                isDisabled={isDisabled}
+                inputClass={inputClass}
+              />
+            </div>
+          </details>
+
+          {/* ==================== ДЕСКТОПНАЯ ПАНЕЛЬ ==================== */}
+          <aside className="hidden lg:flex w-80 shrink-0 border-l border-[var(--border)] bg-[var(--bg-card)] flex-col relative z-10">
             <div className="p-5 border-b border-[var(--border)] flex items-center gap-2 text-[var(--text-primary)] font-medium shrink-0">
               <Settings2 className="w-4 h-4" />
               <span>Настройки поста</span>
             </div>
 
             <div className="flex-1 overflow-y-auto overflow-x-visible">
-              <div className="p-5 space-y-6">
-                {/* Статус публикации */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-                    Публикация
-                  </label>
-                  <select
-                    id="post_status"
-                    {...register("post_status")}
-                    className={inputClass}
-                    disabled={isDisabled}
-                  >
-                    <option value="published">Опубликовать</option>
-                    <option value="draft">Черновик</option>
-                  </select>
-                </div>
-
-                {/* Категория */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1">
-                    <Tag className="w-3 h-3" /> Категория
-                  </label>
-                  <select
-                    id="category"
-                    {...register("categoryId", { valueAsNumber: true })}
-                    className={inputClass}
-                    disabled={isDisabled}
-                  >
-                    <option value="">Без категории</option>
-                    {categoryOptions.map(({ value, label }) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Краткое описание */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1">
-                    <FileText className="w-3 h-3" /> Краткое описание
-                  </label>
-                  <textarea
-                    id="excerpt"
-                    {...register("excerpt")}
-                    className={`${inputClass} min-h-[100px] resize-y`}
-                    disabled={isDisabled}
-                    placeholder="Пара предложений о чём пост..."
-                    maxLength={300}
-                  />
-                  <p className="text-right text-xs text-[var(--text-muted)]">
-                    {excerptValue.length}/300
-                  </p>
-                </div>
-
-                {/* Обложка */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1">
-                    <ImageIcon className="w-3 h-3" /> Обложка
-                  </label>
-                  {featuredImagePreview ? (
-                    <div className="relative group rounded-lg overflow-hidden border border-[var(--border)]">
-                      <img
-                        src={featuredImagePreview}
-                        alt="Cover"
-                        className="w-full h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={handleEditCover}
-                      />
-                      {isEditingCover && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <Loader2 className="w-6 h-6 animate-spin text-white" />
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveImage();
-                        }}
-                        disabled={isDisabled}
-                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isDisabled}
-                      className="w-full border-2 border-dashed border-[var(--border)] rounded-lg p-6 text-center hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors group"
-                    >
-                      <Upload className="w-6 h-6 text-[var(--text-muted)] mx-auto mb-2 group-hover:text-[var(--accent)]" />
-                      <p className="text-xs text-[var(--text-secondary)]">
-                        Загрузить обложку
-                      </p>
-                    </button>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    className="hidden"
-                    disabled={isDisabled}
-                  />
-                </div>
-              </div>
+              <PostSettingsFields
+                categories={categories}
+                categoryId={categoryValue}
+                setCategoryId={(id) => setValue("categoryId", id)}
+                postStatus={postStatusValue}
+                setPostStatus={(s) => setValue("post_status", s)}
+                excerpt={excerptValue}
+                setExcerpt={(t) => setValue("excerpt", t)}
+                featuredImagePreview={featuredImagePreview}
+                isEditingCover={isEditingCover}
+                onCoverEdit={handleEditCover}
+                onCoverRemove={handleRemoveImage}
+                onCoverSelect={handleImageSelect}
+                fileInputRef={fileInputRef}
+                isDisabled={isDisabled}
+                inputClass={inputClass}
+              />
             </div>
 
             <div className="shrink-0 p-5 border-t border-[var(--border)] text-xs text-[var(--text-muted)] text-center bg-[var(--bg-card)]">
@@ -649,6 +574,7 @@ export default memo(function CreatePostClient({
         </form>
       </main>
 
+      {/* ==================== МОДАЛКА ИСТОРИИ ==================== */}
       {isEditMode && editId && (
         <PostVersionsModal
           postId={editId}
