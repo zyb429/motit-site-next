@@ -299,3 +299,137 @@
     flex: 0 0 auto !important;
   }
 }
+
+/* ============================================
+   ФИКС ЦВЕТОВ КНОПОК TIPTAP (data-style="ghost")
+   ============================================ */
+
+/* 1. Обычное состояние (убираем серый фон) */
+.simple-editor-wrapper.dark .simple-editor-toolbar .tiptap-button {
+  background-color: transparent !important;
+  color: #80deea !important; /* Светло-бирюзовый цвет иконок */
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+/* 2. Наведение (hover) — легкий бирюзовый фон */
+.simple-editor-wrapper.dark .simple-editor-toolbar .tiptap-button:hover {
+  background-color: rgba(45, 212, 191, 0.15) !important;
+  color: #2dd4bf !important;
+}
+
+/* 3. Активное состояние (когда кнопка "включена", например, Bold) */
+.simple-editor-wrapper.dark .simple-editor-toolbar .tiptap-button[data-active-state="on"] {
+  background-color: rgba(45, 212, 191, 0.25) !important;
+  color: #2dd4bf !important;
+}
+
+/* 4. Фокус (при клике) — убираем стандартную синюю/серую обводку */
+.simple-editor-wrapper.dark .simple-editor-toolbar .tiptap-button:focus,
+.simple-editor-wrapper.dark .simple-editor-toolbar .tiptap-button:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.4) !important;
+}
+
+/* 5. Разделители (линии между группами кнопок) */
+.simple-editor-wrapper.dark .simple-editor-toolbar .tiptap-separator,
+.simple-editor-wrapper.dark .simple-editor-toolbar .tiptap-toolbar-group {
+  border-color: rgba(45, 212, 191, 0.15) !important;
+  background-color: transparent !important;
+}
+
+/* 6. Убираем серый фон у выпадающих списков (Heading, списки) */
+.simple-editor-wrapper.dark .simple-editor-toolbar [data-slot="dropdown-menu-trigger"],
+.simple-editor-wrapper.dark .simple-editor-toolbar button[data-state="closed"] {
+  background-color: transparent !important;
+}
+
+/* ============================================
+   СБРОС ЧЕРНЫХ ОБВОДОК (БЕЗ ПОТЕРИ РАМКИ КОНТЕЙНЕРА)
+   ============================================ */
+
+/* Убираем черный фокус-ринг у самого редактора (ProseMirror) */
+.simple-editor-content .tiptap.ProseMirror.simple-editor,
+.simple-editor-content .tiptap.ProseMirror.simple-editor:focus,
+.simple-editor-content .tiptap.ProseMirror.simple-editor:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Убираем фокус-ринг у обертки редактора, НО НЕ ТРОГАЕМ border */
+.simple-editor-wrapper,
+.simple-editor-wrapper:focus,
+.simple-editor-wrapper:focus-visible,
+.simple-editor-wrapper:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important; /* Сама обертка не имеет рамки */
+}
+
+/* Убираем черный outline у родительского div (того, что в CreatePostClient) */
+div:has(> .simple-editor-wrapper):focus,
+div:has(> .simple-editor-wrapper):focus-within,
+div:has(> .simple-editor-wrapper):focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Убираем черную рамку у тулбара и оставляем тонкую линию */
+.simple-editor-toolbar {
+  border: none !important;
+  border-bottom: 1px solid var(--tt-toolbar-border-color) !important;
+  outline: none !important;
+}
+
+/* ============================================
+   ИКОНКИ В ТУЛБАРЕ: ПРАВИЛЬНЫЕ ЦВЕТА И ФОРМЫ
+   ============================================ */
+
+/* 1. Базовый цвет иконок для светлой темы */
+.simple-editor-wrapper.light .simple-editor-toolbar .tiptap-button {
+  color: #475569 !important;
+}
+/* Базовый цвет иконок для темной темы */
+.simple-editor-wrapper.dark .simple-editor-toolbar .tiptap-button {
+  color: #80deea !important;
+}
+
+/* 2. Иконки с заливкой (Bold, Italic, списки и т.д.) наследуют цвет */
+.simple-editor-wrapper .simple-editor-toolbar .tiptap-button-icon:not(.lucide-table):not(.lucide-quote) {
+  fill: currentColor !important;
+}
+
+/* 3. Контурные иконки (Таблица, Цитата): строго без заливки, только контур */
+.simple-editor-wrapper .simple-editor-toolbar svg.lucide-table,
+.simple-editor-wrapper .simple-editor-toolbar svg.lucide-quote {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.75 !important;
+}
+
+/* 4. Наведение (hover) — заливка меняется ТОЛЬКО у иконок с заливкой */
+.simple-editor-wrapper .simple-editor-toolbar button:hover .tiptap-button-icon:not(.lucide-table):not(.lucide-quote) {
+  fill: #2dd4bf !important;
+  color: #2dd4bf !important;
+}
+
+/* 5. Наведение (hover) — у контурных иконок меняется ТОЛЬКО контур (stroke) */
+.simple-editor-wrapper .simple-editor-toolbar button:hover svg.lucide-table,
+.simple-editor-wrapper .simple-editor-toolbar button:hover svg.lucide-quote {
+  stroke: #2dd4bf !important;
+  fill: none !important; /* Страховка: заливка не должна появляться */
+}
+
+/* 6. Активное состояние (кнопка нажата) — заливка */
+.simple-editor-wrapper .simple-editor-toolbar button[data-active-state="on"] .tiptap-button-icon:not(.lucide-table):not(.lucide-quote) {
+  fill: #2dd4bf !important;
+  color: #2dd4bf !important;
+}
+
+/* 7. Активное состояние (кнопка нажата) — контурные иконки */
+.simple-editor-wrapper .simple-editor-toolbar button[data-active-state="on"] svg.lucide-table,
+.simple-editor-wrapper .simple-editor-toolbar button[data-active-state="on"] svg.lucide-quote {
+  stroke: #2dd4bf !important;
+  fill: none !important;
+}
