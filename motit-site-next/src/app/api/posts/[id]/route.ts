@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { snapshotPost } from "@/lib/post-versions";
 
 async function findPostId(rawId: string): Promise<number | null> {
   const num = Number(rawId);
@@ -171,6 +172,10 @@ export async function PUT(
         }
       }
     }
+
+    // Сохраняем снимок текущего состояния ДО обновления
+    const userId = typeof user.id === "number" ? user.id : Number(user.id);
+    await snapshotPost(postId, Number.isFinite(userId) ? userId : null);
 
     const updated = await prisma.posts.update({
       where: { id: postId },

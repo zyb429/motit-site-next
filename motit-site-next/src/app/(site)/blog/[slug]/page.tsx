@@ -392,7 +392,7 @@ export default async function BlogPostPage({
           </div>
         )}
 
-        <div className="prose prose-invert max-w-none post-content prose-headings:text-[#e0f7fa] prose-headings:font-bold prose-p:text-gray-300 prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6] prose-strong:text-[#e0f7fa] prose-li:text-gray-300 prose-blockquote:border-[#2dd4bf] prose-blockquote:text-gray-400 prose-img:rounded-lg">
+        <div className="post-content max-w-none">
           {htmlContent ? (
             <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           ) : (

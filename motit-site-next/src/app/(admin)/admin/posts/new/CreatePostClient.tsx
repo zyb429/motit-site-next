@@ -27,6 +27,7 @@ import {
   Upload,
   Trash2,
   Settings2,
+  History
 } from "lucide-react";
 import { openEditorModal } from "@rageshpikalmunde/rp-image-editor";
 
@@ -34,6 +35,7 @@ import type { CustomElement } from "@/types/slate";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { generateSlug } from "@/lib/utils";
 import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
+import { PostVersionsModal } from "@/components/admin/PostVersionsModal";
 
 type Category = {
   id: number;
@@ -90,6 +92,7 @@ export default memo(function CreatePostClient({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isEditingCover, setIsEditingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [versionsOpen, setVersionsOpen] = useState(false);
 
   const {
     register,
@@ -430,6 +433,17 @@ export default memo(function CreatePostClient({
         </div>
 
         <div className="flex items-center gap-3">
+          {isEditMode && editId && (
+            <button
+              type="button"
+              onClick={() => setVersionsOpen(true)}
+              disabled={isDisabled}
+              className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors flex items-center gap-2"
+            >
+              <History className="w-4 h-4" />
+              <span>История</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => router.back()}
@@ -634,6 +648,18 @@ export default memo(function CreatePostClient({
           </aside>
         </form>
       </main>
+
+      {isEditMode && editId && (
+        <PostVersionsModal
+          postId={editId}
+          open={versionsOpen}
+          onClose={() => setVersionsOpen(false)}
+          onRollback={() => {
+            router.refresh();
+            if (typeof window !== "undefined") window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 });

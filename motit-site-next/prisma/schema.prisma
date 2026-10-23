@@ -193,6 +193,7 @@ model posts {
   author_id              Int?                     @db.UnsignedInt
   featured_image_id      Int?                     @db.UnsignedInt
   locale                 String?                  @db.VarChar(255)
+  versions               PostVersion[]
 
   author                 users?                   @relation("PostAuthor", fields: [author_id], references: [id], onUpdate: NoAction, map: "fk_posts_author")
   users                  users?                   @relation("PostCreatedBy", fields: [created_by_id], references: [id], onUpdate: NoAction, map: "fk_posts_created_by")
@@ -435,6 +436,7 @@ model users {
   clients               clients?
   posts                 posts[]                 @relation("PostCreatedBy")
   postsAuthored         posts[]                 @relation("PostAuthor")
+  post_versions         PostVersion[]           @relation("PostVersionAuthor")
   ticket_comments       ticket_comments[]
   ticketsAssigned       tickets[]               @relation("TicketAssignee")
   ticketsClient         tickets[]               @relation("TicketClient")
@@ -688,4 +690,24 @@ model CodeLanguage {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PostVersion {
+  id            Int      @id @default(autoincrement())
+  post_id       Int      @db.UnsignedInt
+  title         String?  @db.VarChar(255)
+  slug          String?  @db.VarChar(255)
+  excerpt       String?  @db.LongText
+  content       Json?
+  post_status   String?  @db.VarChar(255)
+  meta_title    String?  @db.VarChar(255)
+  meta_description String? @db.LongText
+  created_by_id Int?     @db.UnsignedInt
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+
+  post          posts    @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  created_by    users?   @relation("PostVersionAuthor", fields: [created_by_id], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_post_versions_author")
+
+  @@index([post_id, created_at])
+  @@index([created_by_id])
 }
