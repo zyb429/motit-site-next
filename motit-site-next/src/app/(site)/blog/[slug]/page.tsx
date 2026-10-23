@@ -21,11 +21,9 @@ import "./post-content.scss";
 import { CustomBlockquote } from "@/components/tiptap-node/blockquote-node/blockquote-extension";
 import { TableKit } from "@tiptap/extension-table";
 import * as cheerio from "cheerio";
-import { common, createLowlight } from "lowlight";
+import { lowlight } from "@/lib/lowlight";
 import { toHtml } from "hast-util-to-html";
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
-
-const lowlight = createLowlight(common);
 
 const TIPTAP_EXTENSIONS = [
   StarterKit.configure({

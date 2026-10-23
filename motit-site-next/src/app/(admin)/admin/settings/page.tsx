@@ -13,6 +13,7 @@ import {
   Palette,
   Shield,
   Database,
+  Code2,
 } from "lucide-react";
 
 const SECTIONS = [
@@ -63,6 +64,12 @@ const SECTIONS = [
     icon: Palette,
     title: "Внешний вид",
     desc: "Логотип, favicon, акцентный цвет",
+  },
+  {
+    href: "/admin/settings/languages",
+    icon: Code2,
+    title: "Языки программирования",
+    desc: "Подсветка кода в редакторе",
   },
   {
     href: "/admin/settings/security",

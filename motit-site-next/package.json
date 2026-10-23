@@ -18,6 +18,7 @@
     "db:seed": "prisma db seed",
     "backfill:status-history": "npx tsx scripts/backfill-status-history.ts",
     "backfill:chats": "npx tsx scripts/backfill-chats.ts",
+    "seed:languages": "npx tsx scripts/seed-languages.ts",
     "ws": "npx tsx server.ts"
   },
   "dependencies": {

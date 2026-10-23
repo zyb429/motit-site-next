@@ -23,7 +23,7 @@ import { FindAndReplace } from "@tiptap/extension-find-and-replace"
 import { Selection } from "@tiptap/extensions"
 import { TableKit } from "@tiptap/extension-table"
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
-import { common, createLowlight } from "lowlight"
+import { lowlight } from "@/lib/lowlight"
 
 // --- UI Primitives ---
 import { Button } from "@/components/tiptap-ui-primitive/button"
@@ -93,8 +93,6 @@ import "@/components/tiptap-node/list-node/list-node.scss"
 const SEARCH_AND_REPLACE_SCROLL_OPTIONS: ScrollIntoViewOptions = {
   block: "center",
 }
-
-const lowlight = createLowlight(common)
 
 const THEME_STORAGE_KEY = "simple-editor-theme"
 

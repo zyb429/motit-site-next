@@ -2,14 +2,30 @@
 
 import { useEffect, useState } from "react"
 import { useCurrentEditor } from "@tiptap/react"
-import { common, createLowlight } from "lowlight"
 
-const lowlight = createLowlight(common)
+type Lang = { code: string; label: string }
 
 export function CodeBlockLanguageSelector() {
   const { editor } = useCurrentEditor()
   const [isActive, setIsActive] = useState(false)
   const [currentLang, setCurrentLang] = useState("plaintext")
+  const [languages, setLanguages] = useState<Lang[]>([])
+
+  // Список включённых языков — из БД
+  useEffect(() => {
+    let cancelled = false
+    fetch("/api/languages", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: Lang[]) => {
+        if (!cancelled) setLanguages(data)
+      })
+      .catch(() => {
+        if (!cancelled) setLanguages([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!editor) return
@@ -43,9 +59,9 @@ export function CodeBlockLanguageSelector() {
       className="h-8 rounded border border-[var(--border)] bg-[var(--bg-primary)] px-2 text-xs text-[var(--text-primary)] outline-none"
       title="Язык кода"
     >
-      {lowlight.listLanguages().map((lang) => (
-        <option key={lang} value={lang}>
-          {lang}
+      {languages.map((lang) => (
+        <option key={lang.code} value={lang.code}>
+          {lang.label}
         </option>
       ))}
     </select>
