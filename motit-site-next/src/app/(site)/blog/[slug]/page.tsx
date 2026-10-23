@@ -24,11 +24,12 @@ import * as cheerio from "cheerio";
 import { lowlight } from "@/lib/lowlight";
 import { toHtml } from "hast-util-to-html";
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
+import { CodeBlockCopyHandler } from "@/components/blog/CodeBlockCopyHandler";
 
 const TIPTAP_EXTENSIONS = [
   StarterKit.configure({
     blockquote: false,
-    codeBlock: false, // ← отключаем стандартный
+    codeBlock: false,
     link: {
       openOnClick: false,
       HTMLAttributes: { class: "text-[#2dd4bf] hover:text-[#14b8a6]" },
@@ -62,7 +63,6 @@ interface BlogPostPageProps {
     | undefined;
 }
 
-// SSG
 export async function generateStaticParams() {
   try {
     const posts = await getPostsPrisma({ status: "published", take: 100 });
@@ -75,7 +75,6 @@ export async function generateStaticParams() {
   }
 }
 
-// SEO
 export async function generateMetadata({
   params,
 }: BlogPostPageProps): Promise<Metadata> {
@@ -115,7 +114,6 @@ function highlightCodeBlocks(html: string): string {
     const className = $code.attr("class") || "";
     const lang = className.replace("language-", "").split(" ")[0] || "plaintext";
 
-    // Очищаем от невидимых символов, которые JetBrains Mono рендерит как ‘
     const code = $code
       .text()
       .replace(/\u200B/g, "")
@@ -133,9 +131,19 @@ function highlightCodeBlocks(html: string): string {
       $code.addClass("hljs");
     }
 
+    $code.addClass("code-block-content");
+
     const $wrapper = $('<div class="code-block-wrapper"></div>');
     const $header = $(
-      `<div class="code-block-header"><span class="code-block-lang">${lang}</span></div>`
+      `<div class="code-block-header">
+        <span class="code-block-lang">${lang}</span>
+        <button type="button" class="code-block-copy" aria-label="Копировать код" title="Копировать код">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+      </div>`,
     );
     $pre.wrap($wrapper);
     $pre.before($header);
@@ -390,6 +398,7 @@ export default async function BlogPostPage({
           ) : (
             <p className="text-gray-500">Нет содержимого</p>
           )}
+          <CodeBlockCopyHandler />
         </div>
 
         <footer className="mt-12 pt-6 border-t border-[rgba(45,212,191,0.06)]">

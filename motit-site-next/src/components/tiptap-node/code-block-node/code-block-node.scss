@@ -47,6 +47,7 @@
   .code-block-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 0.4rem 1rem;
     background: rgba(0, 0, 0, 0.03) !important;
     border-bottom: 1px solid var(--tt-codeblock-border) !important;
@@ -65,6 +66,41 @@
 
       .simple-editor-wrapper.dark & {
         color: #94a3b8 !important;
+      }
+    }
+  }
+
+  .code-block-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0.25rem;
+    color: #64748b;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      opacity: 1;
+      background-color: rgba(0, 0, 0, 0.06);
+      color: #1e293b;
+    }
+
+    &:active {
+      opacity: 0.8;
+    }
+
+    .simple-editor-wrapper.dark & {
+      color: #94a3b8;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+        color: #e5e7eb;
       }
     }
   }
