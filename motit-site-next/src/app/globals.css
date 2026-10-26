@@ -273,7 +273,7 @@ select {
 input::placeholder,
 textarea::placeholder {
   color: var(--text-muted);
-  opacity: 0.5;
+  opacity: 0.8;
 }
 
 input:focus,
