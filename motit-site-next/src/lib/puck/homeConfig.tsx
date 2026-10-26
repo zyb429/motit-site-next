@@ -3,9 +3,9 @@ import Hero, { type HeroProps } from "@/components/sections/Hero";
 import Directions, { type DirectionsProps } from "@/components/sections/Directions";
 import CallToAction, { type CallToActionProps } from "@/components/sections/CallToAction";
 import About, { type AboutProps } from "@/components/sections/About";
-import WhyChooseUs from "@/components/sections/WhyChooseUs";
+import WhyChooseUs, { type WhyChooseUsProps } from "@/components/sections/WhyChooseUs";
 import Advantages, { type AdvantagesProps } from "@/components/sections/Advantages";
-import KeyServices from "@/components/sections/KeyServices";
+import KeyServices, { type KeyServicesProps } from "@/components/sections/KeyServices";
 import Partners from "@/components/sections/Partners";
 import FAQ, { type FAQProps } from "@/components/sections/FAQ";
 import Contact from "@/components/sections/Contact";
@@ -18,9 +18,9 @@ type HomeConfig = {
   Directions: DirectionsProps;
   CallToAction: CallToActionProps;
   About: AboutProps;
-  WhyChooseUs: Empty;
+  WhyChooseUs: WhyChooseUsProps,
   Advantages: AdvantagesProps;
-  KeyServices: Empty;
+  KeyServices: KeyServicesProps;
   Partners: Empty;
   FAQ: FAQProps;
   Contact: Empty;
@@ -117,7 +117,57 @@ export const homeConfig: Config<HomeConfig> = {
       },
       render: (props) => <About {...props} />,
     },
-    WhyChooseUs: wrap(WhyChooseUs, "Why choose us"),
+    WhyChooseUs: {
+        fields: {
+            label: { type: "text", label: "Метка" },
+            title: { type: "text", label: "Заголовок" },
+            subtitle: { type: "textarea", label: "Подзаголовок" },
+            items: {
+            type: "array",
+            label: "Компетенции",
+            arrayFields: {
+                title: { type: "text", label: "Заголовок" },
+                subtitle: { type: "text", label: "Подзаголовок" },
+                description: { type: "textarea", label: "Описание" },
+                image: { type: "text", label: "Картинка (URL)" },
+            },
+            defaultItemProps: { title: "", subtitle: "", description: "", image: "" },
+            getItemSummary: (item) => item.title || "Компетенция",
+            },
+        },
+        defaultProps: {
+            label: "НАШИ КОМПЕТЕНЦИИ",
+            title: "Экспертиза в ключевых областях",
+            subtitle: "Глубокие знания и практический опыт в каждом направлении",
+            items: [
+            {
+                title: "Сетевое администрирование",
+                subtitle: "Профессиональный подход к сетям",
+                description: "Проектируем, настраиваем и обслуживаем корпоративные сети любой сложности. Мониторинг 24/7, оперативное устранение неисправностей, регулярное обновление оборудования.",
+                image: "/images/acc-network.jpg",
+            },
+            {
+                title: "Информационная безопасность",
+                subtitle: "Комплексная защита данных",
+                description: "Аудит безопасности, внедрение СЗИ, тестирование на проникновение, подготовка к аттестации. Мы защищаем ваши данные на всех уровнях инфраструктуры.",
+                image: "/images/acc-security.jpg",
+            },
+            {
+                title: "Обслуживание техники",
+                subtitle: "Ремонт и обслуживание оборудования",
+                description: "Ремонт компьютеров, серверов и оргтехники. Профилактическое обслуживание, замена комплектующих, консультации по выбору техники.",
+                image: "/images/acc-repair.jpg",
+            },
+            {
+                title: "Мониторинг и SIEM",
+                subtitle: "Контроль и анализ событий",
+                description: "Настройка систем мониторинга и SIEM-платформ для своевременного обнаружения угроз и инцидентов. Автоматизация реагирования с помощью SOAR.",
+                image: "/images/acc-monitoring.jpg",
+            },
+            ],
+        },
+        render: (props) => <WhyChooseUs {...props} />,
+    },
     Advantages: {
       fields: {
         label: { type: "text" }, title: { type: "text" }, subtitle: { type: "textarea" },
@@ -149,7 +199,51 @@ export const homeConfig: Config<HomeConfig> = {
       },
       render: (props) => <Advantages {...props} />,
     },
-    KeyServices: wrap(KeyServices, "Key services"),
+    KeyServices: {
+    fields: {
+        label: { type: "text", label: "Метка" },
+        title: { type: "text", label: "Заголовок" },
+        subtitle: { type: "textarea", label: "Подзаголовок" },
+        items: {
+        type: "array",
+        label: "Услуги",
+        arrayFields: {
+            number: { type: "text", label: "Номер (01, 02, 03)" },
+            title: { type: "text", label: "Заголовок" },
+            shortDesc: { type: "textarea", label: "Краткое описание" },
+            fullDesc: { type: "textarea", label: "Полное описание" },
+        },
+        defaultItemProps: { number: "", title: "", shortDesc: "", fullDesc: "" },
+        getItemSummary: (item) => item.title || "Услуга",
+        },
+    },
+    defaultProps: {
+        label: "КЛЮЧЕВЫЕ УСЛУГИ",
+        title: "Специализированные решения",
+        subtitle: "Глубокая экспертиза в приоритетных направлениях IT-безопасности",
+        items: [
+        {
+            number: "01",
+            title: "SOAR и SIEM",
+            shortDesc: "Внедрение систем корреляции событий и автоматического реагирования на инциденты безопасности. Централизованный мониторинг всех источников данных в реальном времени.",
+            fullDesc: "Интегрируем платформы SIEM для сбора и анализа событий безопасности из всех источников вашей инфраструктуры. Настраиваем SOAR для автоматизации реагирования на инциденты, что сокращает время реакции с часов до минут. Включает настройку правил корреляции, дашбордов, оповещений и интеграцию с существующими системами защиты.",
+        },
+        {
+            number: "02",
+            title: "Антивирусная защита",
+            shortDesc: "Развертывание и управление корпоративными антивирусными решениями. Защита рабочих станций, серверов и мобильных устройств от всех типов угроз.",
+            fullDesc: "Поставляем и настраиваем корпоративные антивирусные решения ведущих вендоров (Kaspersky, ESET, Trend Micro и др.). Обеспечиваем централизованное управление политиками защиты, регулярное обновление баз, мониторинг состояния защиты и оперативное реагирование на обнаруженные угрозы. Включает защиту рабочих станций, серверов, почтовых систем и мобильных устройств.",
+        },
+        {
+            number: "03",
+            title: "Сетевое оборудование",
+            shortDesc: "Поставка, настройка и обслуживание сетевого оборудования ведущих производителей. Проектирование отказоустойчивых сетевых инфраструктур.",
+            fullDesc: "Подбираем, поставляем и настраиваем сетевое оборудование от ведущих производителей: коммутаторы, маршрутизаторы, точки доступа Wi-Fi, файрволы, системы IPS/IDS. Проектируем сетевую архитектуру с учётом требований к производительности, безопасности и отказоустойчивости. Предоставляем гарантийное и постгарантийное обслуживание.",
+        },
+        ],
+    },
+    render: (props) => <KeyServices {...props} />,
+    },
     Partners: wrap(Partners, "Partners"),
     FAQ: {
       fields: {
