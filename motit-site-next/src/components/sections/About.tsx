@@ -36,8 +36,8 @@ export default function About({ label, title, text1, text2, buttonLabel, buttonH
   }, []);
 
   return (
-    <section ref={sectionRef} id="about" className="section-padding" style={{ backgroundColor: '#0d2029' }}>
-      <div className="content-container">
+    <section ref={sectionRef} id="about" style={{ backgroundColor: '#0d2029' }}>
+      <div className="content-container section-padding">
         {imageUrl && (
           <div className="about-image mb-10 md:mb-12">
             {/* eslint-disable-next-line @next/next/no-img-element */}
