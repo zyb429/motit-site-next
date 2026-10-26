@@ -47,6 +47,14 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Внешний вид",
+    items: [
+      { href: "/admin/globals/home-layout", label: "Главная", icon: Home },
+      { href: "/admin/globals/header", label: "Хедер", icon: Globe },
+      { href: "/admin/globals/footer", label: "Футер", icon: LayoutDashboard },
+    ],
+  },
+  {
     title: "Система",
     items: [
       { href: "/admin/users", label: "Пользователи", icon: Users },

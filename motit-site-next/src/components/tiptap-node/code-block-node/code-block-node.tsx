@@ -48,7 +48,7 @@ export function CodeBlockNode(props: NodeViewProps) {
         </button>
       </div>
       <pre>
-        <NodeViewContent as="code" className="code-block-content" />
+        <NodeViewContent as={"code" as any} className="code-block-content" />
       </pre>
     </NodeViewWrapper>
   )

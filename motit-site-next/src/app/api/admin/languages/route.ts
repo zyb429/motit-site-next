@@ -15,7 +15,6 @@ export async function GET() {
 export async function POST(req: Request) {
   const body = (await req.json()) as { code?: string; label?: string }
   const code = body.code?.trim().toLowerCase()
-  const label = body.label?.trim() || code
 
   if (!code) {
     return NextResponse.json(
@@ -23,8 +22,11 @@ export async function POST(req: Request) {
       { status: 400 },
     )
   }
+  // здесь TypeScript уже знает: code: string
 
-  // Проверяем, что парсер реально есть в highlight.js
+  const label: string = body.label?.trim() || code
+  // label: string, потому что code: string
+
   if (!lowlight.registered(code)) {
     return NextResponse.json(
       {
@@ -40,7 +42,6 @@ export async function POST(req: Request) {
     })
     return NextResponse.json(created, { status: 201 })
   } catch (e: unknown) {
-    // P2002 — уникальный constraint (code уже существует)
     const err = e as { code?: string }
     if (err.code === "P2002") {
       return NextResponse.json(

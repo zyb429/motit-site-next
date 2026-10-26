@@ -68,23 +68,23 @@ const SECTIONS = [
     title: "Внешний вид",
     desc: "Логотип, favicon, акцентный цвет",
   },
-    {
-    href: "/admin/settings/header",
+  {
+    href: "/admin/settings/puck-header",
     icon: Layout,
     title: "Хедер",
-    desc: "Логотип, меню, кнопка CTA",
+    desc: "Логотип, меню, CTA (Puck)",
   },
   {
-    href: "/admin/settings/footer",
+    href: "/admin/settings/puck-footer",
     icon: LayoutList,
     title: "Футер",
-    desc: "Колонки ссылок, соцсети, копирайт",
+    desc: "Бренд, колонки, соцсети (Puck)",
   },
   {
-    href: "/admin/settings/home",
+    href: "/admin/settings/puck-home",
     icon: Home,
-    title: "Главная страница",
-    desc: "Hero-секция, контент, SEO",
+    title: "Главная",
+    desc: "Секции главной (Puck)",
   },
   {
     href: "/admin/settings/languages",
