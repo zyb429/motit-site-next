@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
 import "highlight.js/styles/github-dark.css";
-import Script from "next/script";
 import { Providers } from "./providers";
 
 const inter = Inter({
@@ -60,16 +59,6 @@ export const metadata: Metadata = {
   },
 };
 
-// Всегда ставим dark, чтобы избежать вспышки светлой темы при загрузке
-const THEME_INIT_SCRIPT = `
-(function() {
-  try {
-    // Принудительно включаем темную тему (как на основном сайте)
-    document.documentElement.classList.add("dark");
-  } catch (e) {}
-})();
-`;
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -81,9 +70,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className={inter.className}>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {THEME_INIT_SCRIPT}
-        </Script>
         <Providers>{children}</Providers>
       </body>
     </html>

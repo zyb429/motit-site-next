@@ -104,6 +104,12 @@ const SECTIONS = [
     title: "Резервные копии",
     desc: "Экспорт, импорт и сброс настроек",
   },
+  {
+    href: "/admin/settings/contact-fields",
+    icon: LayoutList,
+    title: "Поля формы контактов",
+    desc: "Добавление и удаление полей заявки",
+  },
 ];
 
 export default function SettingsPage() {

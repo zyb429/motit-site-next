@@ -1,5 +1,8 @@
 import type { Config } from "@puckeditor/core";
-import { FooterBlock, type FooterBlockProps } from "@/components/puck/FooterBlock";
+import {
+  FooterBlock,
+  type FooterBlockProps,
+} from "@/components/puck/FooterBlock";
 import { imageUploadField } from "@/components/puck/ImageUploadField";
 
 type FooterConfig = { Footer: FooterBlockProps };
@@ -129,10 +132,32 @@ export const footerConfig: Config<FooterConfig> = {
         logoText: "МОТИТ",
         logoHref: "/",
         logoImageUrl: "",
-        description: "",
-        columns: [],
-        social: [],
-        copyright: "© Motit",
+        description: "IT-решения для бизнеса",
+        columns: [
+          {
+            title: "Услуги",
+            type: "links",
+            links: [
+              { label: "Разработка ПО", href: "/services/dev", external: false },
+              { label: "Техподдержка", href: "/services/support", external: false },
+            ],
+            contacts: [],
+          },
+          {
+            title: "Контакты",
+            type: "contacts",
+            links: [],
+            contacts: [
+              { icon: "phone", text: "+375 (29) 118-50-82", href: "tel:+375291185082" },
+              { icon: "mail", text: "info@motit.by", href: "mailto:info@motit.by" },
+            ],
+          },
+        ],
+        social: [
+          { name: "telegram", href: "https://t.me/motit" },
+          { name: "vk", href: "https://vk.com/motit" },
+        ],
+        copyright: "© 2026 МОТИТ. Все права защищены.",
       },
       render: (props) => <FooterBlock {...props} />,
     },

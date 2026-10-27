@@ -8,12 +8,10 @@ import Advantages, { type AdvantagesProps } from "@/components/sections/Advantag
 import KeyServices, { type KeyServicesProps } from "@/components/sections/KeyServices";
 import Partners, { type PartnersProps } from "@/components/sections/Partners";
 import FAQ, { type FAQProps } from "@/components/sections/FAQ";
-import Contact from "@/components/sections/Contact";
+import ContactView, { type ContactViewProps } from "@/components/sections/ContactView";
 import QualityManagement, { type QualityManagementProps } from "@/components/sections/QualityManagement";
 import { partnerLogoField } from "@/components/puck/PartnerLogoField";
 import { dateField } from "@/components/puck/DateField";
-
-type Empty = Record<string, never>;
 
 type HomeConfig = {
   Hero: HeroProps;
@@ -25,13 +23,9 @@ type HomeConfig = {
   KeyServices: KeyServicesProps;
   Partners: PartnersProps;
   FAQ: FAQProps;
-  Contact: Empty;
+  Contact: ContactViewProps;
   QualityManagement: QualityManagementProps;
 };
-
-const wrap = (Cmp: React.ComponentType<any>, label: string) => ({
-  fields: {}, defaultProps: {}, render: () => <Cmp />, label,
-});
 
 export const homeConfig: Config<HomeConfig> = {
   components: {
@@ -320,7 +314,50 @@ export const homeConfig: Config<HomeConfig> = {
       },
       render: (props) => <FAQ {...props} />,
     },
-    Contact: wrap(Contact, "Contact"),
+    Contact: {
+      fields: {
+        label: { type: "text", label: "Метка" },
+        title: { type: "text", label: "Заголовок" },
+        subtitle: { type: "textarea", label: "Подзаголовок" },
+        contacts: {
+          type: "array",
+          label: "Контакты",
+          arrayFields: {
+            icon: {
+              type: "select",
+              label: "Иконка",
+              options: [
+                { label: "Телефон", value: "phone" },
+                { label: "Email", value: "mail" },
+                { label: "Адрес", value: "map-pin" },
+                { label: "Режим работы", value: "clock" },
+              ],
+            },
+            label: { type: "text", label: "Подпись" },
+            value: { type: "text", label: "Значение" },
+            href: { type: "text", label: "Ссылка (tel:/mailto:)" },
+          },
+          defaultItemProps: { icon: "phone", label: "", value: "", href: "" },
+          getItemSummary: (item) => item.label || "Контакт",
+        },
+        privacyLabel: { type: "text", label: "Текст согласия на обработку ПД" },
+        privacyHref: { type: "text", label: "Ссылка на политику конфиденциальности" },
+      },
+      defaultProps: {
+        label: "КОНТАКТЫ",
+        title: "Свяжитесь с нами",
+        subtitle: "Готовы обсудить ваши задачи и предложить оптимальное решение",
+        contacts: [
+          { icon: "phone", label: "Телефон", value: "+375 (29) 118-50-82", href: "tel:+375291185082" },
+          { icon: "mail", label: "Email", value: "info@motit.by", href: "mailto:info@motit.by" },
+          { icon: "map-pin", label: "Адрес", value: "г. Минск, ул. Сухаревская, д. 16, п. 71" },
+          { icon: "clock", label: "Режим работы", value: "Пн–Пт: 9:00 – 18:00" },
+        ],
+        privacyLabel: "политикой конфиденциальности",
+        privacyHref: "/privacy-policy",
+      },
+      render: (props) => <ContactView {...props} fields={[]} />,
+    },
     QualityManagement: {
       fields: {
         label: { type: "text", label: "Метка" },
