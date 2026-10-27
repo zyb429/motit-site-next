@@ -11,6 +11,7 @@ import FAQ, { type FAQProps } from "@/components/sections/FAQ";
 import Contact from "@/components/sections/Contact";
 import QualityManagement, { type QualityManagementProps } from "@/components/sections/QualityManagement";
 import { partnerLogoField } from "@/components/puck/PartnerLogoField";
+import { dateField } from "@/components/puck/DateField";
 
 type Empty = Record<string, never>;
 
@@ -322,17 +323,25 @@ export const homeConfig: Config<HomeConfig> = {
     Contact: wrap(Contact, "Contact"),
     QualityManagement: {
       fields: {
-        label: { type: "text" }, title: { type: "text" }, subtitle: { type: "textarea" },
-        policyTitle: { type: "text" }, policyDesc: { type: "text" }, policyHref: { type: "text" },
+        label: { type: "text", label: "Метка" },
+        title: { type: "text", label: "Заголовок" },
+        subtitle: { type: "textarea", label: "Подзаголовок" },
+        policyTitle: { type: "text", label: "Политика: заголовок" },
+        policyDesc: { type: "text", label: "Политика: описание" },
+        policyHref: { type: "text", label: "Политика: ссылка" },
         certificates: {
           type: "array", label: "Сертификаты",
           arrayFields: {
-            title: { type: "text" }, subtitle: { type: "text" }, description: { type: "textarea" },
-            file: { type: "text" }, icon: { type: "select", options: [
+            title: { type: "text", label: "Заголовок" },
+            subtitle: { type: "text", label: "Подзаголовок" },
+            description: { type: "textarea", label: "Описание" },
+            file: { type: "text", label: "Ссылка на PDF" },
+            icon: { type: "select", label: "Иконка", options: [
               { label: "Award", value: "award" }, { label: "Shield", value: "shield" },
             ]},
+            expiryDate: dateField,
           },
-          defaultItemProps: { title: "", subtitle: "", description: "", file: "", icon: "award" },
+          defaultItemProps: { title: "", subtitle: "", description: "", file: "", icon: "award", expiryDate: "" },
           getItemSummary: (item) => item.title || "Сертификат",
         },
       },
@@ -341,8 +350,8 @@ export const homeConfig: Config<HomeConfig> = {
         subtitle: "Подтверждённое соответствие международным стандартам и внутренним регламентам качества",
         policyTitle: "Политика в области качества", policyDesc: "Официальный документ компании", policyHref: "/documents/policy-quality.pdf",
         certificates: [
-          { title: "Сертификат качества", subtitle: "Certificate of Quality MOTIT-Q-001", description: "Подтверждает соответствие высшим стандартам управления качеством IT-услуг. Действителен до 31.12.2026.", file: "/documents/certificate-1.pdf", icon: "award" },
-          { title: "ISO 9001:2015", subtitle: "ISO 9001:2015 Compliance MOTIT-ISO-001", description: "Соответствие требованиям международного стандарта системы менеджмента качества. Действителен до 31.12.2027.", file: "/documents/certificate-2.pdf", icon: "shield" },
+          { title: "Сертификат качества", subtitle: "Certificate of Quality MOTIT-Q-001", description: "Подтверждает соответствие высшим стандартам управления качеством IT-услуг. Действителен до 31.12.2026.", file: "/documents/certificate-1.pdf", icon: "award", expiryDate: "2026-12-31" },
+          { title: "ISO 9001:2015", subtitle: "ISO 9001:2015 Compliance MOTIT-ISO-001", description: "Соответствие требованиям международного стандарта системы менеджмента качества. Действителен до 31.12.2027.", file: "/documents/certificate-2.pdf", icon: "shield", expiryDate: "2027-12-31" },
         ],
       },
       render: (props) => <QualityManagement {...props} />,
