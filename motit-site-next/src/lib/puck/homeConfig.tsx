@@ -19,7 +19,7 @@ type HomeConfig = {
   Directions: DirectionsProps;
   CallToAction: CallToActionProps;
   About: AboutProps;
-  WhyChooseUs: WhyChooseUsProps,
+  WhyChooseUs: WhyChooseUsProps;
   Advantages: AdvantagesProps;
   KeyServices: KeyServicesProps;
   Partners: PartnersProps;
@@ -119,55 +119,55 @@ export const homeConfig: Config<HomeConfig> = {
       render: (props) => <About {...props} />,
     },
     WhyChooseUs: {
-        fields: {
-            label: { type: "text", label: "Метка" },
+      fields: {
+        label: { type: "text", label: "Метка" },
+        title: { type: "text", label: "Заголовок" },
+        subtitle: { type: "textarea", label: "Подзаголовок" },
+        items: {
+          type: "array",
+          label: "Компетенции",
+          arrayFields: {
             title: { type: "text", label: "Заголовок" },
-            subtitle: { type: "textarea", label: "Подзаголовок" },
-            items: {
-            type: "array",
-            label: "Компетенции",
-            arrayFields: {
-                title: { type: "text", label: "Заголовок" },
-                subtitle: { type: "text", label: "Подзаголовок" },
-                description: { type: "textarea", label: "Описание" },
-                image: { type: "text", label: "Картинка (URL)" },
-            },
-            defaultItemProps: { title: "", subtitle: "", description: "", image: "" },
-            getItemSummary: (item) => item.title || "Компетенция",
-            },
+            subtitle: { type: "text", label: "Подзаголовок" },
+            description: { type: "textarea", label: "Описание" },
+            image: { type: "text", label: "Картинка (URL)" },
+          },
+          defaultItemProps: { title: "", subtitle: "", description: "", image: "" },
+          getItemSummary: (item) => item.title || "Компетенция",
         },
-        defaultProps: {
-            label: "НАШИ КОМПЕТЕНЦИИ",
-            title: "Экспертиза в ключевых областях",
-            subtitle: "Глубокие знания и практический опыт в каждом направлении",
-            items: [
-            {
-                title: "Сетевое администрирование",
-                subtitle: "Профессиональный подход к сетям",
-                description: "Проектируем, настраиваем и обслуживаем корпоративные сети любой сложности. Мониторинг 24/7, оперативное устранение неисправностей, регулярное обновление оборудования.",
-                image: "/images/acc-network.jpg",
-            },
-            {
-                title: "Информационная безопасность",
-                subtitle: "Комплексная защита данных",
-                description: "Аудит безопасности, внедрение СЗИ, тестирование на проникновение, подготовка к аттестации. Мы защищаем ваши данные на всех уровнях инфраструктуры.",
-                image: "/images/acc-security.jpg",
-            },
-            {
-                title: "Обслуживание техники",
-                subtitle: "Ремонт и обслуживание оборудования",
-                description: "Ремонт компьютеров, серверов и оргтехники. Профилактическое обслуживание, замена комплектующих, консультации по выбору техники.",
-                image: "/images/acc-repair.jpg",
-            },
-            {
-                title: "Мониторинг и SIEM",
-                subtitle: "Контроль и анализ событий",
-                description: "Настройка систем мониторинга и SIEM-платформ для своевременного обнаружения угроз и инцидентов. Автоматизация реагирования с помощью SOAR.",
-                image: "/images/acc-monitoring.jpg",
-            },
-            ],
-        },
-        render: (props) => <WhyChooseUs {...props} />,
+      },
+      defaultProps: {
+        label: "НАШИ КОМПЕТЕНЦИИ",
+        title: "Экспертиза в ключевых областях",
+        subtitle: "Глубокие знания и практический опыт в каждом направлении",
+        items: [
+          {
+            title: "Сетевое администрирование",
+            subtitle: "Профессиональный подход к сетям",
+            description: "Проектируем, настраиваем и обслуживаем корпоративные сети любой сложности. Мониторинг 24/7, оперативное устранение неисправностей, регулярное обновление оборудования.",
+            image: "/images/acc-network.jpg",
+          },
+          {
+            title: "Информационная безопасность",
+            subtitle: "Комплексная защита данных",
+            description: "Аудит безопасности, внедрение СЗИ, тестирование на проникновение, подготовка к аттестации. Мы защищаем ваши данные на всех уровнях инфраструктуры.",
+            image: "/images/acc-security.jpg",
+          },
+          {
+            title: "Обслуживание техники",
+            subtitle: "Ремонт и обслуживание оборудования",
+            description: "Ремонт компьютеров, серверов и оргтехники. Профилактическое обслуживание, замена комплектующих, консультации по выбору техники.",
+            image: "/images/acc-repair.jpg",
+          },
+          {
+            title: "Мониторинг и SIEM",
+            subtitle: "Контроль и анализ событий",
+            description: "Настройка систем мониторинга и SIEM-платформ для своевременного обнаружения угроз и инцидентов. Автоматизация реагирования с помощью SOAR.",
+            image: "/images/acc-monitoring.jpg",
+          },
+        ],
+      },
+      render: (props) => <WhyChooseUs {...props} />,
     },
     Advantages: {
       fields: {
@@ -201,96 +201,98 @@ export const homeConfig: Config<HomeConfig> = {
       render: (props) => <Advantages {...props} />,
     },
     KeyServices: {
-    fields: {
+      fields: {
         label: { type: "text", label: "Метка" },
         title: { type: "text", label: "Заголовок" },
         subtitle: { type: "textarea", label: "Подзаголовок" },
         items: {
-        type: "array",
-        label: "Услуги",
-        arrayFields: {
+          type: "array",
+          label: "Услуги",
+          arrayFields: {
             number: { type: "text", label: "Номер (01, 02, 03)" },
             title: { type: "text", label: "Заголовок" },
             shortDesc: { type: "textarea", label: "Краткое описание" },
             fullDesc: { type: "textarea", label: "Полное описание" },
+          },
+          defaultItemProps: { number: "", title: "", shortDesc: "", fullDesc: "" },
+          getItemSummary: (item) => item.title || "Услуга",
         },
-        defaultItemProps: { number: "", title: "", shortDesc: "", fullDesc: "" },
-        getItemSummary: (item) => item.title || "Услуга",
-        },
-    },
-    defaultProps: {
+      },
+      defaultProps: {
         label: "КЛЮЧЕВЫЕ УСЛУГИ",
         title: "Специализированные решения",
         subtitle: "Глубокая экспертиза в приоритетных направлениях IT-безопасности",
         items: [
-        {
+          {
             number: "01",
             title: "SOAR и SIEM",
             shortDesc: "Внедрение систем корреляции событий и автоматического реагирования на инциденты безопасности. Централизованный мониторинг всех источников данных в реальном времени.",
             fullDesc: "Интегрируем платформы SIEM для сбора и анализа событий безопасности из всех источников вашей инфраструктуры. Настраиваем SOAR для автоматизации реагирования на инциденты, что сокращает время реакции с часов до минут. Включает настройку правил корреляции, дашбордов, оповещений и интеграцию с существующими системами защиты.",
-        },
-        {
+          },
+          {
             number: "02",
             title: "Антивирусная защита",
             shortDesc: "Развертывание и управление корпоративными антивирусными решениями. Защита рабочих станций, серверов и мобильных устройств от всех типов угроз.",
             fullDesc: "Поставляем и настраиваем корпоративные антивирусные решения ведущих вендоров (Kaspersky, ESET, Trend Micro и др.). Обеспечиваем централизованное управление политиками защиты, регулярное обновление баз, мониторинг состояния защиты и оперативное реагирование на обнаруженные угрозы. Включает защиту рабочих станций, серверов, почтовых систем и мобильных устройств.",
-        },
-        {
+          },
+          {
             number: "03",
             title: "Сетевое оборудование",
             shortDesc: "Поставка, настройка и обслуживание сетевого оборудования ведущих производителей. Проектирование отказоустойчивых сетевых инфраструктур.",
             fullDesc: "Подбираем, поставляем и настраиваем сетевое оборудование от ведущих производителей: коммутаторы, маршрутизаторы, точки доступа Wi-Fi, файрволы, системы IPS/IDS. Проектируем сетевую архитектуру с учётом требований к производительности, безопасности и отказоустойчивости. Предоставляем гарантийное и постгарантийное обслуживание.",
-        },
+          },
         ],
-    },
-    render: (props) => <KeyServices {...props} />,
+      },
+      render: (props) => <KeyServices {...props} />,
     },
     Partners: {
-    fields: {
+      fields: {
         label: { type: "text", label: "Метка" },
         title: { type: "text", label: "Заголовок" },
         subtitle: { type: "textarea", label: "Подзаголовок" },
         footerText: { type: "text", label: "Текст над кнопкой" },
         footerButtonLabel: { type: "text", label: "Текст кнопки" },
+        footerButtonHref: { type: "text", label: "Ссылка кнопки" },
         items: {
-        type: "array",
-        label: "Партнёры",
-        arrayFields: {
+          type: "array",
+          label: "Партнёры",
+          arrayFields: {
             name: { type: "text", label: "Название" },
             logo: partnerLogoField,
             website: { type: "text", label: "Сайт (URL)" },
+          },
+          defaultItemProps: { name: "", logo: "", website: "" },
+          getItemSummary: (item) => item.name || "Партнёр",
         },
-        defaultItemProps: { name: "", logo: "", website: "" },
-        getItemSummary: (item) => item.name || "Партнёр",
-        },
-    },
-    defaultProps: {
+      },
+      defaultProps: {
         label: "НАМ ДОВЕРЯЮТ",
         title: "Наши партнеры",
         subtitle: "Сотрудничаем с ведущими технологическими компаниями",
         footerText: "Хотите стать нашим партнером?",
         footerButtonLabel: "Свяжитесь с нами",
+        footerButtonHref: "#contact",
         items: [
-        { name: "Axoft", logo: "/images/partners/partner_1.png", website: "https://axoftglobal.ru/ru-by/" },
-        { name: "Rusiem", logo: "/images/partners/partner_2.png", website: "https://rusiem.com/" },
-        { name: "Life", logo: "/images/partners/partner_3.png", website: "https://life.by/business/it-solutions" },
-        { name: "Kaspersky", logo: "/images/partners/partner_4.png", website: "https://www.kaspersky.ru/" },
-        { name: "Tenit", logo: "/images/partners/partner_5.png", website: "https://tenit.by/" },
-        { name: "Qtech", logo: "/images/partners/partner_6.png", website: "https://www.qtech.ru/" },
-        { name: "Wi-Tek", logo: "/images/partners/partner_7.png", website: "https://wireless-tek.ru/" },
-        { name: "Киберпротект", logo: "/images/partners/partner_8.png", website: "https://cyberprotect.ru/" },
-        { name: "СерверКом", logo: "/images/partners/partner_9.png", website: "https://xn--b1afbuklkce.com/" },
-        { name: "hoster.by", logo: "/images/partners/partner_10.png", website: "https://hoster.by/" },
-        { name: "ЭйСиТехникс", logo: "/images/partners/partner_11.png", website: "https://actech.by/" },
-        { name: "Librasoft", logo: "/images/partners/partner_12.png", website: "https://librasoft.by/" },
-        { name: "F6", logo: "/images/partners/partner_13.png", website: "https://www.f6.ru/" },
-        { name: "IT Distribution", logo: "/images/partners/partner_14.png", website: "https://it-d.by/" },
-        { name: "Ассистент", logo: "/images/partners/partner_15.png", website: "https://xn--80akicokc0aablc.xn--p1ai/" },
-        { name: "Mont", logo: "/images/partners/partner_16.png", website: "https://mont.by/ru-by" },
-        { name: "Belsiem", logo: "/images/partners/partner_17.png", website: "https://belsiem.com/" },
+          { name: "Axoft", logo: "/images/partners/partner_1.png", website: "https://axoftglobal.ru/ru-by/" },
+          { name: "Rusiem", logo: "/images/partners/partner_2.png", website: "https://rusiem.com/" },
+          { name: "Life", logo: "/images/partners/partner_3.png", website: "https://life.by/business/it-solutions" },
+          { name: "Kaspersky", logo: "/images/partners/partner_4.png", website: "https://www.kaspersky.ru/" },
+          { name: "Tenit", logo: "/images/partners/partner_5.png", website: "https://tenit.by/" },
+          { name: "Qtech", logo: "/images/partners/partner_6.png", website: "https://www.qtech.ru/" },
+          { name: "Wi-Tek", logo: "/images/partners/partner_7.png", website: "https://wireless-tek.ru/" },
+          { name: "Киберпротект", logo: "/images/partners/partner_8.png", website: "https://cyberprotect.ru/" },
+          { name: "СерверКом", logo: "/images/partners/partner_9.png", website: "https://xn--b1afbuklkce.com/" },
+          { name: "hoster.by", logo: "/images/partners/partner_10.png", website: "https://hoster.by/" },
+          { name: "ЭйСиТехникс", logo: "/images/partners/partner_11.png", website: "https://actech.by/" },
+          { name: "Librasoft", logo: "/images/partners/partner_12.png", website: "https://librasoft.by/" },
+          { name: "F6", logo: "/images/partners/partner_13.png", website: "https://www.f6.ru/" },
+          { name: "IT Distribution", logo: "/images/partners/partner_14.png", website: "https://it-d.by/" },
+          { name: "Ассистент", logo: "/images/partners/partner_15.png", website: "https://xn--80akicokc0aablc.xn--p1ai/" },
+          { name: "Mont", logo: "/images/partners/partner_16.png", website: "https://mont.by/ru-by" },
+          { name: "Belsiem", logo: "/images/partners/partner_17.png", website: "https://belsiem.com/" },
         ],
-    },
-    render: (props) => <Partners {...props} />,
+      },
+      render: (props) => <Partners {...props} />,
     },
     FAQ: {
       fields: {

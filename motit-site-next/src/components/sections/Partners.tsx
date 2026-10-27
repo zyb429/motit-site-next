@@ -9,6 +9,7 @@ export type PartnersProps = {
   subtitle: string;
   footerText: string;
   footerButtonLabel: string;
+  footerButtonHref: string;
   items: Array<{ name: string; logo: string; website: string }>;
 };
 
@@ -18,6 +19,7 @@ export default function Partners({
   subtitle,
   footerText,
   footerButtonLabel,
+  footerButtonHref,
   items,
 }: PartnersProps) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -84,6 +86,8 @@ export default function Partners({
     },
     [isDragging, startX, scrollLeft],
   );
+
+  const isExternal = footerButtonHref?.startsWith('http');
 
   return (
     <section className="section-padding" style={{ backgroundColor: '#0a1920' }}>
@@ -189,7 +193,12 @@ export default function Partners({
         >
           {footerText}
         </p>
-        <a href="#contact" className="btn-ghost text-xs">
+        <a
+          href={footerButtonHref || '#contact'}
+          target={isExternal ? '_blank' : undefined}
+          rel={isExternal ? 'noopener noreferrer' : undefined}
+          className="btn-ghost text-xs"
+        >
           {footerButtonLabel}
         </a>
       </div>
