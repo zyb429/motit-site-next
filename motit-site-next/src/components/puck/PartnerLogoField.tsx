@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { ImageIcon, Upload, Trash2 } from "lucide-react";
-import { openEditorModal } from "@rageshpikalmunde/rp-image-editor";
 import type { CustomField } from "@puckeditor/core";
 
 export const partnerLogoField: CustomField<string> = {
@@ -46,6 +45,8 @@ export const partnerLogoField: CustomField<string> = {
           type: blob.type || "image/png",
         });
 
+        // Ленивый импорт: загружается только при клике в браузере
+        const { openEditorModal } = await import("@rageshpikalmunde/rp-image-editor");
         const result = await openEditorModal({
           image: file,
           config: {
@@ -85,6 +86,9 @@ export const partnerLogoField: CustomField<string> = {
       try {
         setEditing(true);
         setError(null);
+
+        // Ленивый импорт: загружается только при клике в браузере
+        const { openEditorModal } = await import("@rageshpikalmunde/rp-image-editor");
         const result = await openEditorModal({
           image: file,
           config: {
