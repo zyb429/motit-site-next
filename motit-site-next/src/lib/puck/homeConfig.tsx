@@ -6,10 +6,11 @@ import About, { type AboutProps } from "@/components/sections/About";
 import WhyChooseUs, { type WhyChooseUsProps } from "@/components/sections/WhyChooseUs";
 import Advantages, { type AdvantagesProps } from "@/components/sections/Advantages";
 import KeyServices, { type KeyServicesProps } from "@/components/sections/KeyServices";
-import Partners from "@/components/sections/Partners";
+import Partners, { type PartnersProps } from "@/components/sections/Partners";
 import FAQ, { type FAQProps } from "@/components/sections/FAQ";
 import Contact from "@/components/sections/Contact";
 import QualityManagement, { type QualityManagementProps } from "@/components/sections/QualityManagement";
+import { partnerLogoField } from "@/components/puck/PartnerLogoField";
 
 type Empty = Record<string, never>;
 
@@ -21,7 +22,7 @@ type HomeConfig = {
   WhyChooseUs: WhyChooseUsProps,
   Advantages: AdvantagesProps;
   KeyServices: KeyServicesProps;
-  Partners: Empty;
+  Partners: PartnersProps;
   FAQ: FAQProps;
   Contact: Empty;
   QualityManagement: QualityManagementProps;
@@ -244,7 +245,53 @@ export const homeConfig: Config<HomeConfig> = {
     },
     render: (props) => <KeyServices {...props} />,
     },
-    Partners: wrap(Partners, "Partners"),
+    Partners: {
+    fields: {
+        label: { type: "text", label: "Метка" },
+        title: { type: "text", label: "Заголовок" },
+        subtitle: { type: "textarea", label: "Подзаголовок" },
+        footerText: { type: "text", label: "Текст над кнопкой" },
+        footerButtonLabel: { type: "text", label: "Текст кнопки" },
+        items: {
+        type: "array",
+        label: "Партнёры",
+        arrayFields: {
+            name: { type: "text", label: "Название" },
+            logo: partnerLogoField,
+            website: { type: "text", label: "Сайт (URL)" },
+        },
+        defaultItemProps: { name: "", logo: "", website: "" },
+        getItemSummary: (item) => item.name || "Партнёр",
+        },
+    },
+    defaultProps: {
+        label: "НАМ ДОВЕРЯЮТ",
+        title: "Наши партнеры",
+        subtitle: "Сотрудничаем с ведущими технологическими компаниями",
+        footerText: "Хотите стать нашим партнером?",
+        footerButtonLabel: "Свяжитесь с нами",
+        items: [
+        { name: "Axoft", logo: "/images/partners/partner_1.png", website: "https://axoftglobal.ru/ru-by/" },
+        { name: "Rusiem", logo: "/images/partners/partner_2.png", website: "https://rusiem.com/" },
+        { name: "Life", logo: "/images/partners/partner_3.png", website: "https://life.by/business/it-solutions" },
+        { name: "Kaspersky", logo: "/images/partners/partner_4.png", website: "https://www.kaspersky.ru/" },
+        { name: "Tenit", logo: "/images/partners/partner_5.png", website: "https://tenit.by/" },
+        { name: "Qtech", logo: "/images/partners/partner_6.png", website: "https://www.qtech.ru/" },
+        { name: "Wi-Tek", logo: "/images/partners/partner_7.png", website: "https://wireless-tek.ru/" },
+        { name: "Киберпротект", logo: "/images/partners/partner_8.png", website: "https://cyberprotect.ru/" },
+        { name: "СерверКом", logo: "/images/partners/partner_9.png", website: "https://xn--b1afbuklkce.com/" },
+        { name: "hoster.by", logo: "/images/partners/partner_10.png", website: "https://hoster.by/" },
+        { name: "ЭйСиТехникс", logo: "/images/partners/partner_11.png", website: "https://actech.by/" },
+        { name: "Librasoft", logo: "/images/partners/partner_12.png", website: "https://librasoft.by/" },
+        { name: "F6", logo: "/images/partners/partner_13.png", website: "https://www.f6.ru/" },
+        { name: "IT Distribution", logo: "/images/partners/partner_14.png", website: "https://it-d.by/" },
+        { name: "Ассистент", logo: "/images/partners/partner_15.png", website: "https://xn--80akicokc0aablc.xn--p1ai/" },
+        { name: "Mont", logo: "/images/partners/partner_16.png", website: "https://mont.by/ru-by" },
+        { name: "Belsiem", logo: "/images/partners/partner_17.png", website: "https://belsiem.com/" },
+        ],
+    },
+    render: (props) => <Partners {...props} />,
+    },
     FAQ: {
       fields: {
         label: { type: "text" }, title: { type: "text" }, subtitle: { type: "textarea" },
