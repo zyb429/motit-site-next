@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
     "@prisma/client",
     "@prisma/adapter-mariadb",
     "mariadb",
+    "canvas",
+    "jsdom",
   ],
 
   compress: true,
