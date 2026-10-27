@@ -5,7 +5,43 @@ import { Check, Loader2, AlertCircle } from "lucide-react";
 
 type FormState = "idle" | "loading" | "success" | "error";
 
-export default function ContactClient() {
+type Field = {
+  name: string;
+  label: string;
+  type: string;
+  required: boolean;
+  placeholder?: string | null;
+  options?: { label: string; value: string }[] | string | null;
+};
+
+const inputStyle = {
+  backgroundColor: "#0f2832",
+  border: "1.5px solid rgba(45, 212, 191, 0.2)",
+  color: "#e0f7fa",
+  fontSize: "16px",
+};
+
+const focusIn = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = "#2dd4bf";
+  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(45, 212, 191, 0.1)";
+};
+const focusOut = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  e.currentTarget.style.borderColor = "rgba(45, 212, 191, 0.2)";
+  e.currentTarget.style.boxShadow = "none";
+};
+
+export default function ContactClient({
+  privacyLabel = "политикой конфиденциальности",
+  privacyHref = "/privacy-policy",
+  fields: initialFields = [],
+}: {
+  privacyLabel?: string;
+  privacyHref?: string;
+  fields?: Field[];
+}) {
+  const [fields, setFields] = useState<Field[]>(initialFields);
+  const [isLoadingFields, setIsLoadingFields] = useState(false);
+  
   const [formState, setFormState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [isPrivacyAgreed, setIsPrivacyAgreed] = useState(false);
@@ -13,7 +49,38 @@ export default function ContactClient() {
   const formRef = useRef<HTMLFormElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
 
-  // Лёгкая анимация появления
+  // 🔥 Загрузка полей, если они не переданы (например, на главной через Puck)
+  useEffect(() => {
+    if (initialFields && initialFields.length > 0) {
+      setFields(initialFields);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingFields(true);
+
+    fetch("/api/contact-fields")
+      .then((res) => {
+        if (!res.ok) throw new Error("Не удалось загрузить поля");
+        return res.json();
+      })
+      .then((data) => {
+        if (isMounted && Array.isArray(data)) {
+          setFields(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Ошибка загрузки полей формы:", err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingFields(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialFields]);
+
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -30,16 +97,12 @@ export default function ContactClient() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-          }
+          if (entry.isIntersecting) entry.target.classList.add("visible");
         });
       },
       { threshold: 0.1 },
     );
-
     observer.observe(section);
-
     return () => observer.disconnect();
   }, []);
 
@@ -48,15 +111,6 @@ export default function ContactClient() {
     setFormState("loading");
     setErrorMessage("");
     setPrivacyError("");
-
-    const formData = new FormData(e.currentTarget);
-
-    const name = (formData.get("name") as string) || "";
-    const email = (formData.get("email") as string) || "";
-    const phone = (formData.get("phone") as string) || "";
-    const message = (formData.get("message") as string) || "";
-    const job_title = (formData.get("job_title") as string) || "";
-    const company_name = (formData.get("company_name") as string) || "";
 
     if (!isPrivacyAgreed) {
       setFormState("error");
@@ -68,35 +122,28 @@ export default function ContactClient() {
       return;
     }
 
-    const data = {
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      message: message.trim(),
-      job_title: job_title.trim(),
-      company_name: company_name.trim(),
-      privacyAgreed: isPrivacyAgreed,
-      privacyAgreedAt: new Date().toISOString(),
-    };
-
-    // Валидация
-    if (!data.name || data.name.length < 2) {
-      setFormState("error");
-      setErrorMessage("Имя должно содержать минимум 2 символа");
-      setTimeout(() => setFormState("idle"), 3000);
-      return;
+    const formData = new FormData(e.currentTarget);
+    const data: Record<string, string> = {};
+    for (const field of fields) {
+      const v = formData.get(field.name);
+      if (v) data[field.name] = String(v).trim();
     }
 
-    if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    // required-валидация
+    for (const field of fields) {
+      if (field.required && !data[field.name]) {
+        setFormState("error");
+        setErrorMessage(`Поле «${field.label}» обязательно`);
+        setTimeout(() => setFormState("idle"), 3000);
+        return;
+      }
+    }
+
+    // email-валидация, если есть поле type=email
+    const emailField = fields.find((f) => f.type === "email");
+    if (emailField && data[emailField.name] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data[emailField.name])) {
       setFormState("error");
       setErrorMessage("Введите корректный email");
-      setTimeout(() => setFormState("idle"), 3000);
-      return;
-    }
-
-    if (data.job_title && data.job_title.length < 4) {
-      setFormState("error");
-      setErrorMessage("Введите корректную должность");
       setTimeout(() => setFormState("idle"), 3000);
       return;
     }
@@ -104,10 +151,12 @@ export default function ContactClient() {
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fields: data,
+          privacyAgreed: isPrivacyAgreed,
+          privacyAgreedAt: new Date().toISOString(),
+        }),
       });
 
       const result = await response.json();
@@ -120,18 +169,13 @@ export default function ContactClient() {
       formRef.current?.reset();
       setIsPrivacyAgreed(false);
 
-      setTimeout(() => {
-        setFormState("idle");
-      }, 4000);
+      setTimeout(() => setFormState("idle"), 4000);
     } catch (error) {
       console.error("Ошибка отправки:", error);
       setFormState("error");
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Произошла ошибка. Попробуйте позже.",
+        error instanceof Error ? error.message : "Произошла ошибка. Попробуйте позже.",
       );
-
       setTimeout(() => {
         setFormState("idle");
         setErrorMessage("");
@@ -141,136 +185,98 @@ export default function ContactClient() {
 
   return (
     <div ref={sectionRef} className="reveal reveal-d1" style={{ opacity: 1 }}>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="text"
-          name="name"
-          placeholder="Введите имя и фамилию *"
-          required
-          className="w-full rounded-xl px-5 py-4 text-base outline-none transition-all duration-150"
-          style={{
-            backgroundColor: "#0f2832",
-            border: "1.5px solid rgba(45, 212, 191, 0.2)",
-            color: "#e0f7fa",
-            fontSize: "16px",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "#2dd4bf";
-            e.currentTarget.style.boxShadow =
-              "0 0 0 3px rgba(45, 212, 191, 0.1)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(45, 212, 191, 0.2)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        />
-        <input
-          type="text"
-          name="company_name"
-          placeholder="Название компании *"
-          required
-          className="w-full rounded-xl px-5 py-4 text-base outline-none transition-all duration-150"
-          style={{
-            backgroundColor: "#0f2832",
-            border: "1.5px solid rgba(45, 212, 191, 0.2)",
-            color: "#e0f7fa",
-            fontSize: "16px",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "#2dd4bf";
-            e.currentTarget.style.boxShadow =
-              "0 0 0 3px rgba(45, 212, 191, 0.1)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(45, 212, 191, 0.2)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        />
-        <input
-          type="text"
-          name="job_title"
-          placeholder="Ваша должность"
-          className="w-full rounded-xl px-5 py-4 text-base outline-none transition-all duration-150"
-          style={{
-            backgroundColor: "#0f2832",
-            border: "1.5px solid rgba(45, 212, 191, 0.2)",
-            color: "#e0f7fa",
-            fontSize: "16px",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "#2dd4bf";
-            e.currentTarget.style.boxShadow =
-              "0 0 0 3px rgba(45, 212, 191, 0.1)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(45, 212, 191, 0.2)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="example@gmail.com *"
-          required
-          className="w-full rounded-xl px-5 py-4 text-base outline-none transition-all duration-150"
-          style={{
-            backgroundColor: "#0f2832",
-            border: "1.5px solid rgba(45, 212, 191, 0.2)",
-            color: "#e0f7fa",
-            fontSize: "16px",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "#2dd4bf";
-            e.currentTarget.style.boxShadow =
-              "0 0 0 3px rgba(45, 212, 191, 0.1)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(45, 212, 191, 0.2)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        />
-        <input
-          type="tel"
-          name="phone"
-          placeholder="+375 (__) ___ __ __"
-          className="w-full rounded-xl px-5 py-4 text-base outline-none transition-all duration-150"
-          style={{
-            backgroundColor: "#0f2832",
-            border: "1.5px solid rgba(45, 212, 191, 0.2)",
-            color: "#e0f7fa",
-            fontSize: "16px",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "#2dd4bf";
-            e.currentTarget.style.boxShadow =
-              "0 0 0 3px rgba(45, 212, 191, 0.1)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(45, 212, 191, 0.2)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        />
-        <textarea
-          name="message"
-          placeholder="Расскажите нам о своей задаче"
-          rows={5}
-          className="w-full rounded-xl px-5 py-4 text-base outline-none transition-all duration-150 resize-none"
-          style={{
-            backgroundColor: "#0f2832",
-            border: "1.5px solid rgba(45, 212, 191, 0.2)",
-            color: "#e0f7fa",
-            fontSize: "16px",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "#2dd4bf";
-            e.currentTarget.style.boxShadow =
-              "0 0 0 3px rgba(45, 212, 191, 0.1)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(45, 212, 191, 0.2)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        />
+      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
+        
+        {/* Индикатор загрузки, если поля грузятся с клиента */}
+        {isLoadingFields && (
+          <p style={{ color: "rgba(128, 222, 234, 0.6)" }}>
+            Загрузка полей формы...
+          </p>
+        )}
+
+        {/* Сообщение, только если поля загрузились и их реально нет */}
+        {!isLoadingFields && fields.length === 0 && (
+          <p style={{ color: "rgba(128, 222, 234, 0.6)" }}>
+            Поля формы не настроены в админке.
+          </p>
+        )}
+
+        {fields.map((field) => {
+          // Парсим options, если пришли строкой
+          let parsedOptions: { label: string; value: string }[] = [];
+          if (typeof field.options === "string") {
+            try {
+              parsedOptions = JSON.parse(field.options);
+            } catch {
+              parsedOptions = [];
+            }
+          } else if (Array.isArray(field.options)) {
+            parsedOptions = field.options;
+          }
+
+          // placeholder как в старом ContactClient
+          const basePlaceholder = field.placeholder?.trim() || field.label;
+          const placeholder = field.required
+            ? `${basePlaceholder} *`
+            : basePlaceholder;
+
+          // select требует label сверху — иначе непонятно, что выбирать
+          if (field.type === "select") {
+            return (
+              <div key={field.name} className="space-y-1">
+                <label className="text-sm" style={{ color: "#e0f7fa" }}>
+                  {field.label}
+                  {field.required && " *"}
+                </label>
+                <select
+                  name={field.name}
+                  required={field.required}
+                  className="w-full rounded-xl px-5 py-4 text-base outline-none transition-all duration-150"
+                  style={inputStyle}
+                  onFocus={focusIn}
+                  onBlur={focusOut}
+                >
+                  <option value="">—</option>
+                  {parsedOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          }
+
+          if (field.type === "textarea") {
+            return (
+              <textarea
+                key={field.name}
+                name={field.name}
+                required={field.required}
+                placeholder={placeholder}
+                rows={5}
+                className="w-full rounded-xl px-5 py-4 text-base outline-none transition-all duration-150 resize-none"
+                style={inputStyle}
+                onFocus={focusIn}
+                onBlur={focusOut}
+              />
+            );
+          }
+
+          return (
+            <input
+              key={field.name}
+              type={field.type}
+              name={field.name}
+              required={field.required}
+              placeholder={placeholder}
+              className="w-full rounded-xl px-5 py-4 text-base outline-none transition-all duration-150"
+              style={inputStyle}
+              onFocus={focusIn}
+              onBlur={focusOut}
+            />
+          );
+        })}
 
         <div className="space-y-1">
           <label className="flex items-start gap-3 cursor-pointer">
@@ -290,27 +296,22 @@ export default function ContactClient() {
               }}
               required
             />
-            <span
-              className="text-sm leading-relaxed"
-              style={{ color: "#e0f7fa" }}
-            >
+            <span className="text-sm leading-relaxed" style={{ color: "#e0f7fa" }}>
               Я согласен(а) на обработку персональных данных в соответствии с{" "}
               <a
-                href="/privacy-policy"
+                href={privacyHref}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="text-teal-400 hover:text-teal-300 underline transition-colors"
                 style={{ color: "#2dd4bf" }}
               >
-                политикой конфиденциальности
+                {privacyLabel}
               </a>
             </span>
           </label>
 
           {privacyError && (
-            <p
-              className="text-sm text-red-400 pl-8"
-              style={{ color: "#f87171" }}
-            >
+            <p className="text-sm text-red-400 pl-8" style={{ color: "#f87171" }}>
               {privacyError}
             </p>
           )}
@@ -334,12 +335,10 @@ export default function ContactClient() {
 
         <button
           type="submit"
-          disabled={formState === "loading" || formState === "success"}
+          disabled={formState === "loading" || formState === "success" || isLoadingFields}
           className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-70"
         >
-          {formState === "loading" && (
-            <Loader2 size={18} className="animate-spin" />
-          )}
+          {formState === "loading" && <Loader2 size={18} className="animate-spin" />}
           {formState === "success" && <Check size={18} />}
           {formState === "idle" && "Отправить"}
           {formState === "loading" && "Отправка..."}
@@ -348,10 +347,7 @@ export default function ContactClient() {
         </button>
 
         {formState === "success" && (
-          <p
-            className="text-sm text-center"
-            style={{ color: "rgba(52, 211, 153, 0.7)" }}
-          >
+          <p className="text-sm text-center" style={{ color: "rgba(52, 211, 153, 0.7)" }}>
             ✓ Заявка отправлена! Мы свяжемся с вами в ближайшее время
           </p>
         )}

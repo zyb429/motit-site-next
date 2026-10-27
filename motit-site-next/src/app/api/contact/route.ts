@@ -3,19 +3,27 @@ import nodemailer from "nodemailer";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 
+type ContactFields = Record<string, string>;
+
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
-    const {
-      name,
-      job_title,
-      company_name,
-      email,
-      phone,
-      message,
-      privacyAgreed,
-      privacyAgreedAt,
-    } = data;
+    const body = await request.json();
+
+    // Поддерживаем оба контракта:
+    // - новый: { fields: {...}, privacyAgreed, privacyAgreedAt }
+    // - старый: { name, email, phone, message, ..., privacyAgreed, privacyAgreedAt }
+    const fields: ContactFields = body.fields ?? {};
+    const legacy = {
+      name: body.name ?? fields.name,
+      email: body.email ?? fields.email,
+      phone: body.phone ?? fields.phone,
+      message: body.message ?? fields.message,
+      company_name: body.company_name ?? fields.company_name,
+      job_title: body.job_title ?? fields.job_title,
+    };
+
+    const privacyAgreed = !!body.privacyAgreed;
+    const privacyAgreedAt: string = body.privacyAgreedAt ?? new Date().toISOString();
 
     // ---------- 1. Валидация ----------
     if (!privacyAgreed) {
@@ -29,14 +37,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!name || String(name).trim().length < 2) {
+    if (!legacy.name || String(legacy.name).trim().length < 2) {
       return NextResponse.json(
         { success: false, error: "Имя должно содержать минимум 2 символа", field: "name" },
         { status: 400 },
       );
     }
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
+    if (!legacy.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(legacy.email))) {
       return NextResponse.json(
         { success: false, error: "Введите корректный email", field: "email" },
         { status: 400 },
@@ -47,16 +55,17 @@ export async function POST(request: Request) {
     let ticketUuid: string | null = null;
     try {
       ticketUuid = await createTicketFromContact({
-        name: String(name).trim(),
-        email: String(email).trim(),
-        phone: phone ? String(phone).trim() : null,
-        company_name: company_name ? String(company_name).trim() : null,
-        job_title: job_title ? String(job_title).trim() : null,
-        message: message ? String(message).trim() : null,
-        privacyAgreedAt: privacyAgreedAt ?? new Date().toISOString(),
+        fields,
+        name: String(legacy.name).trim(),
+        email: String(legacy.email).trim(),
+        phone: legacy.phone ? String(legacy.phone).trim() : null,
+        company_name: legacy.company_name ? String(legacy.company_name).trim() : null,
+        job_title: legacy.job_title ? String(legacy.job_title).trim() : null,
+        message: legacy.message ? String(legacy.message).trim() : null,
+        privacyAgreed,
+        privacyAgreedAt,
       });
     } catch (dbError) {
-      // Не роняем форму, если БД недоступна — письмо всё равно отправим
       console.error("❌ Ошибка сохранения заявки в БД:", dbError);
     }
 
@@ -75,10 +84,7 @@ export async function POST(request: Request) {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       tls: { rejectUnauthorized: false },
       connectionTimeout: 10000,
       greetingTimeout: 10000,
@@ -88,15 +94,24 @@ export async function POST(request: Request) {
 
     await transporter.verify();
 
-    const htmlContent = buildHtml({ name, job_title, company_name, email, phone, message, privacyAgreedAt });
+    const htmlContent = buildHtml({
+      fields,
+      name: legacy.name,
+      email: legacy.email,
+      phone: legacy.phone,
+      message: legacy.message,
+      company_name: legacy.company_name,
+      job_title: legacy.job_title,
+      privacyAgreedAt,
+    });
 
     const mailOptions = {
       from: `"${process.env.SMTP_FROM_NAME || "Сайт"}" <${process.env.SMTP_FROM_EMAIL}>`,
       to: process.env.CONTACT_EMAIL,
-      subject: `Новая заявка от ${name}`,
+      subject: `Новая заявка от ${legacy.name}`,
       html: htmlContent,
-      text: buildText({ name, email, phone, message, privacyAgreedAt, ticketUuid }),
-      replyTo: email,
+      text: buildText({ ...legacy, privacyAgreedAt, ticketUuid }),
+      replyTo: legacy.email,
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -119,28 +134,25 @@ export async function POST(request: Request) {
 }
 
 /* ============================================================
- *  Сохранение заявки в виде тикета
+ *  Сохранение заявки в виде тикета (с form_data)
  * ============================================================ */
 type ContactPayload = {
+  fields: ContactFields;
   name: string;
   email: string;
   phone: string | null;
   company_name: string | null;
   job_title: string | null;
   message: string | null;
+  privacyAgreed: boolean;
   privacyAgreedAt: string;
 };
 
 async function createTicketFromContact(p: ContactPayload): Promise<string> {
-  // Категория "site-request" (создать сидом или один раз руками)
   const category = await prisma.ticket_categories.findUnique({
     where: { slug: "site-request" },
   });
-
-  // Статус "new" по code (в твоей таблице statuses.code уникален)
-  const status = await prisma.statuses.findUnique({
-    where: { code: "new" },
-  });
+  const status = await prisma.statuses.findUnique({ where: { code: "new" } });
 
   const title = p.company_name
     ? `Заявка с сайта: ${p.company_name}`
@@ -161,6 +173,12 @@ async function createTicketFromContact(p: ContactPayload): Promise<string> {
         uuid: randomUUID(),
         title,
         description: descriptionParts.join("\n\n"),
+        // 🔑 СОХРАНЯЕМ СХЕМУ ПОЛЕЙ
+        form_data: {
+          fields: p.fields,
+          privacyAgreed: p.privacyAgreed,
+          privacyAgreedAt: p.privacyAgreedAt,
+        },
         contact_name: p.name,
         contact_email: p.email,
         contact_phone: p.phone,
@@ -183,8 +201,6 @@ async function createTicketFromContact(p: ContactPayload): Promise<string> {
       },
     });
 
-    // Добавляем админов и воркеров как участников,
-    // чтобы они могли отвечать на заявку с сайта
     const staff = await tx.users.findMany({
       where: {
         users_role_lnk: {
@@ -208,7 +224,6 @@ async function createTicketFromContact(p: ContactPayload): Promise<string> {
       });
     }
 
-    // История статусов
     if (status?.uuid) {
       await tx.ticket_status_history.create({
         data: {
@@ -229,16 +244,36 @@ async function createTicketFromContact(p: ContactPayload): Promise<string> {
  *  Шаблоны письма
  * ============================================================ */
 function buildHtml(d: {
-  name: string;
+  fields: ContactFields;
+  name?: string;
   job_title?: string;
   company_name?: string;
-  email: string;
+  email?: string;
   phone?: string;
   message?: string;
   privacyAgreedAt?: string;
 }) {
   const esc = (s?: string) =>
     (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Если есть fields — рендерим их таблицей, иначе старый набор
+  const fieldRows = Object.keys(d.fields ?? {}).length
+    ? Object.entries(d.fields)
+        .map(
+          ([k, v]) =>
+            `<div class="field"><div class="label">${esc(k)}</div><div class="value">${esc(
+              String(v),
+            ).replace(/\n/g, "<br>")}</div></div>`,
+        )
+        .join("")
+    : `
+        <div class="field"><div class="label">👤 Имя</div><div class="value">${esc(d.name)}</div></div>
+        ${d.job_title ? `<div class="field"><div class="label">Должность</div><div class="value">${esc(d.job_title)}</div></div>` : ""}
+        ${d.company_name ? `<div class="field"><div class="label">🏢 Компания</div><div class="value">${esc(d.company_name)}</div></div>` : ""}
+        <div class="field"><div class="label">📧 Email</div><div class="value">${esc(d.email)}</div></div>
+        ${d.phone ? `<div class="field"><div class="label">📱 Телефон</div><div class="value">${esc(d.phone)}</div></div>` : ""}
+        <div class="field"><div class="label">💬 Сообщение</div><div class="value">${esc(d.message).replace(/\n/g, "<br>")}</div></div>
+      `;
 
   return `
     <!DOCTYPE html>
@@ -255,12 +290,7 @@ function buildHtml(d: {
       <div class="container">
         <div class="header"><h2>📩 Новая заявка с сайта</h2></div>
         <div class="content">
-          <div class="field"><div class="label">👤 Имя</div><div class="value">${esc(d.name)}</div></div>
-          ${d.job_title ? `<div class="field"><div class="label">Должность</div><div class="value">${esc(d.job_title)}</div></div>` : ""}
-          ${d.company_name ? `<div class="field"><div class="label">🏢 Компания</div><div class="value">${esc(d.company_name)}</div></div>` : ""}
-          <div class="field"><div class="label">📧 Email</div><div class="value">${esc(d.email)}</div></div>
-          ${d.phone ? `<div class="field"><div class="label">📱 Телефон</div><div class="value">${esc(d.phone)}</div></div>` : ""}
-          <div class="field"><div class="label">💬 Сообщение</div><div class="value">${esc(d.message).replace(/\n/g, "<br>")}</div></div>
+          ${fieldRows}
           <div class="field"><div class="label">📋 Согласие на обработку ПД</div>
             <div class="value">✅ Да
               <div style="font-size:12px;color:#64748b;margin-top:5px;">
@@ -276,8 +306,8 @@ function buildHtml(d: {
 }
 
 function buildText(d: {
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
   phone?: string;
   message?: string;
   privacyAgreedAt?: string;
@@ -286,8 +316,8 @@ function buildText(d: {
   return `
 Новая заявка с сайта Motit
 
-Имя: ${d.name}
-Email: ${d.email}
+Имя: ${d.name ?? ""}
+Email: ${d.email ?? ""}
 ${d.phone ? `Телефон: ${d.phone}` : ""}
 Сообщение: ${d.message ?? ""}
 
