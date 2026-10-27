@@ -339,6 +339,7 @@ model tickets {
   uuid             String    @unique(map: "idx_tickets_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
   title            String    @db.VarChar(255)
   description      String?   @db.Text
+  form_data        Json?
 
   contact_name      String? @db.VarChar(255)
   contact_email     String? @db.VarChar(255)
@@ -725,4 +726,18 @@ model GlobalSettings {
   updated_by users? @relation("GlobalSettingsUpdatedBy", fields: [updated_by_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([updated_by_id])
+}
+
+model ContactFormField {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique(map: "idx_contact_form_name") @db.VarChar(100)
+  label       String   @db.VarChar(255)
+  type        String   @db.VarChar(50)
+  required    Boolean  @default(false)
+  placeholder String?  @db.VarChar(255)
+  options     Json?
+  sortOrder   Int      @default(0)
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamp(0)
+  updatedAt   DateTime @updatedAt @db.Timestamp(0)
 }
