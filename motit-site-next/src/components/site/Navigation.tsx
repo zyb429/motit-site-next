@@ -8,7 +8,7 @@ const links = [
   { href: "/", label: "Главная" },
   { href: "/blog", label: "Блог" },
   { href: "/about", label: "О нас" },
-  { href: "/contact", label: "Контакты" },
+  { href: "/#contact", label: "Контакты" },
 ];
 
 export function Navigation() {
@@ -16,10 +16,12 @@ export function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
-    if (path === "/blog" && pathname?.startsWith("/blog")) {
+    // Убираем якорь для проверки пути
+    const cleanPath = path.split("#")[0];
+    if (cleanPath === "/blog" && pathname?.startsWith("/blog")) {
       return true;
     }
-    return pathname === path;
+    return pathname === cleanPath;
   };
 
   return (

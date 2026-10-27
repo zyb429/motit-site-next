@@ -1,5 +1,8 @@
 import type { Config } from "@puckeditor/core";
-import { HeaderBlock, type HeaderBlockProps } from "@/components/puck/HeaderBlock";
+import {
+  HeaderBlock,
+  type HeaderBlockProps,
+} from "@/components/puck/HeaderBlock";
 import { imageUploadField } from "@/components/puck/ImageUploadField";
 
 type HeaderConfig = { Header: HeaderBlockProps };
@@ -25,8 +28,21 @@ export const headerConfig: Config<HeaderConfig> = {
                 { label: "Нет", value: false },
               ],
             },
+            icon: {
+              type: "select",
+              label: "Иконка",
+              options: [
+                { label: "Нет", value: "" },
+                { label: "Наушники (Поддержка)", value: "headphones" },
+              ],
+            },
           },
-          defaultItemProps: { label: "", href: "", external: false },
+          defaultItemProps: {
+            label: "",
+            href: "",
+            external: false,
+            icon: "",
+          },
           getItemSummary: (item) => item.label || "Пункт",
         },
         ctaLabel: { type: "text", label: "CTA: текст" },
@@ -41,12 +57,23 @@ export const headerConfig: Config<HeaderConfig> = {
         },
       },
       defaultProps: {
-        logoText: "Motit",
+        logoText: "МОТИТ",
         logoHref: "/",
         logoImageUrl: "",
-        nav: [],
-        ctaLabel: "Связаться",
-        ctaHref: "/contacts",
+        nav: [
+          { label: "Направления", href: "/#directions", external: false },
+          { label: "О нас", href: "/about", external: false },
+          { label: "Контакты", href: "/#contact", external: false },
+          { label: "Блог", href: "/blog", external: false },
+          {
+            label: "Поддержка",
+            href: "/support",
+            external: false,
+            icon: "headphones",
+          },
+        ],
+        ctaLabel: "СВЯЗАТЬСЯ",
+        ctaHref: "/#contact",
         ctaEnabled: true,
       },
       render: (props) => <HeaderBlock {...props} />,

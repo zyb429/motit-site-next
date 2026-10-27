@@ -1,97 +1,178 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { Container } from "@/components/ui";
+import { useActiveSection } from "@/hooks/useActiveSection";
+import { Headphones } from "lucide-react";
 
 export type HeaderBlockProps = {
   logoText: string;
   logoHref: string;
-  logoImageUrl: string | null;
-  nav: Array<{ label: string; href: string; external: boolean }>;
-  ctaLabel: string;
-  ctaHref: string;
-  ctaEnabled: boolean;
+  logoImageUrl?: string;
+  nav: Array<{
+    label: string;
+    href: string;
+    external?: boolean;
+    icon?: string;
+  }>;
+  ctaLabel?: string;
+  ctaHref?: string;
+  ctaEnabled?: boolean;
 };
 
-export function HeaderBlock(props: HeaderBlockProps) {
-  const [open, setOpen] = useState(false);
+export function HeaderBlock({
+  logoText = "Motit",
+  logoHref = "/",
+  logoImageUrl,
+  nav = [],
+  ctaLabel = "Связаться",
+  ctaHref = "/#contact",
+  ctaEnabled = false,
+}: HeaderBlockProps) {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  const sectionIds = nav
+    .map((link) => link.href.split("#")[1])
+    .filter(Boolean) as string[];
+
+  const activeSection = useActiveSection(sectionIds);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const isActive = (href: string) => {
+    const [cleanPath, hash] = href.split("#");
+    if (
+      pathname !== cleanPath &&
+      !(cleanPath === "/blog" && pathname?.startsWith("/blog"))
+    ) {
+      return false;
+    }
+    if (hash) {
+      return activeSection === hash;
+    }
+    return !activeSection;
+  };
 
   return (
-    <header className="sticky top-0 z-40 bg-[var(--bg-card)] border-b border-[var(--border)]">
-      <div className="h-20 px-4 sm:px-6 max-w-7xl mx-auto flex items-center justify-between gap-4">
-        {/* Логотип */}
-        <Link href={props.logoHref || "/"} className="flex items-center gap-3 shrink-0">
-          {props.logoImageUrl ? (
-            <img src={props.logoImageUrl} alt="" className="h-10 w-auto" />
-          ) : (
-            <span className="text-lg font-bold text-[var(--text-primary)]">
-              {props.logoText}
-            </span>
-          )}
-        </Link>
-
-        {/* Меню — десктоп */}
-        <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
-          {props.nav.map((item, i) => (
-            <a
-              key={i}
-              href={item.href}
-              target={item.external ? "_blank" : undefined}
-              rel={item.external ? "noreferrer" : undefined}
-              className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-
-        {/* CTA */}
-        <div className="flex items-center gap-3 shrink-0">
-          {props.ctaEnabled && (
-            <a
-              href={props.ctaHref || "/"}
-              className="hidden sm:inline-block px-4 py-2 rounded-md bg-[var(--accent)] text-white text-sm hover:opacity-90 transition-opacity"
-            >
-              {props.ctaLabel}
-            </a>
-          )}
-
-          {/* Бургер — мобилка */}
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="md:hidden p-2 text-[var(--text-primary)]"
-            aria-label="Меню"
+    <header
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-[#0a1920]/80 backdrop-blur-sm border-b border-[rgba(45,212,191,0.1)]"
+          : "bg-[#0a1920]"
+      }`}
+    >
+      <Container>
+        <div className="flex h-16 items-center justify-between">
+          {/* Логотип — всегда белый */}
+          <Link
+            href={logoHref}
+            className="text-xl font-bold flex items-center gap-2 text-white"
           >
-            {open ? "✕" : "☰"}
+            {logoImageUrl ? (
+              <img src={logoImageUrl} alt={logoText} className="h-8 w-auto" />
+            ) : (
+              logoText
+            )}
+          </Link>
+
+          {/* Десктопное меню */}
+          <nav className="hidden md:flex items-center gap-6">
+            {nav.map((link, i) => (
+              <Link
+                key={i}
+                href={link.href}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
+                className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive(link.href)
+                    ? "text-[var(--accent)]"
+                    : "text-gray-300 hover:text-[var(--accent)]"
+                }`}
+              >
+                {link.icon === "headphones" && <Headphones size={16} />}
+                {link.label}
+              </Link>
+            ))}
+
+            {/* CTA */}
+            {ctaEnabled && ctaLabel && ctaHref && (
+              <Link
+                href={ctaHref}
+                className="ml-4 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 bg-[var(--accent)] text-[var(--bg-primary)]"
+              >
+                {ctaLabel}
+              </Link>
+            )}
+          </nav>
+
+          {/* Кнопка мобильного меню — всегда белая */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 text-white"
+            aria-label="Toggle menu"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              {isMobileMenuOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
           </button>
         </div>
-      </div>
+      </Container>
 
-      {/* Мобильное меню */}
-      {open && (
-        <div className="md:hidden border-t border-[var(--border)] bg-[var(--bg-card)]">
-          <nav className="px-4 py-3 space-y-1">
-            {props.nav.map((item, i) => (
-              <a
+      {/* Мобильное меню — всегда тёмное */}
+      {isMobileMenuOpen && (
+        <div className="absolute top-16 left-0 right-0 bg-[#0a1920] border-b border-[rgba(45,212,191,0.1)] p-4 md:hidden z-50">
+          <nav className="flex flex-col gap-3">
+            {nav.map((link, i) => (
+              <Link
                 key={i}
-                href={item.href}
-                target={item.external ? "_blank" : undefined}
-                rel={item.external ? "noreferrer" : undefined}
-                onClick={() => setOpen(false)}
-                className="block px-2 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--accent)]"
+                href={link.href}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive(link.href)
+                    ? "text-[var(--accent)]"
+                    : "text-gray-300 hover:text-[var(--accent)]"
+                }`}
               >
-                {item.label}
-              </a>
+                {link.icon === "headphones" && <Headphones size={16} />}
+                {link.label}
+              </Link>
             ))}
-            {props.ctaEnabled && (
-              <a
-                href={props.ctaHref || "/"}
-                onClick={() => setOpen(false)}
-                className="block mt-2 px-4 py-2 rounded-md bg-[var(--accent)] text-white text-sm text-center"
+            {ctaEnabled && ctaLabel && ctaHref && (
+              <Link
+                href={ctaHref}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="mt-2 inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-all duration-300 bg-[var(--accent)] text-[var(--bg-primary)]"
               >
-                {props.ctaLabel}
-              </a>
+                {ctaLabel}
+              </Link>
             )}
           </nav>
         </div>
