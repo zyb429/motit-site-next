@@ -12,6 +12,7 @@ import ContactView, { type ContactViewProps } from "@/components/sections/Contac
 import QualityManagement, { type QualityManagementProps } from "@/components/sections/QualityManagement";
 import { partnerLogoField } from "@/components/puck/PartnerLogoField";
 import { dateField } from "@/components/puck/DateField";
+import { certificateFileField, policyFileField } from "@/components/puck/CertificateFileField";
 
 type HomeConfig = {
   Hero: HeroProps;
@@ -365,14 +366,14 @@ export const homeConfig: Config<HomeConfig> = {
         subtitle: { type: "textarea", label: "Подзаголовок" },
         policyTitle: { type: "text", label: "Политика: заголовок" },
         policyDesc: { type: "text", label: "Политика: описание" },
-        policyHref: { type: "text", label: "Политика: ссылка" },
+        policyHref: policyFileField,
         certificates: {
           type: "array", label: "Сертификаты",
           arrayFields: {
             title: { type: "text", label: "Заголовок" },
             subtitle: { type: "text", label: "Подзаголовок" },
             description: { type: "textarea", label: "Описание" },
-            file: { type: "text", label: "Ссылка на PDF" },
+            file: certificateFileField,
             icon: { type: "select", label: "Иконка", options: [
               { label: "Award", value: "award" }, { label: "Shield", value: "shield" },
             ]},

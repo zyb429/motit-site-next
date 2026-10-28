@@ -3,18 +3,23 @@
 import { useState, useRef, useEffect } from 'react';
 import { FileText, ExternalLink, ShieldCheck, ChevronDown, Award, Download } from 'lucide-react';
 
+export type CertificateFile =
+  | string
+  | { url: string; fileId?: number; name?: string }
+  | null;
+
 export type QualityManagementProps = {
   label: string;
   title: string;
   subtitle: string;
   policyTitle: string;
   policyDesc: string;
-  policyHref: string;
+  policyHref: CertificateFile;
   certificates: Array<{
     title: string;
     subtitle: string;
     description: string;
-    file: string;
+    file: CertificateFile;
     icon: 'award' | 'shield';
     expiryDate: string;
   }>;
@@ -22,6 +27,12 @@ export type QualityManagementProps = {
 };
 
 const ICONS = { award: Award, shield: ShieldCheck } as const;
+
+function resolveFileUrl(file: CertificateFile): string {
+  if (!file) return '';
+  if (typeof file === 'string') return file;
+  return file.url ?? '';
+}
 
 export default function QualityManagement({
   label,
@@ -53,6 +64,7 @@ export default function QualityManagement({
   }, [inEditor]);
 
   const opened = inEditor || isOpen;
+  const policyUrl = resolveFileUrl(policyHref);
 
   return (
     <section className="section-padding" style={{ backgroundColor: '#0d2029' }}>
@@ -66,9 +78,10 @@ export default function QualityManagement({
         {policyTitle && (
           <div className="mb-4">
             <a
-              href={policyHref}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={policyUrl || '#'}
+              onClick={(e) => { if (!policyUrl) e.preventDefault(); }}
+              target={policyUrl ? '_blank' : undefined}
+              rel={policyUrl ? 'noopener noreferrer' : undefined}
               className="flex items-center justify-between rounded-xl p-5 md:p-6 transition-all duration-150 hover:-translate-y-1"
               style={{
                 backgroundColor: '#0f2832',
@@ -144,12 +157,19 @@ export default function QualityManagement({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 {certificates.map((cert, i) => {
                   const Icon = ICONS[cert.icon] ?? Award;
+                  const fileUrl = resolveFileUrl(cert.file);
+                  const Wrapper = fileUrl ? 'a' : 'div';
+                  const wrapperProps = fileUrl
+                    ? {
+                        href: fileUrl,
+                        target: '_blank',
+                        rel: 'noopener noreferrer',
+                      }
+                    : {};
                   return (
-                    <a
+                    <Wrapper
                       key={i}
-                      href={cert.file}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      {...wrapperProps}
                       className="flex flex-col rounded-xl p-5 transition-all duration-150 hover:-translate-y-1 group"
                       style={{ backgroundColor: '#0f2832', border: '1.5px solid rgba(45, 212, 191, 0.1)' }}
                     >
@@ -185,7 +205,7 @@ export default function QualityManagement({
                           })}
                         </p>
                       )}
-                    </a>
+                    </Wrapper>
                   );
                 })}
               </div>
