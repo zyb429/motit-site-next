@@ -9,7 +9,12 @@ import { useState } from "react";
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   const orig = console.error;
   console.error = (...args: unknown[]) => {
-    if (typeof args[0] === "string" && args[0].includes("Encountered a script tag")) {
+    if (
+      typeof args[0] === "string" &&
+      (args[0].includes("Encountered a script tag") ||
+        // Фильтруем предупреждения о key из внутренних компонентов Puck
+        args[0].includes('Each child in a list should have a unique "key" prop'))
+    ) {
       return;
     }
     orig.apply(console, args);

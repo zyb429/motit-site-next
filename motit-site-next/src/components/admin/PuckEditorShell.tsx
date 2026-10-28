@@ -47,5 +47,12 @@ export function PuckEditorShell({
     }
   };
 
-  return <Puck config={config} data={initial} onPublish={onPublish} iframe={{ enabled: false }} />;
+    return (
+        <Puck
+        config={config}
+        data={initial}
+        onPublish={onPublish}
+        iframe={{ enabled: false }}
+        />
+    );
 }

@@ -3,6 +3,13 @@
 @import "tailwindcss/preflight" layer(base);
 @import "tailwindcss/utilities" layer(utilities);
 
+/* Tailwind 4: явно указываем, где искать классы.
+   Без этого классы из src/components (включая FooterBlock, HeaderBlock)
+   не попадают в собранный CSS, и Puck-компоненты рендерятся "списком". */
+@source "../components/**/*.{ts,tsx}";
+@source "../lib/**/*.{ts,tsx}";
+@source "../app/**/*.{ts,tsx}";
+
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
