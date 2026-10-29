@@ -6,17 +6,14 @@ import {
   Globe,
   Phone,
   Share2,
-  Mail,
   Search,
   BarChart3,
   Bell,
   Palette,
-  Shield,
-  Database,
   Code2,
   Layout,
   LayoutList,
-  Home, 
+  Home,
 } from "lucide-react";
 
 const SECTIONS = [
@@ -37,12 +34,6 @@ const SECTIONS = [
     icon: Share2,
     title: "Соцсети",
     desc: "Ссылки на Telegram, Instagram, VK и др.",
-  },
-  {
-    href: "/admin/settings/email",
-    icon: Mail,
-    title: "Почта",
-    desc: "Адрес и имя отправителя писем",
   },
   {
     href: "/admin/settings/seo",
@@ -91,18 +82,6 @@ const SECTIONS = [
     icon: Code2,
     title: "Языки программирования",
     desc: "Подсветка кода в редакторе",
-  },
-  {
-    href: "/admin/settings/security",
-    icon: Shield,
-    title: "Безопасность",
-    desc: "2FA, срок сессии, IP-ограничения",
-  },
-  {
-    href: "/admin/settings/backups",
-    icon: Database,
-    title: "Резервные копии",
-    desc: "Экспорт, импорт и сброс настроек",
   },
   {
     href: "/admin/settings/contact-fields",

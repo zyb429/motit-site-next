@@ -252,13 +252,39 @@ model roles {
   users_role_lnk users_role_lnk[]
 }
 
-model settings {
-  id          Int       @id @default(autoincrement()) @db.UnsignedInt
-  key         String    @unique(map: "idx_settings_key") @db.VarChar(255)
-  value       String?   @db.LongText
-  description String?   @db.VarChar(255)
-  created_at  DateTime? @default(now()) @db.Timestamp(0)
-  updated_at  DateTime? @default(now()) @db.Timestamp(0)
+model SiteSettings {
+  id           Int      @id @default(autoincrement())
+  siteName     String   @default("Motit")
+  description  String?  @db.Text
+  language     String   @default("ru")
+  timezone     String   @default("Europe/Minsk")
+
+  contactEmail String?
+  contactPhone String?
+  address      String?
+  workHours    String?
+
+  socialLinks  Json?
+
+  emailFromName  String?
+  emailFromEmail String?
+
+  seoTitle       String?
+  seoDescription String? @db.Text
+  seoKeywords    String? @db.Text
+  ogImageUrl     String?
+  robots         String? @default("index,follow")
+
+  analyticsGaId  String?
+  analyticsYmId  String?
+
+  notificationEmails Json?
+
+  logoUrl     String?
+  faviconUrl  String?
+  accentColor String? @default("#6366f1")
+
+  updatedAt DateTime @updatedAt
 }
 
 model statuses {

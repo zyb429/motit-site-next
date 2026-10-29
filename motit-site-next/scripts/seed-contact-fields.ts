@@ -9,7 +9,7 @@ const fields = [
   { name: "company_name", label: "Название компании", type: "text", required: true, placeholder: "Название компании", sortOrder: 1 },
   { name: "job_title", label: "Ваша должность", type: "text", required: false, placeholder: "Ваша должность", sortOrder: 2 },
   { name: "email", label: "Email", type: "email", required: true, placeholder: "example@gmail.com", sortOrder: 3 },
-  { name: "phone", label: "Телефон", type: "tel", required: false, placeholder: "+375 (__) ___ __ __", sortOrder: 4 },
+  { name: "phone", label: "Телефон", type: "tel", required: true, placeholder: "+375 (__) ___ __ __", sortOrder: 4 },
   { name: "message", label: "Сообщение", type: "textarea", required: false, placeholder: "Расскажите нам о своей задаче", sortOrder: 5 },
 ];
 

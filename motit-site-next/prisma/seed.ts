@@ -53,12 +53,15 @@ async function main() {
     skipDuplicates: true,
   });
 
-  await prisma.settings.upsert({
+  // === НОВЫЕ НАСТРОЙКИ ===
+  
+  // 1. Переносим MIME-типы и posts_per_page в GlobalSettings
+  await prisma.globalSettings.upsert({
     where: { key: "upload.allowed_mime" },
     update: {},
     create: {
       key: "upload.allowed_mime",
-      value: JSON.stringify([
+      value: [
         "image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml",
         "image/bmp", "text/plain", "text/markdown", "text/csv", "text/html",
         "text/css", "application/json", "application/xml", "application/x-yaml",
@@ -71,14 +74,78 @@ async function main() {
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         "application/zip", "application/x-rar-compressed", "application/gzip",
         "application/x-7z-compressed",
-      ]),
-      description: "Разрешённые MIME-типы для загрузки файлов",
+      ],
     },
   });
 
-  // --- admin user ---
-  const adminEmail = "admin@local.dev";
-  const adminPassword = "admin123";
+  await prisma.globalSettings.upsert({
+    where: { key: "posts_per_page" },
+    update: {},
+    create: { key: "posts_per_page", value: 6 },
+  });
+
+  // 2. Создаем настройки сайта
+  const siteSettingsData = {
+    id: 1,
+    siteName: "Motit",
+    description: "IT-решения для бизнеса",
+    language: "ru",
+    timezone: "Europe/Minsk",
+
+    // SEO — дефолтные значения
+    seoTitle: "МОТИТ — IT-решения для бизнеса | Аудит, безопасность, разработка",
+    seoDescription:
+      "Комплексные IT-услуги для бизнеса: аудит информационной безопасности, пентест, СЗИ, разработка ПО и сайтов, умный дом. Более 10 лет опыта. Работаем по всей Беларуси.",
+    seoKeywords:
+      "IT-услуги, информационная безопасность, аудит, пентест, СЗИ, разработка ПО, разработка сайтов, умный дом, SOAR, SIEM, антивирусная защита, Минск, Беларусь",
+    ogImageUrl: "/og-image.jpg",
+    robots: "index, follow",
+
+    // Внешний вид
+    accentColor: "#6366f1",
+    socialLinks: { telegram: "", vk: "", instagram: "" },
+    notificationEmails: [],
+  };
+
+  await prisma.siteSettings.upsert({
+    where: { id: 1 },
+    update: siteSettingsData,
+    create: siteSettingsData,
+  });
+
+  // 3. Поля формы контактов (upsert, чтобы обновлять существующие)
+  const contactFields = [
+    { name: "name", label: "Имя", type: "text", required: true, placeholder: "Ваше имя", sortOrder: 1 },
+    { name: "email", label: "Email", type: "email", required: true, placeholder: "email@example.com", sortOrder: 2 },
+    { name: "phone", label: "Телефон", type: "tel", required: true, placeholder: "+375 (29) 123-45-67", sortOrder: 3 },
+    { name: "company_name", label: "Компания", type: "text", required: false, placeholder: "Название компании", sortOrder: 4 },
+    { name: "job_title", label: "Должность", type: "text", required: false, placeholder: "Ваша должность", sortOrder: 5 },
+    { name: "message", label: "Сообщение", type: "textarea", required: false, placeholder: "Ваше сообщение...", sortOrder: 6 },
+  ];
+
+  for (const field of contactFields) {
+    await prisma.contactFormField.upsert({
+      where: { name: field.name },
+      update: field,
+      create: field,
+    });
+  }
+
+  // 4. Языки программирования
+  await prisma.codeLanguage.createMany({
+    skipDuplicates: true,
+    data: [
+      { code: "typescript", label: "TypeScript", sortOrder: 1 },
+      { code: "javascript", label: "JavaScript", sortOrder: 2 },
+      { code: "python", label: "Python", sortOrder: 3 },
+      { code: "go", label: "Go", sortOrder: 4 },
+      { code: "rust", label: "Rust", sortOrder: 5 },
+    ],
+  });
+
+  // === ADMIN ===
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@local.dev";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 
   const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
 
@@ -118,5 +185,8 @@ async function main() {
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1); })
+  .catch((e) => { 
+    console.error(e); 
+    process.exit(1); 
+  })
   .finally(() => prisma.$disconnect());

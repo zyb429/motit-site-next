@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Search, X } from "lucide-react";
 import { getPostsPrisma } from "@/lib/db/posts";
-import { getPostsPerPagePrisma } from "@/lib/db/settings";
+import { getPostsPerPage } from "@/lib/db/global-settings";
 import { getCategoriesPrisma } from "@/lib/db/categories";
 import { BlogPosts } from "@/components/blog/BlogPosts";
 import { BlogCategories } from "@/components/blog/BlogCategories";
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 
 export async function generateStaticParams() {
   try {
-    const postsPerPage = await getPostsPerPagePrisma();
+    const postsPerPage = await getPostsPerPage();
     const allPosts = await getPostsPrisma({ status: "published", take: 1000 });
     const total = allPosts.length;
     const totalPages = Math.ceil(total / postsPerPage);
@@ -93,7 +93,7 @@ export default async function BlogPage({
   }
 
   const [postsPerPage, allPosts, allCategories] = await Promise.all([
-    getPostsPerPagePrisma(),
+    getPostsPerPage(),
     getPostsPrisma({ status: "published", take: 1000 }),
     getCategoriesPrisma(),
   ]);

@@ -1,30 +1,54 @@
-import type { Metadata } from 'next';
-import { Container } from '@/components/ui';
+// src/app/(site)/layout.tsx
+import { getPuckDoc } from "@/lib/db/puck";
+import { getSiteSettings } from "@/lib/db/site-settings";
+import { SitePuckRenderer } from "@/components/site/SitePuckRenderer";
+import { HeaderBlock } from "@/components/puck/HeaderBlock";
+import DraftModeIndicator from "@/components/DraftModeIndicator";
 
-export const metadata: Metadata = {
-  title: 'Блог | Motit',
-  description: 'Новости, статьи и обновления от Motit',
-  openGraph: {
-    title: 'Блог | Motit',
-    description: 'Новости, статьи и обновления от Motit',
-    type: 'website',
-    url: '/blog',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Блог | Motit',
-    description: 'Новости, статьи и обновления от Motit',
-  },
-};
-
-export default function BlogLayout({
+export default async function SiteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [header, footer, settings] = await Promise.all([
+    getPuckDoc("puck_header"),
+    getPuckDoc("puck_footer"),
+    getSiteSettings(),
+  ]);
+
+  const puckProps = header?.content?.[0]?.props ?? {};
+  const headerProps = {
+    logoText: puckProps.logoText || settings.siteName,
+    logoHref: puckProps.logoHref || "/",
+    logoUrl: puckProps.logoUrl || settings.logoUrl || undefined,
+    nav: puckProps.nav || [
+      { label: "Главная", href: "/" },
+      { label: "Блог", href: "/blog" },
+      { label: "О нас", href: "/about" },
+      { label: "Направления", href: "/#directions" },
+      { label: "Контакты", href: "/#contact" },
+    ],
+    ctaLabel: puckProps.ctaLabel || "Связаться",
+    ctaHref: puckProps.ctaHref || "/#directions",
+    ctaEnabled: puckProps.ctaEnabled ?? true,
+  };
+
   return (
-    <Container>
-      {children}
-    </Container>
+    <div className="dark bg-(--bg-primary) text-(--text-primary) min-h-screen">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            :root { --accent: ${settings.accentColor ?? "#6366f1"}; }
+            body { background-color: #0a1920; }
+          `,
+        }}
+      />
+
+      <main className="min-h-screen">{children}</main>
+
+      <DraftModeIndicator />
+
+      <SitePuckRenderer kind="footer" data={footer} />
+    </div>
   );
 }

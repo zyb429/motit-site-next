@@ -1,15 +1,11 @@
-// src/app/(admin)/admin/settings/general/page.tsx
 import Link from "next/link";
 import { ArrowLeft, Globe } from "lucide-react";
-import { GeneralSettingsForm } from "./GeneralSettingsForm";
-import { getAllSettingsPrisma } from "@/lib/db/settings";
-
-async function getSettings(): Promise<Record<string, string>> {
-  return getAllSettingsPrisma();
-}
+import { getSiteSettings } from "@/lib/db/site-settings";
+import { SettingsForm } from "@/components/admin/settings/SettingsForm";
+import { updateGeneralSettings } from "../actions";
 
 export default async function GeneralSettingsPage() {
-  const settings = await getSettings();
+  const s = await getSiteSettings();
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
@@ -18,7 +14,7 @@ export default async function GeneralSettingsPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/admin/settings"
-              className="text-(--text-muted) hover:text-(--text-primary) transition-colors"
+              className="text-(--text-muted) hover:text-(--text-primary)"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
@@ -36,10 +32,18 @@ export default async function GeneralSettingsPage() {
           </div>
         </div>
       </header>
-
       <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="max-w-3xl mx-auto w-full">
-          <GeneralSettingsForm initial={settings} />
+          <SettingsForm
+            settings={s}
+            action={updateGeneralSettings}
+            fields={[
+              { name: "siteName", label: "Название сайта" },
+              { name: "description", label: "Описание", textarea: true },
+              { name: "language", label: "Язык (ru/en)" },
+              { name: "timezone", label: "Часовой пояс" },
+            ]}
+          />
         </div>
       </main>
     </div>
