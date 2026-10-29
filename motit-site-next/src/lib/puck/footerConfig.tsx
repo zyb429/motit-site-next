@@ -1,8 +1,10 @@
-import type { Config } from "@puckeditor/core";
+import type { Config, CustomField } from "@puckeditor/core";
 import { FooterBlock, type FooterBlockProps } from "@/components/puck/FooterBlock";
 import { imageUploadField } from "@/components/puck/ImageUploadField";
 
 type FooterConfig = { Footer: FooterBlockProps };
+
+type LogoImage = FooterBlockProps["logoImageUrl"];
 
 const getEmptySupport = () => ({
   enabled: false,
@@ -18,7 +20,10 @@ export const footerConfig: Config<FooterConfig> = {
       fields: {
         logoText: { type: "text", label: "Лого: текст" },
         logoHref: { type: "text", label: "Лого: ссылка" },
-        logoImageUrl: { ...imageUploadField, label: "Лого: изображение" },
+        logoImageUrl: {
+          ...imageUploadField,
+          label: "Лого: изображение",
+        } as CustomField<LogoImage>,
         description: { type: "textarea", label: "Описание под лого" },
         social: {
           type: "array",

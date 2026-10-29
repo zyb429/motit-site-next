@@ -8,7 +8,8 @@ import Advantages, { type AdvantagesProps } from "@/components/sections/Advantag
 import KeyServices, { type KeyServicesProps } from "@/components/sections/KeyServices";
 import Partners, { type PartnersProps } from "@/components/sections/Partners";
 import FAQ, { type FAQProps } from "@/components/sections/FAQ";
-import ContactView, { type ContactViewProps } from "@/components/sections/ContactView";
+import ContactView from "@/components/sections/ContactView";
+import type { ContactProps } from "@/components/sections/Contact";
 import QualityManagement, { type QualityManagementProps } from "@/components/sections/QualityManagement";
 import { partnerLogoField } from "@/components/puck/PartnerLogoField";
 import { dateField } from "@/components/puck/DateField";
@@ -24,7 +25,7 @@ type HomeConfig = {
   KeyServices: KeyServicesProps;
   Partners: PartnersProps;
   FAQ: FAQProps;
-  Contact: ContactViewProps;
+  Contact: ContactProps;
   QualityManagement: QualityManagementProps;
 };
 
@@ -320,6 +321,10 @@ export const homeConfig: Config<HomeConfig> = {
         label: { type: "text", label: "Метка" },
         title: { type: "text", label: "Заголовок" },
         subtitle: { type: "textarea", label: "Подзаголовок" },
+        workHours: {
+          type: "text",
+          label: "Режим работы (если пусто — из настроек сайта)",
+        },
         contacts: {
           type: "array",
           label: "Контакты",
@@ -348,6 +353,7 @@ export const homeConfig: Config<HomeConfig> = {
         label: "КОНТАКТЫ",
         title: "Свяжитесь с нами",
         subtitle: "Готовы обсудить ваши задачи и предложить оптимальное решение",
+        workHours: "",   // пусто = fallback на SiteSettings
         contacts: [
           { icon: "phone", label: "Телефон", value: "+375 (29) 118-50-82", href: "tel:+375291185082" },
           { icon: "mail", label: "Email", value: "info@motit.by", href: "mailto:info@motit.by" },

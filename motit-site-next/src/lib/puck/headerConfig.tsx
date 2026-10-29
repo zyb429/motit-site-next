@@ -1,4 +1,4 @@
-import type { Config } from "@puckeditor/core";
+import type { Config, CustomField } from "@puckeditor/core";
 import {
   HeaderBlock,
   type HeaderBlockProps,
@@ -13,7 +13,10 @@ export const headerConfig: Config<HeaderConfig> = {
       fields: {
         logoText: { type: "text", label: "Логотип: текст" },
         logoHref: { type: "text", label: "Логотип: ссылка" },
-        logoImageUrl: { ...imageUploadField, label: "Логотип: изображение" },
+        logoImageUrl: {
+          ...imageUploadField,
+          label: "Логотип: изображение",
+        } as CustomField<string | null | undefined>,
         nav: {
           type: "array",
           label: "Меню",

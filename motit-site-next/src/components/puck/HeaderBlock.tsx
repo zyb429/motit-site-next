@@ -10,7 +10,7 @@ import { Headphones } from "lucide-react";
 export type HeaderBlockProps = {
   logoText: string;
   logoHref: string;
-  logoImageUrl?: string;
+  logoImageUrl?: string | null;
   nav: Array<{
     label: string;
     href: string;

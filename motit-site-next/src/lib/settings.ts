@@ -49,42 +49,26 @@ export const ALL_MIME_OPTIONS: { group: string; mime: string; label: string }[] 
 ];
 
 export const DEFAULT_ALLOWED_MIME: string[] = [
-  "image/png",
-  "image/jpeg",
-  "image/gif",
-  "image/webp",
-  "application/pdf",
+  "image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf",
 ];
 
 export async function getAllowedMime(): Promise<string[]> {
-  const row = await prisma.settings.findUnique({
+  const row = await prisma.globalSettings.findUnique({
     where: { key: ALLOWED_MIME_KEY },
   });
-
   if (!row?.value) return DEFAULT_ALLOWED_MIME;
 
-  try {
-    const parsed = JSON.parse(row.value);
-    if (Array.isArray(parsed) && parsed.every((v) => typeof v === "string")) {
-      return parsed;
-    }
-  } catch {
-    // ignore
+  // value уже Json — не нужно JSON.parse
+  if (Array.isArray(row.value) && row.value.every(v => typeof v === "string")) {
+    return row.value as string[];
   }
   return DEFAULT_ALLOWED_MIME;
 }
 
 export async function setAllowedMime(mimeList: string[]): Promise<void> {
-  const value = JSON.stringify(mimeList);
-  await prisma.settings.upsert({
+  await prisma.globalSettings.upsert({
     where: { key: ALLOWED_MIME_KEY },
-    update: { value, updated_at: new Date() },
-    create: {
-      key: ALLOWED_MIME_KEY,
-      value,
-      description: "Разрешённые MIME-типы для загрузки файлов",
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
+    update: { value: mimeList },
+    create: { key: ALLOWED_MIME_KEY, value: mimeList },
   });
 }

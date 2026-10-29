@@ -48,9 +48,16 @@ function parseSchedule(str: string): DayConfig[] {
   str.split(";").forEach((part) => {
     const trimmed = part.trim();
     if (!trimmed) return;
-    const [dayPart, timePartRaw] = trimmed.split(":").map((s) => s.trim());
-    if (!dayPart || !timePartRaw) return;
 
+    // Разделяем по ПЕРВОМУ двоеточию:
+    // "Пн-Пт" | "09:00-18:00 (обед 13:00-14:00)"
+    const colonIdx = trimmed.indexOf(":");
+    if (colonIdx === -1) return;
+
+    const dayPart = trimmed.slice(0, colonIdx).trim();
+    const timePartRaw = trimmed.slice(colonIdx + 1).trim();
+
+    // Обед
     let hasLunch = false;
     let lunchStart = "13:00";
     let lunchEnd = "14:00";
@@ -66,14 +73,15 @@ function parseSchedule(str: string): DayConfig[] {
       timePart = timePartRaw.replace(lunchMatch[0], "").trim();
     }
 
-    const dayMatch = dayPart.match(/^([А-Яа-я]{2})(?:-([А-Яа-я]{2}))?$/);
+    // Диапазон дней: "Пн" или "Пн-Пт"
+    const dayMatch = dayPart.match(/^([А-Яа-яЁё]{2})(?:-([А-Яа-яЁё]{2}))?$/);
     if (!dayMatch) return;
     const startDay = dayMatch[1];
     const endDay = dayMatch[2];
 
     const startIdx = DAYS.indexOf(startDay);
     const endIdx = endDay ? DAYS.indexOf(endDay) : startIdx;
-    if (startIdx === -1) return;
+    if (startIdx === -1 || endIdx === -1) return;
 
     const isWorking = timePart !== "выходной";
     let start = "09:00";
@@ -402,36 +410,36 @@ export function SettingsForm({
     );
   };
 
-    return (
+  return (
     <form action={formAction} className="space-y-4 max-w-2xl">
-        <input type="hidden" name="id" value={settings?.id ?? 1} />
+      <input type="hidden" name="id" value={settings?.id ?? 1} />
 
-        {fields.map((f) => (
+      {fields.map((f) => (
         <div key={f.name}>
-            {f.kind !== "checkbox" && f.kind !== "image" && (
+          {f.kind !== "checkbox" && f.kind !== "image" && (
             <label className="block text-sm font-medium text-(--text-primary) mb-1">
-                {f.label}
+              {f.label}
             </label>
-            )}
-            {renderField(f)}
+          )}
+          {renderField(f)}
         </div>
-        ))}
+      ))}
 
-        <div className="flex items-center gap-3 pt-2">
+      <div className="flex items-center gap-3 pt-2">
         <button
-            type="submit"
-            disabled={pending}
-            className="px-4 py-2 rounded-lg bg-(--accent) text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+          type="submit"
+          disabled={pending}
+          className="px-4 py-2 rounded-lg bg-(--accent) text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
         >
-            {pending ? "Сохранение..." : "Сохранить"}
+          {pending ? "Сохранение..." : "Сохранить"}
         </button>
         {state?.ok && (
-            <span className="text-green-500 text-sm">Сохранено</span>
+          <span className="text-green-500 text-sm">Сохранено</span>
         )}
         {state?.error && (
-            <span className="text-red-500 text-sm">{state.error}</span>
+          <span className="text-red-500 text-sm">{state.error}</span>
         )}
-        </div>
+      </div>
     </form>
-    );
+  );
 }

@@ -6,7 +6,6 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from "react";
-import { openEditorModal } from "@rageshpikalmunde/rp-image-editor";
 import { EmojiPickerButton } from "./EmojiPickerButton";
 import { Send, Paperclip, X, CornerUpLeft, Pencil } from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
@@ -16,6 +15,17 @@ type PendingFile = {
   previewUrl: string | null;
   isImage: boolean;
 };
+
+type EditorResult = { file?: File } | undefined;
+type OpenEditorFn = (args: {
+  image: File;
+  config: {
+    exportFormat: string;
+    exportQuality: number;
+    maxUndoSteps: number;
+    language: string;
+  };
+}) => Promise<EditorResult>;
 
 export function MessageInput({
   onSendMessageAction,
@@ -91,18 +101,45 @@ export function MessageInput({
     const target = pending[index];
     if (!target) return;
 
-    const result = await openEditorModal({
-      image: target.file,
-      config: {
-        exportFormat: "jpeg",
-        exportQuality: 0.92,
-        maxUndoSteps: 30,
-        language: "en",
-      },
-    });
+    // Динамический импорт: пакет не попадает в серверный граф,
+    // canvas/fabric/jsdom загружаются только в браузере по клику.
+    let openEditorModal: OpenEditorFn | undefined;
+    try {
+      const mod: Record<string, unknown> = await import(
+        "@rageshpikalmunde/rp-image-editor-react"
+      );
+      openEditorModal =
+        (mod.openEditorModal as OpenEditorFn | undefined) ??
+        (mod.default as OpenEditorFn | undefined) ??
+        (mod.EditorModal as OpenEditorFn | undefined);
+    } catch (err) {
+      console.error("Не удалось загрузить редактор изображений", err);
+      return;
+    }
 
-    if (result?.file) {
-      replaceFile(index, result.file);
+    if (!openEditorModal) {
+      console.error(
+        "openEditorModal не найден в @rageshpikalmunde/rp-image-editor-react",
+      );
+      return;
+    }
+
+    try {
+      const result = await openEditorModal({
+        image: target.file,
+        config: {
+          exportFormat: "jpeg",
+          exportQuality: 0.92,
+          maxUndoSteps: 30,
+          language: "en",
+        },
+      });
+
+      if (result?.file) {
+        replaceFile(index, result.file);
+      }
+    } catch (err) {
+      console.error("Ошибка редактора изображений", err);
     }
   }
 
