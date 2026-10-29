@@ -20,12 +20,12 @@
 
 ## Требования
 
-- **Node.js 22+** (Next.js 16.4.2 требует Node `>=20.9`, но `concurrently@10` в `devDependencies` требует Node `>=22`; локально проверено на Node 24) + **npm** (lockfile — `package-lock.json`)
-- **Bun** — только для запуска `npm run dev:all` (внутри скрипта используются `bun run ws` / `bun run dev`)
+- **Node.js 22+** + **npm** (lockfile — `package-lock.json`) — для **Docker/прода** (`npm ci`, `npm run build`, `npm run start`)
+- **Bun** (lockfile — `bun.lock`) — для **локальной разработки** (`bun dev`, `bun install`)
 - Docker + docker compose
 
 > Docker-образ приложения — на `node:22-alpine` (внутри контейнера используется `npx` / `npm run`).
-> Локальная разработка — на Node/npm, см. раздел «Скрипты». Для `dev:all` нужен Bun; без Bun запускайте `npm run ws` и `npm run dev` в двух терминалах.
+> Локальная разработка — на **Bun** (`bun install`, `bun run dev:turbopack`), либо на npm, если Bun не установлен. Для `dev:all` нужен Bun; без Bun запускайте `npm run ws` и `npm run dev` в двух терминалах.
 
 ## Структура репозитория
 
@@ -41,7 +41,8 @@ motit-site-next/ ← корень монорепы
 │ ├── .dockerignore
 │ ├── .env.example
 │ ├── package.json
-│ └── package-lock.json ← npm lockfile
+│ ├── package-lock.json ← npm lockfile (Docker/прод)
+│ └── bun.lock ← Bun lockfile (локальная разработка)
 ├── docker-compose.yml ← MySQL + Redis + MinIO + app + ws
 └── README.md
 ```
@@ -136,6 +137,15 @@ cd motit-site-next
 npm install
 npm run dev:turbopack          # Next.js на :3000
 npm run ws                     # WS на :3001 (в отдельном терминале)
+```
+
+Если есть установленный bun:
+
+```bash
+cd motit-site-next
+bun install
+bun run dev:turbopack          # Next.js на :3000
+bun run ws                     # WS на :3001 (в отдельном терминале)
 ```
 
 Скрипты из `package.json`:
@@ -251,12 +261,6 @@ docker compose exec mysql mysql -uroot -proot_local_dev -e \
 
 **Про .env и секреты:** файл `motit-site-next/.env` никогда не коммитится — он в `.gitignore`. В репозитории хранится только `.env.example` без значений. Реальные секреты (`SMTP_PASS`, `AUTH_SECRET`, `HEALTH_TOKEN`, пароли БД и S3) держите только в локальном `.env` и в переменных окружения прода.
 
-> ⚠️ В текущем `.env.example` в репозитории:
-> - `NEXT_PUBLIC_SITE_URL` объявлен **дважды** (`https://motit.by` и `http://localhost:3000`) — оставьте одну строку;
-> - `HEALTH_TOKEN` содержит **реальное значение** (`ebb6d572...`) — считайте его скомпрометированным и замените на своё (`openssl rand -hex 32`).
->
-> Ниже — исправленный шаблон (один `NEXT_PUBLIC_SITE_URL`, пустой `HEALTH_TOKEN`).
-
 ### Шаблон .env.example
 
 ```dotenv
@@ -325,24 +329,33 @@ HEALTH_DETAILS="0"
 
 ## Скрипты
 
-| Команда | Что делает |
-| --- | --- |
-| npm run dev | Dev-сервер (Turbopack) |
-| npm run dev:webpack | Dev-сервер (Webpack, для Docker) |
-| npm run dev:all | Next.js + WS одновременно (`concurrently`, внутри — `bun run ws` + `bun run dev`; нужен Bun) |
-| npm run build | Production-сборка (`prisma generate && next build --webpack`) |
-| npm run start | Запуск production (`next start`) |
-| npm run lint | ESLint (`eslint`) |
-| npm run db:studio | Prisma Studio |
-| npm run db:pull | Интроспекция схемы |
-| npm run db:generate | Генерация Prisma Client |
-| npm run db:push | Применить схему к БД |
-| npm run db:migrate | Prisma migrate dev |
-| npm run db:seed | Сиды (справочники + admin) |
-| npm run ws | WebSocket-сервер (`npx tsx server.ts`) |
-| npm run backfill:chats | Бэкфилл чатов (`npx tsx scripts/backfill-chats.ts`) |
-| npm run backfill:status-history | Бэкфилл истории статусов (`npx tsx scripts/backfill-status-history.ts`) |
-| docker compose exec app npx prisma db seed | Справочники + admin-пользователь (в Docker) |
+| npm | Bun | Что делает |
+| --- | --- | --- |
+| `npm run dev` | `bun run dev` | Dev-сервер (Turbopack) |
+| `npm run dev:webpack` | `bun run dev:webpack` | Dev-сервер (Webpack, для Docker) |
+| `npm run dev:turbopack` | `bun run dev:turbopack` | Dev-сервер (Turbopack, явно) |
+| `npm run dev:all` | `bun run dev:all` | Next.js + WS одновременно (`concurrently`, внутри — `bun run ws` + `bun run dev`; нужен Bun) |
+| `npm run build` | `bun run build` | Production-сборка (`prisma generate && next build --webpack`) |
+| `npm run start` | `bun run start` | Запуск production (`next start`) |
+| `npm run lint` | `bun run lint` | ESLint (`eslint`) |
+| `npm run db:studio` | `bun run db:studio` | Prisma Studio |
+| `npm run db:pull` | `bun run db:pull` | Интроспекция схемы |
+| `npm run db:generate` | `bun run db:generate` | Генерация Prisma Client |
+| `npm run db:push` | `bun run db:push` | Применить схему к БД |
+| `npm run db:migrate` | `bun run db:migrate` | Prisma migrate dev |
+| `npm run db:seed` | `bun run db:seed` | Сиды (справочники + admin) |
+| `npm run ws` | `bun run ws` | WebSocket-сервер (`npx tsx server.ts`) |
+| `npm run backfill:chats` | `bun run backfill:chats` | Бэкфилл чатов (`npx tsx scripts/backfill-chats.ts`) |
+| `npm run backfill:status-history` | `bun run backfill:status-history` | Бэкфилл истории статусов (`npx tsx scripts/backfill-status-history.ts`) |
+| `docker compose exec app npx prisma db seed` | — | Справочники + admin-пользователь (в Docker) |
+
+**Где что запускать:**
+
+- **Docker / прод** — `npm` (`npm ci`, `npm run build`, `npm run start`). Внутри контейнера на `node:22-alpine`.
+- **Локально** — `bun` (`bun install`, `bun run dev:turbopack`). Быстрее и не требует Node.
+- **Если Bun не установлен** — те же скрипты работают через `npm` (`npm install`, `npm run dev:turbopack`).
+
+> Скрипты в `package.json` используют `npm` / `npx` внутри (`"build": "prisma generate && next build --webpack"`), но Bun умеет их запускать (`bun run build` = `npm run build`). На сервере — только npm (см. Dockerfile).
 
 ## Архитектура
 
@@ -552,6 +565,8 @@ Healthcheck — `mysqladmin ping -h 127.0.0.1 -uroot -proot_local_dev`, `interva
 - `RAYON_NUM_THREADS: "4"` в `app.environment` — ограничение параллелизма Rust-частей (например, SWC).
 - `restart: unless-stopped` у всех сервисов (`mysql`, `minio`, `redis`, `app`, `ws`); у `minio-init` — не нужен (one-shot).
 
+> Docker-образ использует **npm** (`npm ci` с `package-lock.json`). `bun.lock` в образ **не** копируется — он только для локальной разработки на хосте. Это сделано намеренно: Bun + Prisma в Docker иногда дают ошибку `Cannot find module '.../node_modules/prisma/build/index.js'` (postinstall Prisma не выполняется). На сервере стабильнее npm.
+
 Кэш `npm ci`: `RUN --mount=type=cache,target=/root/.npm npm ci` сохраняет скачанные пакеты между сборками. Первая сборка с новым кэшем такая же по времени, последующие — заметно быстрее. Если меняется `package-lock.json`, кэш переиспользуется для уже скачанных пакетов, скачиваются только новые.
 
 ### Выделение текста в редакторе
@@ -560,12 +575,13 @@ Healthcheck — `mysqladmin ping -h 127.0.0.1 -uroot -proot_local_dev`, `interva
 
 ### ⚠️ Известные проблемы
 
-1. **`NEXT_PUBLIC_SITE_URL` задублирован в текущем `.env.example`** — оставить одну строку (см. исправленный шаблон выше).
-2. **`HEALTH_TOKEN` в текущем `.env.example` содержит реальное значение** — заменить на пустое и сгенерировать своё.
-3. **`concurrently@10` требует Node `>=22`**, а Next.js 16 — `>=20.9`. Если нужен Node 20, придётся откатить `concurrently` до 9.x или запускать `ws` и `dev` раздельно.
-4. **`dev:all` вызывает `bun run ws` / `bun run dev`** — на машине без Bun скрипт упадёт; используйте `npm run ws` и `npm run dev` раздельно.
-5. **`experimental.devMemoryThresholdRestart` не поддерживается** в Next.js 16 — в логах `⨯ devMemoryThresholdRestart`. Не добавлять в `next.config.ts` (игнорируется). Для стабильности — prod-профиль (`next start`), а не dev.
-6. **Turbopack в Docker на Windows не подхватывает изменения файлов** — для dev-профиля в контейнере используется `npm run dev:webpack` с `WATCHPACK_POLLING=true`. На хосте (Вариант B) можно использовать `npm run dev:turbopack`.
+1. **`concurrently@10` требует Node `>=22`**, а Next.js 16 — `>=20.9`. Если нужен Node 20, придётся откатить `concurrently` до 9.x или запускать `ws` и `dev` раздельно.
+2. **`dev:all` вызывает `bun run ws` / `bun run dev`** — на машине без Bun скрипт упадёт; используйте `npm run ws` и `npm run dev` раздельно.
+3. **`experimental.devMemoryThresholdRestart` не поддерживается** в Next.js 16 — в логах `⨯ devMemoryThresholdRestart`. Не добавлять в `next.config.ts` (игнорируется). Для стабильности — prod-профиль (`next start`), а не dev.
+4. **Turbopack в Docker на Windows не подхватывает изменения файлов** — для dev-профиля в контейнере используется `npm run dev:webpack` с `WATCHPACK_POLLING=true`. На хосте (Вариант B) можно использовать `npm run dev:turbopack`.
+5. **`bun.lock` и `package-lock.json` сосуществуют.** При добавлении пакета обновляйте **оба**, иначе `npm ci` (Docker/прод) или `bun install --frozen-lockfile` (локально) упадут:
+   - через Bun: `bun add <pkg>` → `npm install --package-lock-only`
+   - через npm: `npm install <pkg>` → `bun install`
 
 ### Пароли в docker-compose.yml
 
@@ -648,6 +664,8 @@ npm run build
 npm run start
 ```
 
+> **В проде/на сервере** — npm (Docker на `node:22-alpine`, `npm ci`). **Локально** можно использовать Bun (`bun install`, `bun run build`, `bun run start`). Не смешивайте: если `node_modules` создан npm, `bun run build` может упасть с `Cannot find module '.../node_modules/prisma/build/index.js'`.
+
 В `docker-compose.yml` **уже есть** prod-профиль `app` с правильным `command` и `NODE_ENV: production`. Достаточно:
 
 ```bash
@@ -672,6 +690,7 @@ const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
 - `SMTP_PASS` (Gmail App Password), `AUTH_SECRET`, `HEALTH_TOKEN` при утечке — немедленно отозвать и перегенерировать.
 - Пароли MySQL (`root_local_dev`, `MotitSecure2024!`) и MinIO (`minioadmin`/`minioadmin`) захардкожены в `docker-compose.yml` — для прода заменить и вынести в секреты.
 - Health-check: `detail` (текст ошибок) отдаётся только при `HEALTH_DETAILS=1` или с `Authorization: Bearer $HEALTH_TOKEN`. В проде — `HEALTH_DETAILS=0`.
+- **`bun.lock` и `package-lock.json`** — оба должны быть в git (не в `.gitignore`), чтобы Docker/прод (`npm ci`) и локальная разработка (`bun install --frozen-lockfile`) работали.
 
 ## Лицензия
 
