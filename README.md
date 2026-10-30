@@ -4,7 +4,7 @@
 
 ## Стек
 
-- **Next.js 16.4.2** — App Router, Turbopack (dev на хосте) / Webpack (build и dev в Docker), React 19.3.1
+- **Next.js 16.4.2** — App Router, Turbopack (dev на хосте и build), Webpack (только dev в Docker), React 19.3.1
 - **TypeScript 5.9.3**
 - **MySQL 8** + **Prisma 6.19.0** (`prisma-client-js`, `@prisma/client`, `@prisma/adapter-mariadb`)
 - **Auth.js** (`next-auth@5.0.0-beta.32`, `@auth/core@0.41.3`) — Credentials provider
@@ -79,7 +79,7 @@ docker compose exec app-dev npx prisma db seed
 `app` (профиль `prod`):
   npx prisma generate &&
   npx prisma migrate deploy &&
-  npm run build &&
+  npm run build:turbopack &&
   npm run start
 
 `app-dev` (профиль `dev`):
@@ -94,7 +94,7 @@ npx tsx server.ts
 ```
 
 `NODE_ENV` по профилям:
-- `app` (профиль `prod`): `production` + `npm run build && npm run start`
+- `app` (профиль `prod`): `production` + `npm run build:turbopack && npm run start`
 - `app-dev` (профиль `dev`): `development` + `npm run dev:webpack`
 - `ws`: `development` (WS-сервер не зависит от production build)
 
@@ -335,7 +335,9 @@ HEALTH_DETAILS="0"
 | `npm run dev:webpack` | `bun run dev:webpack` | Dev-сервер (Webpack, для Docker) |
 | `npm run dev:turbopack` | `bun run dev:turbopack` | Dev-сервер (Turbopack, явно) |
 | `npm run dev:all` | `bun run dev:all` | Next.js + WS одновременно (`concurrently`, внутри — `bun run ws` + `bun run dev`; нужен Bun) |
-| `npm run build` | `bun run build` | Production-сборка (`prisma generate && next build --webpack`) |
+| `npm run build` | `bun run build` | Production-сборка (`prisma generate && next build` — Turbopack в Next 16) |
+| `npm run build:turbopack` | `bun run build:turbopack` | Production-сборка, явно Turbopack |
+| `npm run build:webpack` | `bun run build:webpack` | Production-сборка, явно Webpack |
 | `npm run start` | `bun run start` | Запуск production (`next start`) |
 | `npm run lint` | `bun run lint` | ESLint (`eslint`) |
 | `npm run db:studio` | `bun run db:studio` | Prisma Studio |
@@ -351,11 +353,11 @@ HEALTH_DETAILS="0"
 
 **Где что запускать:**
 
-- **Docker / прод** — `npm` (`npm ci`, `npm run build`, `npm run start`). Внутри контейнера на `node:22-alpine`.
+- **Docker / прод** — `npm` (`npm ci`, `npm run build:turbopack`, `npm run start`). Внутри контейнера на `node:22-alpine`.
 - **Локально** — `bun` (`bun install`, `bun run dev:turbopack`). Быстрее и не требует Node.
 - **Если Bun не установлен** — те же скрипты работают через `npm` (`npm install`, `npm run dev:turbopack`).
 
-> Скрипты в `package.json` используют `npm` / `npx` внутри (`"build": "prisma generate && next build --webpack"`), но Bun умеет их запускать (`bun run build` = `npm run build`). На сервере — только npm (см. Dockerfile).
+> Скрипты в `package.json` используют `npm` / `npx` внутри (`"build:turbopack": "prisma generate && next build --turbopack"`), но Bun умеет их запускать (`bun run build:turbopack` = `npm run build:turbopack`). На сервере — только npm (см. Dockerfile).
 
 ## Архитектура
 
@@ -578,7 +580,7 @@ Healthcheck — `mysqladmin ping -h 127.0.0.1 -uroot -proot_local_dev`, `interva
 1. **`concurrently@10` требует Node `>=22`**, а Next.js 16 — `>=20.9`. Если нужен Node 20, придётся откатить `concurrently` до 9.x или запускать `ws` и `dev` раздельно.
 2. **`dev:all` вызывает `bun run ws` / `bun run dev`** — на машине без Bun скрипт упадёт; используйте `npm run ws` и `npm run dev` раздельно.
 3. **`experimental.devMemoryThresholdRestart` не поддерживается** в Next.js 16 — в логах `⨯ devMemoryThresholdRestart`. Не добавлять в `next.config.ts` (игнорируется). Для стабильности — prod-профиль (`next start`), а не dev.
-4. **Turbopack в Docker на Windows не подхватывает изменения файлов** — для dev-профиля в контейнере используется `npm run dev:webpack` с `WATCHPACK_POLLING=true`. На хосте (Вариант B) можно использовать `npm run dev:turbopack`.
+4. **Turbopack в Docker на Windows не подхватывает изменения файлов (только watch)** — для dev-профиля в контейнере используется `npm run dev:webpack` с `WATCHPACK_POLLING=true`. На хосте (Вариант B) можно использовать `npm run dev:turbopack`. **Production build** (`npm run build:turbopack`) этой проблемы не имеет — `next build` компилирует один раз, watch ему не нужен, поэтому в prod-профиле `app` используется Turbopack.
 5. **`bun.lock` и `package-lock.json` сосуществуют.** При добавлении пакета обновляйте **оба**, иначе `npm ci` (Docker/прод) или `bun install --frozen-lockfile` (локально) упадут:
    - через Bun: `bun add <pkg>` → `npm install --package-lock-only`
    - через npm: `npm install <pkg>` → `bun install`
@@ -660,7 +662,7 @@ HEALTH_DETAILS="0"
 
 ```bash
 npm ci
-npm run build
+npm run build:turbopack
 npm run start
 ```
 

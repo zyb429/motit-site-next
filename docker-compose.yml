@@ -75,7 +75,7 @@ services:
       retries: 10
 
   # ============================================
-  # APP — PROD (по умолчанию, npm run build && npm run start)
+  # APP — PROD (по умолчанию, npm run build:turbopack && npm run start)
   # ============================================
   app:
     build:
@@ -114,7 +114,7 @@ services:
       sh -c "
       npx prisma generate &&
       npx prisma migrate deploy &&
-      npm run build &&
+      npm run build:turbopack &&
       npm run start
       "
     healthcheck:
