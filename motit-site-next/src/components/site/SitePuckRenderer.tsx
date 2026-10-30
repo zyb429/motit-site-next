@@ -1,10 +1,17 @@
 "use client";
 
-import { Render, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import { headerConfig } from "@/lib/puck/headerConfig";
-import { footerConfig } from "@/lib/puck/footerConfig";
-import { homeConfig } from "@/lib/puck/homeConfig";
+import {
+  Render,
+  type ComponentConfig,
+  type Config,
+  type Data,
+} from "@puckeditor/core";
+import { useMemo } from "react";
+import { createHeaderConfig } from "@/lib/puck/headerConfig";
+import { createFooterConfig } from "@/lib/puck/footerConfig";
+import { createHomeConfig } from "@/lib/puck/homeConfig";
+import type { SocialOption } from "@/lib/social-options";
 
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   const orig = console.error;
@@ -20,9 +27,36 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   };
 }
 
-const CONFIGS = { header: headerConfig, footer: footerConfig, home: homeConfig } as const;
+export type SitePuckRendererProps = {
+  data: Partial<Data>;
+  /** Какой набор компонентов рендерить: home, header, footer или всё сразу */
+  kind?: "home" | "header" | "footer" | "all";
+  /** Пользовательские соцсети для футера (влияет на select в Puck) */
+  socialOptions?: SocialOption[];
+};
 
-export function SitePuckRenderer({ kind, data }: { kind: keyof typeof CONFIGS; data: Data }) {
+export function SitePuckRenderer({
+  data,
+  kind = "all",
+  socialOptions = [],
+}: SitePuckRendererProps) {
+  const config = useMemo(() => {
+    const components: Record<string, ComponentConfig> = {};
+
+    if (kind === "all" || kind === "home") {
+      Object.assign(components, createHomeConfig().components);
+    }
+    if (kind === "all" || kind === "header") {
+      Object.assign(components, createHeaderConfig().components);
+    }
+    if (kind === "all" || kind === "footer") {
+      Object.assign(components, createFooterConfig(socialOptions).components);
+    }
+
+    return { components } as Config;
+  }, [kind, socialOptions]);
+
   if (!data?.content?.length) return null;
-  return <Render config={CONFIGS[kind]} data={data} />;
+
+  return <Render config={config} data={data} />;
 }
