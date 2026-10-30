@@ -38,18 +38,6 @@ const nextConfig: NextConfig = {
     ],
     dangerouslyAllowLocalIP: true,
   },
-
-  async rewrites() {
-    const s3ProxyTarget =
-      process.env.S3_PROXY_TARGET ?? "http://localhost:9000/motit-uploads";
-
-    return [
-      {
-        source: "/files/:path*",
-        destination: `${s3ProxyTarget}/:path*`,
-      },
-    ];
-  },
 };
 
 export default nextConfig;
