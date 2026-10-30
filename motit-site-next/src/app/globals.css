@@ -456,3 +456,50 @@ textarea:focus::placeholder {
   background-color: var(--selection-bg) !important;
   color: var(--selection-color) !important;
 }
+
+
+/* ============================================
+   Puck: тема редактора и селектов
+   ============================================ */
+.puck-theme-wrapper {
+  /* Переменные Puck (0.22+) */
+  --puck-color-surface: #ffffff;
+  --puck-color-surface-muted: #f9fafb;
+  --puck-color-surface-subtle: #f3f4f6;
+  --puck-color-text: #111827;
+  --puck-color-text-secondary: #4b5563;
+  --puck-color-text-muted: #9ca3af;
+  --puck-color-border: #d1d5db;
+  --puck-color-border-hover: #14b8a6;
+  --puck-color-border-muted: #e5e7eb;
+  --puck-color-interactive: #14b8a6;
+  --puck-color-interactive-hover: #0d9488;
+  --puck-color-interactive-active: #0f766e;
+  --puck-color-focus-ring: #14b8a6;
+  --puck-color-selection-bg: rgba(20, 184, 166, 0.15);
+  --puck-color-selection-border: #14b8a6;
+
+  /* Переменные полей ввода (используются в Puck) */
+  --puck-field-color-bg: var(--puck-color-surface);
+  --puck-field-color-text: var(--puck-color-text);
+  --puck-field-color-border: var(--puck-color-border);
+  --puck-field-color-border-hover: var(--puck-color-border-hover);
+
+  /* Переменные кнопок */
+  --puck-button-primary-color-bg: var(--puck-color-interactive);
+  --puck-button-primary-color-bg-hover: var(--puck-color-interactive-hover);
+  --puck-button-primary-color-text: #ffffff;
+}
+
+/*
+ * Puck: опции в <select> в редакторе должны быть читаемы
+ * (по умолчанию в тёмной теме они невидимы)
+ */
+.puck-theme-wrapper select option {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}
+
+.puck-theme-wrapper select option:disabled {
+  color: #9ca3af !important;
+}
