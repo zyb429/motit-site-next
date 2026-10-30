@@ -1,16 +1,30 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ColorPicker } from "./ColorPicker";
 import { ImageField } from "./ImageField";
 
 type Field =
-  | { kind?: "text"; name: string; label: string; textarea?: boolean; type?: string }
+  | {
+      kind?: "text";
+      name: string;
+      label: string;
+      textarea?: boolean;
+      type?: string;
+    }
   | { kind: "json"; name: string; label: string }
   | { kind: "color"; name: string; label: string }
   | { kind: "checkbox"; name: string; label: string }
   | { kind: "schedule"; name: string; label: string }
-  | { kind: "image"; name: string; label: string; accept?: string; uploadEndpoint?: string };
+  | { kind: "social"; name: string; label: string }
+  | {
+      kind: "image";
+      name: string;
+      label: string;
+      accept?: string;
+      uploadEndpoint?: string;
+    };
 
 type ActionState = { ok?: boolean; error?: string } | null;
 
@@ -49,15 +63,12 @@ function parseSchedule(str: string): DayConfig[] {
     const trimmed = part.trim();
     if (!trimmed) return;
 
-    // Разделяем по ПЕРВОМУ двоеточию:
-    // "Пн-Пт" | "09:00-18:00 (обед 13:00-14:00)"
     const colonIdx = trimmed.indexOf(":");
     if (colonIdx === -1) return;
 
     const dayPart = trimmed.slice(0, colonIdx).trim();
     const timePartRaw = trimmed.slice(colonIdx + 1).trim();
 
-    // Обед
     let hasLunch = false;
     let lunchStart = "13:00";
     let lunchEnd = "14:00";
@@ -73,7 +84,6 @@ function parseSchedule(str: string): DayConfig[] {
       timePart = timePartRaw.replace(lunchMatch[0], "").trim();
     }
 
-    // Диапазон дней: "Пн" или "Пн-Пт"
     const dayMatch = dayPart.match(/^([А-Яа-яЁё]{2})(?:-([А-Яа-яЁё]{2}))?$/);
     if (!dayMatch) return;
     const startDay = dayMatch[1];
@@ -199,6 +209,10 @@ function ScheduleWidget({
     parseSchedule(defaultValue || ""),
   );
 
+  useEffect(() => {
+    setDays(parseSchedule(defaultValue || ""));
+  }, [defaultValue]);
+
   const toggleDay = (day: string, checked: boolean) => {
     setDays((prev) =>
       prev.map((d) => (d.day === day ? { ...d, isWorking: checked } : d)),
@@ -312,6 +326,151 @@ function ScheduleWidget({
 }
 
 // ============================================
+// Соцсети: парсинг, сериализация, виджет
+// ============================================
+type SocialItem = { name: string; href: string };
+
+const SOCIAL_OPTIONS = [
+  { label: "Telegram", value: "telegram" },
+  { label: "VK", value: "vk" },
+  { label: "YouTube", value: "youtube" },
+  { label: "GitHub", value: "github" },
+  { label: "LinkedIn", value: "linkedin" },
+  { label: "Поддержка", value: "support" },
+] as const;
+
+function parseSocial(raw: unknown): SocialItem[] {
+  if (!raw) return [];
+
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    return Object.entries(raw as Record<string, unknown>)
+      .filter(([, href]) => typeof href === "string" && href.trim())
+      .map(([name, href]) => ({ name, href: (href as string).trim() }));
+  }
+
+  if (Array.isArray(raw)) {
+    return raw
+      .filter(
+        (o) =>
+          o &&
+          typeof o === "object" &&
+          typeof (o as any).name === "string" &&
+          typeof (o as any).href === "string",
+      )
+      .map((o) => ({
+        name: (o as any).name as string,
+        href: (o as any).href as string,
+      }));
+  }
+
+  return [];
+}
+
+function serializeSocial(items: SocialItem[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const item of items) {
+    if (!item.name.trim() || !item.href.trim()) continue;
+    out[item.name.trim()] = item.href.trim();
+  }
+  return out;
+}
+
+function SocialWidget({
+  name,
+  defaultValue,
+}: {
+  name: string;
+  defaultValue?: unknown;
+}) {
+  const [items, setItems] = useState<SocialItem[]>(() =>
+    parseSocial(defaultValue),
+  );
+
+  useEffect(() => {
+    setItems(parseSocial(defaultValue));
+  }, [defaultValue]);
+
+  const datalistId = `social-options-${name}`;
+
+  const addItem = () => {
+    setItems((prev) => [...prev, { name: "", href: "" }]);
+  };
+
+  const removeItem = (idx: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const updateItem = (idx: number, field: "name" | "href", value: string) => {
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it)),
+    );
+  };
+
+  const serialized = JSON.stringify(serializeSocial(items));
+
+  return (
+    <div className="space-y-3">
+      {items.length === 0 && (
+        <p className="text-sm text-(--text-muted)">
+          Соцсети не добавлены. Нажмите «Добавить соцсеть», чтобы создать
+          первую.
+        </p>
+      )}
+
+      {items.map((item, idx) => (
+        <div
+          key={idx}
+          className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center rounded-lg border border-(--border) p-2"
+        >
+          <input
+            type="text"
+            list={datalistId}
+            value={item.name}
+            onChange={(e) => updateItem(idx, "name", e.target.value)}
+            placeholder="telegram, vk, twitter…"
+            className="px-3 py-2 rounded border border-(--border) bg-(--bg-primary) text-(--text-primary) text-sm sm:w-44"
+          />
+
+          <input
+            type="url"
+            value={item.href}
+            onChange={(e) => updateItem(idx, "href", e.target.value)}
+            placeholder="https://..."
+            className="flex-1 px-3 py-2 rounded border border-(--border) bg-(--bg-primary) text-(--text-primary) text-sm"
+          />
+
+          <button
+            type="button"
+            onClick={() => removeItem(idx)}
+            className="px-3 py-2 rounded border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10 transition-colors"
+          >
+            Удалить
+          </button>
+        </div>
+      ))}
+
+      <datalist id={datalistId}>
+        {SOCIAL_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </datalist>
+
+      <button
+        type="button"
+        onClick={addItem}
+        className="px-3 py-2 rounded-lg border border-(--border) text-sm text-(--text-primary) hover:border-(--accent) transition-colors"
+      >
+        + Добавить соцсеть
+      </button>
+
+      <input type="hidden" name={name} value={serialized} />
+    </div>
+  );
+}
+
+// ============================================
 // Универсальная форма настроек
 // ============================================
 export function SettingsForm({
@@ -324,6 +483,14 @@ export function SettingsForm({
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
 }) {
   const [state, formAction, pending] = useActionState(action, null);
+  const router = useRouter();
+
+  // После успешного сохранения обновляем данные страницы (server component).
+  useEffect(() => {
+    if (state?.ok) {
+      router.refresh();
+    }
+  }, [state, router]);
 
   const inputCls =
     "w-full rounded-lg px-3 py-2 text-sm bg-(--bg-primary) text-(--text-primary) border border-(--border) focus:border-(--accent) outline-none transition-colors";
@@ -389,6 +556,16 @@ export function SettingsForm({
       );
     }
 
+    if (f.kind === "social") {
+      return (
+        <SocialWidget
+          key={`social-${JSON.stringify(val ?? "")}`}
+          name={f.name}
+          defaultValue={val}
+        />
+      );
+    }
+
     if (f.textarea) {
       return (
         <textarea
@@ -433,9 +610,7 @@ export function SettingsForm({
         >
           {pending ? "Сохранение..." : "Сохранить"}
         </button>
-        {state?.ok && (
-          <span className="text-green-500 text-sm">Сохранено</span>
-        )}
+        {state?.ok && <span className="text-green-500 text-sm">Сохранено</span>}
         {state?.error && (
           <span className="text-red-500 text-sm">{state.error}</span>
         )}

@@ -1,11 +1,22 @@
 import Link from "next/link";
 import { ArrowLeft, Share2 } from "lucide-react";
 import { getSiteSettings } from "@/lib/db/site-settings";
+import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/admin/settings/SettingsForm";
+import { SocialOptionsForm } from "@/components/admin/settings/SocialOptionsForm";
 import { updateSocial } from "../actions";
 
+type Option = { label: string; value: string; icon?: string };
+
 export default async function SocialSettingsPage() {
-  const s = await getSiteSettings();
+  const [s, socialOptionsRow] = await Promise.all([
+    getSiteSettings(),
+    prisma.globalSettings.findUnique({ where: { key: "social_options" } }),
+  ]);
+
+  const customOptions: Option[] = Array.isArray(socialOptionsRow?.value)
+    ? (socialOptionsRow!.value as Option[])
+    : [];
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
@@ -33,21 +44,35 @@ export default async function SocialSettingsPage() {
         </div>
       </header>
       <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="max-w-3xl mx-auto w-full">
-          <SettingsForm
-            settings={s}
-            action={updateSocial}
-            fields={[
-              {
-                kind: "json",
-                name: "socialLinks",
-                label: "Ссылки (JSON-объект)",
-              },
-            ]}
-          />
-          <p className="text-xs text-(--text-muted) mt-3">
-            Пример: {"{"}"telegram": "https://t.me/...", "vk": "https://vk.com/..."{"}"}
-          </p>
+        <div className="max-w-3xl mx-auto w-full space-y-10">
+          <section>
+            <h2 className="text-base font-semibold text-(--text-primary) mb-3">
+              Ссылки на соцсети
+            </h2>
+            <SettingsForm
+              settings={s}
+              action={updateSocial}
+              fields={[
+                {
+                  kind: "social",
+                  name: "socialLinks",
+                  label: "Ссылки",
+                },
+              ]}
+            />
+          </section>
+
+          <section>
+            <h2 className="text-base font-semibold text-(--text-primary) mb-1">
+              Пользовательские соцсети
+            </h2>
+            <p className="text-xs text-(--text-muted) mb-3">
+              Задают список соцсетей для выбора в настройках Puck-футера.
+              Поддерживаются SVG/PNG, загруженные как иконки, и любое имя
+              соцсети.
+            </p>
+            <SocialOptionsForm siteId={s.id} initial={customOptions} />
+          </section>
         </div>
       </main>
     </div>
