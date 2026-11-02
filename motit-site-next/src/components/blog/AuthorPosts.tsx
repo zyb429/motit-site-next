@@ -6,13 +6,21 @@ import { parseView, type View } from "@/lib/view";
 import { BlogCard } from "./BlogCard";
 import { ViewModeToggle } from "./ViewModeToggle";
 import type { PostListItem } from "@/lib/db/posts";
+import type { LanguageCode } from "@/lib/i18n";
 
 interface AuthorPostsProps {
   posts: PostListItem[];
   initialView?: View;
+  timezone?: string;
+  locale?: LanguageCode;
 }
 
-export function AuthorPosts({ posts, initialView }: AuthorPostsProps) {
+export function AuthorPosts({
+  posts,
+  initialView,
+  timezone = "Europe/Minsk",
+  locale = "ru",
+}: AuthorPostsProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -39,6 +47,8 @@ export function AuthorPosts({ posts, initialView }: AuthorPostsProps) {
               key={post.id}
               post={post}
               variant="list"
+              timezone={timezone}
+              locale={locale}
             />
           ))}
         </div>
@@ -53,6 +63,8 @@ export function AuthorPosts({ posts, initialView }: AuthorPostsProps) {
               key={post.id || post.documentId}
               post={post}
               variant="tiles"
+              timezone={timezone}
+              locale={locale}
             />
           ))}
         </div>
@@ -66,6 +78,8 @@ export function AuthorPosts({ posts, initialView }: AuthorPostsProps) {
             key={post.id || post.documentId}
             post={post}
             variant="grid"
+            timezone={timezone}
+            locale={locale}
           />
         ))}
       </div>

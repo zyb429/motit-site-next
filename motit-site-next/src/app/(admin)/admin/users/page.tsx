@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { ArrowLeft, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/db/site-settings";
+import type { AdminLanguageCode } from "@/lib/i18n";
 import { UsersTable } from "./UsersTable";
 import { CreateUserButton } from "./CreateUserButton";
 
@@ -85,6 +87,10 @@ export default async function UsersPage() {
     getAllOrganizations(),
   ]);
 
+  const settings = await getSiteSettings();
+  const tz = settings?.timezone ?? "Europe/Minsk";
+  const locale = (settings?.adminLocale ?? "ru") as AdminLanguageCode;
+
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
       <header className="shrink-0 bg-(--bg-card) border-b border-(--border)">
@@ -124,6 +130,8 @@ export default async function UsersPage() {
             users={users}
             roles={roles}
             allOrganizations={allOrganizations}
+            timezone={tz}
+            locale={locale}
           />
         </div>
       </main>

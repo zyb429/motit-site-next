@@ -5,13 +5,21 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { BlogCard } from "./BlogCard";
 import { ViewModeToggle, type ViewMode } from "./ViewModeToggle";
 import { PostListItem } from "@/lib/db/posts";
+import type { LanguageCode } from "@/lib/i18n";
 
 interface BlogPostsProps {
   posts: PostListItem[];
   initialViewMode?: ViewMode;
+  timezone?: string;
+  locale?: LanguageCode;
 }
 
-export function BlogPosts({ posts, initialViewMode = "list" }: BlogPostsProps) {
+export function BlogPosts({
+  posts,
+  initialViewMode = "list",
+  timezone = "Europe/Minsk",
+  locale = "ru",
+}: BlogPostsProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -36,7 +44,13 @@ export function BlogPosts({ posts, initialViewMode = "list" }: BlogPostsProps) {
       return (
         <div className="space-y-4">
           {posts.map((post) => (
-            <BlogCard key={post.id} post={post} variant="list" />
+            <BlogCard
+              key={post.id}
+              post={post}
+              variant="list"
+              timezone={timezone}
+              locale={locale}
+            />
           ))}
         </div>
       );
@@ -46,7 +60,13 @@ export function BlogPosts({ posts, initialViewMode = "list" }: BlogPostsProps) {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {posts.map((post) => (
-            <BlogCard key={post.id} post={post} variant="tiles" />
+            <BlogCard
+              key={post.id}
+              post={post}
+              variant="tiles"
+              timezone={timezone}
+              locale={locale}
+            />
           ))}
         </div>
       );
@@ -55,7 +75,13 @@ export function BlogPosts({ posts, initialViewMode = "list" }: BlogPostsProps) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {posts.map((post) => (
-          <BlogCard key={post.id} post={post} variant="grid" />
+          <BlogCard
+            key={post.id}
+            post={post}
+            variant="grid"
+            timezone={timezone}
+            locale={locale}
+          />
         ))}
       </div>
     );
