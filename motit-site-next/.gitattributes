@@ -1,3 +1,4 @@
 * text=auto
 *.lock text eol=lf
+*.sql text eol=lf
 bun.lock text eol=lf
