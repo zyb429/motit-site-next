@@ -25,3 +25,20 @@ export function formatDateTime(
     ...opts,
   }).format(d);
 }
+
+export function formatDate(
+  date: Date | string | null | undefined,
+  timeZone: string,
+  locale: LanguageCode | AdminLanguageCode = "ru",
+  opts?: Intl.DateTimeFormatOptions,
+): string {
+  if (!date) return "—";
+  const d = typeof date === "string" ? new Date(date) : date;
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale], {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    ...opts,
+  }).format(d);
+}
