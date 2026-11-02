@@ -5,6 +5,8 @@ import Image from "next/image";
 import { User, FileText } from "lucide-react";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/db/site-settings";
+import type { LanguageCode } from "@/lib/i18n";
 import { BackButton } from "@/components/blog/BackButton";
 import { AuthorPosts } from "@/components/blog/AuthorPosts";
 import { parseView } from "@/lib/view";
@@ -111,10 +113,17 @@ export default async function AuthorPage({
   const sp = await searchParams;
   const initialView = parseView(sp?.view);
 
-  const author = await getAuthor(username);
+  const [author, settings] = await Promise.all([
+    getAuthor(username),
+    getSiteSettings(),
+  ]);
+
   if (!author) notFound();
 
   const posts = await getPostsByAuthorPrisma(username);
+
+  const tz = settings?.timezone ?? "Europe/Minsk";
+  const locale = (settings?.siteLocale ?? "ru") as LanguageCode;
 
   const displayName = author.full_name || author.username;
   const avatarUrl = author.avatar_url;
@@ -195,7 +204,12 @@ export default async function AuthorPage({
                 </div>
               }
             >
-              <AuthorPosts posts={posts} initialView={initialView} />
+              <AuthorPosts
+                posts={posts}
+                initialView={initialView}
+                timezone={tz}
+                locale={locale}
+              />
             </Suspense>
           )}
         </section>

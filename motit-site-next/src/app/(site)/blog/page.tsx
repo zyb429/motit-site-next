@@ -6,6 +6,8 @@ import { Search, X } from "lucide-react";
 import { getPostsPrisma } from "@/lib/db/posts";
 import { getPostsPerPage } from "@/lib/db/global-settings";
 import { getCategoriesPrisma } from "@/lib/db/categories";
+import { getSiteSettings } from "@/lib/db/site-settings";
+import type { LanguageCode } from "@/lib/i18n";
 import { BlogPosts } from "@/components/blog/BlogPosts";
 import { BlogCategories } from "@/components/blog/BlogCategories";
 import { PaginationClient } from "@/components/blog/PaginationClient";
@@ -92,11 +94,15 @@ export default async function BlogPage({
       : [params.category];
   }
 
-  const [postsPerPage, allPosts, allCategories] = await Promise.all([
+  const [postsPerPage, allPosts, allCategories, settings] = await Promise.all([
     getPostsPerPage(),
     getPostsPrisma({ status: "published", take: 1000 }),
     getCategoriesPrisma(),
+    getSiteSettings(),
   ]);
+
+  const tz = settings?.timezone ?? "Europe/Minsk";
+  const locale = (settings?.siteLocale ?? "ru") as LanguageCode;
 
   let filtered = allPosts;
   if (searchQuery) {
@@ -227,7 +233,12 @@ export default async function BlogPage({
                   </div>
                 }
               >
-                <BlogPosts posts={posts} initialViewMode={initialViewMode} />
+                <BlogPosts
+                  posts={posts}
+                  initialViewMode={initialViewMode}
+                  timezone={tz}
+                  locale={locale}
+                />
               </Suspense>
 
               {totalPages > 1 && (
