@@ -19,6 +19,12 @@ type Field =
   | { kind: "schedule"; name: string; label: string }
   | { kind: "social"; name: string; label: string }
   | {
+      kind: "select";
+      name: string;
+      label: string;
+      options: { value: string; label: string }[];
+    }
+  | {
       kind: "image";
       name: string;
       label: string;
@@ -485,7 +491,6 @@ export function SettingsForm({
   const [state, formAction, pending] = useActionState(action, null);
   const router = useRouter();
 
-  // После успешного сохранения обновляем данные страницы (server component).
   useEffect(() => {
     if (state?.ok) {
       router.refresh();
@@ -563,6 +568,29 @@ export function SettingsForm({
           name={f.name}
           defaultValue={val}
         />
+      );
+    }
+
+    if (f.kind === "select") {
+      return (
+        <select
+          key={`select-${val ?? ""}`}
+          name={f.name}
+          defaultValue={val ?? ""}
+          className={inputCls}
+        >
+          <option value="" disabled>
+            — выберите —
+          </option>
+          {val && !f.options.some((o) => o.value === val) && (
+            <option value={val}>{val} (текущее)</option>
+          )}
+          {f.options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
       );
     }
 

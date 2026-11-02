@@ -2,6 +2,11 @@ import Link from "next/link";
 import { ArrowLeft, Globe } from "lucide-react";
 import { getSiteSettings } from "@/lib/db/site-settings";
 import { SettingsForm } from "@/components/admin/settings/SettingsForm";
+import {
+  ADMIN_LANGUAGE_OPTIONS,
+  LANGUAGE_OPTIONS,
+  TIMEZONE_OPTIONS,
+} from "@/lib/i18n";
 import { updateGeneralSettings } from "../actions";
 
 export default async function GeneralSettingsPage() {
@@ -26,7 +31,7 @@ export default async function GeneralSettingsPage() {
                 Основные
               </h1>
               <p className="text-sm text-(--text-secondary)">
-                Название, описание, язык
+                Название, описание, языки, часовой пояс
               </p>
             </div>
           </div>
@@ -40,8 +45,24 @@ export default async function GeneralSettingsPage() {
             fields={[
               { name: "siteName", label: "Название сайта" },
               { name: "description", label: "Описание", textarea: true },
-              { name: "language", label: "Язык (ru/en)" },
-              { name: "timezone", label: "Часовой пояс" },
+              {
+                kind: "select",
+                name: "siteLocale",
+                label: "Язык публичного сайта",
+                options: LANGUAGE_OPTIONS,
+              },
+              {
+                kind: "select",
+                name: "adminLocale",
+                label: "Язык интерфейса админки",
+                options: ADMIN_LANGUAGE_OPTIONS,
+              },
+              {
+                kind: "select",
+                name: "timezone",
+                label: "Часовой пояс",
+                options: TIMEZONE_OPTIONS,
+              },
             ]}
           />
         </div>

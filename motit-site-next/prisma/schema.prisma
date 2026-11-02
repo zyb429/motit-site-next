@@ -257,6 +257,8 @@ model SiteSettings {
   siteName     String   @default("Motit")
   description  String?  @db.Text
   language     String   @default("ru")
+  siteLocale   String   @default("ru")
+  adminLocale  String   @default("ru")
   timezone     String   @default("Europe/Minsk")
 
   contactEmail String?

@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { CUSTOM_SOCIAL_VALUE } from "@/lib/social-options";
+import {
+  isAdminLanguage,
+  isLanguage,
+  isTimezone,
+} from "@/lib/i18n";
 
 type Result = { ok?: boolean; error?: string };
 
@@ -30,11 +35,28 @@ export async function updateGeneralSettings(
   _: unknown,
   fd: FormData,
 ): Promise<Result> {
+  const siteLocaleRaw = String(fd.get("siteLocale") ?? "");
+  const adminLocaleRaw = String(fd.get("adminLocale") ?? "");
+  const timezoneRaw = String(fd.get("timezone") ?? "");
+
+  if (!isLanguage(siteLocaleRaw)) {
+    return { error: "Некорректный язык публичного сайта" };
+  }
+  if (!isAdminLanguage(adminLocaleRaw)) {
+    return { error: "Некорректный язык админки" };
+  }
+  if (!isTimezone(timezoneRaw)) {
+    return { error: "Некорректный часовой пояс" };
+  }
+
   return updateSite(Number(fd.get("id")), {
     siteName: String(fd.get("siteName") ?? ""),
     description: String(fd.get("description") ?? ""),
-    language: String(fd.get("language") ?? "ru"),
-    timezone: String(fd.get("timezone") ?? "Europe/Minsk"),
+    // `language` синхронизируем с `siteLocale`, чтобы старый код не сломался
+    language: siteLocaleRaw,
+    siteLocale: siteLocaleRaw,
+    adminLocale: adminLocaleRaw,
+    timezone: timezoneRaw,
   });
 }
 

@@ -90,6 +90,8 @@ async function main() {
     siteName: "Motit",
     description: "IT-решения для бизнеса",
     language: "ru",
+    siteLocale: "ru",
+    adminLocale: "ru",
     timezone: "Europe/Minsk",
 
     // SEO — дефолтные значения
