@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { Calendar } from "lucide-react";
 import { getPostsPrisma } from "@/lib/db/posts";
+import { getSiteSettings } from "@/lib/db/site-settings";
+import { formatDate } from "@/lib/format-date";
 
 export async function BlogSidebar() {
   const posts = await getPostsPrisma({ status: "published", take: 4 });
@@ -9,17 +11,13 @@ export async function BlogSidebar() {
 
   if (validPosts.length === 0) return null;
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "";
-    try {
-      return new Date(dateString).toLocaleDateString("ru-RU", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-    } catch {
-      return "";
-    }
+  const settings = await getSiteSettings();
+  const tz = settings?.timezone ?? "Europe/Minsk";
+  const locale = (settings?.siteLocale ?? "ru") as "ru" | "en" | "be";
+  const dateOpts = {
+    day: "numeric" as const,
+    month: "short" as const,
+    year: "numeric" as const,
   };
 
   return (
@@ -51,7 +49,7 @@ export async function BlogSidebar() {
                     {post.publishedAt && (
                       <span className="text-xs text-gray-500 flex items-center gap-1">
                         <Calendar size={10} />
-                        {formatDate(post.publishedAt)}
+                        {formatDate(post.publishedAt, tz, locale, dateOpts)}
                       </span>
                     )}
                   </div>

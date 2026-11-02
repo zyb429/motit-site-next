@@ -16,6 +16,8 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { EditUserModal } from "@/components/admin/EditUserModal";
+import { formatDate } from "@/lib/format-date";
+import type { AdminLanguageCode } from "@/lib/i18n";
 
 type Role = {
   id: number;
@@ -98,9 +100,17 @@ interface Props {
   users: User[];
   roles: Role[];
   allOrganizations: { uuid: string; name: string; inn: string | null }[];
+  timezone?: string;
+  locale?: AdminLanguageCode;
 }
 
-export function UsersTable({ users, roles, allOrganizations }: Props) {
+export function UsersTable({
+  users,
+  roles,
+  allOrganizations,
+  timezone = "Europe/Minsk",
+  locale = "ru",
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
@@ -222,12 +232,11 @@ export function UsersTable({ users, roles, allOrganizations }: Props) {
     }
   };
 
-  const formatDate = (s: string) =>
-    new Date(s).toLocaleDateString("ru-RU", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+  const dateOpts = {
+    day: "numeric" as const,
+    month: "short" as const,
+    year: "numeric" as const,
+  };
 
   const roleColor = (name?: string) => {
     const n = (name ?? "").toLowerCase();
@@ -456,7 +465,7 @@ export function UsersTable({ users, roles, allOrganizations }: Props) {
                     </td>
                     <td className="px-4 py-3 hidden xl:table-cell">
                       <span className="text-xs text-(--text-secondary)">
-                        {formatDate(u.createdAt)}
+                        {formatDate(u.createdAt, timezone, locale, dateOpts)}
                       </span>
                     </td>
                     <td className="px-4 py-3">

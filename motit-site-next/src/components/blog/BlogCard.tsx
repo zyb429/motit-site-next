@@ -9,11 +9,15 @@ import { Calendar, Clock } from "lucide-react";
 import { AuthorLink } from "./AuthorLink";
 import type { View } from "@/lib/view";
 import type { PostListItem } from "@/lib/db/posts";
+import { formatDate } from "@/lib/format-date";
+import type { LanguageCode } from "@/lib/i18n";
 
 interface BlogCardProps {
   post: PostListItem;
   className?: string;
   variant?: View;
+  timezone?: string;
+  locale?: LanguageCode;
 }
 
 type SlateNode = {
@@ -46,6 +50,8 @@ export function BlogCard({
   post,
   className = "",
   variant = "list",
+  timezone = "Europe/Minsk",
+  locale = "ru",
 }: BlogCardProps) {
   const searchParams = useSearchParams();
   const { saveScrollPosition } = useScrollRestoration();
@@ -81,18 +87,14 @@ export function BlogCard({
     return `/blog/${slug}${qs ? `?${qs}` : ""}`;
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return null;
-    try {
-      return new Date(dateString).toLocaleDateString("ru-RU", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-    } catch {
-      return null;
-    }
+  const dateOpts = {
+    day: "numeric" as const,
+    month: "long" as const,
+    year: "numeric" as const,
   };
+
+  const formatPublished = (dateString: string | null) =>
+    dateString ? formatDate(dateString, timezone, locale, dateOpts) : null;
 
   const getReadingTime = () => {
     const text = getTextFromContent(excerpt || "");
@@ -150,7 +152,7 @@ export function BlogCard({
                   <span className="text-gray-600">•</span>
                   <span className="flex items-center gap-1">
                     <Calendar size={12} className="text-[#2dd4bf]" />
-                    {formatDate(publishedAt)}
+                    {formatPublished(publishedAt)}
                   </span>
                 </>
               )}
@@ -260,7 +262,7 @@ export function BlogCard({
             {publishedAt && (
               <span className="flex items-center gap-1">
                 <Calendar size={12} className="text-[#2dd4bf]" />
-                {formatDate(publishedAt)}
+                {formatPublished(publishedAt)}
               </span>
             )}
           </div>
@@ -302,7 +304,7 @@ export function BlogCard({
           {publishedAt && (
             <span className="flex items-center gap-1">
               <Calendar size={12} className="text-[#2dd4bf]" />
-              {formatDate(publishedAt)}
+              {formatPublished(publishedAt)}
             </span>
           )}
         </div>

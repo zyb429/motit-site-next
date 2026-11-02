@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getSiteSettings } from "@/lib/db/site-settings";
+import { formatDate } from "@/lib/format-date";
 import { DeletePostButton } from "./DeletePostButton";
 import { StatusToggleButton } from "./StatusToggleButton";
 import { EditPostButton } from "./EditPostButton";
@@ -67,19 +69,6 @@ async function getPosts() {
   }));
 }
 
-function formatDate(dateString?: string | null) {
-  if (!dateString) return "—";
-  try {
-    return new Date(dateString).toLocaleDateString("ru-RU", {
-      day: "numeric",
-      month: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return "—";
-  }
-}
-
 type PostAuthor = {
   username: string | null;
   full_name: string | null;
@@ -115,6 +104,15 @@ export default async function AdminPostsPage({
   const params = (await searchParams) || {};
   const query = (params.q || "").toLowerCase().trim();
   const statusFilter = params.status || "all";
+
+  const settings = await getSiteSettings();
+  const tz = settings?.timezone ?? "Europe/Minsk";
+  const locale = (settings?.adminLocale ?? "ru") as "ru" | "en";
+  const dateOpts = {
+    day: "numeric" as const,
+    month: "numeric" as const,
+    year: "numeric" as const,
+  };
 
   const allPosts = await getPosts();
 
@@ -403,7 +401,7 @@ export default async function AdminPostsPage({
                         </div>
                       )}
                       <span className="whitespace-nowrap">
-                        {formatDate(post.publishedAt || post.createdAt)}
+                        {formatDate(post.publishedAt || post.createdAt, tz, locale, dateOpts)}
                       </span>
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status === "published"
@@ -568,7 +566,7 @@ export default async function AdminPostsPage({
 
                         <td className="px-3 py-3 align-middle overflow-hidden">
                           <span className="text-xs text-(--text-secondary) truncate block whitespace-nowrap">
-                            {formatDate(post.publishedAt || post.createdAt)}
+                            {formatDate(post.publishedAt || post.createdAt, tz, locale, dateOpts)}
                           </span>
                         </td>
 

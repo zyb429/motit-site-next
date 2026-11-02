@@ -7,6 +7,8 @@ import { getPostBySlugPrisma, getPostsPrisma } from "@/lib/db/posts";
 import { BlogPostActions } from "@/components/blog/BlogPostActions";
 import { Calendar, User, Clock, ArrowLeft, Tag } from "lucide-react";
 import { getSafeImageUrl } from "@/lib/images";
+import { getSiteSettings } from "@/lib/db/site-settings";
+import { formatDate } from "@/lib/format-date";
 import { TaskList, TaskItem } from "@tiptap/extension-list";
 import { generateHTML } from "@tiptap/html";
 import StarterKit from "@tiptap/starter-kit";
@@ -265,6 +267,15 @@ export default async function BlogPostPage({
 
   if (!post) notFound();
 
+  const settings = await getSiteSettings();
+  const tz = settings?.timezone ?? "Europe/Minsk";
+  const locale = (settings?.siteLocale ?? "ru") as "ru" | "en" | "be";
+  const dateOpts = {
+    day: "numeric" as const,
+    month: "long" as const,
+    year: "numeric" as const,
+  };
+
   const categories = post.categories;
   const author = post.author;
 
@@ -279,19 +290,6 @@ export default async function BlogPostPage({
   };
 
   const readingTime = getReadingTime();
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return null;
-    try {
-      return new Date(dateString).toLocaleDateString("ru-RU", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-    } catch {
-      return null;
-    }
-  };
 
   const getBackUrl = () => {
     const p = new URLSearchParams();
@@ -360,7 +358,7 @@ export default async function BlogPostPage({
             {post.publishedAt && (
               <span className="flex items-center gap-1.5">
                 <Calendar size={14} className="text-[#2dd4bf]" />
-                {formatDate(post.publishedAt)}
+                {formatDate(post.publishedAt, tz, locale, dateOpts)}
               </span>
             )}
             <span className="flex items-center gap-1.5">
