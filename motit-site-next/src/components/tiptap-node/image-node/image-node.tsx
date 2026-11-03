@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
-import { openEditorModal } from "@rageshpikalmunde/rp-image-editor";
 import { handleImageUpload } from "@/lib/tiptap-utils";
 import "@/components/tiptap-node/image-node/image-node.scss";
 
@@ -23,7 +22,11 @@ export function ImageNode(props: NodeViewProps) {
         type: blob.type || "image/jpeg",
       });
 
-      // 2. Открываем модал редактора
+      // 2. ДИНАМИЧЕСКИЙ ИМПОРТ РЕДАКТОРА (только в браузере)
+      const { openEditorModal } = await import(
+        "@rageshpikalmunde/rp-image-editor"
+      );
+
       const result = await openEditorModal({
         image: file,
         config: {

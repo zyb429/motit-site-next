@@ -106,7 +106,7 @@ export function MessageInput({
     let openEditorModal: OpenEditorFn | undefined;
     try {
       const mod: Record<string, unknown> = await import(
-        "@rageshpikalmunde/rp-image-editor-react"
+        "@rageshpikalmunde/rp-image-editor"
       );
       openEditorModal =
         (mod.openEditorModal as OpenEditorFn | undefined) ??

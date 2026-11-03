@@ -51,8 +51,14 @@ export default async function SeoSettingsPage() {
               {
                 kind: "image",
                 name: "ogImageUrl",
-                label: "OG image (1200×630)",
+                label: "OG image (1200×630, файл)",
                 accept: "image/*",
+              },
+              {
+                kind: "svg",
+                name: "ogImageSvg",
+                label: "OG image (SVG-код, исходник)",
+                rows: 12,
               },
               {
                 name: "robots",

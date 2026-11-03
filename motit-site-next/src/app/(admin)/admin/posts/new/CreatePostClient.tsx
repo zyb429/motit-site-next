@@ -24,7 +24,6 @@ import {
   Settings2,
   History,
 } from "lucide-react";
-import { openEditorModal } from "@rageshpikalmunde/rp-image-editor";
 
 import type { CustomElement } from "@/types/slate";
 import { PageSkeleton } from "@/components/PageSkeleton";
@@ -241,6 +240,11 @@ export default memo(function CreatePostClient({
       const file = new File([blob], "cover.jpg", {
         type: blob.type || "image/jpeg",
       });
+
+      // ДИНАМИЧЕСКИЙ ИМПОРТ — только в браузере, по клику
+      const { openEditorModal } = await import(
+        "@rageshpikalmunde/rp-image-editor"
+      );
 
       const result = await openEditorModal({
         image: file,

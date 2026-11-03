@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, Loader2, Link as LinkIcon } from "lucide-react";
+import { Upload, X, Loader2, Link as LinkIcon, ImageIcon, Pencil } from "lucide-react";
 
 export function ImageField({
   name,
@@ -21,20 +21,17 @@ export function ImageField({
     defaultValue ? "url" : "upload",
   );
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const uploadFile = async (file: File | Blob) => {
     setIsUploading(true);
     setError("");
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "branding");
+      formData.append("files", file, "image.jpg");
 
       const res = await fetch(uploadEndpoint, {
         method: "POST",
@@ -47,15 +44,75 @@ export function ImageField({
       }
 
       const data = await res.json();
-      const url = data.url ?? data.file?.url;
+      const url = Array.isArray(data)
+        ? data[0]?.url
+        : data.url ?? data.file?.url;
+
       if (!url) throw new Error("API не вернул URL");
       setValue(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка загрузки");
     } finally {
       setIsUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
     }
+  };
+
+  const processImage = async (fileOrUrl: File | string) => {
+    try {
+      setIsEditing(true);
+      setError("");
+
+      let file: File;
+      if (typeof fileOrUrl === "string") {
+        const res = await fetch(fileOrUrl);
+        if (!res.ok) throw new Error("Не удалось загрузить изображение");
+        const blob = await res.blob();
+        file = new File([blob], "image.jpg", {
+          type: blob.type || "image/jpeg",
+        });
+      } else {
+        file = fileOrUrl;
+      }
+
+      const { openEditorModal } = await import(
+        "@rageshpikalmunde/rp-image-editor"
+      );
+
+      const result = await openEditorModal({
+        image: file,
+        config: {
+          exportFormat: "jpeg",
+          exportQuality: 0.92,
+          maxUndoSteps: 30,
+          language: "en",
+        },
+      });
+
+      if (!result?.file) return;
+      await uploadFile(result.file);
+    } catch (err) {
+      console.error("Image edit error:", err);
+      setError(err instanceof Error ? err.message : "Ошибка редактора");
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Пожалуйста, выберите изображение");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Файл слишком большой (максимум 5MB)");
+      return;
+    }
+
+    if (inputRef.current) inputRef.current.value = "";
+    await processImage(file);
   };
 
   return (
@@ -65,22 +122,49 @@ export function ImageField({
       </label>
 
       <div className="flex items-start gap-4">
-        {/* Превью */}
-        <div className="w-20 h-20 rounded-lg border border-(--border) bg-(--bg-secondary) flex items-center justify-center overflow-hidden shrink-0">
+        {/* Превью с ховер-эффектом */}
+        <div className="relative shrink-0">
           {value ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={value}
-              alt={label}
-              className="w-full h-full object-contain"
-            />
+            <button
+              type="button"
+              onClick={() => processImage(value)}
+              disabled={isEditing || isUploading}
+              title="Редактировать изображение"
+              className="block cursor-pointer disabled:opacity-50 relative overflow-hidden rounded-lg border border-(--border) bg-(--bg-secondary) p-1 group"
+            >
+              <img
+                src={value}
+                alt={label}
+                className="h-16 w-16 object-contain transition-opacity group-hover:opacity-50"
+              />
+              
+              {/* Оверлей при наведении */}
+              {!isEditing && !isUploading && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                  <Pencil className="w-5 h-5 text-white" />
+                </div>
+              )}
+
+              {isEditing && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md">
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                </div>
+              )}
+            </button>
           ) : (
-            <span className="text-xs text-(--text-muted)">Нет</span>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={isEditing || isUploading}
+              title="Загрузить изображение"
+              className="flex h-16 w-16 items-center justify-center rounded-lg border border-(--border) bg-(--bg-secondary) text-(--text-muted) hover:border-(--accent) hover:text-(--accent) transition-colors disabled:opacity-50"
+            >
+              <ImageIcon size={24} />
+            </button>
           )}
         </div>
 
         <div className="flex-1 space-y-2">
-          {/* Переключатель режимов */}
           <div className="flex gap-2 text-xs">
             <button
               type="button"
@@ -106,33 +190,35 @@ export function ImageField({
             </button>
           </div>
 
-          {/* Загрузка файла */}
           {mode === "upload" && (
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                disabled={isUploading}
+                disabled={isUploading || isEditing}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-(--bg-secondary) text-sm border border-(--border) hover:border-(--accent) transition-colors disabled:opacity-50"
               >
-                {isUploading ? (
+                {isUploading || isEditing ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Upload className="w-4 h-4" />
                 )}
-                {isUploading ? "Загрузка..." : "Выбрать файл"}
+                {isEditing
+                  ? "Редактор..."
+                  : isUploading
+                    ? "Загрузка..."
+                    : "Выбрать файл"}
               </button>
               <input
                 ref={inputRef}
                 type="file"
                 accept={accept}
-                onChange={handleFile}
+                onChange={handleFileSelect}
                 className="hidden"
               />
             </div>
           )}
 
-          {/* Ввод URL */}
           {mode === "url" && (
             <input
               type="text"
@@ -145,12 +231,12 @@ export function ImageField({
 
           {error && <p className="text-xs text-red-400">{error}</p>}
 
-          {/* Кнопка удаления */}
           {value && (
             <button
               type="button"
               onClick={() => setValue("")}
-              className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+              disabled={isEditing || isUploading}
+              className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 disabled:opacity-50"
             >
               <X className="w-3 h-3" /> Удалить
             </button>
@@ -158,7 +244,6 @@ export function ImageField({
         </div>
       </div>
 
-      {/* Скрытое поле для формы */}
       <input type="hidden" name={name} value={value} />
     </div>
   );
