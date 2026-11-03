@@ -503,3 +503,33 @@ textarea:focus::placeholder {
 .puck-theme-wrapper select option:disabled {
   color: #9ca3af !important;
 }
+
+/* ============================================
+   ФИКС КАРТОЧЕК В FLEX-СЕТКЕ (Directions)
+   ============================================ */
+
+/* 1. Контейнер: разрешаем карточкам растягиваться по высоте */
+.flex-wrap.gap-4,
+.flex-wrap.md\:gap-5 {
+  align-items: stretch;
+}
+
+/* 2. Сами карточки */
+.flex-wrap > .reveal {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+/* 3. Текст внутри карточки растягивается */
+.flex-wrap > .reveal > p {
+  flex-grow: 1;
+}
+
+/* 4. ГЛАВНОЕ: На мобильных (до 640px) одна колонка */
+@media (max-width: 640px) {
+  .flex-wrap > .reveal {
+    width: 100% !important; /* Карточка на всю ширину */
+    min-height: auto !important;
+  }
+}
