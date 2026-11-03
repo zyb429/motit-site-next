@@ -266,11 +266,19 @@ export async function updateSocialOptions(fd: FormData): Promise<Result> {
 }
 
 export async function updateSeo(_: unknown, fd: FormData): Promise<Result> {
+  const ogImageSvgRaw = String(fd.get("ogImageSvg") ?? "");
+  const trimmed = ogImageSvgRaw.trim();
+  // Сохраняем только если похоже на SVG, иначе — null
+  const ogImageSvg = trimmed.toLowerCase().startsWith("<svg")
+    ? trimmed
+    : null;
+
   return updateSite(Number(fd.get("id")), {
     seoTitle: String(fd.get("seoTitle") ?? ""),
     seoDescription: String(fd.get("seoDescription") ?? ""),
     seoKeywords: String(fd.get("seoKeywords") ?? ""),
     ogImageUrl: String(fd.get("ogImageUrl") ?? ""),
+    ogImageSvg,
     robots: String(fd.get("robots") ?? "index,follow"),
   });
 }
@@ -303,9 +311,17 @@ export async function updateAppearance(
   _: unknown,
   fd: FormData,
 ): Promise<Result> {
+  const faviconSvgRaw = String(fd.get("faviconSvg") ?? "");
+  const trimmed = faviconSvgRaw.trim();
+  // Сохраняем только если похоже на SVG, иначе — null
+  const faviconSvg = trimmed.toLowerCase().startsWith("<svg")
+    ? trimmed
+    : null;
+
   return updateSite(Number(fd.get("id")), {
     logoUrl: String(fd.get("logoUrl") ?? ""),
     faviconUrl: String(fd.get("faviconUrl") ?? ""),
+    faviconSvg,
     accentColor: String(fd.get("accentColor") ?? "#6366f1"),
   });
 }
