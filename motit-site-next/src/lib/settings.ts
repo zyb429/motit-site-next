@@ -10,6 +10,8 @@ export const ALL_MIME_OPTIONS: { group: string; mime: string; label: string }[] 
   { group: "Изображения", mime: "image/webp", label: "WebP" },
   { group: "Изображения", mime: "image/svg+xml", label: "SVG" },
   { group: "Изображения", mime: "image/bmp", label: "BMP" },
+  { group: "Изображения", mime: "image/x-icon", label: "ICO (favicon)" },
+  { group: "Изображения", mime: "image/vnd.microsoft.icon", label: "ICO (alt)" },
 
   { group: "Текст и код", mime: "text/plain", label: "TXT" },
   { group: "Текст и код", mime: "text/markdown", label: "Markdown" },
@@ -49,7 +51,14 @@ export const ALL_MIME_OPTIONS: { group: string; mime: string; label: string }[] 
 ];
 
 export const DEFAULT_ALLOWED_MIME: string[] = [
-  "image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+  "application/pdf",
 ];
 
 export async function getAllowedMime(): Promise<string[]> {
@@ -59,7 +68,7 @@ export async function getAllowedMime(): Promise<string[]> {
   if (!row?.value) return DEFAULT_ALLOWED_MIME;
 
   // value уже Json — не нужно JSON.parse
-  if (Array.isArray(row.value) && row.value.every(v => typeof v === "string")) {
+  if (Array.isArray(row.value) && row.value.every((v) => typeof v === "string")) {
     return row.value as string[];
   }
   return DEFAULT_ALLOWED_MIME;

@@ -1,3 +1,4 @@
+// src/components/admin/settings/UploadMimeForm.tsx
 "use client";
 
 import { useState } from "react";
@@ -67,7 +68,8 @@ export function UploadMimeForm({
     <div className="space-y-6">
       <p className="text-sm text-(--text-muted)">
         Отметьте типы файлов, которые можно загружать через админку. Для иконок
-        соцсетей нужен <code>image/svg+xml</code>.
+        соцсетей нужен <code>image/svg+xml</code>, для favicon —{" "}
+        <code>image/x-icon</code>.
       </p>
 
       {groups.map((group) => {
@@ -94,6 +96,7 @@ export function UploadMimeForm({
                 <label
                   key={o.mime}
                   className="flex items-center gap-2 px-3 py-2 rounded border border-(--border) text-sm text-(--text-primary) cursor-pointer hover:border-(--accent)"
+                  title={o.mime}
                 >
                   <input
                     type="checkbox"

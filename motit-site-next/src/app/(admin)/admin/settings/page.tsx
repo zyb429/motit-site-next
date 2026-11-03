@@ -14,6 +14,7 @@ import {
   Layout,
   LayoutList,
   Home,
+  Upload,
 } from "lucide-react";
 
 const SECTIONS = [
@@ -88,6 +89,12 @@ const SECTIONS = [
     icon: LayoutList,
     title: "Поля формы контактов",
     desc: "Добавление и удаление полей заявки",
+  },
+  {
+    href: "/admin/settings/upload",
+    icon: Upload,
+    title: "Доступные к загрузке файлы",
+    desc: "Добавление и удаление типов файлов, которые можно загрузить на сервер",
   },
 ];
 

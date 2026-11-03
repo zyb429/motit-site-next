@@ -1,3 +1,4 @@
+// src/app/(admin)/admin/settings/upload/page.tsx
 import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
 import { getAllowedMime, ALL_MIME_OPTIONS } from "@/lib/settings";

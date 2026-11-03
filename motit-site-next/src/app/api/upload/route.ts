@@ -18,6 +18,7 @@ const EXT_MIME_MAP: Record<string, string> = {
   webp: "image/webp",
   svg: "image/svg+xml",
   bmp: "image/bmp",
+  ico: "image/x-icon",
 
   txt: "text/plain",
   md: "text/markdown",
