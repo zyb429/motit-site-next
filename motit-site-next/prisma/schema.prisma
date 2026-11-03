@@ -262,8 +262,11 @@ model SiteSettings {
   timezone     String   @default("Europe/Minsk")
 
   contactEmail String?
+  contactEmails Json?
   contactPhone String?
+  contactPhones Json?
   address      String?
+  addresses     Json?
   workHours    String?
 
   socialLinks  Json?
