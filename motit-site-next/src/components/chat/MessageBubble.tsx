@@ -7,8 +7,11 @@ import { Check, CheckCheck, CornerUpLeft, Forward, Pin } from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
 import type { PreviewFile } from "./MediaPreviewModal";
 import { MessageContextMenu } from "./MessageContextMenu";
+import { MessageAttachments } from "./MessageAttachments";
 import { ClientOnly } from "@/components/ClientOnly";
 import { formatMessageTime } from "@/lib/format-time";
+import { Linkify } from "./Linkify";
+import { LinkPreview } from "./LinkPreview";
 
 export function MessageBubble({
   message,
@@ -75,15 +78,6 @@ export function MessageBubble({
   const isRead =
     isOwn && message.read_receipts.some((r) => r.user_uuid !== currentUserUuid);
 
-  const filesInMessage: PreviewFile[] = message.attachments.map((a) => ({
-    id: a.file.id,
-    uuid: a.file.uuid,
-    name: a.file.name,
-    url: a.file.url,
-    mime: a.file.mime,
-    size: a.file.size,
-  }));
-
   function handleContextMenu(e: MouseEvent<HTMLDivElement>) {
     e.preventDefault();
     setMenu({ x: e.clientX, y: e.clientY });
@@ -97,6 +91,8 @@ export function MessageBubble({
     if (r.user_uuid === currentUserUuid) acc[r.emoji].mine = true;
     return acc;
   }, {});
+
+  const hasAttachments = message.attachments.length > 0;
 
   return (
     <div className="relative">
@@ -135,22 +131,23 @@ export function MessageBubble({
           )}
 
           <div
-            className={`px-3 py-2 rounded-2xl text-sm ${
+            className={`text-sm ${
               isOwn
-                ? "bg-(--accent) text-(--bg-card) rounded-br-sm"
-                : "bg-(--bg-primary) text-(--text-primary) rounded-bl-sm"
-            }`}
+                ? "bg-(--accent) text-(--bg-card) rounded-2xl rounded-br-sm"
+                : "bg-(--bg-primary) text-(--text-primary) rounded-2xl rounded-bl-sm"
+            } ${hasAttachments && !message.content ? "p-1" : "px-3 py-2"}`}
           >
             {message.forwarded_from_message_uuid && (
               <div
-                className={`flex items-center gap-1 text-[10px] mb-1 italic ${
+                className={`flex items-center gap-1 text-[10px] mb-1 italic px-2 ${
                   isOwn ? "text-white/70" : "text-(--text-muted)"
                 }`}
               >
                 <Forward size={10} />
-                  Переслано
+                Переслано
               </div>
             )}
+
             {message.reply_to_uuid && replyToMessage && (
               <button
                 type="button"
@@ -176,70 +173,51 @@ export function MessageBubble({
             )}
 
             {message.content && (
-              <div className="whitespace-pre-wrap wrapbreak-word">
-                {message.content}
+              <div
+                className={`whitespace-pre-wrap wrapbreak-word ${
+                  hasAttachments ? "px-2 pt-1.5" : ""
+                }`}
+              >
+                <Linkify text={message.content} />
                 {message.edited_at && (
                   <span className="ml-1 text-[10px] opacity-60">(изм.)</span>
                 )}
               </div>
             )}
 
-            {message.attachments.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {message.attachments.map((a) => {
-                  const isImage = a.file.mime?.startsWith("image/");
-                  const file: PreviewFile = {
-                    id: a.file.id,
-                    uuid: a.file.uuid,
-                    name: a.file.name,
-                    url: a.file.url,
-                    mime: a.file.mime,
-                    size: a.file.size,
-                  };
-                  return (
-                    <button
-                      key={a.uuid}
-                      type="button"
-                      onClick={() => onPreviewFileAction?.(file, filesInMessage)}
-                      className={`block w-full text-left rounded-lg overflow-hidden cursor-zoom-in ${
-                        isOwn ? "bg-black/10" : "bg-(--bg-card)"
-                      }`}
-                    >
-                      {isImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={a.file.url}
-                          alt={a.file.name}
-                          className="max-w-full max-h-64 object-contain"
-                        />
-                      ) : (
-                        <div className="px-2 py-1.5 text-xs truncate">
-                          📎 {a.file.name}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Превью первой ссылки (как в Telegram) */}
+            {message.content && <LinkPreview text={message.content} />}
+
+            {hasAttachments && (
+              <MessageAttachments
+                attachments={message.attachments}
+                onPreviewFileAction={onPreviewFileAction}
+              />
             )}
           </div>
 
           {Object.keys(reactionGroups).length > 0 && (
-            <div className={`flex flex-wrap gap-1 mt-1 ${isOwn ? "justify-end" : "justify-start"}`}>
-              {Object.entries(reactionGroups).map(([emoji, { count, mine }]) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => onReactAction?.(message, emoji)}
-                  className={`text-xs px-1.5 py-0.5 rounded-full border transition-colors ${
-                    mine
-                      ? "bg-(--accent-dim) border-(--accent)"
-                      : "bg-(--bg-primary) border-(--border) hover:border-(--accent)"
-                  }`}
-                >
-                  {emoji} {count}
-                </button>
-              ))}
+            <div
+              className={`flex flex-wrap gap-1 mt-1 ${
+                isOwn ? "justify-end" : "justify-start"
+              }`}
+            >
+              {Object.entries(reactionGroups).map(
+                ([emoji, { count, mine }]) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => onReactAction?.(message, emoji)}
+                    className={`text-xs px-1.5 py-0.5 rounded-full border transition-colors ${
+                      mine
+                        ? "bg-(--accent-dim) border-(--accent)"
+                        : "bg-(--bg-primary) border-(--border) hover:border-(--accent)"
+                    }`}
+                  >
+                    {emoji} {count}
+                  </button>
+                ),
+              )}
             </div>
           )}
 
@@ -269,28 +247,32 @@ export function MessageBubble({
         </div>
       </div>
 
-      {menu && mounted && createPortal (
-        <MessageContextMenu
-          x={menu.x}
-          y={menu.y}
-          isOwn={isOwn}
-          onCloseAction={() => setMenu(null)}
-          onReplyAction={() => onReplyAction?.(message)}
-          onCopyAction={() => onCopyAction?.(message)}
-          onEditAction={() => onEditAction?.(message)}
-          onDeleteAction={
-            onDeleteAction ? (scope) => onDeleteAction(message, scope) : undefined
-          }
-          onForwardAction={() => onForwardAction?.(message)}
-          onPinAction={
-            onPinAction ? (scope) => onPinAction(message, scope) : undefined
-          }
-          onReactAction={(emoji) => {
-            if (emoji !== "more") onReactAction?.(message, emoji);
-          }}
-        />,
-        document.body,
-      )}
+      {menu &&
+        mounted &&
+        createPortal(
+          <MessageContextMenu
+            x={menu.x}
+            y={menu.y}
+            isOwn={isOwn}
+            onCloseAction={() => setMenu(null)}
+            onReplyAction={() => onReplyAction?.(message)}
+            onCopyAction={() => onCopyAction?.(message)}
+            onEditAction={() => onEditAction?.(message)}
+            onDeleteAction={
+              onDeleteAction
+                ? (scope) => onDeleteAction(message, scope)
+                : undefined
+            }
+            onForwardAction={() => onForwardAction?.(message)}
+            onPinAction={
+              onPinAction ? (scope) => onPinAction(message, scope) : undefined
+            }
+            onReactAction={(emoji) => {
+              if (emoji !== "more") onReactAction?.(message, emoji);
+            }}
+          />,
+          document.body,
+        )}
     </div>
   );
 }
