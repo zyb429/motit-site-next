@@ -278,6 +278,7 @@ model SiteSettings {
   seoDescription String? @db.Text
   seoKeywords    String? @db.Text
   ogImageUrl     String?
+  ogImageSvg     String? @db.Text
   robots         String? @default("index,follow")
 
   analyticsGaId  String?
@@ -287,6 +288,7 @@ model SiteSettings {
 
   logoUrl     String?
   faviconUrl  String?
+  faviconSvg  String? @db.Text
   accentColor String? @default("#6366f1")
 
   updatedAt DateTime @updatedAt

@@ -1,3 +1,4 @@
+// src/app/(admin)/admin/settings/appearance/page.tsx
 import Link from "next/link";
 import { ArrowLeft, Palette } from "lucide-react";
 import { getSiteSettings } from "@/lib/db/site-settings";
@@ -42,8 +43,14 @@ export default async function AppearanceSettingsPage() {
               {
                 kind: "image",
                 name: "faviconUrl",
-                label: "Favicon",
+                label: "Favicon (файл)",
                 accept: "image/x-icon,image/png,image/svg+xml",
+              },
+              {
+                kind: "svg",
+                name: "faviconSvg",
+                label: "Favicon (SVG-код)",
+                rows: 10,
               },
               {
                 kind: "color",
