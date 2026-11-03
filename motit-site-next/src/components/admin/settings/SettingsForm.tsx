@@ -18,6 +18,9 @@ type Field =
   | { kind: "checkbox"; name: string; label: string }
   | { kind: "schedule"; name: string; label: string }
   | { kind: "social"; name: string; label: string }
+  | { kind: "phones"; name: string; label: string }
+  | { kind: "emails"; name: string; label: string }
+  | { kind: "addresses"; name: string; label: string }
   | {
       kind: "select";
       name: string;
@@ -477,6 +480,350 @@ function SocialWidget({
 }
 
 // ============================================
+// Телефоны: парсинг, сериализация, виджет
+// ============================================
+type PhoneItem = { phone: string; comment: string };
+
+function parsePhones(raw: unknown): PhoneItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (o) =>
+        o &&
+        typeof o === "object" &&
+        typeof (o as any).phone === "string" &&
+        (o as any).phone.trim(),
+    )
+    .map((o) => ({
+      phone: (o as any).phone.trim(),
+      comment:
+        typeof (o as any).comment === "string" ? (o as any).comment : "",
+    }));
+}
+
+function PhonesWidget({
+  name,
+  defaultValue,
+}: {
+  name: string;
+  defaultValue?: unknown;
+}) {
+  const [items, setItems] = useState<PhoneItem[]>(() =>
+    parsePhones(defaultValue),
+  );
+
+  useEffect(() => {
+    setItems(parsePhones(defaultValue));
+  }, [defaultValue]);
+
+  const addItem = () =>
+    setItems((prev) => [...prev, { phone: "", comment: "" }]);
+
+  const removeItem = (idx: number) =>
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+
+  const updateItem = (
+    idx: number,
+    field: "phone" | "comment",
+    value: string,
+  ) => {
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it)),
+    );
+  };
+
+  const serialized = JSON.stringify(
+    items
+      .map((it) => ({
+        phone: it.phone.trim(),
+        comment: it.comment.trim() || undefined,
+      }))
+      .filter((it) => it.phone),
+  );
+
+  return (
+    <div className="space-y-3">
+      {items.length === 0 && (
+        <p className="text-sm text-(--text-muted)">
+          Телефоны не добавлены. Нажмите «Добавить телефон», чтобы создать
+          первый.
+        </p>
+      )}
+
+      {items.map((item, idx) => (
+        <div
+          key={idx}
+          className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center rounded-lg border border-(--border) p-2"
+        >
+          <input
+            type="tel"
+            value={item.phone}
+            onChange={(e) => updateItem(idx, "phone", e.target.value)}
+            placeholder="+375 (29) 123-45-67"
+            className="px-3 py-2 rounded border border-(--border) bg-(--bg-primary) text-(--text-primary) text-sm sm:w-56"
+          />
+
+          <input
+            type="text"
+            value={item.comment}
+            onChange={(e) => updateItem(idx, "comment", e.target.value)}
+            placeholder="Комментарий (необязательно), напр. «Отдел продаж»"
+            className="flex-1 px-3 py-2 rounded border border-(--border) bg-(--bg-primary) text-(--text-primary) text-sm"
+          />
+
+          <button
+            type="button"
+            onClick={() => removeItem(idx)}
+            className="px-3 py-2 rounded border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10 transition-colors"
+          >
+            Удалить
+          </button>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addItem}
+        className="px-3 py-2 rounded-lg border border-(--border) text-sm text-(--text-primary) hover:border-(--accent) transition-colors"
+      >
+        + Добавить телефон
+      </button>
+
+      <input type="hidden" name={name} value={serialized} />
+    </div>
+  );
+}
+
+// ============================================
+// Email-адреса: парсинг, сериализация, виджет
+// ============================================
+type EmailItem = { email: string; comment: string };
+
+function parseEmails(raw: unknown): EmailItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (o) =>
+        o &&
+        typeof o === "object" &&
+        typeof (o as any).email === "string" &&
+        (o as any).email.trim(),
+    )
+    .map((o) => ({
+      email: (o as any).email.trim(),
+      comment:
+        typeof (o as any).comment === "string" ? (o as any).comment : "",
+    }));
+}
+
+function EmailsWidget({
+  name,
+  defaultValue,
+}: {
+  name: string;
+  defaultValue?: unknown;
+}) {
+  const [items, setItems] = useState<EmailItem[]>(() =>
+    parseEmails(defaultValue),
+  );
+
+  useEffect(() => {
+    setItems(parseEmails(defaultValue));
+  }, [defaultValue]);
+
+  const addItem = () =>
+    setItems((prev) => [...prev, { email: "", comment: "" }]);
+
+  const removeItem = (idx: number) =>
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+
+  const updateItem = (
+    idx: number,
+    field: "email" | "comment",
+    value: string,
+  ) => {
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it)),
+    );
+  };
+
+  const serialized = JSON.stringify(
+    items
+      .map((it) => ({
+        email: it.email.trim(),
+        comment: it.comment.trim() || undefined,
+      }))
+      .filter((it) => it.email),
+  );
+
+  return (
+    <div className="space-y-3">
+      {items.length === 0 && (
+        <p className="text-sm text-(--text-muted)">
+          Email-адреса не добавлены. Нажмите «Добавить email», чтобы создать
+          первый.
+        </p>
+      )}
+
+      {items.map((item, idx) => (
+        <div
+          key={idx}
+          className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center rounded-lg border border-(--border) p-2"
+        >
+          <input
+            type="email"
+            value={item.email}
+            onChange={(e) => updateItem(idx, "email", e.target.value)}
+            placeholder="info@example.com"
+            className="px-3 py-2 rounded border border-(--border) bg-(--bg-primary) text-(--text-primary) text-sm sm:w-64"
+          />
+
+          <input
+            type="text"
+            value={item.comment}
+            onChange={(e) => updateItem(idx, "comment", e.target.value)}
+            placeholder="Комментарий (необязательно), напр. «Отдел продаж»"
+            className="flex-1 px-3 py-2 rounded border border-(--border) bg-(--bg-primary) text-(--text-primary) text-sm"
+          />
+
+          <button
+            type="button"
+            onClick={() => removeItem(idx)}
+            className="px-3 py-2 rounded border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10 transition-colors"
+          >
+            Удалить
+          </button>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addItem}
+        className="px-3 py-2 rounded-lg border border-(--border) text-sm text-(--text-primary) hover:border-(--accent) transition-colors"
+      >
+        + Добавить email
+      </button>
+
+      <input type="hidden" name={name} value={serialized} />
+    </div>
+  );
+}
+
+// ============================================
+// Адреса: парсинг, сериализация, виджет
+// ============================================
+type AddressItem = { address: string; comment: string };
+
+function parseAddresses(raw: unknown): AddressItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (o) =>
+        o &&
+        typeof o === "object" &&
+        typeof (o as any).address === "string" &&
+        (o as any).address.trim(),
+    )
+    .map((o) => ({
+      address: (o as any).address.trim(),
+      comment:
+        typeof (o as any).comment === "string" ? (o as any).comment : "",
+    }));
+}
+
+function AddressesWidget({
+  name,
+  defaultValue,
+}: {
+  name: string;
+  defaultValue?: unknown;
+}) {
+  const [items, setItems] = useState<AddressItem[]>(() =>
+    parseAddresses(defaultValue),
+  );
+
+  useEffect(() => {
+    setItems(parseAddresses(defaultValue));
+  }, [defaultValue]);
+
+  const addItem = () =>
+    setItems((prev) => [...prev, { address: "", comment: "" }]);
+
+  const removeItem = (idx: number) =>
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+
+  const updateItem = (
+    idx: number,
+    field: "address" | "comment",
+    value: string,
+  ) => {
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it)),
+    );
+  };
+
+  const serialized = JSON.stringify(
+    items
+      .map((it) => ({
+        address: it.address.trim(),
+        comment: it.comment.trim() || undefined,
+      }))
+      .filter((it) => it.address),
+  );
+
+  return (
+    <div className="space-y-3">
+      {items.length === 0 && (
+        <p className="text-sm text-(--text-muted)">
+          Адреса не добавлены. Нажмите «Добавить адрес», чтобы создать первый.
+        </p>
+      )}
+
+      {items.map((item, idx) => (
+        <div
+          key={idx}
+          className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center rounded-lg border border-(--border) p-2"
+        >
+          <input
+            type="text"
+            value={item.address}
+            onChange={(e) => updateItem(idx, "address", e.target.value)}
+            placeholder="г. Минск, ул. Сухаревская, д. 16, п. 71"
+            className="px-3 py-2 rounded border border-(--border) bg-(--bg-primary) text-(--text-primary) text-sm sm:w-72"
+          />
+
+          <input
+            type="text"
+            value={item.comment}
+            onChange={(e) => updateItem(idx, "comment", e.target.value)}
+            placeholder="Комментарий (необязательно), напр. «Главный офис»"
+            className="flex-1 px-3 py-2 rounded border border-(--border) bg-(--bg-primary) text-(--text-primary) text-sm"
+          />
+
+          <button
+            type="button"
+            onClick={() => removeItem(idx)}
+            className="px-3 py-2 rounded border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10 transition-colors"
+          >
+            Удалить
+          </button>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addItem}
+        className="px-3 py-2 rounded-lg border border-(--border) text-sm text-(--text-primary) hover:border-(--accent) transition-colors"
+      >
+        + Добавить адрес
+      </button>
+
+      <input type="hidden" name={name} value={serialized} />
+    </div>
+  );
+}
+
+// ============================================
 // Универсальная форма настроек
 // ============================================
 export function SettingsForm({
@@ -565,6 +912,36 @@ export function SettingsForm({
       return (
         <SocialWidget
           key={`social-${JSON.stringify(val ?? "")}`}
+          name={f.name}
+          defaultValue={val}
+        />
+      );
+    }
+
+    if (f.kind === "phones") {
+      return (
+        <PhonesWidget
+          key={`phones-${JSON.stringify(val ?? [])}`}
+          name={f.name}
+          defaultValue={val}
+        />
+      );
+    }
+
+    if (f.kind === "emails") {
+      return (
+        <EmailsWidget
+          key={`emails-${JSON.stringify(val ?? [])}`}
+          name={f.name}
+          defaultValue={val}
+        />
+      );
+    }
+
+    if (f.kind === "addresses") {
+      return (
+        <AddressesWidget
+          key={`addresses-${JSON.stringify(val ?? [])}`}
           name={f.name}
           defaultValue={val}
         />

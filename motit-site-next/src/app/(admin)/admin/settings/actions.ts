@@ -64,10 +64,97 @@ export async function updateContacts(
   _: unknown,
   fd: FormData,
 ): Promise<Result> {
+  // --- Email-адреса ---
+  let contactEmails: { email: string; comment?: string }[] | null = null;
+
+  const rawEmails = fd.get("contactEmails");
+  if (typeof rawEmails === "string" && rawEmails.trim()) {
+    try {
+      const parsed = JSON.parse(rawEmails);
+      if (Array.isArray(parsed)) {
+        contactEmails = parsed
+          .filter(
+            (o) =>
+              o &&
+              typeof o === "object" &&
+              typeof o.email === "string" &&
+              o.email.trim(),
+          )
+          .map((o) => ({
+            email: String(o.email).trim(),
+            ...(typeof o.comment === "string" && o.comment.trim()
+              ? { comment: o.comment.trim() }
+              : {}),
+          }));
+      }
+    } catch {
+      return { error: "Некорректный JSON в email-адресах" };
+    }
+  }
+
+  // --- Телефоны ---
+  let contactPhones: { phone: string; comment?: string }[] | null = null;
+
+  const rawPhones = fd.get("contactPhones");
+  if (typeof rawPhones === "string" && rawPhones.trim()) {
+    try {
+      const parsed = JSON.parse(rawPhones);
+      if (Array.isArray(parsed)) {
+        contactPhones = parsed
+          .filter(
+            (o) =>
+              o &&
+              typeof o === "object" &&
+              typeof o.phone === "string" &&
+              o.phone.trim(),
+          )
+          .map((o) => ({
+            phone: String(o.phone).trim(),
+            ...(typeof o.comment === "string" && o.comment.trim()
+              ? { comment: o.comment.trim() }
+              : {}),
+          }));
+      }
+    } catch {
+      return { error: "Некорректный JSON в телефонах" };
+    }
+  }
+
+  // --- Адреса ---
+  let addresses: { address: string; comment?: string }[] | null = null;
+
+  const rawAddresses = fd.get("addresses");
+  if (typeof rawAddresses === "string" && rawAddresses.trim()) {
+    try {
+      const parsed = JSON.parse(rawAddresses);
+      if (Array.isArray(parsed)) {
+        addresses = parsed
+          .filter(
+            (o) =>
+              o &&
+              typeof o === "object" &&
+              typeof o.address === "string" &&
+              o.address.trim(),
+          )
+          .map((o) => ({
+            address: String(o.address).trim(),
+            ...(typeof o.comment === "string" && o.comment.trim()
+              ? { comment: o.comment.trim() }
+              : {}),
+          }));
+      }
+    } catch {
+      return { error: "Некорректный JSON в адресах" };
+    }
+  }
+
   return updateSite(Number(fd.get("id")), {
-    contactEmail: String(fd.get("contactEmail") ?? ""),
-    contactPhone: String(fd.get("contactPhone") ?? ""),
-    address: String(fd.get("address") ?? ""),
+    contactEmail: contactEmails?.[0]?.email ?? "",
+    contactEmails,
+    contactPhone: contactPhones?.[0]?.phone ?? "",
+    contactPhones,
+    address: addresses?.[0]?.address ?? "",
+    addresses,
     workHours: String(fd.get("workHours") ?? ""),
   });
 }

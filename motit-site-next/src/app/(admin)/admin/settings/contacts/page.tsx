@@ -8,6 +8,32 @@ import { updateContacts } from "../actions";
 export default async function ContactsSettingsPage() {
   const s = await getSiteSettings();
 
+  // Миграция старого contactEmail в первый элемент нового массива
+  const initialEmails = (
+    Array.isArray(s.contactEmails) && s.contactEmails.length
+      ? s.contactEmails
+      : s.contactEmail
+        ? [{ email: s.contactEmail }]
+        : []
+  ) as { email: string; comment?: string }[];
+
+  // Миграция старого contactPhone в первый элемент нового массива
+  const initialPhones = (
+    Array.isArray(s.contactPhones) && s.contactPhones.length
+      ? s.contactPhones
+      : s.contactPhone
+        ? [{ phone: s.contactPhone }]
+        : []
+  ) as { phone: string; comment?: string }[];
+
+  const initialAddresses = (
+    Array.isArray(s.addresses) && s.addresses.length
+      ? s.addresses
+      : s.address
+        ? [{ address: s.address }]
+        : []
+  ) as { address: string; comment?: string }[];
+
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
       <header className="shrink-0 bg-(--bg-card) border-b border-(--border)">
@@ -36,12 +62,17 @@ export default async function ContactsSettingsPage() {
       <main className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="max-w-3xl mx-auto w-full">
           <SettingsForm
-            settings={s}
+            settings={{
+              ...s,
+              contactEmails: initialEmails,
+              contactPhones: initialPhones,
+              addresses: initialAddresses,
+            }}
             action={updateContacts}
             fields={[
-              { name: "contactEmail", label: "Email", type: "email" },
-              { name: "contactPhone", label: "Телефон" },
-              { name: "address", label: "Адрес", textarea: true },
+              { kind: "emails", name: "contactEmails", label: "Email" },
+              { kind: "phones", name: "contactPhones", label: "Телефоны" },
+              { kind: "addresses", name: "addresses", label: "Адреса" },
               {
                 kind: "schedule",
                 name: "workHours",
