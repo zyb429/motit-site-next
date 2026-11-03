@@ -59,6 +59,9 @@ type ChatWindowProps = {
   onChatToggleMuteAction?: () => void;
   onChatLeaveAction?: () => void;
   onChatDeleteAction?: () => void;
+
+  onOpenAttachmentsAction?: () => void;
+  attachmentsOpen?: boolean;
 };
 
 export function ChatWindow({
@@ -96,6 +99,8 @@ export function ChatWindow({
   onChatToggleMuteAction,
   onChatLeaveAction,
   onChatDeleteAction,
+  onOpenAttachmentsAction,
+  attachmentsOpen = false,
 }: ChatWindowProps) {
   const typingNames = typingUsers
     .filter((uuid) => uuid !== currentUserUuid)
@@ -116,6 +121,8 @@ export function ChatWindow({
         onToggleMuteAction={onChatToggleMuteAction}
         onLeaveAction={onChatLeaveAction}
         onDeleteAction={onChatDeleteAction}
+        onOpenAttachmentsAction={onOpenAttachmentsAction}
+        attachmentsOpen={attachmentsOpen}
       />
 
       {pinned && pinned.length > 0 && onJumpToPinnedAction && onUnpinAction && (

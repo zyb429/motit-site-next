@@ -16,6 +16,7 @@ import {
   Settings,
   Info,
   ArrowLeft,
+  Paperclip,
 } from "lucide-react";
 
 type ChatHeaderProps = {
@@ -41,6 +42,8 @@ type ChatHeaderProps = {
   onLeaveAction?: () => void;
   onDeleteAction?: () => void;
   onInfoAction?: () => void;
+  onOpenAttachmentsAction?: () => void;
+  attachmentsOpen?: boolean;
 };
 
 export function ChatHeader({
@@ -53,16 +56,16 @@ export function ChatHeader({
   onLeaveAction,
   onDeleteAction,
   onInfoAction,
+  onOpenAttachmentsAction,
+  attachmentsOpen = false,
 }: ChatHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  // "/cabinet/chat/<uuid>" → "/cabinet/chat"
   const basePath = pathname.split("/").slice(0, -1).join("/");
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Закрытие по клику вне меню и по Escape
   useEffect(() => {
     if (!menuOpen) return;
     function onDocClick(e: MouseEvent) {
@@ -81,7 +84,6 @@ export function ChatHeader({
     };
   }, [menuOpen]);
 
-  // Кнопка «Назад» к списку чатов — только на мобилке
   const backButton = (
     <button
       type="button"
@@ -93,7 +95,6 @@ export function ChatHeader({
     </button>
   );
 
-  // Saved Messages — особый вид, без меню
   if (chat.kind === "saved") {
     return (
       <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-(--border) bg-(--bg-card)">
@@ -140,7 +141,6 @@ export function ChatHeader({
       ? isOnlineAction?.(otherMember.user.uuid) ?? false
       : false;
 
-  // Что показывать в меню — зависит от типа чата
   const canAddMembers =
     chat.kind === "group" || chat.kind === "private_channel";
   const canLeave = chat.kind !== "direct" && chat.kind !== "saved";
@@ -210,100 +210,117 @@ export function ChatHeader({
         </div>
       </div>
 
-      {/* Меню на 3 точки */}
-      {hasMenuItems && (
-        <div className="relative shrink-0" ref={menuRef}>
+      <div className="flex items-center gap-1 shrink-0">
+        {onOpenAttachmentsAction && chat.kind !== "saved" && (
           <button
             type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            className="p-2 rounded-lg hover:bg-(--bg-primary) text-(--text-muted) hover:text-(--text-primary) transition-colors"
-            title="Настройки чата"
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
+            onClick={onOpenAttachmentsAction}
+            className={`p-2 rounded-lg transition-colors ${
+              attachmentsOpen
+                ? "bg-(--accent) text-white"
+                : "text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-primary)"
+            }`}
+            title="Вложения"
+            aria-pressed={attachmentsOpen}
           >
-            <MoreVertical size={16} />
+            <Paperclip size={16} />
           </button>
+        )}
 
-          {menuOpen && (
-            <div
-              role="menu"
-              className="absolute right-0 top-full mt-1 z-50 min-w-56 max-w-[calc(100vw-2rem)] py-1 rounded-lg bg-(--bg-card) border border-(--border) shadow-lg"
+        {hasMenuItems && (
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="p-2 rounded-lg hover:bg-(--bg-primary) text-(--text-muted) hover:text-(--text-primary) transition-colors"
+              title="Настройки чата"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
             >
-              {onInfoAction && (
-                <MenuItem
-                  icon={<Info size={15} />}
-                  label="Информация о чате"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onInfoAction();
-                  }}
-                />
-              )}
+              <MoreVertical size={16} />
+            </button>
 
-              {onSettingsAction && (
-                <MenuItem
-                  icon={<Settings size={15} />}
-                  label="Настройки чата"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onSettingsAction();
-                  }}
-                />
-              )}
+            {menuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-1 z-50 min-w-56 max-w-[calc(100vw-2rem)] py-1 rounded-lg bg-(--bg-card) border border-(--border) shadow-lg"
+              >
+                {onInfoAction && (
+                  <MenuItem
+                    icon={<Info size={15} />}
+                    label="Информация о чате"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onInfoAction();
+                    }}
+                  />
+                )}
 
-              {canAddMembers && onAddMembersAction && (
-                <MenuItem
-                  icon={<UserPlus size={15} />}
-                  label="Добавить участников"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onAddMembersAction();
-                  }}
-                />
-              )}
+                {onSettingsAction && (
+                  <MenuItem
+                    icon={<Settings size={15} />}
+                    label="Настройки чата"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onSettingsAction();
+                    }}
+                  />
+                )}
 
-              {onToggleMuteAction && (
-                <MenuItem
-                  icon={<BellOff size={15} />}
-                  label="Отключить уведомления"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onToggleMuteAction();
-                  }}
-                />
-              )}
+                {canAddMembers && onAddMembersAction && (
+                  <MenuItem
+                    icon={<UserPlus size={15} />}
+                    label="Добавить участников"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onAddMembersAction();
+                    }}
+                  />
+                )}
 
-              {(canLeave && onLeaveAction) || (canDelete && onDeleteAction) ? (
-                <div className="my-1 border-t border-(--border)" />
-              ) : null}
+                {onToggleMuteAction && (
+                  <MenuItem
+                    icon={<BellOff size={15} />}
+                    label="Отключить уведомления"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onToggleMuteAction();
+                    }}
+                  />
+                )}
 
-              {canLeave && onLeaveAction && (
-                <MenuItem
-                  icon={<LogOut size={15} />}
-                  label="Покинуть чат"
-                  danger
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onLeaveAction();
-                  }}
-                />
-              )}
+                {(canLeave && onLeaveAction) || (canDelete && onDeleteAction) ? (
+                  <div className="my-1 border-t border-(--border)" />
+                ) : null}
 
-              {canDelete && onDeleteAction && (
-                <MenuItem
-                  icon={<Trash2 size={15} />}
-                  label="Удалить чат"
-                  danger
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onDeleteAction();
-                  }}
-                />
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                {canLeave && onLeaveAction && (
+                  <MenuItem
+                    icon={<LogOut size={15} />}
+                    label="Покинуть чат"
+                    danger
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onLeaveAction();
+                    }}
+                  />
+                )}
+
+                {canDelete && onDeleteAction && (
+                  <MenuItem
+                    icon={<Trash2 size={15} />}
+                    label="Удалить чат"
+                    danger
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDeleteAction();
+                    }}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

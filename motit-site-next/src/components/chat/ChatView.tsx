@@ -4,6 +4,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChatWindow } from "./ChatWindow";
+import { ChatAttachmentsPanel } from "./ChatAttachmentsPanel";
 import { ForwardDialog } from "./ForwardDialog";
 import { usePresence } from "@/hooks/usePresence";
 import { MediaPreviewModal, type PreviewFile } from "./MediaPreviewModal";
@@ -59,6 +60,7 @@ export function ChatView({
   const [pinned, setPinned] = useState<PinnedMessageItem[]>([]);
   const [chatList, setChatList] = useState<ChatListItemType[]>([]);
   const [readOnly, setReadOnly] = useState(false);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
 
   const isSaved = chat.kind === "saved";
 
@@ -509,7 +511,36 @@ export function ChatView({
     }, 1500);
   }, []);
 
-  // ---------- Обработчики меню хедера ----------
+  // Скролл к сообщению из панели вложений
+  const jumpToMessage = useCallback((messageUuid: string) => {
+    const isDesktop =
+      typeof window !== "undefined" && window.innerWidth >= 1024;
+
+    // На мобилке/планшете панель перекрывает чат — закрываем её.
+    // На десктопе оставляем открытой.
+    if (!isDesktop) {
+      setAttachmentsOpen(false);
+    }
+
+    const scroll = () => {
+      const el = document.querySelector(
+        `[data-message-uuid="${messageUuid}"]`,
+      ) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-(--accent)", "rounded-2xl");
+      setTimeout(() => {
+        el.classList.remove("ring-2", "ring-(--accent)", "rounded-2xl");
+      }, 1500);
+    };
+
+    if (!isDesktop) {
+      // ждём кадр, чтобы панель успела исчезнуть из DOM
+      requestAnimationFrame(scroll);
+    } else {
+      scroll();
+    }
+  }, []);
 
   const handleChatInfo = useCallback(() => {
     router.push(`${basePath}/${chat.uuid}/info`);
@@ -566,39 +597,52 @@ export function ChatView({
 
   return (
     <>
-      <div className="flex-1 min-h-0 flex flex-col">
-        <ChatWindow
-          chat={chat}
-          currentUserUuid={currentUserUuid}
-          isOnlineAction={isOnline}
-          messages={messages}
-          onSendMessageAction={handleSend}
-          onTypingAction={signalTyping}
-          typingUsers={typingUsers}
-          replyTo={replyTo}
-          onReplyAction={setReplyTo}
-          onCancelReplyAction={() => setReplyTo(null)}
-          editing={editing}
-          onEditAction={setEditing}
-          onCancelEditAction={() => setEditing(null)}
-          onEditSubmitAction={handleEditSubmit}
-          onDeleteAction={handleDelete}
-          onCopyAction={handleCopy}
-          onReactAction={handleReact}
-          onForwardAction={openForward}
-          onPinAction={handlePin}
-          onAttachAction={handleAttach}
-          onChatInfoAction={handleChatInfo}
-          onChatSettingsAction={handleChatSettings}
-          onChatLeaveAction={handleLeaveChat}
-          onChatDeleteAction={handleDeleteChat}
-          onPreviewFileAction={openPreview}
-          inputDisabled={readOnly}
-          pinned={pinned}
-          pinnedUuids={pinnedUuids}
-          onJumpToPinnedAction={handleJumpToPinned}
-          onUnpinAction={handleUnpin}
-        />
+      <div className="flex-1 min-h-0 flex flex-row overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col">
+          <ChatWindow
+            chat={chat}
+            currentUserUuid={currentUserUuid}
+            isOnlineAction={isOnline}
+            messages={messages}
+            onSendMessageAction={handleSend}
+            onTypingAction={signalTyping}
+            typingUsers={typingUsers}
+            replyTo={replyTo}
+            onReplyAction={setReplyTo}
+            onCancelReplyAction={() => setReplyTo(null)}
+            editing={editing}
+            onEditAction={setEditing}
+            onCancelEditAction={() => setEditing(null)}
+            onEditSubmitAction={handleEditSubmit}
+            onDeleteAction={handleDelete}
+            onCopyAction={handleCopy}
+            onReactAction={handleReact}
+            onForwardAction={openForward}
+            onPinAction={handlePin}
+            onAttachAction={handleAttach}
+            onChatInfoAction={handleChatInfo}
+            onChatSettingsAction={handleChatSettings}
+            onChatLeaveAction={handleLeaveChat}
+            onChatDeleteAction={handleDeleteChat}
+            onPreviewFileAction={openPreview}
+            inputDisabled={readOnly}
+            pinned={pinned}
+            pinnedUuids={pinnedUuids}
+            onJumpToPinnedAction={handleJumpToPinned}
+            onUnpinAction={handleUnpin}
+            onOpenAttachmentsAction={() => setAttachmentsOpen((v) => !v)}
+            attachmentsOpen={attachmentsOpen}
+          />
+        </div>
+
+        {attachmentsOpen && (
+          <ChatAttachmentsPanel
+            messages={messages}
+            onCloseAction={() => setAttachmentsOpen(false)}
+            onPreviewFileAction={openPreview}
+            onJumpToMessageAction={jumpToMessage}
+          />
+        )}
       </div>
 
       {forwarding && (
