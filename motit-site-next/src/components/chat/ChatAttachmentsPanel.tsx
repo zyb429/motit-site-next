@@ -11,30 +11,21 @@ import {
   Film,
   Music,
   FileArchive,
-  Download,
   ExternalLink,
   LayoutGrid,
   MessageSquare,
   Copy,
+  Download,
 } from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
 import type { PreviewFile } from "./MediaPreviewModal";
 
-type Tab = "all" | "media" | "files" | "voice" | "links";
+type Tab = "all" | "media" | "video" | "files" | "voice" | "links";
 
 type Att = ChatMessageItem["attachments"][number];
 
-type Row = {
-  date: Date;
-  att: Att;
-  message: ChatMessageItem;
-};
-
-type LinkRow = {
-  date: Date;
-  url: string;
-  message: ChatMessageItem;
-};
+type Row = { date: Date; att: Att; message: ChatMessageItem };
+type LinkRow = { date: Date; url: string; message: ChatMessageItem };
 
 type CtxMenu =
   | { kind: "attachment"; x: number; y: number; row: Row }
@@ -50,16 +41,12 @@ function hrefFor(url: string): string {
   return `https://${url}`;
 }
 
-function classify(
-  mime: string | null,
-): "image" | "video" | "audio" | "doc" | "other" {
+function classify(mime: string | null): "image" | "video" | "audio" | "doc" | "other" {
   if (!mime) return "other";
   if (mime.startsWith("image/")) return "image";
   if (mime.startsWith("video/")) return "video";
   if (mime.startsWith("audio/")) return "audio";
-  if (mime === "application/pdf" || mime.startsWith("application/")) {
-    return "doc";
-  }
+  if (mime === "application/pdf" || mime.startsWith("application/")) return "doc";
   return "other";
 }
 
@@ -99,11 +86,7 @@ function dateLabel(iso: string) {
 
   if (iso === today.toISOString().slice(0, 10)) return "Сегодня";
   if (iso === yesterday.toISOString().slice(0, 10)) return "Вчера";
-  return d.toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 }
 
 export function ChatAttachmentsPanel({
@@ -124,11 +107,8 @@ export function ChatAttachmentsPanel({
 
   useEffect(() => {
     if (!ctxMenu) return;
-
     function onDocClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setCtxMenu(null);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setCtxMenu(null);
     }
     function onEsc(e: KeyboardEvent) {
       if (e.key === "Escape") setCtxMenu(null);
@@ -144,18 +124,12 @@ export function ChatAttachmentsPanel({
   useEffect(() => {
     const container = tabsRef.current;
     if (!container) return;
-    const active = container.querySelector<HTMLElement>(
-      `[data-tab="${tab}"]`,
-    );
+    const active = container.querySelector<HTMLElement>(`[data-tab="${tab}"]`);
     if (active) {
       const c = container.getBoundingClientRect();
       const a = active.getBoundingClientRect();
       if (a.left < c.left || a.right > c.right) {
-        active.scrollIntoView({
-          behavior: "smooth",
-          inline: "center",
-          block: "nearest",
-        });
+        active.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
       }
     }
   }, [tab]);
@@ -166,15 +140,8 @@ export function ChatAttachmentsPanel({
       if (m.deleted_at) continue;
       if (!m.created_at) continue;
       if (!m.attachments || m.attachments.length === 0) continue;
-
-      const d =
-        typeof m.created_at === "string"
-          ? new Date(m.created_at)
-          : m.created_at;
-
-      for (const a of m.attachments) {
-        rows.push({ date: d, att: a, message: m });
-      }
+      const d = typeof m.created_at === "string" ? new Date(m.created_at) : m.created_at;
+      for (const a of m.attachments) rows.push({ date: d, att: a, message: m });
     }
     return rows;
   }, [messages]);
@@ -185,12 +152,7 @@ export function ChatAttachmentsPanel({
       if (m.deleted_at) continue;
       if (!m.created_at) continue;
       if (!m.content) continue;
-
-      const d =
-        typeof m.created_at === "string"
-          ? new Date(m.created_at)
-          : m.created_at;
-
+      const d = typeof m.created_at === "string" ? new Date(m.created_at) : m.created_at;
       const seen = new Set<string>();
       for (const match of m.content.matchAll(URL_REGEX)) {
         const raw = match[0].replace(/[.,!?;:)\]}]+$/, "");
@@ -205,74 +167,45 @@ export function ChatAttachmentsPanel({
   }, [messages]);
 
   const counts = useMemo(() => {
-    let media = 0;
-    let files = 0;
-    let voice = 0;
+    let media = 0, video = 0, files = 0, voice = 0;
     for (const { att } of allAttachments) {
       const kind = classify(att.file.mime);
-      if (kind === "image" || kind === "video") media++;
-      else if (kind === "doc" || kind === "other") files++;
+      if (kind === "image") media++;
+      else if (kind === "video") video++;
       else if (kind === "audio") voice++;
+      else if (kind === "doc" || kind === "other") files++;
     }
-    return {
-      all: allAttachments.length,
-      media,
-      files,
-      voice,
-      links: linkRows.length,
-    };
+    return { all: allAttachments.length, media, video, files, voice, links: linkRows.length };
   }, [allAttachments, linkRows.length]);
 
-  // «Все» = вложения + ссылки. Остальные — только вложения.
-  const filteredAttachments = useMemo(() => {
+  const filtered = useMemo(() => {
     if (tab === "all") return allAttachments;
     if (tab === "links") return [];
     return allAttachments.filter(({ att }) => {
       const kind = classify(att.file.mime);
-      if (tab === "media") return kind === "image" || kind === "video";
+      if (tab === "media") return kind === "image";
+      if (tab === "video") return kind === "video";
       if (tab === "files") return kind === "doc" || kind === "other";
       if (tab === "voice") return kind === "audio";
       return false;
     });
   }, [allAttachments, tab]);
 
-  const groupedAttachments = useMemo(
-    () => groupByDate(filteredAttachments),
-    [filteredAttachments],
-  );
-
-  const groupedLinks = useMemo(
-    () => (tab === "links" || tab === "all" ? groupByDate(linkRows) : []),
-    [tab, linkRows],
-  );
+  const grouped = useMemo(() => groupByDate(filtered), [filtered]);
+  const groupedLinks = useMemo(() => (tab === "links" ? groupByDate(linkRows) : []), [tab, linkRows]);
 
   const allPreviewFiles: PreviewFile[] = useMemo(
-    () =>
-      allAttachments
-        .filter(({ att }) => {
-          const k = classify(att.file.mime);
-          return k === "image" || k === "video";
-        })
-        .map(({ att }) => toPreviewFile(att)),
+    () => allAttachments.map(({ att }) => toPreviewFile(att)),
     [allAttachments],
   );
 
-  const tabs: Array<{
-    key: Tab;
-    label: string;
-    icon: React.ReactNode;
-    count: number;
-  }> = [
-    {
-      key: "all",
-      label: "Все",
-      icon: <LayoutGrid size={14} />,
-      count: counts.all + counts.links,
-    },
-    { key: "media", label: "Медиа", icon: <ImageIcon size={14} />, count: counts.media },
-    { key: "files", label: "Файлы", icon: <FileText size={14} />, count: counts.files },
-    { key: "voice", label: "Аудио", icon: <Music size={14} />, count: counts.voice },
-    { key: "links", label: "Ссылки", icon: <ExternalLink size={14} />, count: counts.links },
+  const tabs = [
+    { key: "all" as Tab, label: "Все", icon: <LayoutGrid size={14} />, count: counts.all },
+    { key: "media" as Tab, label: "Фото", icon: <ImageIcon size={14} />, count: counts.media },
+    { key: "video" as Tab, label: "Видео", icon: <Film size={14} />, count: counts.video },
+    { key: "files" as Tab, label: "Файлы", icon: <FileText size={14} />, count: counts.files },
+    { key: "voice" as Tab, label: "Аудио", icon: <Music size={14} />, count: counts.voice },
+    { key: "links" as Tab, label: "Ссылки", icon: <ExternalLink size={14} />, count: counts.links },
   ];
 
   function openAttachmentCtx(e: React.MouseEvent, row: Row) {
@@ -295,75 +228,25 @@ export function ChatAttachmentsPanel({
 
   async function copyLink() {
     if (!ctxMenu) return;
-    const url =
-      ctxMenu.kind === "attachment"
-        ? ctxMenu.row.att.file.url
-        : ctxMenu.row.url;
+    const url = ctxMenu.kind === "attachment" ? ctxMenu.row.att.file.url : ctxMenu.row.url;
     try {
       await navigator.clipboard.writeText(url);
     } catch {}
     setCtxMenu(null);
   }
 
-  // Определяем, что показывать по дате: сначала ссылки? нет — всё вместе.
-  // Для таба «all» надо объединить даты из attachments и links.
-  const allGrouped = useMemo(() => {
-    if (tab !== "all") return [];
-
-    const map = new Map<
-      string,
-      { links: LinkRow[]; attachments: Row[] }
-    >();
-
-    for (const l of linkRows) {
-      const key = l.date.toISOString().slice(0, 10);
-      if (!map.has(key)) map.set(key, { links: [], attachments: [] });
-      map.get(key)!.links.push(l);
-    }
-    for (const a of allAttachments) {
-      const key = a.date.toISOString().slice(0, 10);
-      if (!map.has(key)) map.set(key, { links: [], attachments: [] });
-      map.get(key)!.attachments.push(a);
-    }
-
-    return Array.from(map.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
-  }, [tab, linkRows, allAttachments]);
-
-  const isEmpty =
-    tab === "links"
-      ? groupedLinks.length === 0
-      : tab === "all"
-        ? allGrouped.length === 0
-        : groupedAttachments.length === 0;
+  const isEmpty = tab === "links" ? groupedLinks.length === 0 : grouped.length === 0;
 
   return (
-    <aside
-      className="
-        fixed inset-0 z-50 w-full
-        lg:static lg:inset-auto lg:z-20 lg:w-[380px]
-        shrink-0 h-full min-h-0 flex flex-col
-        border-l border-(--border) bg-(--bg-card)
-      "
-    >
+    <aside className="fixed inset-0 z-50 w-full lg:static lg:inset-auto lg:z-20 lg:w-[380px] shrink-0 h-full min-h-0 flex flex-col border-l border-(--border) bg-(--bg-card)">
       {/* Хедер */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-(--border)">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-(--text-primary)">
-            Вложения
-          </h3>
+          <h3 className="text-sm font-semibold text-(--text-primary)">Вложения</h3>
           <p className="text-[11px] text-(--text-muted)">
-            {counts.all}{" "}
-            {counts.all === 1 ? "файл" : counts.all < 5 ? "файла" : "файлов"}
+            {counts.all} {counts.all === 1 ? "файл" : counts.all < 5 ? "файла" : "файлов"}
             {counts.links > 0 && (
-              <>
-                {" · "}
-                {counts.links}{" "}
-                {counts.links === 1
-                  ? "ссылка"
-                  : counts.links < 5
-                    ? "ссылки"
-                    : "ссылок"}
-              </>
+              <> · {counts.links} {counts.links === 1 ? "ссылка" : counts.links < 5 ? "ссылки" : "ссылок"}</>
             )}
           </p>
         </div>
@@ -382,16 +265,9 @@ export function ChatAttachmentsPanel({
         <div
           ref={tabsRef}
           className="flex gap-1 p-2 overflow-x-auto"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            WebkitOverflowScrolling: "touch",
-          }}
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
           onWheel={(e) => {
-            if (
-              e.deltaY !== 0 &&
-              e.currentTarget.scrollWidth > e.currentTarget.clientWidth
-            ) {
+            if (e.deltaY !== 0 && e.currentTarget.scrollWidth > e.currentTarget.clientWidth) {
               e.currentTarget.scrollLeft += e.deltaY;
             }
           }}
@@ -403,9 +279,7 @@ export function ChatAttachmentsPanel({
               type="button"
               onClick={() => setTab(t.key)}
               className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-colors ${
-                tab === t.key
-                  ? "bg-(--accent) text-white"
-                  : "text-(--text-muted) hover:bg-(--bg-primary)"
+                tab === t.key ? "bg-(--accent) text-white" : "text-(--text-muted) hover:bg-(--bg-primary)"
               }`}
             >
               {t.icon}
@@ -413,9 +287,7 @@ export function ChatAttachmentsPanel({
               {t.count > 0 && (
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                    tab === t.key
-                      ? "bg-white/20 text-white"
-                      : "bg-(--bg-secondary) text-(--text-muted)"
+                    tab === t.key ? "bg-white/20 text-white" : "bg-(--bg-secondary) text-(--text-muted)"
                   }`}
                 >
                   {t.count}
@@ -432,20 +304,19 @@ export function ChatAttachmentsPanel({
         {isEmpty && (
           <div className="text-center py-12 text-sm text-(--text-muted)">
             {tab === "all" && "Нет вложений"}
-            {tab === "media" && "Нет медиа"}
+            {tab === "media" && "Нет фото"}
+            {tab === "video" && "Нет видео"}
             {tab === "files" && "Нет файлов"}
             {tab === "voice" && "Нет аудио"}
             {tab === "links" && "Нет ссылок"}
           </div>
         )}
 
-        {/* ===== Ссылки (отдельная вкладка) ===== */}
+        {/* Ссылки */}
         {tab === "links" &&
           groupedLinks.map(([iso, items]) => (
             <div key={iso} className="mb-4">
-              <div className="text-xs font-medium text-(--text-muted) mb-2 px-1">
-                {dateLabel(iso)}
-              </div>
+              <div className="text-xs font-medium text-(--text-muted) mb-2 px-1">{dateLabel(iso)}</div>
               <div className="space-y-1">
                 {items.map((row, idx) => (
                   <a
@@ -460,13 +331,9 @@ export function ChatAttachmentsPanel({
                       <ExternalLink size={14} className="text-(--accent)" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-(--text-primary) truncate group-hover:underline">
-                        {row.url}
-                      </p>
+                      <p className="text-xs font-medium text-(--text-primary) truncate group-hover:underline">{row.url}</p>
                       <p className="text-[10px] text-(--text-muted) truncate">
-                        {row.message.user?.full_name ??
-                          row.message.user?.username ??
-                          "—"}
+                        {row.message.user?.full_name ?? row.message.user?.username ?? "—"}
                       </p>
                     </div>
                   </a>
@@ -475,259 +342,125 @@ export function ChatAttachmentsPanel({
             </div>
           ))}
 
-        {/* ===== Всё вместе (all) ===== */}
-        {tab === "all" &&
-          allGrouped.map(([iso, { links, attachments }]) => (
-            <div key={iso} className="mb-4">
-              <div className="text-xs font-medium text-(--text-muted) mb-2 px-1">
-                {dateLabel(iso)}
-              </div>
-
-              {/* Ссылки — первыми */}
-              {links.length > 0 && (
-                <div className="space-y-1 mb-2">
-                  {links.map((row, idx) => (
-                    <a
-                      key={`${row.message.uuid}-${idx}`}
-                      href={hrefFor(row.url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onContextMenu={(e) => openLinkCtx(e, row)}
-                      className="flex items-start gap-2 p-2 rounded-md bg-(--bg-primary) hover:bg-(--bg-secondary) transition-colors group"
-                    >
-                      <div className="w-8 h-8 rounded-md bg-(--accent-dim) flex items-center justify-center shrink-0">
-                        <ExternalLink size={14} className="text-(--accent)" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-(--text-primary) truncate group-hover:underline">
-                          {row.url}
-                        </p>
-                        <p className="text-[10px] text-(--text-muted) truncate">
-                          {row.message.user?.full_name ??
-                            row.message.user?.username ??
-                            "—"}
-                        </p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              )}
-
-              {/* Вложения */}
-              {attachments.length > 0 &&
-                (attachments.some((it) => {
-                  const k = classify(it.att.file.mime);
-                  return k === "image" || k === "video";
-                }) ? (
-                  <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
-                    {attachments.map((row) => {
-                      const a = row.att;
-                      const kind = classify(a.file.mime);
-                      const preview = toPreviewFile(a);
-                      const isImg = kind === "image";
-                      const isVid = kind === "video";
-
-                      if (!isImg && !isVid) {
-                        return (
-                          <a
-                            key={a.uuid}
-                            href={a.file.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            download={a.file.name}
-                            onContextMenu={(e) => openAttachmentCtx(e, row)}
-                            className="col-span-3 flex items-center gap-2 p-2 rounded-md bg-(--bg-primary) hover:bg-(--bg-secondary) transition-colors"
-                          >
-                            <div className="w-8 h-8 rounded-md bg-(--accent-dim) flex items-center justify-center shrink-0">
-                              <FileText
-                                size={14}
-                                className="text-(--accent)"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-(--text-primary) truncate">
-                                {a.file.name}
-                              </p>
-                              <p className="text-[10px] text-(--text-muted)">
-                                {formatSize(a.file.size)}
-                              </p>
-                            </div>
-                            <Download
-                              size={14}
-                              className="text-(--text-muted)"
-                            />
-                          </a>
-                        );
-                      }
-
-                      return (
-                        <button
-                          key={a.uuid}
-                          type="button"
-                          onClick={() =>
-                            onPreviewFileAction?.(preview, allPreviewFiles)
-                          }
-                          onContextMenu={(e) => openAttachmentCtx(e, row)}
-                          className="relative aspect-square rounded-md overflow-hidden bg-(--bg-primary) group"
-                        >
-                          {isImg ? (
-                            <Image
-                              src={a.file.url}
-                              alt={a.file.name}
-                              fill
-                              sizes="(max-width: 1024px) 33vw, 120px"
-                              className="object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Film
-                                size={20}
-                                className="text-(--text-muted)"
-                              />
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {attachments.map((row) => {
-                      const a = row.att;
-                      const kind = classify(a.file.mime);
-                      const Icon =
-                        kind === "audio"
-                          ? Music
-                          : kind === "doc"
-                            ? FileText
-                            : FileArchive;
-                      return (
-                        <a
-                          key={a.uuid}
-                          href={a.file.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download={a.file.name}
-                          onContextMenu={(e) => openAttachmentCtx(e, row)}
-                          className="flex items-center gap-2 p-2 rounded-md bg-(--bg-primary) hover:bg-(--bg-secondary) transition-colors"
-                        >
-                          <div className="w-8 h-8 rounded-md bg-(--accent-dim) flex items-center justify-center shrink-0">
-                            <Icon size={14} className="text-(--accent)" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-(--text-primary) truncate">
-                              {a.file.name}
-                            </p>
-                            <p className="text-[10px] text-(--text-muted)">
-                              {formatSize(a.file.size)}
-                            </p>
-                          </div>
-                          <Download
-                            size={14}
-                            className="text-(--text-muted)"
-                          />
-                        </a>
-                      );
-                    })}
-                  </div>
-                ))}
-            </div>
-          ))}
-
-        {/* ===== Вложения (media/files/voice) ===== */}
+        {/* Вложения */}
         {tab !== "links" &&
-          tab !== "all" &&
-          groupedAttachments.map(([iso, items]) => (
-            <div key={iso} className="mb-4">
-              <div className="text-xs font-medium text-(--text-muted) mb-2 px-1">
-                {dateLabel(iso)}
-              </div>
+          grouped.map(([iso, items]) => {
+            const visual = items.filter(({ att }) => {
+              const k = classify(att.file.mime);
+              return k === "image" || k === "video";
+            });
+            const docs = items.filter(({ att }) => {
+              const k = classify(att.file.mime);
+              return k !== "image" && k !== "video";
+            });
 
-              {tab === "media" ? (
-                <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
-                  {items.map((row) => {
+            return (
+              <div key={iso} className="mb-4">
+                <div className="text-xs font-medium text-(--text-muted) mb-2 px-1">{dateLabel(iso)}</div>
+
+                {(tab === "all" || tab === "media" || tab === "video") && visual.length > 0 && (
+                  <div className="grid grid-cols-3 gap-1 sm:gap-1.5 mb-2">
+                    {visual.map((row) => {
                     const a = row.att;
-                    const kind = classify(a.file.mime);
-                    if (kind !== "image" && kind !== "video") return null;
-
                     const preview = toPreviewFile(a);
-                    const isImg = kind === "image";
+                    const isVid = classify(a.file.mime) === "video";
                     return (
-                      <button
+                        <button
                         key={a.uuid}
                         type="button"
-                        onClick={() =>
-                          onPreviewFileAction?.(preview, allPreviewFiles)
-                        }
+                        onClick={() => onPreviewFileAction?.(preview, allPreviewFiles)}
                         onContextMenu={(e) => openAttachmentCtx(e, row)}
                         className="relative aspect-square rounded-md overflow-hidden bg-(--bg-primary) group"
-                      >
-                        {isImg ? (
-                          <Image
+                        >
+                        {isVid ? (
+                            <>
+                            <video
+                                src={a.file.url}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="w-full h-full object-cover"
+                                // Показываем первый кадр
+                                onLoadedMetadata={(e) => {
+                                (e.target as HTMLVideoElement).currentTime = 0.1;
+                                }}
+                            />
+                            {/* Иконка воспроизведения поверх */}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                                <div className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
+                                <Film size={16} className="text-black/80 ml-0.5" />
+                                </div>
+                            </div>
+                            {a.file.size && (
+                                <span className="absolute bottom-1 right-1 text-[9px] text-white bg-black/50 px-1 rounded">
+                                {formatSize(a.file.size)}
+                                </span>
+                            )}
+                            </>
+                        ) : (
+                            <Image
                             src={a.file.url}
                             alt={a.file.name}
                             fill
                             sizes="(max-width: 1024px) 33vw, 120px"
                             className="object-cover group-hover:scale-105 transition-transform"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Film
-                              size={20}
-                              className="text-(--text-muted)"
                             />
-                          </div>
                         )}
-                      </button>
+                        </button>
                     );
-                  })}
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {items.map((row) => {
-                    const a = row.att;
-                    const kind = classify(a.file.mime);
-                    const Icon =
-                      kind === "audio"
-                        ? Music
-                        : kind === "doc"
-                          ? FileText
-                          : FileArchive;
-                    return (
-                      <a
-                        key={a.uuid}
-                        href={a.file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download={a.file.name}
-                        onContextMenu={(e) => openAttachmentCtx(e, row)}
-                        className="flex items-center gap-2 p-2 rounded-md bg-(--bg-primary) hover:bg-(--bg-secondary) transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-md bg-(--accent-dim) flex items-center justify-center shrink-0">
-                          <Icon size={14} className="text-(--accent)" />
+                    })}
+                  </div>
+                )}
+
+                {(tab === "all" || tab === "files" || tab === "voice") && docs.length > 0 && (
+                  <div className="space-y-1">
+                    {docs.map((row) => {
+                      const a = row.att;
+                      const kind = classify(a.file.mime);
+                      const Icon = kind === "audio" ? Music : kind === "doc" ? FileText : FileArchive;
+                      const preview = toPreviewFile(a);
+
+                      return (
+                        <div
+                          key={a.uuid}
+                          onContextMenu={(e) => openAttachmentCtx(e, row)}
+                          className="flex items-center gap-2 p-2 rounded-md bg-(--bg-primary) hover:bg-(--bg-secondary) transition-colors group"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => onPreviewFileAction?.(preview, allPreviewFiles)}
+                            className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                          >
+                            <div className="w-8 h-8 rounded-md bg-(--accent-dim) flex items-center justify-center shrink-0">
+                              <Icon size={14} className="text-(--accent)" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-(--text-primary) truncate">{a.file.name}</p>
+                              <p className="text-[10px] text-(--text-muted)">{formatSize(a.file.size)}</p>
+                            </div>
+                          </button>
+                          <a
+                            href={a.file.url}
+                            download={a.file.name}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-md text-(--text-muted) hover:text-(--accent) hover:bg-(--bg-primary) transition-colors"
+                            aria-label="Скачать"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Download size={14} />
+                          </a>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-(--text-primary) truncate">
-                            {a.file.name}
-                          </p>
-                          <p className="text-[10px] text-(--text-muted)">
-                            {formatSize(a.file.size)}
-                          </p>
-                        </div>
-                        <Download
-                          size={14}
-                          className="text-(--text-muted)"
-                        />
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ))}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
       </div>
 
-      {/* Контекстное меню — через portal */}
+      {/* Контекстное меню */}
       {ctxMenu &&
         typeof document !== "undefined" &&
         createPortal(

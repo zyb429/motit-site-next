@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { FileText, Download, ExternalLink, X } from "lucide-react";
+import { FileText, ExternalLink, X, Film, Music, FileArchive } from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
 import type { PreviewFile } from "./MediaPreviewModal";
 
@@ -16,8 +16,17 @@ function formatSize(bytes: number | null) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function isImage(mime: string | null) {
-  return !!mime && mime.startsWith("image/");
+function classify(
+  mime: string | null,
+): "image" | "video" | "audio" | "doc" | "other" {
+  if (!mime) return "other";
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  if (mime === "application/pdf" || mime.startsWith("application/")) {
+    return "doc";
+  }
+  return "other";
 }
 
 function toPreviewFile(a: Attachment): PreviewFile {
@@ -36,26 +45,32 @@ export function MessageAttachments({
   onPreviewFileAction,
 }: {
   attachments: Attachment[];
-  onPreviewFileAction?: (
-    file: PreviewFile,
-    allFiles: PreviewFile[],
-  ) => void;
+  onPreviewFileAction?: (file: PreviewFile, allFiles: PreviewFile[]) => void;
 }) {
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   if (!attachments || attachments.length === 0) return null;
 
-  const images = attachments.filter((a) => isImage(a.file.mime));
-  const files = attachments.filter((a) => !isImage(a.file.mime));
+  const previewable = attachments.filter((a) => {
+    const k = classify(a.file.mime);
+    return k === "image" || k === "video" || k === "audio" || k === "doc";
+  });
 
-  const previewFiles: PreviewFile[] = images.map(toPreviewFile);
+  const images = attachments.filter((a) => classify(a.file.mime) === "image");
+  const others = attachments.filter((a) => classify(a.file.mime) !== "image");
 
-  const openImage = (index: number) => {
+  const previewFiles: PreviewFile[] = previewable.map(toPreviewFile);
+  const imagePreviewFiles: PreviewFile[] = images.map(toPreviewFile);
+
+  const openPreview = (att: Attachment) => {
+    const preview = toPreviewFile(att);
     if (onPreviewFileAction) {
-      onPreviewFileAction(previewFiles[index], previewFiles);
+      onPreviewFileAction(preview, previewFiles);
       return;
     }
-    setLightbox(index);
+    const idx = imagePreviewFiles.findIndex((f) => f.uuid === att.file.uuid);
+    if (idx >= 0) setLightbox(idx);
+    else window.open(att.file.url, "_blank");
   };
 
   const maxVisible = 4;
@@ -64,22 +79,23 @@ export function MessageAttachments({
 
   return (
     <div className="mt-1.5 space-y-2">
+      {/* Сетка изображений */}
       {images.length > 0 && (
         <div
           className={`grid gap-1 overflow-hidden rounded-xl ${
             images.length === 1
-              ? "grid-cols-1 max-w-[340px]"
-              : "grid-cols-2 max-w-[420px]"
+              ? "grid-cols-1 w-[260px] sm:w-[300px] max-w-full"
+              : "grid-cols-2 w-[300px] sm:w-[340px] max-w-full"
           }`}
         >
           {visibleImages.map((img, idx) => (
             <button
               key={img.uuid}
               type="button"
-              onClick={() => openImage(idx)}
-              className={`group relative overflow-hidden bg-(--bg-primary) cursor-zoom-in rounded-lg ${
+              onClick={() => openPreview(img)}
+              className={`group relative overflow-hidden bg-(--bg-primary) cursor-zoom-in rounded-lg w-full ${
                 images.length === 1
-                  ? "max-h-[320px] aspect-auto"
+                  ? "aspect-[4/3] max-h-[320px]"
                   : "aspect-square"
               } ${images.length === 3 && idx === 0 ? "col-span-2" : ""}`}
             >
@@ -99,8 +115,11 @@ export function MessageAttachments({
           {hiddenCount > 0 && (
             <button
               type="button"
-              onClick={() => openImage(maxVisible)}
-              className="aspect-square flex flex-col items-center justify-center bg-(--bg-secondary) text-(--text-primary) font-semibold hover:bg-(--bg-primary) transition-colors rounded-lg"
+              onClick={() => {
+                const firstHidden = images[maxVisible];
+                if (firstHidden) openPreview(firstHidden);
+              }}
+              className="aspect-square w-full flex flex-col items-center justify-center bg-(--bg-secondary) text-(--text-primary) font-semibold hover:bg-(--bg-primary) transition-colors rounded-lg"
             >
               <span className="text-xl">+{hiddenCount}</span>
               <span className="text-[10px] text-(--text-muted)">ещё</span>
@@ -109,37 +128,49 @@ export function MessageAttachments({
         </div>
       )}
 
-      {files.length > 0 && (
+      {/* Не-изображения: видео, аудио, документы */}
+      {others.length > 0 && (
         <div className="space-y-1">
-          {files.map((f) => (
-            <a
-              key={f.uuid}
-              href={f.file.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              download={f.file.name}
-              className="flex items-center gap-2 p-2 rounded-lg bg-(--bg-secondary) border border-(--border) hover:border-(--accent) transition-colors group"
-            >
-              <div className="w-8 h-8 rounded-lg bg-(--accent-dim) flex items-center justify-center shrink-0">
-                <FileText size={16} className="text-(--accent)" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-(--text-primary) truncate">
-                  {f.file.name}
-                </p>
-                <p className="text-[10px] text-(--text-muted)">
-                  {formatSize(f.file.size)}
-                </p>
-              </div>
-              <Download
-                size={14}
-                className="shrink-0 text-(--text-muted) group-hover:text-(--accent) transition-colors"
-              />
-            </a>
-          ))}
+          {others.map((f) => {
+            const kind = classify(f.file.mime);
+            const Icon =
+              kind === "video"
+                ? Film
+                : kind === "audio"
+                  ? Music
+                  : kind === "doc"
+                    ? FileText
+                    : FileArchive;
+
+            return (
+              <button
+                key={f.uuid}
+                type="button"
+                onClick={() => openPreview(f)}
+                className="w-full flex items-center gap-2 p-2 rounded-lg bg-(--bg-secondary) border border-(--border) hover:border-(--accent) transition-colors group text-left"
+              >
+                <div className="w-8 h-8 rounded-lg bg-(--accent-dim) flex items-center justify-center shrink-0">
+                  <Icon size={16} className="text-(--accent)" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-(--text-primary) truncate">
+                    {f.file.name}
+                  </p>
+                  <p className="text-[10px] text-(--text-muted)">
+                    {formatSize(f.file.size)}
+                  </p>
+                </div>
+                <ExternalLink
+                  size={14}
+                  className="shrink-0 text-(--text-muted) group-hover:text-(--accent) transition-colors"
+                />
+              </button>
+            );
+          })}
         </div>
       )}
 
+      {/* Лайтбокс (fallback) */}
       {lightbox !== null && images[lightbox] && (
         <div
           className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
