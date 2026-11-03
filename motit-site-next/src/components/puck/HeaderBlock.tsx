@@ -43,21 +43,26 @@ export function HeaderBlock({
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
+
     window.addEventListener("scroll", handleScroll);
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const isActive = (href: string) => {
     const [cleanPath, hash] = href.split("#");
+
     if (
       pathname !== cleanPath &&
       !(cleanPath === "/blog" && pathname?.startsWith("/blog"))
     ) {
       return false;
     }
+
     if (hash) {
       return activeSection === hash;
     }
+
     return !activeSection;
   };
 
@@ -71,23 +76,36 @@ export function HeaderBlock({
     >
       <Container>
         <div className="flex h-16 items-center justify-between">
-          {/* Логотип — всегда белый */}
+          {/* Логотип */}
           <Link
             href={logoHref}
-            className="text-xl font-bold flex items-center gap-2 text-white"
+            className="flex shrink-0 items-center"
+            aria-label={logoText || "На главную"}
           >
             {logoImageUrl ? (
-              <img src={logoImageUrl} alt={logoText} className="h-8 w-auto" />
+              // Убираем жесткие рамки w-[160px] h-9, 
+              // даем картинке заполнить высоту шапки (h-12 = 48px) и ширину автоподбором
+              <div className="relative h-12 sm:h-14 flex items-center justify-start">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logoImageUrl}
+                  alt={logoText || "Логотип сайта"}
+                  className="h-full w-auto max-w-[200px] object-contain object-left"
+                  loading="eager"
+                />
+              </div>
             ) : (
-              logoText
+              <span className="text-xl font-bold text-white whitespace-nowrap">
+                {logoText}
+              </span>
             )}
           </Link>
 
           {/* Десктопное меню */}
           <nav className="hidden md:flex items-center gap-6">
-            {nav.map((link, i) => (
+            {nav.map((link, index) => (
               <Link
-                key={i}
+                key={`${link.href}-${index}`}
                 href={link.href}
                 target={link.external ? "_blank" : undefined}
                 rel={link.external ? "noopener noreferrer" : undefined}
@@ -102,7 +120,6 @@ export function HeaderBlock({
               </Link>
             ))}
 
-            {/* CTA */}
             {ctaEnabled && ctaLabel && ctaHref && (
               <Link
                 href={ctaHref}
@@ -113,11 +130,13 @@ export function HeaderBlock({
             )}
           </nav>
 
-          {/* Кнопка мобильного меню — всегда белая */}
+          {/* Кнопка мобильного меню */}
           <button
+            type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden p-2 text-white"
             aria-label="Toggle menu"
+            aria-expanded={isMobileMenuOpen}
           >
             <svg
               className="w-6 h-6"
@@ -144,13 +163,13 @@ export function HeaderBlock({
         </div>
       </Container>
 
-      {/* Мобильное меню — всегда тёмное */}
+      {/* Мобильное меню */}
       {isMobileMenuOpen && (
         <div className="absolute top-16 left-0 right-0 bg-[#0a1920] border-b border-[rgba(45,212,191,0.1)] p-4 md:hidden z-50">
           <nav className="flex flex-col gap-3">
-            {nav.map((link, i) => (
+            {nav.map((link, index) => (
               <Link
-                key={i}
+                key={`mobile-${link.href}-${index}`}
                 href={link.href}
                 target={link.external ? "_blank" : undefined}
                 rel={link.external ? "noopener noreferrer" : undefined}
@@ -165,6 +184,7 @@ export function HeaderBlock({
                 {link.label}
               </Link>
             ))}
+
             {ctaEnabled && ctaLabel && ctaHref && (
               <Link
                 href={ctaHref}
@@ -180,3 +200,5 @@ export function HeaderBlock({
     </header>
   );
 }
+
+export default HeaderBlock;
