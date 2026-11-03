@@ -1,37 +1,20 @@
-'use client';
+// src/components/site/Header.tsx
+import { getSiteSettings } from "@/lib/db/site-settings";
+import { Navigation } from "./Navigation";
 
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { Container } from '@/components/ui';
-import { Navigation } from './Navigation';
-
-export function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+export async function Header() {
+  const settings = await getSiteSettings();
 
   return (
-    <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm'
-          : 'bg-transparent'
-      }`}
-    >
-      <Container>
-        <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="text-xl font-bold">
-            Motit
-          </Link>
-          <Navigation />
+    <header className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="flex h-20 items-center justify-between gap-4">
+          <Navigation
+            logoUrl={settings?.logoUrl}
+            siteName={settings?.siteName}
+          />
         </div>
-      </Container>
+      </div>
     </header>
   );
 }

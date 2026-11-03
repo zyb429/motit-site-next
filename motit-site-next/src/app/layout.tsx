@@ -5,6 +5,7 @@ import "./globals.css";
 import "highlight.js/styles/github-dark.css";
 import { Providers } from "./providers";
 import { getSiteSettings } from "@/lib/db/site-settings";
+import { toSvgDataUrl } from "@/lib/svg";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -29,13 +30,29 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteName = s?.siteName ?? "Motit";
   const description =
     s?.seoDescription ?? s?.description ?? "Комплексные IT-услуги";
-  const keywords = s?.seoKeywords ?? "IT, информационная безопасность, пентест, аудит";
+  const keywords =
+    s?.seoKeywords ?? "IT, информационная безопасность, пентест, аудит";
   const ogImage = s?.ogImageUrl ?? "/og-image.jpg";
   const robots = s?.robots ?? "index,follow";
 
   const robotsParts = robots.split(",").map((r) => r.trim());
   const isIndex = robotsParts.includes("index");
   const isFollow = robotsParts.includes("follow");
+
+  // --- Диагностика favicon (временно) ---
+  console.log("[layout] id:", s?.id);
+  console.log("[layout] typeof faviconSvg:", typeof s?.faviconSvg);
+  console.log(
+    "[layout] faviconSvg first 80:",
+    JSON.stringify(s?.faviconSvg?.slice(0, 80)),
+  );
+  console.log("[layout] charCodeAt(0):", s?.faviconSvg?.charCodeAt(0));
+
+  // Favicon: inline SVG (приоритет) → файл → /favicon.ico
+  const svgDataUrl = toSvgDataUrl(s?.faviconSvg);
+  console.log("[layout] svgDataUrl:", svgDataUrl ? "OK" : "NULL");
+
+  const fileIcon = s?.faviconUrl?.trim() || "/favicon.ico";
 
   return {
     metadataBase: new URL(
@@ -48,6 +65,15 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     keywords,
     authors: [{ name: siteName, url: "https://motit.by" }],
+    icons: {
+      icon: [
+        svgDataUrl
+          ? { url: svgDataUrl, type: "image/svg+xml" }
+          : { url: fileIcon },
+      ],
+      shortcut: fileIcon,
+      apple: fileIcon,
+    },
     openGraph: {
       title: s?.seoTitle ?? `${siteName} — IT-решения для бизнеса`,
       description,
