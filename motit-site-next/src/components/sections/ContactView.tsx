@@ -1,16 +1,24 @@
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import ContactClient from "./ContactClient";
 
+export type ContactItem = {
+  icon: "phone" | "mail" | "map-pin" | "clock";
+  label: string;
+  /** Одиночное значение (обратная совместимость) */
+  value: string;
+  href?: string;
+  /**
+   * Несколько значений с необязательным комментарием.
+   * Если задано — рендерится вместо `value`/`href`.
+   */
+  values?: { value: string; comment?: string }[];
+};
+
 export type ContactViewProps = {
   label: string;
   title: string;
   subtitle: string;
-  contacts: Array<{
-    icon: "phone" | "mail" | "map-pin" | "clock";
-    label: string;
-    value: string;
-    href?: string;
-  }>;
+  contacts: ContactItem[];
   privacyLabel: string;
   privacyHref: string;
   fields: Array<{
@@ -35,9 +43,9 @@ const ICONS = {
 // Парсинг графика работы → массив строк
 // ============================================
 type ScheduleLine = {
-  days: string;      // "Пн–Пт" | "Сб" | "Вс"
+  days: string;
   isWorking: boolean;
-  time: string;      // "09:00–18:00 (обед 13:00–14:00)" | "выходной"
+  time: string;
 };
 
 const DAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
@@ -78,7 +86,6 @@ function parseToDays(str: string): DayInfo[] {
     const dayPart = trimmed.slice(0, colonIdx).trim();
     const timePartRaw = trimmed.slice(colonIdx + 1).trim();
 
-    // Обед
     let hasLunch = false;
     let lunchStart = "13:00";
     let lunchEnd = "14:00";
@@ -94,7 +101,6 @@ function parseToDays(str: string): DayInfo[] {
       timePart = timePartRaw.replace(lunchMatch[0], "").trim();
     }
 
-    // Диапазон дней
     const dayMatch = dayPart.match(/^([А-Яа-яЁё]{2})(?:-([А-Яа-яЁё]{2}))?$/);
     if (!dayMatch) return;
     const startDay = dayMatch[1];
@@ -138,7 +144,6 @@ function groupToLines(days: DayInfo[]): ScheduleLine[] {
 
   const lines: ScheduleLine[] = [];
 
-  // Группируем рабочие дни по одинаковому режиму
   const groups = new Map<string, DayInfo[]>();
   for (const d of working) {
     const key = `${d.start}|${d.end}|${d.hasLunch ? `${d.lunchStart}|${d.lunchEnd}` : ""}`;
@@ -185,7 +190,6 @@ function groupToLines(days: DayInfo[]): ScheduleLine[] {
     }
   }
 
-  // Выходные — отдельными диапазонами
   for (const range of splitRanges(weekends)) {
     const first = range[0];
     const last = range[range.length - 1];
@@ -195,6 +199,71 @@ function groupToLines(days: DayInfo[]): ScheduleLine[] {
   }
 
   return lines;
+}
+
+// ============================================
+// Рендер значений контакта (одно или несколько)
+// ============================================
+function ContactValue({
+  item,
+}: {
+  item: ContactItem;
+}) {
+  // Несколько значений с комментариями (телефоны / email из настроек)
+  if (item.values && item.values.length > 0) {
+    const isTel = item.icon === "phone";
+    const isMail = item.icon === "mail";
+
+    return (
+      <div className="flex flex-col gap-1 text-base">
+        {item.values.map((v, idx) => {
+          const href = isTel
+            ? `tel:${v.value.replace(/[^\d+]/g, "")}`
+            : isMail
+              ? `mailto:${v.value}`
+              : undefined;
+
+          const line = href ? (
+            <a
+              href={href}
+              style={{ color: "rgba(128, 222, 234, 0.85)" }}
+              className="hover:underline break-words"
+            >
+              {v.value}
+            </a>
+          ) : (
+            <span
+              style={{ color: "rgba(128, 222, 234, 0.85)" }}
+              className="break-words"
+            >
+              {v.value}
+            </span>
+          );
+
+          return (
+            <div key={idx} className="leading-snug">
+              {line}
+              {v.comment && (
+                <span
+                  className="block text-xs"
+                  style={{ color: "rgba(128, 222, 234, 0.55)" }}
+                >
+                  {v.comment}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Одиночное значение (обратная совместимость)
+  return (
+    <span className="text-base" style={{ color: "rgba(128, 222, 234, 0.85)" }}>
+      {item.value}
+    </span>
+  );
 }
 
 // ============================================
@@ -303,27 +372,29 @@ export default function ContactView({
                   >
                     <Icon size={20} style={{ color: "#2dd4bf" }} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h4
                       className="font-semibold text-base mb-1"
                       style={{ color: "#e0f7fa" }}
                     >
                       {item.label}
                     </h4>
-                    <span
-                      className="text-base"
-                      style={{ color: "rgba(128, 222, 234, 0.85)" }}
-                    >
-                      {item.value}
-                    </span>
+                    <ContactValue item={item} />
                   </div>
                 </div>
               );
 
-              return item.href ? (
+              // Если контакт содержит только одно значение с href — обернём в <a>
+              // Для многоэлементных (values) ссылки уже внутри.
+              const wrapInLink =
+                !item.values || item.values.length === 0
+                  ? item.href
+                  : undefined;
+
+              return wrapInLink ? (
                 <a
                   key={i}
-                  href={item.href}
+                  href={wrapInLink}
                   className="block transition-all duration-150 hover:-translate-y-1"
                   style={{ color: "inherit", textDecoration: "none" }}
                 >
