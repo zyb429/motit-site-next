@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 0 380 110">
+  <defs>
+    <linearGradient id="mgrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7dfff0"/>
+      <stop offset=".5" stop-color="#14dcc4"/>
+      <stop offset="1" stop-color="#0b8f86"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <text x="170" y="88" font-family="Montserrat, Arial Black, Arial, sans-serif" font-weight="800" font-size="80" letter-spacing="4" text-anchor="middle">
+    <tspan fill="url(#mgrad)" filter="url(#glow)">М</tspan><tspan fill="#f0f4f3" letter-spacing="5">ОТИТ</tspan>
+  </text>
+</svg>
