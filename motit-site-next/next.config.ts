@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
     "fabric",
   ],
 
+  // Добавлен блок turbopack для подмены нативных модулей
+  turbopack: {
+    resolveAlias: {
+      canvas: "./src/lib/empty-module.ts",
+      jsdom: "./src/lib/empty-module.ts",
+    },
+  },
+
   compress: true,
   poweredByHeader: false,
 
