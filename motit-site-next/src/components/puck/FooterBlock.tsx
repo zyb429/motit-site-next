@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Phone,
@@ -90,40 +89,20 @@ const resolveLogoUrl = (logo: LogoImage) =>
 export function FooterBlock(props: FooterBlockProps) {
   const logoUrl = resolveLogoUrl(props.logoImageUrl);
 
-  const [isDesktop, setIsDesktop] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  let gridCols = 1;
-  if (isDesktop) gridCols = 4;
-  else if (isTablet) gridCols = 2;
-
   return (
     <footer
       className="border-t border-[rgba(45,212,191,0.12)] bg-[#0a1920]"
       style={{ color: "rgba(128, 222, 234, 0.75)" }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-14">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-            gap: "2.5rem",
-            alignItems: "start",
-            width: "100%",
-          }}
-        >
+        {/* 
+          Используем Tailwind Grid вместо JS-вычислений.
+          Это позволяет iframe в Puck корректно реагировать на ширину экрана.
+        */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 items-start w-full">
+          
           {/* Бренд */}
-          <div style={{ minWidth: 0 }}>
+          <div className="min-w-0">
             <Link
               href={props.logoHref || "/"}
               className="inline-flex items-center gap-3 group"
@@ -209,7 +188,7 @@ export function FooterBlock(props: FooterBlockProps) {
 
           {/* Колонки */}
           {(props.columns || []).map((col, ci) => (
-            <div key={ci} style={{ minWidth: 0 }}>
+            <div key={ci} className="min-w-0">
               {col.title && (
                 <h3
                   className="text-xs font-semibold uppercase tracking-wider mb-4"
