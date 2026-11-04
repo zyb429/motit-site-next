@@ -3,9 +3,7 @@
 @import "tailwindcss/preflight" layer(base);
 @import "tailwindcss/utilities" layer(utilities);
 
-/* Tailwind 4: явно указываем, где искать классы.
-   Без этого классы из src/components (включая FooterBlock, HeaderBlock)
-   не попадают в собранный CSS, и Puck-компоненты рендерятся "списком". */
+/* Tailwind 4: явно указываем, где искать классы. */
 @source "../components/**/*.{ts,tsx}";
 @source "../lib/**/*.{ts,tsx}";
 @source "../app/**/*.{ts,tsx}";
@@ -76,7 +74,7 @@ body {
     color 0.2s ease;
 }
 
-/* Глобальное выделение — работает везде, включая редактор */
+/* Глобальное выделение */
 ::selection {
   background-color: var(--selection-bg);
   color: var(--selection-color);
@@ -310,8 +308,7 @@ textarea:focus::placeholder {
   transform: translateY(0);
 }
 
-/* В редакторе Puck .reveal должен быть виден сразу,
-   потому что IntersectionObserver в редакторе не срабатывает */
+/* В редакторе Puck .reveal должен быть виден сразу */
 .Puck .reveal {
   opacity: 1 !important;
   transform: none !important;
@@ -430,13 +427,6 @@ textarea:focus::placeholder {
   @apply prose prose-sm sm:prose-base lg:prose-lg dark:prose-invert max-w-none focus:outline-none;
 }
 
-/*
- * Выделение в редакторе.
- * Специфичность (0,3,0) — та же, что была у правила из simple-editor.scss,
- * которое мы удалили. Это гарантирует, что наши цвета применятся.
- * Условие :not(.ProseMirror-hideselection) не даёт тексту исчезнуть,
- * когда ProseMirror скрывает фон при выделении целых узлов (списки, картинки).
- */
 .tiptap.ProseMirror:not(.readonly):not(.ProseMirror-hideselection) ::selection {
   background-color: var(--selection-bg) !important;
   color: var(--selection-color) !important;
@@ -447,11 +437,6 @@ textarea:focus::placeholder {
   color: var(--selection-color) !important;
 }
 
-/*
- * Расширение Selection из @tiptap/extensions добавляет класс .selection
- * к выделенному тексту после потери фокуса редактором.
- * Стилизуем отдельно, потому что нативное ::selection здесь не работает.
- */
 .selection {
   background-color: var(--selection-bg) !important;
   color: var(--selection-color) !important;
@@ -462,7 +447,6 @@ textarea:focus::placeholder {
    Puck: тема редактора и селектов
    ============================================ */
 .puck-theme-wrapper {
-  /* Переменные Puck (0.22+) */
   --puck-color-surface: #ffffff;
   --puck-color-surface-muted: #f9fafb;
   --puck-color-surface-subtle: #f3f4f6;
@@ -479,22 +463,16 @@ textarea:focus::placeholder {
   --puck-color-selection-bg: rgba(20, 184, 166, 0.15);
   --puck-color-selection-border: #14b8a6;
 
-  /* Переменные полей ввода (используются в Puck) */
   --puck-field-color-bg: var(--puck-color-surface);
   --puck-field-color-text: var(--puck-color-text);
   --puck-field-color-border: var(--puck-color-border);
   --puck-field-color-border-hover: var(--puck-color-border-hover);
 
-  /* Переменные кнопок */
   --puck-button-primary-color-bg: var(--puck-color-interactive);
   --puck-button-primary-color-bg-hover: var(--puck-color-interactive-hover);
   --puck-button-primary-color-text: #ffffff;
 }
 
-/*
- * Puck: опции в <select> в редакторе должны быть читаемы
- * (по умолчанию в тёмной теме они невидимы)
- */
 .puck-theme-wrapper select option {
   background-color: #ffffff !important;
   color: #111827 !important;
@@ -505,31 +483,54 @@ textarea:focus::placeholder {
 }
 
 /* ============================================
-   ФИКС КАРТОЧЕК В FLEX-СЕТКЕ (Directions)
+   Puck: отключаем анимации (финальное состояние)
    ============================================ */
-
-/* 1. Контейнер: разрешаем карточкам растягиваться по высоте */
-.flex-wrap.gap-4,
-.flex-wrap.md\:gap-5 {
-  align-items: stretch;
+.Puck .reveal,
+.Puck [class*="reveal"],
+[data-puck] .reveal,
+[data-puck] [class*="reveal"] {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
 }
 
-/* 2. Сами карточки */
-.flex-wrap > .reveal {
-  display: flex;
-  flex-direction: column;
-  height: auto;
+iframe#puck-preview .reveal,
+iframe#puck-preview [class*="reveal"] {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
 }
 
-/* 3. Текст внутри карточки растягивается */
-.flex-wrap > .reveal > p {
-  flex-grow: 1;
+/* ============================================
+   Puck: Принудительный показ карточек в превью
+   ============================================ */
+.Puck .PuckVisibilityFix,
+.Puck [class*="PuckVisibilityFix"],
+[data-puck] .PuckVisibilityFix,
+[data-puck] [class*="PuckVisibilityFix"],
+iframe#puck-preview .PuckVisibilityFix,
+iframe#puck-preview [class*="PuckVisibilityFix"] {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  
+  /* Запасные цвета, если CSS-переменные не прогрузились в iframe Puck */
+  background-color: var(--bg-card, #0f2832) !important;
+  border: 1px solid var(--border, rgba(45, 212, 191, 0.1)) !important;
 }
 
-/* 4. ГЛАВНОЕ: На мобильных (до 640px) одна колонка */
-@media (max-width: 640px) {
-  .flex-wrap > .reveal {
-    width: 100% !important; /* Карточка на всю ширину */
-    min-height: auto !important;
-  }
+/* Текст внутри карточек тоже должен быть виден */
+.Puck .PuckVisibilityFix *,
+[data-puck] .PuckVisibilityFix *,
+iframe#puck-preview .PuckVisibilityFix * {
+  color: var(--text-primary, #e0f7fa) !important;
+}
+
+/* Описание чуть бледнее, как и задумано */
+.Puck .PuckVisibilityFix p,
+[data-puck] .PuckVisibilityFix p,
+iframe#puck-preview .PuckVisibilityFix p {
+  color: var(--text-secondary, #80deea) !important;
 }

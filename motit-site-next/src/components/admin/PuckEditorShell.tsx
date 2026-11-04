@@ -20,17 +20,11 @@ export function PuckEditorShell({
   const [socialOptions, setSocialOptions] =
     useState<SocialOption[]>(initialSocialOptions);
 
-  // Конфиг пересобираем при изменении socialOptions. Puck чувствителен к
-  // идентичности config (сбрасывает состояние при смене), поэтому memo
-  // критичен.
   const config: Config = useMemo(
     () => createPuckConfig(socialOptions),
     [socialOptions],
   );
 
-  // Периодически подтягиваем свежие socialOptions из API (раз в 15 сек
-  // и при возврате фокуса на вкладку), чтобы редактор не показывал
-  // устаревший список.
   useEffect(() => {
     let cancelled = false;
 
@@ -90,7 +84,11 @@ export function PuckEditorShell({
         config={config}
         data={initial}
         onPublish={onPublish}
-        iframe={{ enabled: false }}
+        iframe={{
+          enabled: true,
+          // Передаем путь к стилям сайта, чтобы внутри iframe работали Tailwind и переменные
+          css: ["/_next/static/css/app/layout.css"],
+        }}
       />
     </div>
   );
