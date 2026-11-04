@@ -1,3 +1,4 @@
+// src/components/blog/SearchInput.tsx
 "use client";
 
 import { useState, useRef } from "react";
@@ -26,7 +27,6 @@ export function SearchInput({
 
     const params = new URLSearchParams(window.location.search);
 
-    // ✅ Сохраняем все существующие параметры
     params.delete("search");
     if (search.trim()) {
       params.set("search", search.trim());
@@ -53,18 +53,18 @@ export function SearchInput({
         placeholder="Поиск по блогу..."
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="w-full px-4 py-2 pl-9 pr-10 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-[#e0f7fa] placeholder:text-gray-500 text-sm focus:border-[#2dd4bf] focus:outline-none transition-colors"
+        className="w-full px-4 py-2 pl-9 pr-10 rounded-lg bg-(--bg-card) border border-(--border) text-(--text-primary) placeholder:text-(--text-muted) text-sm focus:border-(--accent) focus:outline-none transition-colors"
       />
       <Search
         size={16}
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted) pointer-events-none"
       />
 
       {value && (
         <button
           type="button"
           onClick={handleClear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#e0f7fa] transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-(--text-muted) hover:text-(--text-primary) transition-colors"
           aria-label="Очистить поиск"
         >
           <X size={16} />

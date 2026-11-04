@@ -1,4 +1,3 @@
-// src/app/(site)/blog/page.tsx
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -13,32 +12,6 @@ import { BlogCategories } from "@/components/blog/BlogCategories";
 import { PaginationClient } from "@/components/blog/PaginationClient";
 import { SearchInput } from "@/components/blog/SearchInput";
 import type { ViewMode } from "@/components/blog/ViewModeToggle";
-import { TaskList, TaskItem } from "@tiptap/extension-list";
-import { TextAlign } from "@tiptap/extension-text-align";
-import { Typography } from "@tiptap/extension-typography";
-import { Highlight } from "@tiptap/extension-highlight";
-import { Subscript } from "@tiptap/extension-subscript";
-import { Superscript } from "@tiptap/extension-superscript";
-import { generateHTML } from "@tiptap/html";
-import StarterKit from "@tiptap/starter-kit";
-import ImageExtension from "@tiptap/extension-image";
-
-const TIPTAP_EXTENSIONS = [
-  StarterKit.configure({
-    link: {
-      openOnClick: false,
-      HTMLAttributes: { class: "text-[#2dd4bf] hover:text-[#14b8a6]" },
-    },
-  }),
-  ImageExtension,
-  TaskList,
-  TaskItem.configure({ nested: true }),
-  TextAlign.configure({ types: ["heading", "paragraph"] }),
-  Typography,
-  Highlight.configure({ multicolor: true }),
-  Superscript,
-  Subscript,
-];
 
 export const revalidate = 3600;
 
@@ -162,14 +135,14 @@ export default async function BlogPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a1920] py-8 md:py-12">
+    <div className="min-h-screen bg-(--bg-primary) py-8 md:py-12 transition-colors duration-300">
       <div className="container mx-auto px-4 max-w-4xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-[rgba(45,212,191,0.06)]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-(--border)">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-[#e0f7fa] tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-bold text-(--text-primary) tracking-tight">
               Блог
             </h1>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-(--text-secondary) mt-1">
               Статьи и новости от Motit
             </p>
           </div>
@@ -184,21 +157,21 @@ export default async function BlogPage({
         />
 
         {searchQuery && (
-          <div className="mb-4 flex items-center gap-3 px-4 py-2.5 bg-[#0f2832] border border-[rgba(45,212,191,0.12)] rounded-xl">
-            <Search size={16} className="text-[#2dd4bf] shrink-0" />
-            <span className="text-sm text-gray-300 flex-1 min-w-0 truncate">
-              <span className="text-gray-500">Поиск:</span>{" "}
-              <span className="text-[#e0f7fa] font-medium">
+          <div className="mb-4 flex items-center gap-3 px-4 py-2.5 bg-(--bg-card) border border-(--border) rounded-xl">
+            <Search size={16} className="text-(--accent) shrink-0" />
+            <span className="text-sm text-(--text-secondary) flex-1 min-w-0 truncate">
+              <span className="text-(--text-muted)">Поиск:</span>{" "}
+              <span className="text-(--text-primary) font-medium">
                 «{searchQuery}»
               </span>
-              <span className="text-gray-500">
+              <span className="text-(--text-muted)">
                 {" "}
                 — {total} {pluralizePosts(total)}
               </span>
             </span>
             <Link
               href={buildSearchResetUrl()}
-              className="shrink-0 flex items-center gap-1 text-xs text-gray-400 hover:text-[#2dd4bf] transition-colors"
+              className="shrink-0 flex items-center gap-1 text-xs text-(--text-muted) hover:text-(--accent) transition-colors"
             >
               <X size={12} />
               Сбросить
@@ -209,7 +182,7 @@ export default async function BlogPage({
         <div id="blog-posts">
           {posts.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-400 text-sm">
+              <p className="text-(--text-muted) text-sm">
                 {searchQuery && categorySlugs.length > 0
                   ? "Нет постов, соответствующих вашему запросу и всем выбранным категориям"
                   : searchQuery
@@ -227,7 +200,7 @@ export default async function BlogPage({
                     {posts.slice(0, 3).map((post) => (
                       <div
                         key={post.id}
-                        className="h-40 bg-[#0f2832] rounded-xl border border-[rgba(45,212,191,0.06)] animate-pulse"
+                        className="h-40 bg-(--bg-card) rounded-xl border border-(--border) animate-pulse"
                       />
                     ))}
                   </div>
@@ -242,22 +215,22 @@ export default async function BlogPage({
               </Suspense>
 
               {totalPages > 1 && (
-                <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 border-t border-[rgba(45,212,191,0.06)] pt-4 sm:pt-6">
-                  <div className="text-xs sm:text-sm text-gray-400 text-center sm:text-left">
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 border-t border-(--border) pt-4 sm:pt-6">
+                  <div className="text-xs sm:text-sm text-(--text-muted) text-center sm:text-left">
                     {total > 0 ? (
                       <>
                         <span className="hidden sm:inline">
                           Показаны посты{" "}
                         </span>
-                        <span className="text-[#e0f7fa] font-medium">
+                        <span className="text-(--text-primary) font-medium">
                           {paginationStart}
                         </span>
-                        <span className="text-gray-500"> – </span>
-                        <span className="text-[#e0f7fa] font-medium">
+                        <span className="text-(--text-muted)"> – </span>
+                        <span className="text-(--text-primary) font-medium">
                           {paginationEnd}
                         </span>
                         <span className="hidden sm:inline"> из </span>
-                        <span className="text-[#e0f7fa] font-medium">
+                        <span className="text-(--text-primary) font-medium">
                           {total}
                         </span>
                       </>

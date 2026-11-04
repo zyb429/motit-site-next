@@ -1,5 +1,6 @@
-import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+// src/components/blog/Pagination.tsx
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
   currentPage: number;
@@ -23,9 +24,9 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
       ) {
         rangeWithDots.push(i);
         lastAdded = i;
-      } else if (lastAdded !== '...') {
-        rangeWithDots.push('...');
-        lastAdded = '...';
+      } else if (lastAdded !== "...") {
+        rangeWithDots.push("...");
+        lastAdded = "...";
       }
     }
 
@@ -35,26 +36,25 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
   const pageNumbers = getPageNumbers();
 
   const buildUrl = (page: number) => {
-    const url = new URL(baseUrl, 'http://localhost:3000');
+    const url = new URL(baseUrl, "http://localhost:3000");
     if (page > 1) {
-      url.searchParams.set('page', String(page));
+      url.searchParams.set("page", String(page));
     } else {
-      url.searchParams.delete('page');
+      url.searchParams.delete("page");
     }
     return url.pathname + url.search;
   };
 
   return (
-    <nav 
-      className="flex items-center gap-0.5 sm:gap-1" 
+    <nav
+      className="flex items-center gap-0.5 sm:gap-1"
       aria-label="Пагинация"
       role="navigation"
     >
-      {/* Кнопка "Назад" */}
       {currentPage > 1 ? (
         <Link
           href={buildUrl(currentPage - 1)}
-          className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30 active:scale-95 transition-colors"
+          className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-(--bg-card) border border-(--border) text-(--text-muted) hover:text-(--text-primary) hover:border-(--accent) active:scale-95 transition-colors"
           aria-label="Предыдущая страница"
           prefetch={true}
           scroll={false}
@@ -62,18 +62,17 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
           <ChevronLeft size={14} className="sm:w-4.5 sm:h-4.5" />
         </Link>
       ) : (
-        <span className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.04)] text-gray-600 cursor-not-allowed pointer-events-none">
+        <span className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-(--bg-card) border border-(--border) text-(--text-muted) opacity-50 cursor-not-allowed pointer-events-none">
           <ChevronLeft size={14} className="sm:w-4.5 sm:h-4.5" />
         </span>
       )}
 
-      {/* Номера страниц */}
       {pageNumbers.map((page, index) => {
-        if (page === '...') {
+        if (page === "...") {
           return (
             <span
               key={`ellipsis-${index}`}
-              className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 text-gray-500 select-none text-xs sm:text-sm"
+              className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 text-(--text-muted) select-none text-xs sm:text-sm"
             >
               …
             </span>
@@ -87,7 +86,7 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
           return (
             <span
               key={pageNum}
-              className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg text-xs sm:text-sm bg-[#2dd4bf] text-[#0a1920] font-medium cursor-default pointer-events-none"
+              className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg text-xs sm:text-sm bg-(--accent) text-(--bg-primary) font-medium cursor-default pointer-events-none"
               aria-current="page"
             >
               {pageNum}
@@ -99,7 +98,7 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
           <Link
             key={pageNum}
             href={buildUrl(pageNum)}
-            className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg text-xs sm:text-sm bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30 active:scale-95 transition-colors"
+            className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg text-xs sm:text-sm bg-(--bg-card) border border-(--border) text-(--text-muted) hover:text-(--text-primary) hover:border-(--accent) active:scale-95 transition-colors"
             prefetch={true}
             scroll={false}
           >
@@ -108,11 +107,10 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
         );
       })}
 
-      {/* Кнопка "Вперед" */}
       {currentPage < totalPages ? (
         <Link
           href={buildUrl(currentPage + 1)}
-          className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30 active:scale-95 transition-colors"
+          className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-(--bg-card) border border-(--border) text-(--text-muted) hover:text-(--text-primary) hover:border-(--accent) active:scale-95 transition-colors"
           aria-label="Следующая страница"
           prefetch={true}
           scroll={false}
@@ -120,7 +118,7 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
           <ChevronRight size={14} className="sm:w-4.5 sm:h-4.5" />
         </Link>
       ) : (
-        <span className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-[#0d2029] border border-[rgba(45,212,191,0.04)] text-gray-600 cursor-not-allowed pointer-events-none">
+        <span className="flex items-center justify-center min-w-7 h-7 sm:min-w-9 sm:h-9 rounded-lg bg-(--bg-card) border border-(--border) text-(--text-muted) opacity-50 cursor-not-allowed pointer-events-none">
           <ChevronRight size={14} className="sm:w-4.5 sm:h-4.5" />
         </span>
       )}

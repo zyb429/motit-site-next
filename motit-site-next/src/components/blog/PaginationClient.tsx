@@ -1,3 +1,4 @@
+// src/components/blog/PaginationClient.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -16,15 +17,12 @@ export function PaginationClient({
 }: PaginationClientProps) {
   const isFirstRender = useRef(true);
 
-  // Эффект для прокрутки при изменении страницы
   useEffect(() => {
-    // Пропускаем первый рендер (при загрузке страницы)
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
 
-    // Прокручиваем к постам
     const postsContainer = document.getElementById("blog-posts");
     if (postsContainer) {
       postsContainer.scrollIntoView({ behavior: "smooth", block: "start" });

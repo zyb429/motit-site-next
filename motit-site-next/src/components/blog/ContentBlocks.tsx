@@ -1,3 +1,4 @@
+// src/components/blog/ContentBlocks.tsx
 "use client";
 
 import ReactMarkdown from "react-markdown";
@@ -83,9 +84,9 @@ interface ContentBlocksProps {
 }
 
 const headingClasses: Record<HeadingLevel, string> = {
-  h2: "text-2xl md:text-3xl font-bold text-[#e0f7fa] mt-8 mb-4",
-  h3: "text-xl md:text-2xl font-bold text-[#e0f7fa] mt-6 mb-3",
-  h4: "text-lg md:text-xl font-bold text-[#e0f7fa] mt-4 mb-2",
+  h2: "text-2xl md:text-3xl font-bold text-(--text-primary) mt-8 mb-4",
+  h3: "text-xl md:text-2xl font-bold text-(--text-primary) mt-6 mb-3",
+  h4: "text-lg md:text-xl font-bold text-(--text-primary) mt-4 mb-2",
 };
 
 const S3_BASE =
@@ -129,7 +130,7 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
             return (
               <div
                 key={index}
-                className="prose prose-invert max-w-none prose-p:text-gray-300 prose-strong:text-[#e0f7fa] prose-a:text-[#2dd4bf] prose-a:hover:text-[#14b8a6]"
+                className="prose prose-invert max-w-none prose-p:text-(--text-secondary) prose-strong:text-(--text-primary) prose-a:text-(--accent) prose-a:hover:text-(--accent-hover)"
               >
                 <ReactMarkdown>{block.text || ""}</ReactMarkdown>
               </div>
@@ -140,7 +141,7 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
             if (!imageUrl) return null;
             return (
               <figure key={index} className="my-6">
-                <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#0a1920]">
+                <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-(--bg-primary)">
                   <Image
                     src={imageUrl}
                     alt={block.caption || "Изображение"}
@@ -150,7 +151,7 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
                   />
                 </div>
                 {block.caption && (
-                  <figcaption className="text-sm text-gray-500 mt-2 text-center">
+                  <figcaption className="text-sm text-(--text-muted) mt-2 text-center">
                     {block.caption}
                   </figcaption>
                 )}
@@ -162,13 +163,13 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
             return (
               <blockquote
                 key={index}
-                className="border-l-4 border-[#2dd4bf] pl-5 py-2 my-6"
+                className="border-l-4 border-(--accent) pl-5 py-2 my-6"
               >
-                <p className="text-lg italic text-gray-300 leading-relaxed">
+                <p className="text-lg italic text-(--text-secondary) leading-relaxed">
                   {block.quote_text || ""}
                 </p>
                 {block.quote_author && (
-                  <footer className="text-sm text-gray-500 mt-2">
+                  <footer className="text-sm text-(--text-muted) mt-2">
                     — {block.quote_author}
                   </footer>
                 )}
@@ -195,7 +196,7 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
               <div key={index} className="my-6">
                 <a
                   href={block.button_url}
-                  className="inline-flex items-center gap-2 bg-[#2dd4bf] text-[#0a1920] px-6 py-3 rounded-xl font-medium hover:bg-[#14b8a6] transition-colors"
+                  className="inline-flex items-center gap-2 bg-(--accent) text-(--bg-primary) px-6 py-3 rounded-xl font-medium hover:bg-(--accent-hover) transition-colors"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -236,7 +237,7 @@ export default function ContentBlocks({ blocks }: ContentBlocksProps) {
                   return (
                     <div
                       key={i}
-                      className="relative aspect-square rounded-xl overflow-hidden bg-[#0a1920]"
+                      className="relative aspect-square rounded-xl overflow-hidden bg-(--bg-primary)"
                     >
                       <Image
                         src={fullUrl}

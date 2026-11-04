@@ -18,7 +18,7 @@ const MODES: { value: View; label: string; Icon: typeof LayoutList }[] = [
 
 export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
   return (
-    <div className="inline-flex items-center gap-1 bg-[#0d2029] border border-[rgba(45,212,191,0.08)] rounded-full p-1">
+    <div className="inline-flex items-center gap-1 bg-(--bg-card) border border-(--border) rounded-full p-1">
       {MODES.map(({ value: mode, label, Icon }) => {
         const isActive = value === mode;
         return (
@@ -31,8 +31,8 @@ export function ViewModeToggle({ value, onChange }: ViewModeToggleProps) {
             aria-pressed={isActive}
             className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
               isActive
-                ? "bg-[#2dd4bf] text-[#0a1920]"
-                : "text-gray-400 hover:text-[#e0f7fa] hover:bg-[#2dd4bf]/10"
+                ? "bg-(--accent) text-(--bg-primary)"
+                : "text-(--text-muted) hover:text-(--text-primary) hover:bg-(--accent-dim)"
             }`}
           >
             <Icon size={16} />

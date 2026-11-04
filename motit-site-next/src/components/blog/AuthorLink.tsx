@@ -1,3 +1,4 @@
+// src/components/blog/AuthorLink.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -19,11 +20,11 @@ export function AuthorLink({
 }: AuthorLinkProps) {
   const router = useRouter();
 
-    const go = (e: React.MouseEvent | React.KeyboardEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        router.push(`/authors/${username}`);
-    };
+  const go = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/authors/${username}`);
+  };
 
   return (
     <span
@@ -33,7 +34,7 @@ export function AuthorLink({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") go(e);
       }}
-      className={`cursor-pointer inline-flex items-center gap-1.5 hover:text-[#2dd4bf] transition-colors ${className ?? ""}`}
+      className={`cursor-pointer inline-flex items-center gap-1.5 hover:text-(--accent) transition-colors ${className ?? ""}`}
     >
       {avatarUrl ? (
         <Image

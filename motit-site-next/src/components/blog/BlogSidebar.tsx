@@ -23,7 +23,7 @@ export async function BlogSidebar() {
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-24">
-        <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">
+        <h4 className="text-xs font-medium text-(--text-muted) uppercase tracking-wider mb-3">
           Свежие статьи
         </h4>
         <ul className="space-y-3">
@@ -35,19 +35,19 @@ export async function BlogSidebar() {
               <li key={post.id}>
                 <Link
                   href={`/blog/${slug}`}
-                  className="group flex gap-3 items-start hover:bg-[#0d2029] p-2 -mx-2 rounded-lg transition-colors"
+                  className="group flex gap-3 items-start hover:bg-(--bg-card-hover) p-2 -mx-2 rounded-lg transition-colors"
                 >
-                  <div className="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
-                    <div className="w-full h-full flex items-center justify-center text-gray-600 text-lg">
+                  <div className="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-(--bg-primary)">
+                    <div className="w-full h-full flex items-center justify-center text-(--text-muted) text-lg">
                       📄
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h5 className="text-sm font-medium text-gray-300 group-hover:text-[#2dd4bf] transition-colors line-clamp-2">
+                    <h5 className="text-sm font-medium text-(--text-secondary) group-hover:text-(--accent) transition-colors line-clamp-2">
                       {title}
                     </h5>
                     {post.publishedAt && (
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className="text-xs text-(--text-muted) flex items-center gap-1">
                         <Calendar size={10} />
                         {formatDate(post.publishedAt, tz, locale, dateOpts)}
                       </span>

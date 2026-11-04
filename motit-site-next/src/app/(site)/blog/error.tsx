@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { Container, Button } from '@/components/ui';
+import { useEffect } from "react";
+import { Container, Button } from "@/components/ui";
 
 export default function BlogError({
   error,
@@ -16,12 +16,14 @@ export default function BlogError({
 
   return (
     <Container className="py-24 text-center">
-      <h2 className="text-2xl font-bold mb-4">Что-то пошло не так</h2>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
+      <h2 className="text-2xl font-bold mb-4 text-(--text-primary)">
+        Что-то пошло не так
+      </h2>
+      <p className="text-(--text-secondary) mb-6">
         Не удалось загрузить блог. Пожалуйста, попробуйте позже.
       </p>
       {error.digest && (
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-(--text-muted) mb-4">
           Код ошибки: <code>{error.digest}</code>
         </p>
       )}

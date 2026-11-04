@@ -25,13 +25,29 @@ export function ImageField({
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const uploadFile = async (file: File | Blob) => {
+  // Загружаем файл без принудительного переименования в .jpg
+  const uploadFile = async (file: File | Blob, originalName?: string) => {
     setIsUploading(true);
     setError("");
 
     try {
       const formData = new FormData();
-      formData.append("files", file, "image.jpg");
+      // Если это File (не Blob), используем его оригинальное имя.
+      // Иначе (Blob из редактора) даём имя с правильным расширением по MIME.
+      const extFromMime: Record<string, string> = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/webp": "webp",
+        "image/svg+xml": "svg",
+        "image/gif": "gif",
+      };
+      const ext =
+        (originalName && originalName.split(".").pop()) ||
+        extFromMime[file.type] ||
+        "png";
+      const filename = originalName ?? `image.${ext}`;
+
+      formData.append("files", file, filename);
 
       const res = await fetch(uploadEndpoint, {
         method: "POST",
@@ -57,21 +73,43 @@ export function ImageField({
     }
   };
 
+  // Редактор — только для растровых (jpg/webp), не для png/svg
   const processImage = async (fileOrUrl: File | string) => {
     try {
       setIsEditing(true);
       setError("");
 
       let file: File;
+      let originalName: string | undefined;
+
       if (typeof fileOrUrl === "string") {
         const res = await fetch(fileOrUrl);
         if (!res.ok) throw new Error("Не удалось загрузить изображение");
         const blob = await res.blob();
-        file = new File([blob], "image.jpg", {
-          type: blob.type || "image/jpeg",
+        const extFromMime: Record<string, string> = {
+          "image/png": "png",
+          "image/jpeg": "jpg",
+          "image/webp": "webp",
+          "image/svg+xml": "svg",
+          "image/gif": "gif",
+        };
+        const ext = extFromMime[blob.type] || "png";
+        originalName = `image.${ext}`;
+        file = new File([blob], originalName, {
+          type: blob.type || "image/png",
         });
       } else {
         file = fileOrUrl;
+        originalName = fileOrUrl.name;
+      }
+
+      // PNG и SVG не пускаем в редактор — он превратит их в JPEG и убьёт прозрачность
+      const isPngOrSvg =
+        file.type === "image/png" || file.type === "image/svg+xml";
+
+      if (isPngOrSvg) {
+        await uploadFile(file, originalName);
+        return;
       }
 
       const { openEditorModal } = await import(
@@ -137,7 +175,7 @@ export function ImageField({
                 alt={label}
                 className="h-16 w-16 object-contain transition-opacity group-hover:opacity-50"
               />
-              
+
               {/* Оверлей при наведении */}
               {!isEditing && !isUploading && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">

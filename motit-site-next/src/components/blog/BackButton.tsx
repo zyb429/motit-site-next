@@ -1,3 +1,4 @@
+// src/components/blog/BackButton.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -18,7 +19,7 @@ export function BackButton({ fallback = "/blog" }: { fallback?: string }) {
     <button
       type="button"
       onClick={handleBack}
-      className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#2dd4bf] transition-colors mb-6"
+      className="inline-flex items-center gap-1.5 text-sm text-(--text-muted) hover:text-(--accent) transition-colors mb-6"
     >
       <ArrowLeft size={16} />
       Назад
