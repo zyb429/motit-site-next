@@ -90,12 +90,12 @@ export default function Partners({
   const isExternal = footerButtonHref?.startsWith('http');
 
   return (
-    <section className="section-padding" style={{ backgroundColor: '#0a1920' }}>
+    <section className="section-padding bg-(--bg-primary) transition-colors duration-300">
       <div className="content-container">
         <div className="text-center mb-10 md:mb-14">
           <span className="section-label block mb-3">{label}</span>
-          <h2 className="section-title mb-4">{title}</h2>
-          <p className="section-subtitle max-w-[600px] mx-auto">{subtitle}</p>
+          <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
+          <p className="section-subtitle max-w-[600px] mx-auto text-(--text-secondary)">{subtitle}</p>
         </div>
       </div>
 
@@ -109,12 +109,7 @@ export default function Partners({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleMouseUp}
-        style={{
-          scrollbarWidth: 'none',
-          overflowY: 'visible',
-          paddingTop: '10px',
-          paddingBottom: '10px',
-        }}
+        style={{ scrollbarWidth: 'none', overflowY: 'visible', paddingTop: '10px', paddingBottom: '10px' }}
       >
         {doubled.map((partner, index) => {
           const isHovered = hoveredIndex === index;
@@ -127,20 +122,13 @@ export default function Partners({
               className="shrink-0 group relative transition-all duration-150"
               style={{
                 width: 'clamp(150px, 18vw, 210px)',
-                backgroundColor: isHovered ? '#153541' : '#0f2832',
-                border: `1px solid ${
-                  isHovered
-                    ? 'rgba(45, 212, 191, 0.3)'
-                    : 'rgba(45, 212, 191, 0.08)'
-                }`,
+                backgroundColor: isHovered ? 'var(--bg-card-hover)' : 'var(--bg-card)',
+                border: `1px solid ${isHovered ? 'var(--border-hover)' : 'var(--border)'}`,
                 borderRadius: '20px',
-                transform: isHovered
-                  ? 'translateY(-4px) scale(1.03)'
-                  : 'translateY(0) scale(1)',
+                transform: isHovered ? 'translateY(-4px) scale(1.03)' : 'translateY(0) scale(1)',
                 zIndex: isHovered ? 10 : 1,
                 position: 'relative',
-                transition:
-                  'transform 0.15s ease-out, background-color 0.15s ease-out, border-color 0.15s ease-out',
+                transition: 'transform 0.15s ease-out, background-color 0.15s ease-out, border-color 0.15s ease-out',
               }}
               onMouseEnter={() => setHoveredIndex(index)}
               onMouseLeave={() => setHoveredIndex(null)}
@@ -148,10 +136,7 @@ export default function Partners({
               draggable={false}
             >
               <div className="flex flex-col items-center justify-center p-4">
-                <div
-                  className="w-full aspect-3/2 rounded-xl flex items-center justify-center mb-2 p-2 overflow-hidden relative"
-                  style={{ backgroundColor: '#ffffff' }}
-                >
+                <div className="w-full aspect-3/2 rounded-xl flex items-center justify-center mb-2 p-2 overflow-hidden relative" style={{ backgroundColor: '#ffffff' }}>
                   {partner.logo && (
                     <Image
                       src={partner.logo}
@@ -167,17 +152,14 @@ export default function Partners({
                   <div
                     className="absolute inset-0 z-2 rounded-xl pointer-events-none"
                     style={{
-                      backgroundColor: 'rgba(45, 212, 191, 0.4)',
+                      backgroundColor: 'var(--accent)',
+                      opacity: isHovered ? 0 : 0.4,
                       mixBlendMode: 'multiply',
-                      opacity: isHovered ? 0 : 1,
                       transition: 'opacity 0.15s ease-out',
                     }}
                   />
                 </div>
-                <span
-                  className="text-xs md:text-sm font-medium text-center whitespace-nowrap"
-                  style={{ color: '#e0f7fa' }}
-                >
+                <span className="text-xs md:text-sm font-medium text-center whitespace-nowrap text-(--text-primary)">
                   {partner.name}
                 </span>
               </div>
@@ -187,12 +169,7 @@ export default function Partners({
       </div>
 
       <div className="text-center mt-10 md:mt-12">
-        <p
-          className="text-sm mb-3"
-          style={{ color: 'rgba(128, 222, 234, 0.5)' }}
-        >
-          {footerText}
-        </p>
+        <p className="text-sm mb-3 text-(--text-muted)">{footerText}</p>
         <a
           href={footerButtonHref || '#contact'}
           target={isExternal ? '_blank' : undefined}

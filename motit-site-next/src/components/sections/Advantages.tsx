@@ -29,12 +29,12 @@ export default function Advantages({ label, title, subtitle, items }: Advantages
   }, []);
 
   return (
-    <section className="section-padding" style={{ backgroundColor: '#0a1920' }}>
+    <section className="section-padding bg-(--bg-primary) transition-colors duration-300">
       <div className="content-container">
         <div className="mb-12 md:mb-16">
           <span className="section-label block mb-3">{label}</span>
-          <h2 className="section-title mb-4">{title}</h2>
-          <p className="section-subtitle max-w-[600px]">{subtitle}</p>
+          <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
+          <p className="section-subtitle max-w-[600px] text-(--text-secondary)">{subtitle}</p>
         </div>
         <div ref={sectionRef} className="flex flex-wrap gap-5 md:gap-6 justify-center">
           {(items ?? []).map((item, index) => {
@@ -42,16 +42,16 @@ export default function Advantages({ label, title, subtitle, items }: Advantages
             return (
               <div
                 key={index}
-                className={`reveal reveal-d${Math.min(index + 1, 9)} card-dark w-[calc(100%-0px)] sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]`}
+                className={`reveal reveal-d${Math.min(index + 1, 9)} card w-[calc(100%-0px)] sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]`}
                 style={{ opacity: 1 }}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(45, 212, 191, 0.12)' }}>
-                    <Icon size={20} style={{ color: '#2dd4bf' }} />
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-(--accent-dim)">
+                    <Icon size={20} className="text-(--accent)" />
                   </div>
-                  <h4 className="font-semibold text-lg leading-snug" style={{ color: '#e0f7fa' }}>{item.title}</h4>
+                  <h4 className="font-semibold text-lg leading-snug text-(--text-primary)">{item.title}</h4>
                 </div>
-                <p className="text-sm md:text-base leading-relaxed" style={{ color: 'rgba(128, 222, 234, 0.7)' }}>{item.description}</p>
+                <p className="text-sm md:text-base leading-relaxed text-(--text-secondary)">{item.description}</p>
               </div>
             );
           })}

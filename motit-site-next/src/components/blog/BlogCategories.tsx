@@ -29,7 +29,6 @@ export function BlogCategories({
 }: BlogCategoriesProps) {
   const router = useRouter();
 
-  // Оставляем только категории с постами
   const visibleCategories = categories.filter((cat) => {
     const count = counts[cat.slug ?? ""] || 0;
     return count > 0;
@@ -124,13 +123,13 @@ export function BlogCategories({
   return (
     <div className="mb-2">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+        <h3 className="text-sm font-medium text-(--text-muted) uppercase tracking-wider">
           Категории
         </h3>
         {visibleCategories.length > 8 && (
           <button
             onClick={() => setShowAll(!showAll)}
-            className="text-xs text-[#2dd4bf] hover:text-[#14b8a6] transition-colors flex items-center gap-0.5"
+            className="text-xs text-(--accent) hover:text-(--accent-hover) transition-colors flex items-center gap-0.5"
           >
             {showAll ? "Скрыть" : `Все (${visibleCategories.length})`}
             <ChevronRight
@@ -146,8 +145,8 @@ export function BlogCategories({
           onClick={clearCategories}
           className={`px-3 py-1.5 rounded-full text-sm transition-colors whitespace-nowrap ${
             currentCategories.length === 0
-              ? "bg-[#2dd4bf] text-[#0a1920] font-medium"
-              : "bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30"
+              ? "bg-(--accent) text-(--bg-primary) font-medium"
+              : "bg-(--bg-card) border border-(--border) text-(--text-muted) hover:text-(--text-primary) hover:border-(--accent)"
           }`}
         >
           Все
@@ -163,14 +162,14 @@ export function BlogCategories({
               onClick={() => cat.slug && toggleCategory(cat.slug)}
               className={`px-3 py-1.5 rounded-full text-sm transition-colors whitespace-nowrap flex items-center gap-1.5 ${
                 isActive
-                  ? "bg-[#2dd4bf] text-[#0a1920] font-medium"
-                  : "bg-[#0d2029] border border-[rgba(45,212,191,0.08)] text-gray-400 hover:text-[#e0f7fa] hover:border-[#2dd4bf]/30"
+                  ? "bg-(--accent) text-(--bg-primary) font-medium"
+                  : "bg-(--bg-card) border border-(--border) text-(--text-muted) hover:text-(--text-primary) hover:border-(--accent)"
               }`}
             >
               {cat.icon && <span>{cat.icon}</span>}
               {cat.name}
               <span
-                className={`text-[10px] ${isActive ? "text-[#0a1920]/60" : "text-gray-500"}`}
+                className={`text-[10px] ${isActive ? "text-(--bg-primary)/60" : "text-(--text-muted)"}`}
               >
                 {count}
               </span>

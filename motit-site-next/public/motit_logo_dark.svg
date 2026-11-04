@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 0 380 110">
+  <defs>
+    <linearGradient id="mgrad-light" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset=".5" stop-color="#0891b2"/>
+      <stop offset="1" stop-color="#0e7490"/>
+    </linearGradient>
+  </defs>
+  <text x="170" y="88" font-family="Montserrat, Arial Black, Arial, sans-serif" font-weight="800" font-size="80" letter-spacing="4" text-anchor="middle">
+    <tspan fill="url(#mgrad-light)">М</tspan><tspan fill="#0a1920" letter-spacing="5">ОТИТ</tspan>
+  </text>
+</svg>

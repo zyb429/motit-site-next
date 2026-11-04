@@ -19,7 +19,7 @@ export type CallToActionProps = {
   imageUrl: string | null;
 };
 
-export default function CallToAction({ label, title, desc, listItems=[], ctaLabel, ctaHref, secondaryLabel, secondaryHref, imageUrl }: CallToActionProps) {
+export default function CallToAction({ label, title, desc, listItems = [], ctaLabel, ctaHref, secondaryLabel, secondaryHref, imageUrl }: CallToActionProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,25 +42,24 @@ export default function CallToAction({ label, title, desc, listItems=[], ctaLabe
   };
 
   return (
-    <section className="section-padding" style={{ backgroundColor: '#0a1920' }}>
+    <section className="section-padding bg-(--bg-primary) transition-colors duration-300">
       <div className="content-container">
         <div ref={sectionRef}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             {imageUrl && (
               <div className="cta-image" style={{ opacity: 1 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={imageUrl} alt="" className="w-full h-auto object-cover rounded-2xl" style={{ maxHeight: '480px' }} loading="lazy" />
               </div>
             )}
             <div className="cta-content">
               <span className="section-label block mb-3" style={{ opacity: 1 }}>{label}</span>
-              <h2 className="section-title mb-5" style={{ opacity: 1 }}>{title}</h2>
-              <p className="text-base md:text-lg leading-relaxed mb-6" style={{ color: 'rgba(128, 222, 234, 0.75)', opacity: 1 }}>{desc}</p>
+              <h2 className="section-title mb-5 text-(--text-primary)" style={{ opacity: 1 }}>{title}</h2>
+              <p className="text-base md:text-lg leading-relaxed mb-6 text-(--text-secondary)" style={{ opacity: 1 }}>{desc}</p>
               {listItems.length > 0 && (
                 <ul className="flex flex-col gap-2 mb-8" style={{ opacity: 1 }}>
                   {listItems.map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm md:text-base" style={{ color: 'rgba(128, 222, 234, 0.8)' }}>
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: '#2dd4bf' }} />
+                    <li key={i} className="flex items-center gap-2 text-sm md:text-base text-(--text-secondary)" >
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-(--accent)" />
                       {item.text}
                     </li>
                   ))}

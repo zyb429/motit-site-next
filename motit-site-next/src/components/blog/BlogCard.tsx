@@ -71,10 +71,10 @@ export function BlogCard({
 
   const postAuthor = post.author
     ? {
-      username: post.author.username ?? "",
-      full_name: post.author.full_name ?? post.author.username ?? "",
-      avatar_url: post.author.avatar_url ?? null,
-    }
+        username: post.author.username ?? "",
+        full_name: post.author.full_name ?? post.author.username ?? "",
+        avatar_url: post.author.avatar_url ?? null,
+      }
     : null;
 
   const getPostUrl = () => {
@@ -113,10 +113,10 @@ export function BlogCard({
     return (
       <Link
         href={postUrl}
-        className={`group block bg-[#0f2832] rounded-xl overflow-hidden border border-[rgba(45,212,191,0.06)] hover:border-[#2dd4bf]/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${className}`}
+        className={`group block bg-(--bg-card) rounded-xl overflow-hidden border border-(--border) hover:border-(--accent) hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${className}`}
       >
         <div className="flex flex-col md:flex-row gap-4 p-4">
-          <div className="relative w-full md:w-48 h-40 md:h-32 shrink-0 rounded-lg overflow-hidden bg-[#0a1920]">
+          <div className="relative w-full md:w-48 h-40 md:h-32 shrink-0 rounded-lg overflow-hidden bg-(--bg-primary)">
             {post.featuredImage?.url ? (
               <Image
                 src={post.featuredImage.url}
@@ -138,37 +138,37 @@ export function BlogCard({
           </div>
 
           <div className="flex-1 min-w-0 flex flex-col">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-(--text-muted) mb-2">
               {postAuthor?.username && (
                 <AuthorLink
                   username={postAuthor.username}
                   name={postAuthor.full_name || postAuthor.username}
                   avatarUrl={postAuthor.avatar_url}
-                  className="text-xs text-gray-400"
+                  className="text-xs text-(--text-muted)"
                 />
               )}
               {publishedAt && (
                 <>
-                  <span className="text-gray-600">•</span>
+                  <span className="text-(--text-muted)">•</span>
                   <span className="flex items-center gap-1">
-                    <Calendar size={12} className="text-[#2dd4bf]" />
+                    <Calendar size={12} className="text-(--accent)" />
                     {formatPublished(publishedAt)}
                   </span>
                 </>
               )}
-              <span className="text-gray-600">•</span>
+              <span className="text-(--text-muted)">•</span>
               <span className="flex items-center gap-1">
-                <Clock size={12} className="text-[#2dd4bf]" />
+                <Clock size={12} className="text-(--accent)" />
                 {getReadingTime()} мин
               </span>
             </div>
 
-            <h2 className="text-lg font-bold text-[#e0f7fa] group-hover:text-[#2dd4bf] transition-colors line-clamp-2 leading-tight">
+            <h2 className="text-lg font-bold text-(--text-primary) group-hover:text-(--accent) transition-colors line-clamp-2 leading-tight">
               {title}
             </h2>
 
             {excerpt && (
-              <p className="text-sm text-gray-400 line-clamp-2 mt-1 leading-relaxed">
+              <p className="text-sm text-(--text-secondary) line-clamp-2 mt-1 leading-relaxed">
                 {excerpt}
               </p>
             )}
@@ -178,7 +178,7 @@ export function BlogCard({
                 {sortedCategories.map((cat) => (
                   <span
                     key={cat.slug || cat.name}
-                    className="text-xs bg-[#2dd4bf]/10 text-[#2dd4bf] px-2 py-0.5 rounded-full"
+                    className="text-xs bg-(--accent-dim) text-(--accent) px-2 py-0.5 rounded-full"
                   >
                     {cat.name}
                   </span>
@@ -186,7 +186,7 @@ export function BlogCard({
               </div>
             )}
 
-            <div className="flex items-center gap-1 text-[#2dd4bf] text-sm font-medium mt-2 group-hover:gap-2 transition-all duration-200">
+            <div className="flex items-center gap-1 text-(--accent) text-sm font-medium mt-2 group-hover:gap-2 transition-all duration-200">
               Читать далее
             </div>
           </div>
@@ -199,9 +199,9 @@ export function BlogCard({
     return (
       <Link
         href={postUrl}
-        className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${className}`}
+        className={`group block bg-(--bg-card) rounded-2xl overflow-hidden border border-(--border) hover:border-(--accent) hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${className}`}
       >
-        <div className="relative w-full aspect-16/10 overflow-hidden bg-[#0a1920]">
+        <div className="relative w-full aspect-16/10 overflow-hidden bg-(--bg-primary)">
           {post.featuredImage?.url ? (
             <Image
               src={post.featuredImage.url}
@@ -223,7 +223,7 @@ export function BlogCard({
         </div>
 
         <div className="p-5 space-y-3">
-          <h2 className="text-lg font-bold text-[#e0f7fa] line-clamp-2 group-hover:text-[#2dd4bf] transition-colors">
+          <h2 className="text-lg font-bold text-(--text-primary) line-clamp-2 group-hover:text-(--accent) transition-colors">
             {title}
           </h2>
 
@@ -232,7 +232,7 @@ export function BlogCard({
               {sortedCategories.map((cat) => (
                 <span
                   key={cat.slug || cat.name}
-                  className="shrink-0 text-[10px] font-medium text-[#2dd4bf] bg-[#2dd4bf]/10 border border-[#2dd4bf]/20 px-2 py-0.5 rounded-full"
+                  className="shrink-0 text-[10px] font-medium text-(--accent) bg-(--accent-dim) border border-(--accent) px-2 py-0.5 rounded-full"
                 >
                   {cat.name}
                 </span>
@@ -241,27 +241,29 @@ export function BlogCard({
           )}
 
           {excerpt && (
-            <p className="text-sm text-gray-400 line-clamp-2">{excerpt}</p>
+            <p className="text-sm text-(--text-secondary) line-clamp-2">
+              {excerpt}
+            </p>
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-(--text-muted) pt-3 border-t border-(--border)">
             <div className="flex flex-wrap items-center gap-3">
               {postAuthor?.username && (
                 <AuthorLink
                   username={postAuthor.username}
                   name={postAuthor.full_name || postAuthor.username}
                   avatarUrl={postAuthor.avatar_url}
-                  className="text-xs text-gray-400"
+                  className="text-xs text-(--text-muted)"
                 />
               )}
               <span className="flex items-center gap-1">
-                <Clock size={12} className="text-[#2dd4bf]" />
+                <Clock size={12} className="text-(--accent)" />
                 {getReadingTime()} мин
               </span>
             </div>
             {publishedAt && (
               <span className="flex items-center gap-1">
-                <Calendar size={12} className="text-[#2dd4bf]" />
+                <Calendar size={12} className="text-(--accent)" />
                 {formatPublished(publishedAt)}
               </span>
             )}
@@ -271,14 +273,14 @@ export function BlogCard({
     );
   }
 
-  // variant === "grid" — оставим тот же вид, что и tiles
+  // variant === "grid"
   return (
     <Link
       href={postUrl}
-      className={`group block bg-[#0f2832] rounded-2xl overflow-hidden border border-[rgba(45,212,191,0.08)] hover:border-[#2dd4bf]/30 hover:shadow-xl transition-all duration-300 ${className}`}
+      className={`group block bg-(--bg-card) rounded-2xl overflow-hidden border border-(--border) hover:border-(--accent) hover:shadow-xl transition-all duration-300 ${className}`}
     >
       <div className="p-5 space-y-3">
-        <h2 className="text-lg font-bold text-[#e0f7fa] line-clamp-2 group-hover:text-[#2dd4bf] transition-colors">
+        <h2 className="text-lg font-bold text-(--text-primary) line-clamp-2 group-hover:text-(--accent) transition-colors">
           {title}
         </h2>
         {sortedCategories.length > 0 && (
@@ -286,7 +288,7 @@ export function BlogCard({
             {sortedCategories.map((cat) => (
               <span
                 key={cat.slug || cat.name}
-                className="text-[10px] font-medium text-[#2dd4bf] bg-[#2dd4bf]/10 border border-[#2dd4bf]/20 px-2 py-0.5 rounded-full"
+                className="text-[10px] font-medium text-(--accent) bg-(--accent-dim) border border-(--accent) px-2 py-0.5 rounded-full"
               >
                 {cat.name}
               </span>
@@ -294,16 +296,18 @@ export function BlogCard({
           </div>
         )}
         {excerpt && (
-          <p className="text-sm text-gray-400 line-clamp-3">{excerpt}</p>
+          <p className="text-sm text-(--text-secondary) line-clamp-3">
+            {excerpt}
+          </p>
         )}
-        <div className="flex items-center justify-between gap-2 text-xs text-gray-500 pt-3 border-t border-[rgba(45,212,191,0.05)]">
+        <div className="flex items-center justify-between gap-2 text-xs text-(--text-muted) pt-3 border-t border-(--border)">
           <span className="flex items-center gap-1">
-            <Clock size={12} className="text-[#2dd4bf]" />
+            <Clock size={12} className="text-(--accent)" />
             {getReadingTime()} мин
           </span>
           {publishedAt && (
             <span className="flex items-center gap-1">
-              <Calendar size={12} className="text-[#2dd4bf]" />
+              <Calendar size={12} className="text-(--accent)" />
               {formatPublished(publishedAt)}
             </span>
           )}

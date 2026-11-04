@@ -1,4 +1,3 @@
-// src/app/(admin)/admin/settings/appearance/page.tsx
 import Link from "next/link";
 import { ArrowLeft, Palette } from "lucide-react";
 import { getSiteSettings } from "@/lib/db/site-settings";
@@ -27,7 +26,7 @@ export default async function AppearanceSettingsPage() {
                 Внешний вид
               </h1>
               <p className="text-sm text-(--text-secondary)">
-                Логотип, favicon, акцентный цвет
+                Логотипы и favicon
               </p>
             </div>
           </div>
@@ -39,7 +38,8 @@ export default async function AppearanceSettingsPage() {
             settings={s}
             action={updateAppearance}
             fields={[
-              { kind: "image", name: "logoUrl", label: "Логотип" },
+              { kind: "image", name: "logoLightUrl", label: "Логотип (светлая тема)" },
+              { kind: "image", name: "logoDarkUrl", label: "Логотип (тёмная тема)" },
               {
                 kind: "image",
                 name: "faviconUrl",
@@ -51,11 +51,6 @@ export default async function AppearanceSettingsPage() {
                 name: "faviconSvg",
                 label: "Favicon (SVG-код)",
                 rows: 10,
-              },
-              {
-                kind: "color",
-                name: "accentColor",
-                label: "Акцентный цвет",
               },
             ]}
           />

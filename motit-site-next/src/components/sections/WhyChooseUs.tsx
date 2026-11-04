@@ -43,12 +43,12 @@ export default function WhyChooseUs({ label, title, subtitle, items }: WhyChoose
   }, []);
 
   return (
-    <section className="section-padding" style={{ backgroundColor: '#0a1920' }}>
+    <section className="section-padding bg-(--bg-primary) transition-colors duration-300">
       <div className="content-container max-w-225">
         <div className="mb-10 md:mb-12 text-center">
           <span className="section-label block mb-3">{label}</span>
-          <h2 className="section-title mb-4">{title}</h2>
-          <p className="section-subtitle max-w-140 mx-auto">{subtitle}</p>
+          <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
+          <p className="section-subtitle max-w-140 mx-auto text-(--text-secondary)">{subtitle}</p>
         </div>
 
         <div ref={sectionRef} className="reveal flex flex-col gap-3" style={{ opacity: 1 }}>
@@ -57,11 +57,11 @@ export default function WhyChooseUs({ label, title, subtitle, items }: WhyChoose
             return (
               <div
                 key={index}
-                className="rounded-xl overflow-hidden transition-all duration-300"
+                className={`rounded-xl overflow-hidden transition-all duration-300 bg-(--bg-card) border shadow-sm hover:shadow-md ${
+                  isOpen ? 'border-(--accent) shadow-md' : 'border-(--border)'
+                }`}
                 style={{
-                  backgroundColor: '#0f2832',
-                  border: `1px solid ${isOpen ? 'rgba(45, 212, 191, 0.3)' : 'rgba(45, 212, 191, 0.08)'}`,
-                  borderLeft: isOpen ? '3px solid #2dd4bf' : '3px solid transparent',
+                  borderLeft: isOpen ? '3px solid var(--accent)' : '3px solid transparent',
                 }}
               >
                 <button
@@ -69,19 +69,21 @@ export default function WhyChooseUs({ label, title, subtitle, items }: WhyChoose
                   className="w-full flex items-center justify-between p-5 md:p-6 text-left cursor-pointer"
                 >
                   <h4
-                    className="font-semibold leading-snug pr-4 transition-colors duration-300"
+                    className={`font-semibold leading-snug pr-4 transition-colors duration-300 ${
+                      isOpen ? 'text-(--accent)' : 'text-(--text-primary)'
+                    }`}
                     style={{
                       fontSize: 'clamp(1.1rem, 1.6vw, 1.35rem)',
-                      color: isOpen ? '#2dd4bf' : '#e0f7fa',
                     }}
                   >
                     {item.title}
                   </h4>
                   <Plus
                     size={22}
-                    className="shrink-0 transition-transform duration-300"
+                    className={`shrink-0 transition-transform duration-300 ${
+                      isOpen ? 'text-(--accent)' : 'text-(--text-muted)'
+                    }`}
                     style={{
-                      color: isOpen ? '#2dd4bf' : 'rgba(128, 222, 234, 0.5)',
                       transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
                     }}
                   />
@@ -109,15 +111,12 @@ export default function WhyChooseUs({ label, title, subtitle, items }: WhyChoose
                     </div>
                     <div className="md:w-[62%]">
                       <h5
-                        className="font-semibold mb-2"
-                        style={{ color: '#2dd4bf', fontSize: '1.05rem' }}
+                        className="font-semibold mb-2 text-(--accent)"
+                        style={{ fontSize: '1.05rem' }}
                       >
                         {item.subtitle}
                       </h5>
-                      <p
-                        className="text-sm md:text-base leading-relaxed"
-                        style={{ color: 'rgba(128, 222, 234, 0.7)' }}
-                      >
+                      <p className="text-sm md:text-base leading-relaxed text-(--text-secondary)">
                         {item.description}
                       </p>
                     </div>

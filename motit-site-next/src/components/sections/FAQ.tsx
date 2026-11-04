@@ -51,29 +51,29 @@ export default function FAQ({ label, title, subtitle, items }: FAQProps) {
   }, [openIndex]);
 
   return (
-    <section id="faq" className="section-padding" style={{ backgroundColor: '#0d2029' }}>
+    <section id="faq" className="section-padding bg-(--bg-secondary) transition-colors duration-300">
       <div className="content-container">
         <div className="grid grid-cols-1 lg:grid-cols-[0.3fr_0.7fr] gap-10 lg:gap-14">
           <div>
             <span className="section-label block mb-3">{label}</span>
-            <h2 className="section-title mb-4">{title}</h2>
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: 'rgba(128, 222, 234, 0.7)' }}>{subtitle}</p>
+            <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
+            <p className="text-base md:text-lg leading-relaxed text-(--text-secondary)">{subtitle}</p>
           </div>
           <div ref={sectionRef} className="reveal flex flex-col gap-3" style={{ opacity: 1 }}>
             {(items ?? []).map((item, index) => {
               const isOpen = openIndex === index;
               return (
-                <div key={index} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#0f2832', border: `1px solid ${isOpen ? 'rgba(45, 212, 191, 0.3)' : 'rgba(45, 212, 191, 0.08)'}`, transition: 'border-color 0.3s ease-out' }}>
+                <div key={index} className={`rounded-xl overflow-hidden transition-colors duration-300 bg-(--bg-card) border ${isOpen ? 'border-(--accent)' : 'border-(--border)'}`}>
                   <button onClick={() => setOpenIndex(isOpen ? null : index)} className="w-full flex items-start justify-between p-5 md:p-6 text-left cursor-pointer">
                     <div className="flex-1 pr-4">
                       <span className="section-label block mb-2">{item.tag}</span>
-                      <h4 className="font-semibold leading-snug" style={{ fontSize: 'clamp(1.05rem, 1.5vw, 1.25rem)', color: isOpen ? '#2dd4bf' : '#e0f7fa', transition: 'color 0.3s ease-out' }}>{item.question}</h4>
+                      <h4 className={`font-semibold leading-snug transition-colors duration-300 ${isOpen ? 'text-(--accent)' : 'text-(--text-primary)'}`} style={{ fontSize: 'clamp(1.05rem, 1.5vw, 1.25rem)' }}>{item.question}</h4>
                     </div>
-                    <Plus size={22} className="flex-shrink-0 mt-1 transition-transform duration-200" style={{ color: isOpen ? '#2dd4bf' : 'rgba(128, 222, 234, 0.5)', transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }} />
+                    <Plus size={22} className={`flex-shrink-0 mt-1 transition-transform duration-200 ${isOpen ? 'text-(--accent)' : 'text-(--text-muted)'}`} style={{ transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }} />
                   </button>
                   <div ref={(el) => { contentRefs.current[index] = el; }} className="overflow-hidden" style={{ height: 0, opacity: 0 }}>
                     <div ref={(el) => { answerRefs.current[index] = el; }} className="px-5 md:px-6 pb-5 md:pb-6">
-                      <p className="text-sm md:text-base leading-relaxed" style={{ color: 'rgba(128, 222, 234, 0.7)' }}>{item.answer}</p>
+                      <p className="text-sm md:text-base leading-relaxed text-(--text-secondary)">{item.answer}</p>
                     </div>
                   </div>
                 </div>

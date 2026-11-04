@@ -53,20 +53,32 @@ export default function Hero({ label, title, subtitle, desc, ctaLabel, ctaHref, 
   };
 
   return (
-    <section ref={sectionRef} id="hero" className="relative min-h-[100dvh] flex items-center overflow-hidden" style={{ backgroundColor: "#0a1920" }}>
+    <section ref={sectionRef} id="hero" className="relative min-h-[100dvh] flex items-center overflow-hidden bg-(--bg-primary) transition-colors duration-300">
       <div ref={contentRef} className="relative z-[2] content-container w-full pt-20">
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="hero-bg-sparkle-1 absolute top-1/4 left-1/4 w-3 h-3 bg-[#2dd4bf] rounded-full opacity-30 blur-[1.5px]" />
-          <div className="hero-bg-sparkle-2 absolute top-1/3 right-1/4 w-2.5 h-2.5 bg-[#4dd0e1] rounded-full opacity-40 blur-[1px]" />
-          <div className="hero-bg-sparkle-3 absolute bottom-1/3 left-1/3 w-4 h-4 bg-[#2dd4bf] rounded-full opacity-25 blur-[2px]" />
-          <div className="hero-bg-sparkle-4 absolute top-1/2 right-1/3 w-2 h-2 bg-[#80deea] rounded-full opacity-35 blur-[1px]" />
-          <div className="hero-bg-sparkle-5 absolute bottom-1/4 left-1/5 w-2 h-2 bg-[#2dd4bf] rounded-full opacity-30 blur-[1px]" />
-          <div className="hero-bg-sparkle-6 absolute top-2/3 right-1/5 w-2.5 h-2.5 bg-[#4dd0e1] rounded-full opacity-25 blur-[1.5px]" />
+          <div className="hero-bg-sparkle-1 absolute top-1/4 left-1/4 w-3 h-3 bg-(--accent) rounded-full opacity-30 blur-[1.5px]" />
+          <div className="hero-bg-sparkle-2 absolute top-1/3 right-1/4 w-2.5 h-2.5 bg-(--accent-hover) rounded-full opacity-40 blur-[1px]" />
+          <div className="hero-bg-sparkle-3 absolute bottom-1/3 left-1/3 w-4 h-4 bg-(--accent) rounded-full opacity-25 blur-[2px]" />
+          <div className="hero-bg-sparkle-4 absolute top-1/2 right-1/3 w-2 h-2 bg-(--accent-hover) rounded-full opacity-35 blur-[1px]" />
+          <div className="hero-bg-sparkle-5 absolute bottom-1/4 left-1/5 w-2 h-2 bg-(--accent) rounded-full opacity-30 blur-[1px]" />
+          <div className="hero-bg-sparkle-6 absolute top-2/3 right-1/5 w-2.5 h-2.5 bg-(--accent-hover) rounded-full opacity-25 blur-[1.5px]" />
         </div>
         <span className="hero-label section-label block mb-4">{label}</span>
-        <h1 className="hero-title font-extrabold uppercase tracking-[-0.02em] leading-[0.95]" style={{ fontSize: "clamp(3rem, 8vw, 6.5rem)", color: "#e0f7fa", textShadow: "0 0 80px rgba(45, 212, 191, 0.2)" }}>{title}</h1>
-        <h2 className="hero-subtitle mt-3 font-bold uppercase tracking-[-0.01em] leading-[1.05]" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", color: "rgba(128, 222, 234, 0.85)" }}>{subtitle}</h2>
-        <p className="hero-desc mt-6 max-w-[560px] text-base md:text-lg leading-relaxed" style={{ color: "rgba(128, 222, 234, 0.7)" }}>{desc}</p>
+        <h1
+          className="hero-title font-extrabold uppercase tracking-[-0.02em] leading-[0.95] text-(--text-primary)"
+          style={{ fontSize: "clamp(3rem, 8vw, 6.5rem)" }}
+        >
+          {title}
+        </h1>
+        <h2
+          className="hero-subtitle mt-3 font-bold uppercase tracking-[-0.01em] leading-[1.05] text-(--text-secondary)"
+          style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}
+        >
+          {subtitle}
+        </h2>
+        <p className="hero-desc mt-6 max-w-[560px] text-base md:text-lg leading-relaxed text-(--text-secondary) opacity-80">
+          {desc}
+        </p>
         <div className="hero-cta mt-10 flex flex-wrap gap-4">
           {ctaLabel && <button onClick={handleCtaClick} className="btn-primary">{ctaLabel}</button>}
           <a href="https://help.motit.by" target="_blank" rel="noopener noreferrer" className="btn-secondary">Техподдержка</a>

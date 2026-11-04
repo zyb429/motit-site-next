@@ -89,7 +89,7 @@ export function AuthorPosts({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-[#e0f7fa]">Публикации</h2>
+        <h2 className="text-xl font-bold text-(--text-primary)">Публикации</h2>
         <ViewModeToggle value={viewMode} onChange={setViewMode} />
       </div>
       {renderCards()}

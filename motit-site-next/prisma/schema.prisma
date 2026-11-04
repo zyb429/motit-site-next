@@ -286,7 +286,8 @@ model SiteSettings {
 
   notificationEmails Json?
 
-  logoUrl     String?
+  logoLightUrl String? // Логотип для светлой темы
+  logoDarkUrl  String? // Логотип для тёмной темы
   faviconUrl  String?
   faviconSvg  String? @db.Text
   accentColor String? @default("#6366f1")

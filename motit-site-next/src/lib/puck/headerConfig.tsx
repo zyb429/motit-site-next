@@ -12,11 +12,15 @@ export function createHeaderConfig(): Config<HeaderConfig> {
     components: {
       Header: {
         fields: {
-          logoText: { type: "text", label: "Логотип: текст" },
+          logoText: { type: "text", label: "Логотип: текст (если нет картинки)" },
           logoHref: { type: "text", label: "Логотип: ссылка" },
-          logoImageUrl: {
+          logoLightUrl: {
             ...imageUploadField,
-            label: "Логотип: изображение",
+            label: "Логотип для СВЕТЛОЙ темы (тёмный текст/графика)",
+          } as CustomField<string | null | undefined>,
+          logoDarkUrl: {
+            ...imageUploadField,
+            label: "Логотип для ТЁМНОЙ темы (светлый текст/графика)",
           } as CustomField<string | null | undefined>,
           nav: {
             type: "array",
@@ -63,7 +67,8 @@ export function createHeaderConfig(): Config<HeaderConfig> {
         defaultProps: {
           logoText: "МОТИТ",
           logoHref: "/",
-          logoImageUrl: "",
+          logoLightUrl: null,
+          logoDarkUrl: null,
           nav: [
             { label: "Направления", href: "/#directions", external: false },
             { label: "О нас", href: "/about", external: false },

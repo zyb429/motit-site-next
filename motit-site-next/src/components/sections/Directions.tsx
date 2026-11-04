@@ -53,43 +53,27 @@ export default function Directions({ label, title, subtitle, items }: Directions
       result.push(
         <div 
           key={`item-${i}`} 
-          className="PuckVisibilityFix group cursor-pointer rounded-2xl p-5 md:p-6 transition-all duration-300 hover:-translate-y-1.5 flex flex-col h-full w-full" 
-          style={{ 
-            backgroundColor: 'var(--bg-card, #0f2832)', 
-            border: '1px solid var(--border, rgba(45, 212, 191, 0.1))',
-          }}
+          className="PuckVisibilityFix group cursor-pointer rounded-2xl p-5 md:p-6 transition-all duration-300 hover:-translate-y-1.5 flex flex-col h-full w-full bg-(--bg-card) border border-(--border)"
         >
           {/* Верхний блок с заголовком и иконкой */}
           <div className="flex justify-between items-stretch gap-4 mb-4">
-            {/* 
-              Добавили flex и items-center к самому заголовку. 
-              Теперь текст будет центрироваться по вертикали внутри 
-              зарезервированного пространства min-h.
-            */}
             <h3 
-              className="font-semibold text-lg md:text-xl leading-snug flex-1 min-h-[3.25rem] md:min-h-[3.5rem] line-clamp-2 flex items-center" 
-              style={{ color: 'var(--text-primary, #e0f7fa)' }}
+              className="font-semibold text-lg md:text-xl leading-snug flex-1 min-h-[3.25rem] md:min-h-[3.5rem] line-clamp-2 flex items-center text-(--text-primary)"
             >
-              {/* Оборачиваем текст в span, чтобы line-clamp работал корректно внутри flex-контейнера */}
               <span className="line-clamp-2">{item.title}</span>
             </h3>
             
             <div 
-              // Убрали mt-0.5, так как родитель теперь items-stretch, 
-              // и иконка растянется на высоту заголовка. 
-              // items-center внутри центрирует саму иконку в этом блоке.
-              className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0" 
-              style={{ backgroundColor: 'var(--accent-dim, rgba(45, 212, 191, 0.12))' }}
+              className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0 bg-(--accent-dim)"
             >
-              <Icon size={20} className="md:hidden" style={{ color: 'var(--accent, #2dd4bf)' }} />
-              <Icon size={24} className="hidden md:block" style={{ color: 'var(--accent, #2dd4bf)' }} />
+              <Icon size={20} className="md:hidden text-(--accent)" />
+              <Icon size={24} className="hidden md:block text-(--accent)" />
             </div>
           </div>
           
           {/* Описание */}
           <p 
-            className="text-sm md:text-base leading-relaxed flex-grow" 
-            style={{ color: 'var(--text-secondary, #80deea)' }}
+            className="text-sm md:text-base leading-relaxed flex-grow text-(--text-secondary)"
           >
             {item.description}
           </p>
@@ -101,12 +85,12 @@ export default function Directions({ label, title, subtitle, items }: Directions
   };
 
   return (
-    <section id="directions" className="section-padding" style={{ backgroundColor: 'var(--bg-primary, #0a1920)' }}>
+    <section id="directions" className="section-padding bg-(--bg-primary) transition-colors duration-300">
       <div className="content-container">
         <div className="mb-10 md:mb-14">
           <span className="section-label block mb-3">{label}</span>
-          <h2 className="section-title mb-4">{title}</h2>
-          <p className="section-subtitle max-w-160">{subtitle}</p>
+          <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
+          <p className="section-subtitle max-w-160 text-(--text-secondary)">{subtitle}</p>
         </div>
         
         <div 

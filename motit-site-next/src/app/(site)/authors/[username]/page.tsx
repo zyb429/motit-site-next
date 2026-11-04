@@ -60,11 +60,11 @@ async function getPostsByAuthorPrisma(username: string) {
     updatedAt: p.updated_at?.toISOString() ?? null,
     author: p.author
       ? {
-        id: p.author.id,
-        username: p.author.username ?? "",
-        full_name: p.author.full_name ?? null,
-        avatar_url: p.author.avatar?.url ?? null,
-      }
+          id: p.author.id,
+          username: p.author.username ?? "",
+          full_name: p.author.full_name ?? null,
+          avatar_url: p.author.avatar?.url ?? null,
+        }
       : null,
     categories:
       p.posts_categories_links
@@ -77,10 +77,10 @@ async function getPostsByAuthorPrisma(username: string) {
         })) ?? [],
     featuredImage: p.featured_image
       ? {
-        id: p.featured_image.id,
-        url: p.featured_image.url ?? null,
-        name: p.featured_image.name ?? null,
-      }
+          id: p.featured_image.id,
+          url: p.featured_image.url ?? null,
+          name: p.featured_image.name ?? null,
+        }
       : null,
   }));
 }
@@ -138,11 +138,11 @@ export default async function AuthorPage({
   };
 
   return (
-    <main className="min-h-screen bg-[#0a1920] py-8 md:py-12">
+    <main className="min-h-screen bg-(--bg-primary) py-8 md:py-12 transition-colors duration-300">
       <div className="container mx-auto px-4 max-w-4xl">
         <BackButton fallback="/blog" />
 
-        <header className="bg-[#0f2832] rounded-xl p-6 md:p-8 mb-8 border border-[rgba(45,212,191,0.06)]">
+        <header className="bg-(--bg-card) rounded-xl p-6 md:p-8 mb-8 border border-(--border)">
           <div className="flex flex-col md:flex-row items-start gap-6">
             {avatarUrl ? (
               <Image
@@ -151,29 +151,31 @@ export default async function AuthorPage({
                 width={120}
                 height={120}
                 priority
-                className="rounded-full object-cover border-2 border-[#2dd4bf]/20 shrink-0"
+                className="rounded-full object-cover border-2 border-(--accent)/20 shrink-0"
               />
             ) : (
-              <div className="w-30 h-30 rounded-full bg-[#2dd4bf]/10 flex items-center justify-center shrink-0">
-                <User className="w-12 h-12 text-[#2dd4bf]" />
+              <div className="w-30 h-30 rounded-full bg-(--accent-dim) flex items-center justify-center shrink-0">
+                <User className="w-12 h-12 text-(--accent)" />
               </div>
             )}
 
             <div className="flex-1 min-w-0">
-              <h1 className="text-3xl md:text-4xl font-bold text-[#e0f7fa] mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-(--text-primary) mb-2">
                 {displayName}
               </h1>
               {author.username && (
-                <p className="text-sm text-gray-500 mb-3">@{author.username}</p>
+                <p className="text-sm text-(--text-muted) mb-3">
+                  @{author.username}
+                </p>
               )}
               {author.bio && (
-                <p className="text-gray-300 whitespace-pre-line mb-4">
+                <p className="text-(--text-secondary) whitespace-pre-line mb-4">
                   {author.bio}
                 </p>
               )}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-(--text-secondary)">
                 <span className="flex items-center gap-1.5">
-                  <FileText size={14} className="text-[#2dd4bf]" />
+                  <FileText size={14} className="text-(--accent)" />
                   {posts.length} {pluralize(posts.length)}
                 </span>
               </div>
@@ -184,10 +186,10 @@ export default async function AuthorPage({
         <section>
           {posts.length === 0 ? (
             <>
-              <h2 className="text-xl font-bold text-[#e0f7fa] mb-4">
+              <h2 className="text-xl font-bold text-(--text-primary) mb-4">
                 Публикации
               </h2>
-              <p className="text-gray-500 text-center py-12">
+              <p className="text-(--text-muted) text-center py-12">
                 У автора пока нет публикаций
               </p>
             </>
@@ -198,7 +200,7 @@ export default async function AuthorPage({
                   {posts.slice(0, 3).map((post) => (
                     <div
                       key={post.id}
-                      className="h-40 bg-[#0f2832] rounded-xl border border-[rgba(45,212,191,0.06)] animate-pulse"
+                      className="h-40 bg-(--bg-card) rounded-xl border border-(--border) animate-pulse"
                     />
                   ))}
                 </div>

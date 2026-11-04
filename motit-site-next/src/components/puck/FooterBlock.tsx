@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import {
   Phone,
   Mail,
@@ -18,6 +20,8 @@ import {
   Facebook,
   Twitch,
   Rss,
+  Moon,
+  Sun,
   type LucideIcon,
 } from "lucide-react";
 import { CUSTOM_SOCIAL_VALUE } from "@/lib/social-options";
@@ -88,17 +92,17 @@ const resolveLogoUrl = (logo: LogoImage) =>
 
 export function FooterBlock(props: FooterBlockProps) {
   const logoUrl = resolveLogoUrl(props.logoImageUrl);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Избегаем ошибки гидратации при чтении темы
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <footer
-      className="border-t border-[rgba(45,212,191,0.12)] bg-[#0a1920]"
-      style={{ color: "rgba(128, 222, 234, 0.75)" }}
-    >
+    <footer className="border-t border-(--border) bg-(--bg-secondary) text-(--text-secondary) transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-14">
-        {/* 
-          Используем Tailwind Grid вместо JS-вычислений.
-          Это позволяет iframe в Puck корректно реагировать на ширину экрана.
-        */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 items-start w-full">
           
           {/* Бренд */}
@@ -114,20 +118,14 @@ export function FooterBlock(props: FooterBlockProps) {
                   className="h-10 w-auto object-contain"
                 />
               ) : (
-                <span
-                  className="text-xl font-bold tracking-tight"
-                  style={{ color: "#e0f7fa" }}
-                >
+                <span className="text-xl font-bold tracking-tight text-(--text-primary)">
                   {props.logoText}
                 </span>
               )}
             </Link>
 
             {props.description && (
-              <p
-                className="mt-4 text-sm leading-relaxed"
-                style={{ color: "rgba(128, 222, 234, 0.6)" }}
-              >
+              <p className="mt-4 text-sm leading-relaxed text-(--text-muted)">
                 {props.description}
               </p>
             )}
@@ -150,27 +148,9 @@ export function FooterBlock(props: FooterBlockProps) {
                       rel="noreferrer"
                       aria-label={label}
                       title={label}
-                      className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150 hover:-translate-y-0.5"
-                      style={{
-                        backgroundColor: "rgba(45, 212, 191, 0.1)",
-                        color: "#2dd4bf",
-                        border: "1px solid rgba(45, 212, 191, 0.18)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(45, 212, 191, 0.18)";
-                        e.currentTarget.style.borderColor =
-                          "rgba(45, 212, 191, 0.35)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(45, 212, 191, 0.1)";
-                        e.currentTarget.style.borderColor =
-                          "rgba(45, 212, 191, 0.18)";
-                      }}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150 hover:-translate-y-0.5 bg-(--accent-dim) text-(--accent) border border-(--border) hover:border-(--border-hover)"
                     >
                       {iconUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={iconUrl}
                           alt={label}
@@ -190,10 +170,7 @@ export function FooterBlock(props: FooterBlockProps) {
           {(props.columns || []).map((col, ci) => (
             <div key={ci} className="min-w-0">
               {col.title && (
-                <h3
-                  className="text-xs font-semibold uppercase tracking-wider mb-4"
-                  style={{ color: "#e0f7fa" }}
-                >
+                <h3 className="text-xs font-semibold uppercase tracking-wider mb-4 text-(--text-primary)">
                   {col.title}
                 </h3>
               )}
@@ -206,8 +183,7 @@ export function FooterBlock(props: FooterBlockProps) {
                         href={l.href}
                         target={l.external ? "_blank" : undefined}
                         rel={l.external ? "noreferrer" : undefined}
-                        className="text-sm transition-colors duration-150 hover:text-[#2dd4bf]"
-                        style={{ color: "rgba(128, 222, 234, 0.6)" }}
+                        className="text-sm transition-colors duration-150 hover:text-(--accent) text-(--text-muted)"
                       >
                         {l.label}
                       </a>
@@ -224,13 +200,11 @@ export function FooterBlock(props: FooterBlockProps) {
                       <li key={ci2}>
                         <a
                           href={c.href}
-                          className="flex items-start gap-3 text-sm transition-colors duration-150 hover:text-[#2dd4bf]"
-                          style={{ color: "rgba(128, 222, 234, 0.6)" }}
+                          className="flex items-start gap-3 text-sm transition-colors duration-150 hover:text-(--accent) text-(--text-muted)"
                         >
                           <Icon
                             size={16}
-                            className="mt-0.5 flex-shrink-0"
-                            style={{ color: "#2dd4bf" }}
+                            className="mt-0.5 flex-shrink-0 text-(--accent)"
                           />
                           <span>{c.text}</span>
                         </a>
@@ -241,26 +215,16 @@ export function FooterBlock(props: FooterBlockProps) {
               )}
 
               {col.type === "support" && col.support?.enabled && (
-                <div
-                  className="rounded-xl p-4"
-                  style={{
-                    backgroundColor: "rgba(45, 212, 191, 0.06)",
-                    border: "1px solid rgba(45, 212, 191, 0.15)",
-                  }}
-                >
+                <div className="rounded-xl p-4 bg-(--accent-dim) border border-(--border)">
                   {col.support.text && (
-                    <p
-                      className="text-xs leading-relaxed mb-3"
-                      style={{ color: "rgba(128, 222, 234, 0.7)" }}
-                    >
+                    <p className="text-xs leading-relaxed mb-3 text-(--text-secondary)">
                       {col.support.text}
                     </p>
                   )}
                   {col.support.button_label && (
                     <a
                       href={col.support.button_href || "#"}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-opacity duration-150 hover:opacity-90"
-                      style={{ backgroundColor: "#2dd4bf", color: "#0a1920" }}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-opacity duration-150 hover:opacity-90 bg-(--accent) text-(--bg-primary)"
                     >
                       {col.support.button_icon && <Headphones size={14} />}
                       {col.support.button_label}
@@ -273,18 +237,36 @@ export function FooterBlock(props: FooterBlockProps) {
         </div>
       </div>
 
-      <div className="border-t border-[rgba(45,212,191,0.12)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs" style={{ color: "rgba(128, 222, 234, 0.5)" }}>
-            {props.copyright || ""}
-          </p>
-          {props.credit && (
-            <p
-              className="text-xs"
-              style={{ color: "rgba(128, 222, 234, 0.35)" }}
-            >
-              {props.credit}
+      <div className="border-t border-(--border)">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <p className="text-xs text-(--text-muted)">
+              {props.copyright || ""}
             </p>
+            {props.credit && (
+              <p className="text-xs text-(--text-muted) opacity-70">
+                {props.credit}
+              </p>
+            )}
+          </div>
+
+          {/* Переключатель темы */}
+          {mounted && (
+            <button
+              type="button"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="flex items-center gap-2 text-xs font-medium transition-colors text-(--text-muted) hover:text-(--accent)"
+            >
+              {theme === "dark" ? (
+                <>
+                  <Sun size={14} /> Светлая тема
+                </>
+              ) : (
+                <>
+                  <Moon size={14} /> Тёмная тема
+                </>
+              )}
+            </button>
           )}
         </div>
       </div>

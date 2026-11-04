@@ -1,3 +1,4 @@
+// src/components/blog/BlogPostActions.tsx
 'use client';
 
 import { Share2, Bookmark, BookmarkCheck } from 'lucide-react';
@@ -80,7 +81,7 @@ export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
     <div className="flex items-center gap-3">
       <button
         onClick={handleShare}
-        className="p-2 text-gray-400 hover:text-[#2dd4bf] transition-colors rounded-lg hover:bg-[rgba(45,212,191,0.06)]"
+        className="p-2 text-(--text-muted) hover:text-(--accent) transition-colors rounded-lg hover:bg-(--accent-dim)"
         aria-label="Поделиться"
         title="Поделиться"
       >
@@ -88,12 +89,12 @@ export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
       </button>
       <button
         onClick={handleBookmark}
-        className="p-2 text-gray-400 hover:text-[#2dd4bf] transition-colors rounded-lg hover:bg-[rgba(45,212,191,0.06)]"
+        className="p-2 text-(--text-muted) hover:text-(--accent) transition-colors rounded-lg hover:bg-(--accent-dim)"
         aria-label={isBookmarked ? 'Удалить из закладок' : 'Добавить в закладки'}
         title={isBookmarked ? 'Удалить из закладок' : 'Добавить в закладки'}
       >
         {isBookmarked ? (
-          <BookmarkCheck size={18} className="text-[#2dd4bf]" />
+          <BookmarkCheck size={18} className="text-(--accent)" />
         ) : (
           <Bookmark size={18} />
         )}

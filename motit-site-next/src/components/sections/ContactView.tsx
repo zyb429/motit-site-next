@@ -4,13 +4,8 @@ import ContactClient from "./ContactClient";
 export type ContactItem = {
   icon: "phone" | "mail" | "map-pin" | "clock";
   label: string;
-  /** Одиночное значение (обратная совместимость) */
   value: string;
   href?: string;
-  /**
-   * Несколько значений с необязательным комментарием.
-   * Если задано — рендерится вместо `value`/`href`.
-   */
   values?: { value: string; comment?: string }[];
 };
 
@@ -40,7 +35,7 @@ const ICONS = {
 } as const;
 
 // ============================================
-// Парсинг графика работы → массив строк
+// Парсинг графика работы
 // ============================================
 type ScheduleLine = {
   days: string;
@@ -202,20 +197,15 @@ function groupToLines(days: DayInfo[]): ScheduleLine[] {
 }
 
 // ============================================
-// Рендер значений контакта (одно или несколько)
+// Рендер значений контакта
 // ============================================
-function ContactValue({
-  item,
-}: {
-  item: ContactItem;
-}) {
-  // Несколько значений с комментариями (телефоны / email из настроек)
+function ContactValue({ item }: { item: ContactItem }) {
   if (item.values && item.values.length > 0) {
     const isTel = item.icon === "phone";
     const isMail = item.icon === "mail";
 
     return (
-      <div className="flex flex-col gap-1 text-base">
+      <div className="flex flex-col gap-1 text-base text-(--text-secondary)">
         {item.values.map((v, idx) => {
           const href = isTel
             ? `tel:${v.value.replace(/[^\d+]/g, "")}`
@@ -224,30 +214,18 @@ function ContactValue({
               : undefined;
 
           const line = href ? (
-            <a
-              href={href}
-              style={{ color: "rgba(128, 222, 234, 0.85)" }}
-              className="hover:underline break-words"
-            >
+            <a href={href} className="hover:underline break-words">
               {v.value}
             </a>
           ) : (
-            <span
-              style={{ color: "rgba(128, 222, 234, 0.85)" }}
-              className="break-words"
-            >
-              {v.value}
-            </span>
+            <span className="break-words">{v.value}</span>
           );
 
           return (
             <div key={idx} className="leading-snug">
               {line}
               {v.comment && (
-                <span
-                  className="block text-xs"
-                  style={{ color: "rgba(128, 222, 234, 0.55)" }}
-                >
+                <span className="block text-xs text-(--text-muted)">
                   {v.comment}
                 </span>
               )}
@@ -258,12 +236,7 @@ function ContactValue({
     );
   }
 
-  // Одиночное значение (обратная совместимость)
-  return (
-    <span className="text-base" style={{ color: "rgba(128, 222, 234, 0.85)" }}>
-      {item.value}
-    </span>
-  );
+  return <span className="text-base text-(--text-secondary)">{item.value}</span>;
 }
 
 // ============================================
@@ -279,21 +252,15 @@ export default function ContactView({
   fields,
   workHours,
 }: ContactViewProps) {
-  const scheduleLines = workHours
-    ? groupToLines(parseToDays(workHours))
-    : [];
+  const scheduleLines = workHours ? groupToLines(parseToDays(workHours)) : [];
 
   return (
-    <section
-      id="contact"
-      className="section-padding"
-      style={{ backgroundColor: "#0a1920" }}
-    >
+    <section id="contact" className="section-padding bg-(--bg-primary) transition-colors duration-300">
       <div className="content-container">
         <div className="mb-12 md:mb-16">
           <span className="section-label block mb-3">{label}</span>
-          <h2 className="section-title mb-4">{title}</h2>
-          <p className="section-subtitle max-w-150">{subtitle}</p>
+          <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
+          <p className="section-subtitle max-w-150 text-(--text-secondary)">{subtitle}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 lg:gap-16">
@@ -312,40 +279,27 @@ export default function ContactView({
                 return (
                   <div
                     key={i}
-                    className="flex items-start gap-4 rounded-xl p-5 transition-all duration-150"
-                    style={{
-                      backgroundColor: "#0f2832",
-                      border: "1.5px solid rgba(45, 212, 191, 0.15)",
-                    }}
+                    className="flex items-start gap-4 rounded-xl p-5 transition-all duration-150 bg-(--bg-card) border border-(--border)"
                   >
-                    <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: "rgba(45, 212, 191, 0.12)" }}
-                    >
-                      <Icon size={20} style={{ color: "#2dd4bf" }} />
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-(--accent-dim)">
+                      <Icon size={20} className="text-(--accent)" />
                     </div>
                     <div className="min-w-0">
-                      <h4
-                        className="font-semibold text-base mb-1"
-                        style={{ color: "#e0f7fa" }}
-                      >
+                      <h4 className="font-semibold text-base mb-1 text-(--text-primary)">
                         {item.label}
                       </h4>
-                      <div
-                        className="flex flex-col gap-0.5 text-base"
-                        style={{ color: "rgba(128, 222, 234, 0.85)" }}
-                      >
+                      <div className="flex flex-col gap-0.5 text-base text-(--text-secondary)">
                         {scheduleLines.map((line, idx) => (
                           <div key={idx} className="break-words">
-                            <span style={{ color: "rgba(128, 222, 234, 0.6)" }}>
+                            <span className="text-(--text-muted)">
                               {line.days}:
                             </span>{" "}
                             <span
-                              style={{
-                                color: line.isWorking
-                                  ? "rgba(128, 222, 234, 0.85)"
-                                  : "rgba(248, 113, 113, 0.8)",
-                              }}
+                              className={
+                                line.isWorking
+                                  ? "text-(--text-secondary)"
+                                  : "text-red-400"
+                              }
                             >
                               {line.time}
                             </span>
@@ -359,24 +313,12 @@ export default function ContactView({
 
               // Обычный контакт
               const content = (
-                <div
-                  className="flex items-start gap-4 rounded-xl p-5 transition-all duration-150"
-                  style={{
-                    backgroundColor: "#0f2832",
-                    border: "1.5px solid rgba(45, 212, 191, 0.15)",
-                  }}
-                >
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: "rgba(45, 212, 191, 0.12)" }}
-                  >
-                    <Icon size={20} style={{ color: "#2dd4bf" }} />
+                <div className="flex items-start gap-4 rounded-xl p-5 transition-all duration-150 bg-(--bg-card) border border-(--border)">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-(--accent-dim)">
+                    <Icon size={20} className="text-(--accent)" />
                   </div>
                   <div className="min-w-0">
-                    <h4
-                      className="font-semibold text-base mb-1"
-                      style={{ color: "#e0f7fa" }}
-                    >
+                    <h4 className="font-semibold text-base mb-1 text-(--text-primary)">
                       {item.label}
                     </h4>
                     <ContactValue item={item} />
@@ -384,8 +326,6 @@ export default function ContactView({
                 </div>
               );
 
-              // Если контакт содержит только одно значение с href — обернём в <a>
-              // Для многоэлементных (values) ссылки уже внутри.
               const wrapInLink =
                 !item.values || item.values.length === 0
                   ? item.href
@@ -396,7 +336,6 @@ export default function ContactView({
                   key={i}
                   href={wrapInLink}
                   className="block transition-all duration-150 hover:-translate-y-1"
-                  style={{ color: "inherit", textDecoration: "none" }}
                 >
                   {content}
                 </a>

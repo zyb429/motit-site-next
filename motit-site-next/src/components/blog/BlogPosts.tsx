@@ -90,7 +90,7 @@ export function BlogPosts({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+        <h2 className="text-sm font-medium text-(--text-muted) uppercase tracking-wider">
           Статьи
         </h2>
         <ViewModeToggle value={viewMode} onChange={setViewMode} />

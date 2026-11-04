@@ -55,12 +55,12 @@ export default function KeyServices({ label, title, subtitle, items }: KeyServic
   };
 
   return (
-    <section style={{ backgroundColor: '#0d2029' }}>
+    <section className="bg-(--bg-secondary) transition-colors duration-300">
       <div className="content-container section-padding">
         <div className="mb-18 md:mb-14">
           <span className="section-label block mb-3">{label}</span>
-          <h2 className="section-title mb-4">{title}</h2>
-          <p className="section-subtitle max-w-[560px]">{subtitle}</p>
+          <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
+          <p className="section-subtitle max-w-[560px] text-(--text-secondary)">{subtitle}</p>
         </div>
 
         <div
@@ -72,45 +72,32 @@ export default function KeyServices({ label, title, subtitle, items }: KeyServic
             return (
               <div
                 key={index}
-                className={`reveal reveal-d${index + 1} card-dark relative overflow-hidden cursor-pointer`}
+                className={`reveal reveal-d${index + 1} relative overflow-hidden cursor-pointer flex flex-col rounded-2xl p-6 transition-all duration-400 bg-(--bg-card) ${
+                  isOpen ? 'border-[1.5px] border-(--accent)' : 'border-[1.5px] border-(--border)'
+                }`}
                 onClick={() => toggleCard(index)}
                 style={{
-                  height: 'auto',
-                  border: isOpen
-                    ? '1.5px solid rgba(45, 212, 191, 0.2)'
-                    : '1.5px solid transparent',
-                  transition: 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                  padding: '24px 22px 20px',
-                  backgroundColor: '#0f2832',
-                  borderRadius: '16px',
-                  boxShadow: isOpen
-                    ? '0 8px 30px rgba(45, 212, 191, 0.06)'
-                    : '0 4px 20px rgba(0, 0, 0, 0.15)',
-                  display: 'flex',
-                  flexDirection: 'column',
                   opacity: 1,
+                  boxShadow: isOpen ? '0 8px 30px var(--accent-dim)' : 'none',
                 }}
               >
                 <span
-                  className="block font-extrabold leading-[0.8] mb-3"
+                  className="block font-extrabold leading-[0.8] mb-3 text-(--accent) opacity-20"
                   style={{
                     fontSize: 'clamp(2rem, 3.5vw, 3.8rem)',
-                    color: 'rgba(45, 212, 191, 0.12)',
                   }}
                 >
                   {service.number}
                 </span>
                 <h3
-                  className="font-semibold text-base md:text-lg leading-snug mb-2"
-                  style={{ color: '#e0f7fa' }}
+                  className="font-semibold text-base md:text-lg leading-snug mb-2 text-(--text-primary)"
                 >
                   {service.title}
                 </h3>
                 <div>
                   <p
-                    className="text-sm md:text-base leading-relaxed transition-all duration-300"
+                    className="text-sm md:text-base leading-relaxed transition-all duration-300 text-(--text-secondary)"
                     style={{
-                      color: 'rgba(128, 222, 234, 0.7)',
                       display: '-webkit-box',
                       WebkitLineClamp: isOpen ? 'none' : 5,
                       WebkitBoxOrient: 'vertical',
@@ -122,28 +109,18 @@ export default function KeyServices({ label, title, subtitle, items }: KeyServic
                 </div>
 
                 <div
-                  className="flex items-center gap-1.5 sm:gap-2 pt-3"
-                  style={{
-                    borderTop: '1px solid rgba(45, 212, 191, 0.08)',
-                    marginTop: '12px',
-                    flexShrink: 0,
-                  }}
+                  className="flex items-center gap-1.5 sm:gap-2 pt-3 mt-3 border-t border-(--border)"
                 >
                   <ChevronDown
                     size={16}
-                    className="flex-shrink-0 transition-transform duration-300"
+                    className="flex-shrink-0 transition-transform duration-300 text-(--accent)"
                     style={{
-                      color: '#2dd4bf',
                       transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                     }}
                   />
                   <span
-                    className="text-[10px] sm:text-xs font-medium uppercase tracking-wider"
-                    style={{
-                      color: '#2dd4bf',
-                      minWidth: '70px',
-                      display: 'inline-block',
-                    }}
+                    className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-(--accent)"
+                    style={{ minWidth: '70px', display: 'inline-block' }}
                   >
                     {isOpen ? 'Свернуть' : 'Подробнее'}
                   </span>

@@ -14,19 +14,20 @@ type Field = {
   options?: { label: string; value: string }[] | string | null;
 };
 
-const inputStyle = {
-  backgroundColor: "#0f2832",
-  border: "1.5px solid rgba(45, 212, 191, 0.2)",
-  color: "#e0f7fa",
+const inputStyle: React.CSSProperties = {
+  backgroundColor: "var(--bg-card)",
+  border: "1.5px solid var(--border)",
+  color: "var(--text-primary)",
   fontSize: "16px",
 };
 
 const focusIn = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-  e.currentTarget.style.borderColor = "#2dd4bf";
-  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(45, 212, 191, 0.1)";
+  e.currentTarget.style.borderColor = "var(--accent)";
+  e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-dim)";
 };
+
 const focusOut = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-  e.currentTarget.style.borderColor = "rgba(45, 212, 191, 0.2)";
+  e.currentTarget.style.borderColor = "var(--border)";
   e.currentTarget.style.boxShadow = "none";
 };
 
@@ -49,7 +50,6 @@ export default function ContactClient({
   const formRef = useRef<HTMLFormElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
 
-  // 🔥 Загрузка полей, если они не переданы (например, на главной через Puck)
   useEffect(() => {
     if (initialFields && initialFields.length > 0) {
       setFields(initialFields);
@@ -129,7 +129,6 @@ export default function ContactClient({
       if (v) data[field.name] = String(v).trim();
     }
 
-    // required-валидация
     for (const field of fields) {
       if (field.required && !data[field.name]) {
         setFormState("error");
@@ -139,7 +138,6 @@ export default function ContactClient({
       }
     }
 
-    // email-валидация, если есть поле type=email
     const emailField = fields.find((f) => f.type === "email");
     if (emailField && data[emailField.name] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data[emailField.name])) {
       setFormState("error");
@@ -187,22 +185,15 @@ export default function ContactClient({
     <div ref={sectionRef} className="reveal reveal-d1" style={{ opacity: 1 }}>
       <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
         
-        {/* Индикатор загрузки, если поля грузятся с клиента */}
         {isLoadingFields && (
-          <p style={{ color: "rgba(128, 222, 234, 0.6)" }}>
-            Загрузка полей формы...
-          </p>
+          <p className="text-(--text-muted)">Загрузка полей формы...</p>
         )}
 
-        {/* Сообщение, только если поля загрузились и их реально нет */}
         {!isLoadingFields && fields.length === 0 && (
-          <p style={{ color: "rgba(128, 222, 234, 0.6)" }}>
-            Поля формы не настроены в админке.
-          </p>
+          <p className="text-(--text-muted)">Поля формы не настроены в админке.</p>
         )}
 
         {fields.map((field) => {
-          // Парсим options, если пришли строкой
           let parsedOptions: { label: string; value: string }[] = [];
           if (typeof field.options === "string") {
             try {
@@ -214,17 +205,13 @@ export default function ContactClient({
             parsedOptions = field.options;
           }
 
-          // placeholder как в старом ContactClient
           const basePlaceholder = field.placeholder?.trim() || field.label;
-          const placeholder = field.required
-            ? `${basePlaceholder} *`
-            : basePlaceholder;
+          const placeholder = field.required ? `${basePlaceholder} *` : basePlaceholder;
 
-          // select требует label сверху — иначе непонятно, что выбирать
           if (field.type === "select") {
             return (
               <div key={field.name} className="space-y-1">
-                <label className="text-sm" style={{ color: "#e0f7fa" }}>
+                <label className="text-sm text-(--text-primary)">
                   {field.label}
                   {field.required && " *"}
                 </label>
@@ -287,23 +274,17 @@ export default function ContactClient({
                 setIsPrivacyAgreed(e.target.checked);
                 if (e.target.checked) setPrivacyError("");
               }}
-              className="mt-1 w-5 h-5 shrink-0 rounded transition-all duration-150"
-              style={{
-                accentColor: "#2dd4bf",
-                backgroundColor: "#0f2832",
-                border: "2px solid rgba(45, 212, 191, 0.3)",
-                cursor: "pointer",
-              }}
+              className="mt-1 w-5 h-5 shrink-0 rounded border border-(--border) cursor-pointer"
+              style={{ accentColor: "var(--accent)" }}
               required
             />
-            <span className="text-sm leading-relaxed" style={{ color: "#e0f7fa" }}>
+            <span className="text-sm leading-relaxed text-(--text-primary)">
               Я согласен(а) на обработку персональных данных в соответствии с{" "}
               <a
                 href={privacyHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-teal-400 hover:text-teal-300 underline transition-colors"
-                style={{ color: "#2dd4bf" }}
+                className="text-(--accent) hover:opacity-80 underline transition-colors"
               >
                 {privacyLabel}
               </a>
@@ -311,24 +292,18 @@ export default function ContactClient({
           </label>
 
           {privacyError && (
-            <p className="text-sm text-red-400 pl-8" style={{ color: "#f87171" }}>
+            <p className="text-sm text-red-500 pl-8">
               {privacyError}
             </p>
           )}
         </div>
 
         {formState === "error" && errorMessage && (
-          <div
-            className="flex items-start gap-3 rounded-xl p-4"
-            style={{
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-            }}
-          >
-            <AlertCircle size={20} className="text-red-400 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 rounded-xl p-4 bg-red-500/10 border border-red-500/20">
+            <AlertCircle size={20} className="text-red-500 shrink-0 mt-0.5" />
             <div>
-              <p className="text-red-400 font-medium">Ошибка отправки</p>
-              <p className="text-red-300/80 text-sm">{errorMessage}</p>
+              <p className="text-red-500 font-medium">Ошибка отправки</p>
+              <p className="text-red-400 text-sm">{errorMessage}</p>
             </div>
           </div>
         )}
@@ -347,7 +322,7 @@ export default function ContactClient({
         </button>
 
         {formState === "success" && (
-          <p className="text-sm text-center" style={{ color: "rgba(52, 211, 153, 0.7)" }}>
+          <p className="text-sm text-center text-emerald-500">
             ✓ Заявка отправлена! Мы свяжемся с вами в ближайшее время
           </p>
         )}

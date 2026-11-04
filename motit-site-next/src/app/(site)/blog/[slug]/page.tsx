@@ -1,4 +1,3 @@
-// src/app/(site)/blog/[slug]/page.tsx
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -34,7 +33,7 @@ const TIPTAP_EXTENSIONS = [
     codeBlock: false,
     link: {
       openOnClick: false,
-      HTMLAttributes: { class: "text-[#2dd4bf] hover:text-[#14b8a6]" },
+      HTMLAttributes: { class: "text-(--accent) hover:opacity-80" },
     },
   }),
   CodeBlockLowlight.configure({
@@ -303,11 +302,11 @@ export default async function BlogPostPage({
   };
 
   return (
-    <main className="min-h-screen bg-[#0a1920] py-8 md:py-12">
+    <main className="min-h-screen bg-(--bg-primary) py-8 md:py-12 transition-colors duration-300">
       <article className="container mx-auto px-4 max-w-3xl">
         <Link
           href={getBackUrl()}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#2dd4bf] transition-colors mb-6"
+          className="inline-flex items-center gap-1.5 text-sm text-(--text-secondary) hover:text-(--accent) transition-colors mb-6"
         >
           <ArrowLeft size={16} />
           Назад к новостям
@@ -320,7 +319,7 @@ export default async function BlogPostPage({
                 <Link
                   key={cat.id}
                   href={`/blog?category=${cat.slug}`}
-                  className="text-xs font-medium text-[#2dd4bf] bg-[#2dd4bf]/10 px-3 py-1 rounded-full hover:bg-[#2dd4bf]/20 transition-colors"
+                  className="text-xs font-medium text-(--accent) bg-(--accent-dim) px-3 py-1 rounded-full hover:bg-(--accent)/20 transition-colors"
                 >
                   {cat.name}
                 </Link>
@@ -328,15 +327,15 @@ export default async function BlogPostPage({
             </div>
           )}
 
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#e0f7fa] leading-tight tracking-tight mb-4">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-(--text-primary) leading-tight tracking-tight mb-4">
             {post.title}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-(--text-secondary)">
             {author && (
               <Link
                 href={`/authors/${author.username}`}
-                className="flex items-center gap-1.5 hover:text-[#2dd4bf] transition-colors"
+                className="flex items-center gap-1.5 hover:text-(--accent) transition-colors"
               >
                 {(() => {
                   const avatarSrc = getSafeImageUrl(author.avatar_url);
@@ -349,7 +348,7 @@ export default async function BlogPostPage({
                       className="w-5 h-5 rounded-full object-cover"
                     />
                   ) : (
-                    <User size={14} className="text-[#2dd4bf]" />
+                    <User size={14} className="text-(--accent)" />
                   );
                 })()}
                 {author.full_name || author.username}
@@ -357,12 +356,12 @@ export default async function BlogPostPage({
             )}
             {post.publishedAt && (
               <span className="flex items-center gap-1.5">
-                <Calendar size={14} className="text-[#2dd4bf]" />
+                <Calendar size={14} className="text-(--accent)" />
                 {formatDate(post.publishedAt, tz, locale, dateOpts)}
               </span>
             )}
             <span className="flex items-center gap-1.5">
-              <Clock size={14} className="text-[#2dd4bf]" />
+              <Clock size={14} className="text-(--accent)" />
               {readingTime} мин чтения
             </span>
             {post.post_status === "draft" && (
@@ -374,7 +373,7 @@ export default async function BlogPostPage({
         </header>
 
         {post.featuredImage?.url && (
-          <div className="mb-8 rounded-lg overflow-hidden border border-[rgba(45,212,191,0.08)]">
+          <div className="mb-8 rounded-lg overflow-hidden border border-(--border)">
             <Image
               src={
                 getSafeImageUrl(post.featuredImage.url) ??
@@ -394,14 +393,14 @@ export default async function BlogPostPage({
           {htmlContent ? (
             <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           ) : (
-            <p className="text-gray-500">Нет содержимого</p>
+            <p className="text-(--text-muted)">Нет содержимого</p>
           )}
           <CodeBlockCopyHandler />
         </div>
 
-        <footer className="mt-12 pt-6 border-t border-[rgba(45,212,191,0.06)]">
+        <footer className="mt-12 pt-6 border-t border-(--border)">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-(--text-secondary)">
               <span>
                 Опубликовано в{" "}
                 {categories.length > 0 ? (
@@ -410,13 +409,13 @@ export default async function BlogPostPage({
                       <span key={cat.id}>
                         <Link
                           href={`/blog?category=${cat.slug}`}
-                          className="text-[#2dd4bf] hover:text-[#14b8a6] transition-colors inline-flex items-center gap-1"
+                          className="text-(--accent) hover:opacity-80 transition-colors inline-flex items-center gap-1"
                         >
                           <Tag size={14} />
                           {cat.name}
                         </Link>
                         {i < categories.length - 1 && (
-                          <span className="text-gray-500">, </span>
+                          <span className="text-(--text-muted)">, </span>
                         )}
                       </span>
                     ))}
