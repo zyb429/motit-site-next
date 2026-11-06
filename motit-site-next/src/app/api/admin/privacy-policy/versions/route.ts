@@ -30,6 +30,20 @@ export async function GET(req: Request) {
     },
   });
 
+  // Проверяем, какие файлы из версий ещё живы
+  const fileIds = rows
+    .filter((v) => v.displayMode === "file" && v.fileId)
+    .map((v) => v.fileId!) as number[];
+
+  const aliveFiles =
+    fileIds.length > 0
+      ? await prisma.files.findMany({
+          where: { id: { in: fileIds } },
+          select: { id: true },
+        })
+      : [];
+  const aliveSet = new Set(aliveFiles.map((f) => f.id));
+
   return NextResponse.json({
     versions: rows.map((v) => ({
       id: v.id,
@@ -37,6 +51,11 @@ export async function GET(req: Request) {
       displayMode: v.displayMode as PrivacyMode,
       fileId: v.fileId ?? null,
       fileName: v.fileName ?? null,
+      // для file-режима сообщаем, доступен ли ещё файл
+      fileExists:
+        v.displayMode === "file" && v.fileId
+          ? aliveSet.has(v.fileId)
+          : undefined,
       created_at: v.created_at.toISOString(),
       created_by: v.created_by
         ? {

@@ -4,6 +4,8 @@ import { Prisma } from "@generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
+type PrivacyMode = "page" | "document" | "file";
+
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user?.isAdmin && user?.role !== "worker") {
@@ -22,7 +24,11 @@ export async function POST(req: Request) {
   }
 
   const { versionId } = body as { versionId?: unknown };
-  if (typeof versionId !== "number" || !Number.isFinite(versionId)) {
+  if (
+    typeof versionId !== "number" ||
+    !Number.isInteger(versionId) ||
+    versionId <= 0
+  ) {
     return NextResponse.json({ error: "Invalid versionId" }, { status: 400 });
   }
 
@@ -33,10 +39,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Version not found" }, { status: 404 });
   }
 
+  const versionMode = version.displayMode as PrivacyMode;
+
+  // === Проверка существования файла для file-режима ===
+  let restoredFile: { id: number; url: string; name: string } | null = null;
+
+  if (versionMode === "file") {
+    if (!version.fileId) {
+      return NextResponse.json(
+        { error: "Версия в режиме файла не содержит fileId" },
+        { status: 409 },
+      );
+    }
+    const f = await prisma.files.findUnique({ where: { id: version.fileId } });
+    if (!f) {
+      return NextResponse.json(
+        {
+          error:
+            "Файл из этой версии был удалён. Откат к ней невозможен — восстановите файл или выберите другую версию.",
+        },
+        { status: 409 },
+      );
+    }
+    restoredFile = {
+      id: f.id,
+      url: f.url,
+      name: version.fileName ?? f.name,
+    };
+  }
+
   const existing = await prisma.privacyPolicy.findUnique({ where: { id: 1 } });
 
   try {
     await prisma.$transaction(async (tx) => {
+      // 1. Сохраняем ТЕКУЩЕЕ состояние в историю
       if (existing) {
         await tx.privacyPolicyVersion.create({
           data: {
@@ -52,26 +88,36 @@ export async function POST(req: Request) {
         });
       }
 
+      // 2. Восстанавливаем состояние версии
       const restoredContent: Prisma.InputJsonValue | typeof Prisma.DbNull =
         version.content === null
           ? Prisma.DbNull
           : (version.content as Prisma.InputJsonValue);
 
+      // ВАЖНО: при откате на file НЕ трогаем content —
+      // иначе затрём ранее сохранённый текст с прошлой page/document-версии
+      const updateData: Prisma.PrivacyPolicyUpdateInput = {
+        displayMode: versionMode,
+        fileId: versionMode === "file" ? version.fileId ?? null : null,
+        fileName: versionMode === "file" ? version.fileName ?? null : null,
+      };
+      if (versionMode !== "file") {
+        updateData.content = restoredContent;
+      }
+
+      const createData: Prisma.PrivacyPolicyCreateInput = {
+        id: 1,
+        displayMode: versionMode,
+        fileId: versionMode === "file" ? version.fileId ?? null : null,
+        fileName: versionMode === "file" ? version.fileName ?? null : null,
+        // при первом создании в file-режиме контента нет
+        content: versionMode === "file" ? Prisma.DbNull : restoredContent,
+      };
+
       await tx.privacyPolicy.upsert({
         where: { id: 1 },
-        update: {
-          content: restoredContent,
-          displayMode: version.displayMode,
-          fileId: version.displayMode === "file" ? version.fileId ?? null : null,
-          fileName: version.displayMode === "file" ? version.fileName ?? null : null,
-        },
-        create: {
-          id: 1,
-          content: restoredContent,
-          displayMode: version.displayMode,
-          fileId: version.displayMode === "file" ? version.fileId ?? null : null,
-          fileName: version.displayMode === "file" ? version.fileName ?? null : null,
-        },
+        update: updateData,
+        create: createData,
       });
     });
   } catch (e) {
@@ -79,5 +125,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "DB error" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  // Возвращаем актуальный file — клиент восстановит стейт
+  return NextResponse.json({ ok: true, file: restoredFile });
 }
