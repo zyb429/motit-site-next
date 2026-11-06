@@ -37,9 +37,18 @@ export default async function SiteLayout({
 
   return (
     <div className="site-root bg-(--bg-primary) text-(--text-primary) min-h-screen transition-colors duration-300">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `:root { --accent: ${settings.accentColor ?? "#6366f1"}; }`,
+        }}
+      />
+
       <HeaderBlock {...headerProps} />
+
       <main className="min-h-screen">{children}</main>
+
       <DraftModeIndicator />
+
       <SitePuckRenderer kind="footer" data={footer} />
     </div>
   );
