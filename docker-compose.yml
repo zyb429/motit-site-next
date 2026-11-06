@@ -28,7 +28,7 @@ services:
       start_period: 30s
 
   minio:
-    image: bigbeartechworld/big-bear-minio:latest
+    image: minio/minio:latest
     container_name: motit-minio
     restart: unless-stopped
     environment:
@@ -47,7 +47,7 @@ services:
       retries: 10
 
   minio-init:
-    image: netvark/mc:latest
+    image: minio/mc:latest
     depends_on:
       minio:
         condition: service_healthy

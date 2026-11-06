@@ -54,14 +54,35 @@ function FileInput({
     setError(null);
     try {
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("files", file);
       fd.append("folder", folder);
 
       const res = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error((await res.text()) || `HTTP ${res.status}`);
 
-      const data: { url: string; fileId: number; name: string } = await res.json();
-      onChange({ url: data.url, fileId: data.fileId, name: data.name });
+      if (!res.ok) {
+        // /api/upload возвращает JSON: { error: "..." }
+        const err = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // /api/upload возвращает массив:
+      // [{ id, documentId, name, url, mime, size }]
+      const uploaded = Array.isArray(data) ? data[0] : data?.data?.[0] ?? data;
+
+      if (!uploaded?.url) {
+        throw new Error("Некорректный ответ загрузки: нет url");
+      }
+
+      onChange({
+        url: uploaded.url,
+        // сервер возвращает "id", а не "fileId"
+        fileId: uploaded.id ?? uploaded.fileId,
+        name: uploaded.name,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка загрузки");
     } finally {

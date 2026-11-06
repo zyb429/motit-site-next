@@ -59,6 +59,20 @@ function resolveMime(file: File): string {
   return EXT_MIME_MAP[ext] ?? "application/octet-stream";
 }
 
+/**
+ * Разрешённые символы для папки: буквы, цифры, дефис, подчёркивание, слэш.
+ * Защита от path traversal (`..`, `//`, абсолютные пути).
+ */
+function sanitizeFolder(raw: string | null): string {
+  if (!raw) return "";
+  return raw
+    .trim()
+    .replace(/^\/+|\/+$/g, "")        // убрать ведущие/хвостовые слэши
+    .replace(/[^a-zA-Z0-9/_-]/g, "") // только безопасные символы
+    .replace(/\/+/g, "/")             // убрать двойные слэши
+    .replace(/\.\./g, "");            // убрать ".."
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -81,6 +95,9 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    // Папка из формы (Puck-поля сертификатов/политики шлют "certificates" / "policies")
+    const folder = sanitizeFolder(formData.get("folder") as string | null);
 
     const created: {
       id: number;
@@ -109,7 +126,11 @@ export async function POST(request: NextRequest) {
 
       const buffer = Buffer.from(await file.arrayBuffer());
       const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
-      const key = `uploads/${randomUUID()}.${ext}`;
+
+      // Если folder задан — кладём в него, иначе в uploads/
+      const key = folder
+        ? `${folder}/${randomUUID()}.${ext}`
+        : `uploads/${randomUUID()}.${ext}`;
 
       await s3.send(
         new PutObjectCommand({
@@ -130,6 +151,7 @@ export async function POST(request: NextRequest) {
           size: file.size,
           url,
           provider: "s3",
+          folder_path: folder || null,
           created_at: new Date(),
           updated_at: new Date(),
         },
