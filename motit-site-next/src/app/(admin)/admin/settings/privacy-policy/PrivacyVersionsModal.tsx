@@ -7,14 +7,21 @@ import type { JSONContent } from "@tiptap/core";
 
 type PrivacyMode = "page" | "document" | "file";
 
+type PrivacyFile = { id: number; url: string; name: string };
+
 type Version = {
   id: number;
   content: JSONContent | null;
   displayMode: PrivacyMode;
   fileId: number | null;
   fileName: string | null;
+  fileExists?: boolean;
   created_at: string;
-  created_by: { id: number; username: string | null; full_name: string | null } | null;
+  created_by: {
+    id: number;
+    username: string | null;
+    full_name: string | null;
+  } | null;
 };
 
 const MODE_LABELS: Record<PrivacyMode, string> = {
@@ -34,6 +41,7 @@ export function PrivacyVersionsModal({
   onRolledBack: (next: {
     content: JSONContent | null;
     displayMode: PrivacyMode;
+    file: PrivacyFile | null;
   }) => void;
   currentMode: PrivacyMode;
 }) {
@@ -70,6 +78,7 @@ export function PrivacyVersionsModal({
 
   const handleTabChange = (mode: PrivacyMode) => {
     setActiveTab(mode);
+    setVersions([]);
     load(mode);
   };
 
@@ -94,9 +103,31 @@ export function PrivacyVersionsModal({
           alert(`Ошибка: ${body.error ?? res.status}`);
           return;
         }
+        const data = (await res.json().catch(() => ({}))) as {
+          file?: { id: number; url: string; name: string } | null;
+        };
+
+        // Восстанавливаем файл:
+        // 1) если бэкенд вернул актуальный file (с url) — используем его;
+        // 2) иначе, если у версии есть fileId, но url неизвестен —
+        //    создаём заглушку (url пустой).
+        let restoredFile: PrivacyFile | null = null;
+        if (v.displayMode === "file" && v.fileId) {
+          if (data.file && data.file.id === v.fileId && data.file.url) {
+            restoredFile = data.file;
+          } else {
+            restoredFile = {
+              id: v.fileId,
+              url: "",
+              name: v.fileName ?? "файл",
+            };
+          }
+        }
+
         onRolledBack({
           content: v.content,
           displayMode: v.displayMode,
+          file: restoredFile,
         });
         onClose();
       } catch (e) {
@@ -113,15 +144,15 @@ export function PrivacyVersionsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-(--bg-card) rounded-xl border border-(--border) w-full max-w-2xl max-h-[80vh] flex flex-col"
+        className="bg-(--bg-card) rounded-xl border border-(--border) w-full max-w-2xl max-h-[90vh] sm:max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-4 border-b border-(--border)">
-          <h2 className="text-lg font-semibold text-(--text-primary)">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-(--border)">
+          <h2 className="text-base sm:text-lg font-semibold text-(--text-primary)">
             История версий
           </h2>
           <button
@@ -134,13 +165,13 @@ export function PrivacyVersionsModal({
           </button>
         </div>
 
-        <div className="flex gap-1 p-2 border-b border-(--border) bg-(--bg-secondary)">
+        <div className="flex gap-1 p-2 border-b border-(--border) bg-(--bg-secondary) overflow-x-auto">
           {(Object.keys(MODE_LABELS) as PrivacyMode[]).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => handleTabChange(m)}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === m
                   ? "bg-(--accent) text-(--bg-primary)"
                   : "text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-card)"
@@ -151,7 +182,7 @@ export function PrivacyVersionsModal({
           ))}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8 text-(--text-muted)">
               <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -174,45 +205,55 @@ export function PrivacyVersionsModal({
             </div>
           ) : (
             <ul className="space-y-2">
-              {versions.map((v) => (
-                <li
-                  key={v.id}
-                  className="flex items-center justify-between gap-3 p-3 rounded-lg border border-(--border) hover:border-(--border-hover) transition-colors"
-                >
-                  <div className="min-w-0 flex items-start gap-2">
-                    {v.displayMode === "file" && (
-                      <FileText className="w-4 h-4 text-(--accent) shrink-0 mt-0.5" />
-                    )}
-                    <div className="min-w-0">
-                      <div className="text-sm text-(--text-primary) truncate">
-                        {new Date(v.created_at).toLocaleString("ru-RU")}
-                      </div>
-                      <div className="text-xs text-(--text-muted) truncate">
-                        {v.displayMode === "file"
-                          ? v.fileName ?? "файл"
-                          : `Режим: ${MODE_LABELS[v.displayMode]}`}{" "}
-                        · Автор:{" "}
-                        {v.created_by?.full_name ||
-                          v.created_by?.username ||
-                          "—"}
+              {versions.map((v) => {
+                const isDeadFile =
+                  v.displayMode === "file" && v.fileExists === false;
+                return (
+                  <li
+                    key={v.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 rounded-lg border border-(--border) hover:border-(--border-hover) transition-colors"
+                  >
+                    <div className="min-w-0 flex items-start gap-2">
+                      {v.displayMode === "file" && (
+                        <FileText className="w-4 h-4 text-(--accent) shrink-0 mt-0.5" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-sm text-(--text-primary) truncate">
+                          {new Date(v.created_at).toLocaleString("ru-RU")}
+                        </div>
+                        <div className="text-xs text-(--text-muted) truncate">
+                          {v.displayMode === "file"
+                            ? v.fileName ?? "файл"
+                            : `Режим: ${MODE_LABELS[v.displayMode]}`}{" "}
+                          · Автор:{" "}
+                          {v.created_by?.full_name ||
+                            v.created_by?.username ||
+                            "—"}
+                        </div>
+                        {isDeadFile && (
+                          <div className="text-xs text-red-400 mt-1">
+                            Файл удалён — откат недоступен
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRollback(v)}
-                    disabled={rollingBackId === v.id}
-                    className="px-3 py-1.5 text-xs rounded-md bg-(--accent) text-(--bg-primary) hover:bg-(--accent-hover) transition-colors shrink-0 inline-flex items-center gap-1 disabled:opacity-50"
-                  >
-                    {rollingBackId === v.id ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <RotateCcw className="w-3 h-3" />
-                    )}
-                    Откатить
-                  </button>
-                </li>
-              ))}
+                    <button
+                      type="button"
+                      onClick={() => handleRollback(v)}
+                      disabled={rollingBackId === v.id || isDeadFile}
+                      className="px-3 py-1.5 text-xs rounded-md bg-(--accent) text-(--bg-primary) hover:bg-(--accent-hover) transition-colors shrink-0 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
+                      title={isDeadFile ? "Файл удалён" : undefined}
+                    >
+                      {rollingBackId === v.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <RotateCcw className="w-3 h-3" />
+                      )}
+                      Откатить
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
