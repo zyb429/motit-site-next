@@ -93,6 +93,7 @@ export default memo(function CreatePostClient({
   const [isEditingCover, setIsEditingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [versionsOpen, setVersionsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const {
     register,
@@ -195,7 +196,7 @@ export default memo(function CreatePostClient({
           setFeaturedImagePreview(post.featured_image.url);
         }
       } catch (err) {
-        console.error("❌ Load post error:", err);
+        console.error("Load post error:", err);
         alert("Не удалось загрузить пост");
       } finally {
         setIsLoadingPost(false);
@@ -373,7 +374,7 @@ export default memo(function CreatePostClient({
           }
           router.refresh();
         } catch (error) {
-          console.error("❌ Error:", error);
+          console.error("Error:", error);
           alert(error instanceof Error ? error.message : "Произошла ошибка");
         }
       });
@@ -406,47 +407,67 @@ export default memo(function CreatePostClient({
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--bg-primary)] overflow-hidden font-sans">
+    <div className="flex flex-col h-dvh bg-[var(--bg-primary)] overflow-hidden font-sans">
       {/* ==================== ХЕДЕР ==================== */}
-      <header className="shrink-0 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-6 py-2 sm:py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/80 backdrop-blur-md z-20">
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+      <header className="shrink-0 flex items-center justify-between gap-1.5 sm:gap-3 px-2 sm:px-6 py-1.5 sm:py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 backdrop-blur-md z-20">
+        <div className="flex items-center gap-1.5 sm:gap-4 min-w-0">
           <Link
             href="/admin/posts"
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-2 rounded-full hover:bg-[var(--bg-secondary)] shrink-0"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1.5 sm:p-2 rounded-full hover:bg-[var(--bg-secondary)] shrink-0"
+            aria-label="Назад к постам"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="min-w-0">
-            <h1 className="text-sm font-semibold text-[var(--text-primary)] truncate">
-              {isEditMode ? "Редактирование поста" : "Новый пост"}
+            <h1 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] truncate">
+              {isEditMode ? "Редактирование" : "Новый пост"}
             </h1>
-            <p className="text-xs text-[var(--text-muted)] truncate">
+            <p className="text-[10px] sm:text-xs text-[var(--text-muted)] truncate">
               {postStatusValue === "draft" ? "Черновик" : "Публикация"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
+          {/* Настройки — только иконка на мобилке */}
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            disabled={isDisabled}
+            className="lg:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+            aria-label="Настройки поста"
+            title="Настройки"
+          >
+            <Settings2 className="w-5 h-5" />
+          </button>
+
+          {/* История — только иконка на мобилке, если editMode */}
           {isEditMode && editId && (
             <button
               type="button"
               onClick={() => setVersionsOpen(true)}
               disabled={isDisabled}
-              className="px-2 sm:px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors flex items-center gap-1 sm:gap-2"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+              aria-label="История версий"
+              title="История"
             >
-              <History className="w-4 h-4" />
-              <span className="hidden sm:inline">История</span>
+              <History className="w-5 h-5" />
             </button>
           )}
+
+          {/* Отмена — только иконка на мобилке */}
           <button
             type="button"
             onClick={() => router.back()}
             disabled={isDisabled}
-            className="px-2 sm:px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+            aria-label="Отмена"
+            title="Отмена"
           >
-            <span className="hidden sm:inline">Отмена</span>
-            <X className="w-4 h-4 sm:hidden" />
+            <X className="w-5 h-5" />
           </button>
+
+          {/* Сохранить — иконка + текст на мобилке только иконка */}
           <button
             type="submit"
             form="post-form"
@@ -456,25 +477,19 @@ export default memo(function CreatePostClient({
                 ? "Сохранить черновик"
                 : "Опубликовать"
             }
-            className="px-3 sm:px-5 py-2 bg-[var(--accent)] text-[var(--bg-primary)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1 sm:gap-2 shadow-sm font-medium text-sm"
+            className="ml-0.5 sm:ml-2 px-2.5 sm:px-5 py-2 bg-[var(--accent)] text-[var(--bg-primary)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1 sm:gap-2 shadow-sm font-medium text-sm"
           >
             {isPending || isSubmitting || isUploadingImage ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="hidden sm:inline">Сохранение...</span>
-              </>
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                {/* для черновика — Save, для публикации — Send */}
                 {postStatusValue === "draft" ? (
                   <Save className="w-4 h-4" />
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
                 <span className="hidden sm:inline">
-                  {postStatusValue === "draft"
-                    ? "Сохранить черновик"
-                    : "Опубликовать"}
+                  {postStatusValue === "draft" ? "Черновик" : "Опубликовать"}
                 </span>
               </>
             )}
@@ -483,16 +498,15 @@ export default memo(function CreatePostClient({
       </header>
 
       {/* ==================== ОСНОВНАЯ ОБЛАСТЬ ==================== */}
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden min-h-0">
         <form
           id="post-form"
           onSubmit={handleSubmit(onSubmit)}
-          className="flex-1 flex flex-col lg:flex-row overflow-hidden"
+          className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0"
         >
-          {/* ЛЕВАЯ КОЛОНКА: РЕДАКТОР */}
-          <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] overflow-y-auto">
-            {/* px-3 sm:px-8, py-4 sm:py-10, gap-3 sm:gap-6 */}
-            <div className="w-full px-3 sm:px-8 py-4 sm:py-10 flex flex-col gap-3 sm:gap-6 min-h-full">
+          {/* ЛЕВАЯ КОЛОНКА: РЕДАКТОР — занимает всё пространство */}
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--bg-primary)]">
+            <div className="flex-1 flex flex-col min-h-0 px-2 sm:px-8 py-2 sm:py-10 gap-2 sm:gap-6">
               {/* Заголовок */}
               <input
                 id="title"
@@ -500,17 +514,16 @@ export default memo(function CreatePostClient({
                 {...register("title")}
                 disabled={isDisabled}
                 placeholder="Заголовок поста..."
-                /* text-xl sm:text-2xl md:text-4xl, px-3 sm:px-6, py-2 sm:py-4 */
-                className="w-full bg-[#0b1f26] text-xl sm:text-2xl md:text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border border-[#1b3a44] rounded-xl px-3 sm:px-6 py-2 sm:py-4 focus:border-[var(--accent)] transition-colors"
+                className="w-full bg-[#0b1f26] text-lg sm:text-2xl md:text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border border-[#1b3a44] rounded-xl px-3 sm:px-6 py-2 sm:py-4 focus:border-[var(--accent)] transition-colors"
               />
               {errors.title && (
-                <p className="text-red-400 text-sm -mt-2 sm:-mt-4">
+                <p className="text-red-400 text-xs sm:text-sm -mt-1 sm:-mt-4">
                   {errors.title.message}
                 </p>
               )}
 
-              {/* Редактор */}
-              <div className="flex-1 flex flex-col relative overflow-hidden rounded-xl border border-[var(--border)] transition-colors focus-within:border-[var(--accent)] bg-[var(--bg-primary)]">
+              {/* Редактор — flex-1, чтобы заполнить оставшееся пространство */}
+              <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden rounded-xl border border-[var(--border)] transition-colors focus-within:border-[var(--accent)] bg-[var(--bg-primary)]">
                 <SimpleEditor
                   initialContent={content}
                   onChange={(json) =>
@@ -527,34 +540,6 @@ export default memo(function CreatePostClient({
               )}
             </div>
           </div>
-
-          {/* ==================== МОБИЛЬНАЯ / ПЛАНШЕТНАЯ ПАНЕЛЬ ==================== */}
-          <details className="lg:hidden border-t border-[var(--border)] bg-[var(--bg-card)]">
-            <summary className="p-3 sm:p-4 cursor-pointer flex items-center gap-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors select-none">
-              <Settings2 className="w-4 h-4" />
-              <span>Настройки поста</span>
-            </summary>
-            {/* max-h-[50vh] sm:max-h-[60vh] */}
-            <div className="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
-              <PostSettingsFields
-                categories={categories}
-                categoryId={categoryValue}
-                setCategoryId={(id) => setValue("categoryId", id)}
-                postStatus={postStatusValue || "draft"}
-                setPostStatus={(s) => setValue("post_status", s)}
-                excerpt={excerptValue}
-                setExcerpt={(t) => setValue("excerpt", t)}
-                featuredImagePreview={featuredImagePreview}
-                isEditingCover={isEditingCover}
-                onCoverEdit={handleEditCover}
-                onCoverRemove={handleRemoveImage}
-                onCoverSelect={handleImageSelect}
-                fileInputRef={fileInputRef}
-                isDisabled={isDisabled}
-                inputClass={inputClass}
-              />
-            </div>
-          </details>
 
           {/* ==================== ДЕСКТОПНАЯ ПАНЕЛЬ ==================== */}
           <aside className="hidden lg:flex w-80 shrink-0 border-l border-[var(--border)] bg-[var(--bg-card)] flex-col relative z-10">
@@ -589,6 +574,72 @@ export default memo(function CreatePostClient({
           </aside>
         </form>
       </main>
+
+      {/* ==================== МОБИЛЬНАЯ МОДАЛКА «НАСТРОЙКИ ПОСТА» ==================== */}
+      {settingsOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-[60] bg-black/50 flex items-end justify-center"
+          onClick={() => setSettingsOpen(false)}
+        >
+          <div
+            className="bg-[var(--bg-card)] rounded-t-2xl border border-[var(--border)] border-b-0 w-full max-h-[90vh] flex flex-col pb-[env(safe-area-inset-bottom)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Индикатор-«ручка» для свайпа */}
+            <div className="flex justify-center pt-2 pb-1 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-[var(--border)]" />
+            </div>
+
+            {/* Хедер модалки */}
+            <div className="flex items-center justify-between px-4 pb-3 border-b border-[var(--border)] shrink-0">
+              <h2 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <Settings2 className="w-4 h-4" />
+                Настройки поста
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-2 -mr-2 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
+                aria-label="Закрыть"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Контент модалки — скролл */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              <PostSettingsFields
+                categories={categories}
+                categoryId={categoryValue}
+                setCategoryId={(id) => setValue("categoryId", id)}
+                postStatus={postStatusValue || "draft"}
+                setPostStatus={(s) => setValue("post_status", s)}
+                excerpt={excerptValue}
+                setExcerpt={(t) => setValue("excerpt", t)}
+                featuredImagePreview={featuredImagePreview}
+                isEditingCover={isEditingCover}
+                onCoverEdit={handleEditCover}
+                onCoverRemove={handleRemoveImage}
+                onCoverSelect={handleImageSelect}
+                fileInputRef={fileInputRef}
+                isDisabled={isDisabled}
+                inputClass={inputClass}
+              />
+            </div>
+
+            {/* Кнопка «Готово» — крупная */}
+            <div className="shrink-0 p-3 border-t border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                className="w-full px-4 py-3 rounded-lg bg-[var(--accent)] text-[var(--bg-primary)] font-semibold hover:bg-[var(--accent-hover)] transition-colors text-base"
+              >
+                Готово
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ==================== МОДАЛКА ИСТОРИИ ==================== */}
       {isEditMode && editId && (
