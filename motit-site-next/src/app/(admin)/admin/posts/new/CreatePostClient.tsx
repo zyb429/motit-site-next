@@ -7,7 +7,6 @@ import {
   useTransition,
   memo,
   useCallback,
-  useMemo,
   useRef,
   type ChangeEvent,
 } from "react";
@@ -23,6 +22,7 @@ import {
   Loader2,
   Settings2,
   History,
+  Send,
 } from "lucide-react";
 
 import type { CustomElement } from "@/types/slate";
@@ -241,7 +241,6 @@ export default memo(function CreatePostClient({
         type: blob.type || "image/jpeg",
       });
 
-      // ДИНАМИЧЕСКИЙ ИМПОРТ — только в браузере, по клику
       const { openEditorModal } = await import(
         "@rageshpikalmunde/rp-image-editor"
       );
@@ -408,7 +407,7 @@ export default memo(function CreatePostClient({
 
   return (
     <div className="flex flex-col h-screen bg-[var(--bg-primary)] overflow-hidden font-sans">
-      {/* ==================== ХЕДЕР (адаптив) ==================== */}
+      {/* ==================== ХЕДЕР ==================== */}
       <header className="shrink-0 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-6 py-2 sm:py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/80 backdrop-blur-md z-20">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <Link
@@ -452,6 +451,11 @@ export default memo(function CreatePostClient({
             type="submit"
             form="post-form"
             disabled={isDisabled}
+            aria-label={
+              postStatusValue === "draft"
+                ? "Сохранить черновик"
+                : "Опубликовать"
+            }
             className="px-3 sm:px-5 py-2 bg-[var(--accent)] text-[var(--bg-primary)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1 sm:gap-2 shadow-sm font-medium text-sm"
           >
             {isPending || isSubmitting || isUploadingImage ? (
@@ -461,7 +465,12 @@ export default memo(function CreatePostClient({
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                {/* для черновика — Save, для публикации — Send */}
+                {postStatusValue === "draft" ? (
+                  <Save className="w-4 h-4" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
                 <span className="hidden sm:inline">
                   {postStatusValue === "draft"
                     ? "Сохранить черновик"
@@ -473,7 +482,7 @@ export default memo(function CreatePostClient({
         </div>
       </header>
 
-      {/* ==================== ОСНОВНАЯ ОБЛАСТЬ (адаптив) ==================== */}
+      {/* ==================== ОСНОВНАЯ ОБЛАСТЬ ==================== */}
       <main className="flex-1 flex overflow-hidden">
         <form
           id="post-form"
@@ -482,7 +491,8 @@ export default memo(function CreatePostClient({
         >
           {/* ЛЕВАЯ КОЛОНКА: РЕДАКТОР */}
           <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] overflow-y-auto">
-            <div className="w-full px-4 sm:px-8 py-6 sm:py-10 flex flex-col gap-4 sm:gap-6 min-h-full">
+            {/* px-3 sm:px-8, py-4 sm:py-10, gap-3 sm:gap-6 */}
+            <div className="w-full px-3 sm:px-8 py-4 sm:py-10 flex flex-col gap-3 sm:gap-6 min-h-full">
               {/* Заголовок */}
               <input
                 id="title"
@@ -490,7 +500,8 @@ export default memo(function CreatePostClient({
                 {...register("title")}
                 disabled={isDisabled}
                 placeholder="Заголовок поста..."
-                className="w-full bg-[#0b1f26] text-2xl sm:text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border border-[#1b3a44] rounded-xl px-4 sm:px-6 py-3 sm:py-4 focus:border-[var(--accent)] transition-colors"
+                /* text-xl sm:text-2xl md:text-4xl, px-3 sm:px-6, py-2 sm:py-4 */
+                className="w-full bg-[#0b1f26] text-xl sm:text-2xl md:text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border border-[#1b3a44] rounded-xl px-3 sm:px-6 py-2 sm:py-4 focus:border-[var(--accent)] transition-colors"
               />
               {errors.title && (
                 <p className="text-red-400 text-sm -mt-2 sm:-mt-4">
@@ -519,11 +530,12 @@ export default memo(function CreatePostClient({
 
           {/* ==================== МОБИЛЬНАЯ / ПЛАНШЕТНАЯ ПАНЕЛЬ ==================== */}
           <details className="lg:hidden border-t border-[var(--border)] bg-[var(--bg-card)]">
-            <summary className="p-4 cursor-pointer flex items-center gap-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors select-none">
+            <summary className="p-3 sm:p-4 cursor-pointer flex items-center gap-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors select-none">
               <Settings2 className="w-4 h-4" />
               <span>Настройки поста</span>
             </summary>
-            <div className="max-h-[60vh] overflow-y-auto">
+            {/* max-h-[50vh] sm:max-h-[60vh] */}
+            <div className="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
               <PostSettingsFields
                 categories={categories}
                 categoryId={categoryValue}

@@ -1,3 +1,4 @@
+// src/components/admin/PostSettingsFields.tsx
 "use client"
 
 import {
@@ -23,30 +24,20 @@ type Category = {
 type PostStatus = "draft" | "published"
 
 export type PostSettingsFieldsProps = {
-  // Категория
   categories: Category[]
   categoryId: number | null
   setCategoryId: (id: number | null) => void
-
-  // Статус
   postStatus: PostStatus
   setPostStatus: (status: PostStatus) => void
-
-  // Описание
   excerpt: string
   setExcerpt: (text: string) => void
-
-  // Обложка
   featuredImagePreview: string | null
   isEditingCover: boolean
   onCoverEdit: () => void
   onCoverRemove: () => void
   onCoverSelect: (e: ChangeEvent<HTMLInputElement>) => void
   fileInputRef: RefObject<HTMLInputElement | null>
-
-  // Общее состояние
   isDisabled: boolean
-
   inputClass: string
 }
 
@@ -154,7 +145,9 @@ export function PostSettingsFields({
                 onCoverRemove()
               }}
               disabled={isDisabled}
-              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+              /* На мобилке кнопка видна всегда, на десктопе — по hover */
+              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+              aria-label="Удалить обложку"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -164,7 +157,8 @@ export function PostSettingsFields({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isDisabled}
-            className="w-full border-2 border-dashed border-[var(--border)] rounded-lg p-6 text-center hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors group"
+            /* p-4 sm:p-6 — меньше отступ на мобилке */
+            className="w-full border-2 border-dashed border-[var(--border)] rounded-lg p-4 sm:p-6 text-center hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors group"
           >
             <Upload className="w-6 h-6 text-[var(--text-muted)] mx-auto mb-2 group-hover:text-[var(--accent)]" />
             <p className="text-xs text-[var(--text-secondary)]">
