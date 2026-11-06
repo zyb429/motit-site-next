@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { s3, S3_BUCKET, publicUrl } from "@/lib/s3";
 import { getAllowedMime } from "@/lib/settings";
 
-const MAX_SIZE = 10 * 1024 * 1024; // 10 МБ на файл
+const MAX_SIZE = 20 * 1024 * 1024; // 20 МБ на файл
 
 // Если браузер не отдал MIME, определяем по расширению
 const EXT_MIME_MAP: Record<string, string> = {
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       }
       if (file.size > MAX_SIZE) {
         return NextResponse.json(
-          { error: `Файл ${file.name} больше 10 МБ` },
+          { error: `Файл ${file.name} больше 20 МБ` },
           { status: 400 },
         );
       }
