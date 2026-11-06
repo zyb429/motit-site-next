@@ -20,7 +20,7 @@ export default async function SiteLayout({
   const headerProps = {
     logoText: puckProps.logoText || settings.siteName,
     logoHref: puckProps.logoHref || "/",
-    logoUrl: puckProps.logoUrl || settings.logoUrl || undefined,
+    logoUrl: puckProps.logoUrl || settings.logoLightUrl || settings.logoDarkUrl || undefined,
     nav: puckProps.nav || [
       { label: "Главная", href: "/" },
       { label: "Блог", href: "/blog" },

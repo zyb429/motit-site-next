@@ -23,6 +23,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
 
+  const scriptProps =
+  typeof window === "undefined" ? undefined : { type: "application/json" };
+
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
@@ -30,6 +33,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           attribute="class"
           defaultTheme="light"
           enableSystem={false}
+          scriptProps={scriptProps}
           disableTransitionOnChange
         >
           {children}

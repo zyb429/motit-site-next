@@ -10,7 +10,7 @@ export async function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-20 items-center justify-between gap-4">
           <Navigation
-            logoUrl={settings?.logoUrl}
+            logoUrl={settings?.logoLightUrl || settings?.logoDarkUrl}
             siteName={settings?.siteName}
           />
         </div>
