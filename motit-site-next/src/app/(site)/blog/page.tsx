@@ -136,7 +136,7 @@ export default async function BlogPage({
 
   return (
     <div className="min-h-screen bg-(--bg-primary) py-8 md:py-12 transition-colors duration-300">
-      <div className="container mx-auto px-4 max-w-4xl">
+      <div className="container mx-auto px-4 max-w-3xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-(--border)">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-(--text-primary) tracking-tight">
