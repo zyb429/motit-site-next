@@ -15,6 +15,7 @@ import {
   LayoutList,
   Home,
   Upload,
+  ShieldCheck,
 } from "lucide-react";
 
 const SECTIONS = [
@@ -77,6 +78,12 @@ const SECTIONS = [
     icon: Home,
     title: "Главная",
     desc: "Секции главной (Puck)",
+  },
+  {
+    href: "/admin/settings/privacy-policy",
+    icon: ShieldCheck,
+    title: "Политика конфиденциальности",
+    desc: "Редактор и режим отображения (страница/документ)",
   },
   {
     href: "/admin/settings/languages",

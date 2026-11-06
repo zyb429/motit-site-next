@@ -1,3 +1,4 @@
+// src/components/admin/settings/SettingsForm.tsx
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
@@ -33,6 +34,12 @@ type Field =
       label: string;
       accept?: string;
       uploadEndpoint?: string;
+    }
+  | {
+      kind: "svg";
+      name: string;
+      label: string;
+      rows?: number;
     };
 
 type ActionState = { ok?: boolean; error?: string } | null;
@@ -849,6 +856,19 @@ export function SettingsForm({
 
   const renderField = (f: Field) => {
     const val = settings?.[f.name];
+
+    // Новый тип: "svg" — textarea с моноширинным шрифтом
+    if (f.kind === "svg") {
+      return (
+        <textarea
+          name={f.name}
+          rows={f.rows ?? 8}
+          defaultValue={val ?? ""}
+          className={`${inputCls} font-mono`}
+          placeholder="<svg ...>...</svg>"
+        />
+      );
+    }
 
     if (f.kind === "json") {
       return (

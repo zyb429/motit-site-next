@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Building2,
   User,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
@@ -44,6 +45,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
       { href: "/admin/posts", label: "Посты", icon: FileText },
       { href: "/admin/categories", label: "Категории", icon: FolderTree },
+      { href: "/admin/settings/privacy-policy", label: "Политика конфиденциальности", icon: ShieldCheck },
     ],
   },
   {
@@ -59,7 +61,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/users", label: "Пользователи", icon: Users },
       { href: "/admin/organizations", label: "Организации", icon: Building2 },
-      { href: "/admin/settings", label: "Настройки", icon: Settings },
+      { href: "/admin/settings", label: "Настройки", icon: Settings, exact: true },
     ],
   },
   {
