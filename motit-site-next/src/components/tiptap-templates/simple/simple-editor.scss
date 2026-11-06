@@ -32,22 +32,20 @@
 
   /* Тёмная тема */
   &.dark {
-    --tt-theme-text: #e0f7fa;          /* cyan-50 — как на сайте */
-    --tt-bg-color: #0b1f26;            /* тёмно-бирюзовый, чуть светлее #0a1920 */
+    --tt-theme-text: #e0f7fa;
+    --tt-bg-color: #0b1f26;
     --tt-toolbar-bg-color: #0b1f26;
-    --tt-toolbar-border-color: #1b3a44;/* граница в тон, но заметная */
+    --tt-toolbar-border-color: #1b3a44;
 
-    /* Чекбокс: светлее фона + бирюзовая рамка */
-    --tt-checkbox-border: #2dd4bf;     /* teal-400 — ярко видно */
-    --tt-checkbox-bg: #123039;         /* светлее фона #0b1f26 */
+    --tt-checkbox-border: #2dd4bf;
+    --tt-checkbox-bg: #123039;
     --tt-checkbox-checked-bg: #2dd4bf;
 
-    /* Таблица: шапка светлее тела, линии читаются */
-    --tt-table-border: #2a5560;        /* приглушённый teal-700 */
-    --tt-table-header-bg: #123039;     /* светлее фона */
+    --tt-table-border: #2a5560;
+    --tt-table-header-bg: #123039;
     --tt-table-header-color: #e0f7fa;
 
-    --tt-image-upload-text: #7fb3bd;   /* приглушённый cyan-300 */
+    --tt-image-upload-text: #7fb3bd;
   }
 }
 
@@ -61,9 +59,17 @@
   border-radius: 0.75rem 0.75rem 0 0;
   padding: 0 0.5rem;
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 
   &::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Кнопки не сжимаются — на мобилке уходит в скролл */
+  > * {
+    flex-shrink: 0;
   }
 }
 
@@ -204,11 +210,19 @@
   /* =====================
      ТАБЛИЦЫ
      ===================== */
+  /* Обёртка для таблицы — горизонтальный скролл, если не влезает */
+  .tableWrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1.5rem 0;
+  }
+
   table {
     border-collapse: collapse !important;
     width: 100% !important;
-    margin: 1.5rem 0 !important;
+    margin: 0 !important;
     table-layout: fixed !important;
+    min-width: 480px; /* чтобы на мобилке появлялся горизонтальный скролл, а не сжатие */
 
     td, th {
       border: 1px solid var(--tt-table-border) !important;
@@ -280,26 +294,97 @@
   }
 }
 
-/* Мобильная адаптация */
+/* ============================================
+   Мобильная адаптация
+   ============================================ */
 @media screen and (max-width: 640px) {
+  /* Обёртка: высота меньше, т.к. на мобилке нет правой панели */
+  .simple-editor-wrapper {
+    height: calc(100dvh - 100px);
+    min-height: 320px;
+    border-radius: 0.5rem;
+  }
+
+  /* Тулбар */
   .simple-editor-toolbar {
-    border-radius: 0;
-    padding: 0.5rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+    padding: 0.25rem 0.5rem;
   }
 
+  /* Контент: меньше отступы, меньше шрифт */
   .simple-editor-content .tiptap.ProseMirror.simple-editor {
-    padding: 1.5rem 1rem;
-    font-size: 1rem;
+    padding: 1rem 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+
+    /* Заголовки — меньше, чтобы не занимать пол-экрана */
+    h1 { font-size: 1.5rem; margin-top: 1.25rem; margin-bottom: 0.75rem; }
+    h2 { font-size: 1.25rem; margin-top: 1rem; margin-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; margin-top: 0.875rem; margin-bottom: 0.5rem; }
+
+    /* Параграфы — чуть плотнее */
+    p { margin-bottom: 0.5rem; }
+
+    /* Списки — меньше отступ */
+    ul:not([data-type="taskList"]),
+    ol {
+      padding-left: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Картинки — меньше отступы */
+    img {
+      margin: 1rem auto;
+      border-radius: 0.375rem;
+    }
+
+    /* Плейсхолдер image-upload — меньше */
+    [data-type="image-upload"] {
+      padding: 1.25rem;
+      margin: 0.75rem 0;
+    }
   }
 
+  /* Панель поиска и замены */
   .simple-editor-search-and-replace {
     top: 0.5rem;
     left: 0.5rem;
+    right: 0.5rem;
     width: auto;
     max-height: calc(100dvh - 1rem);
   }
 
+  /* Task list: чекбокс не сжимается */
   ul[data-type="taskList"] li label {
     flex: 0 0 auto !important;
+  }
+
+  /* Таблица: скролл по горизонтали */
+  .tableWrapper {
+    margin: 1rem 0;
+  }
+  table {
+    min-width: 400px;
+    td, th {
+      padding: 0.375rem 0.5rem !important;
+    }
+  }
+}
+
+/* ============================================
+    Очень узкие экраны (320–375px)
+   ============================================ */
+@media screen and (max-width: 375px) {
+  .simple-editor-content .tiptap.ProseMirror.simple-editor {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+
+    h1 { font-size: 1.35rem; }
+    h2 { font-size: 1.15rem; }
+    h3 { font-size: 1rem; }
+  }
+
+  .simple-editor-toolbar {
+    padding: 0.25rem;
   }
 }
