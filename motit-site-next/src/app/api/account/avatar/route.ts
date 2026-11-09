@@ -1,4 +1,5 @@
 // src/app/api/account/avatar/route.ts
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
@@ -77,3 +78,4 @@ export async function DELETE() {
 
   return NextResponse.json({ success: true });
 }
+

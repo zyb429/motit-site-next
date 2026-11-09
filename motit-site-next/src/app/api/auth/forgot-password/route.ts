@@ -1,4 +1,5 @@
 // src/app/api/auth/forgot-password/route.ts
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
@@ -78,3 +79,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { mergeSocialOptions } from "@/lib/social-options";
@@ -10,3 +11,4 @@ export async function GET() {
     headers: { "Cache-Control": "no-store" },
   });
 }
+

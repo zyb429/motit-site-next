@@ -1,4 +1,5 @@
 // src/app/api/chat/chats/[uuid]/read/route.ts
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { markChatAsRead } from "@/lib/db/chat";
@@ -33,3 +34,4 @@ export async function POST(
     return NextResponse.json({ error: "Ошибка" }, { status: 400 });
   }
 }
+

@@ -1,4 +1,5 @@
 // src/app/api/account/profile/route.ts
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -35,3 +36,4 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ data: updated });
 }
+

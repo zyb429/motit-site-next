@@ -1,4 +1,5 @@
 // src/app/api/chat/users/search/route.ts
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { searchUsersForChat } from "@/lib/db/chat";
@@ -14,3 +15,4 @@ export async function GET(req: Request) {
   const users = await searchUsersForChat(query, exclude);
   return NextResponse.json({ data: users });
 }
+

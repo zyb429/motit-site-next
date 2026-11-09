@@ -1,4 +1,5 @@
 // src/app/api/admin/privacy-policy/rollback/route.ts
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { Prisma } from "@generated/prisma";
 import { prisma } from "@/lib/prisma";

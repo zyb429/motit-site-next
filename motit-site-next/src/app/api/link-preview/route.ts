@@ -1,4 +1,5 @@
 // src/app/api/link-preview/route.ts
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";

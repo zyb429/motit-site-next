@@ -1,4 +1,5 @@
 // src/app/api/chat/chats/saved/route.ts
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getOrCreateSavedChat } from "@/lib/db/chat";
@@ -10,3 +11,4 @@ export async function POST() {
   const chat = await getOrCreateSavedChat(user.uuid);
   return NextResponse.json({ data: chat });
 }
+

@@ -1,4 +1,5 @@
 // src/app/api/chat/messages/[uuid]/pin/route.ts
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { pinMessage, unpinMessage } from "@/lib/db/chat";
@@ -96,3 +97,4 @@ export async function DELETE(
     return NextResponse.json({ error: msg }, { status });
   }
 }
+

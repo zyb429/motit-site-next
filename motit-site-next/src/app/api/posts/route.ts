@@ -1,4 +1,5 @@
 // src/app/api/posts/route.ts
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
@@ -136,3 +137,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

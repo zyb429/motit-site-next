@@ -1,4 +1,5 @@
 // src/app/api/admin/users/route.ts
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@generated/prisma";
@@ -211,3 +212,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

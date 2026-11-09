@@ -1,4 +1,5 @@
 // src/app/api/tickets/priorities/route.ts
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { listPriorities } from "@/lib/db/tickets";
@@ -10,3 +11,4 @@ export async function GET() {
   const items = await listPriorities();
   return NextResponse.json({ data: items });
 }
+

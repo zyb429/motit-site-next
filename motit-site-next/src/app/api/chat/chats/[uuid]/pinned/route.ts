@@ -1,4 +1,5 @@
 // src/app/api/chat/chats/[uuid]/pinned/route.ts
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { listPinnedMessages } from "@/lib/db/chat";
@@ -23,3 +24,4 @@ export async function GET(
     return NextResponse.json({ error: msg }, { status });
   }
 }
+

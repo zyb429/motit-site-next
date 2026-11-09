@@ -1,4 +1,5 @@
 // src/app/api/admin/users/[id]/organizations/[uuid]/route.ts
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -139,3 +140,4 @@ export async function DELETE(
     );
   }
 }
+
