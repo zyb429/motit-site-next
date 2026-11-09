@@ -75,12 +75,13 @@ services:
       retries: 10
 
   # ============================================
-  # APP — PROD (по умолчанию, npm run build:turbopack && npm run start)
+  # APP — PROD (сборка в Dockerfile, здесь только миграции + start)
   # ============================================
   app:
     build:
       context: ./motit-site-next
       dockerfile: Dockerfile
+      target: prod
     container_name: motit-app
     restart: unless-stopped
     profiles: ["prod"]
@@ -94,8 +95,8 @@ services:
     env_file:
       - ./motit-site-next/.env
     environment:
-      DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site"
-      SHADOW_DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site_shadow"
+      DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site?connection_limit=3&pool_timeout=30&connect_timeout=30"
+      SHADOW_DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site_shadow?connection_limit=3&pool_timeout=30&connect_timeout=30"
       REDIS_URL: "redis://redis:6379"
       S3_ENDPOINT: "http://minio:9000"
       S3_PROXY_TARGET: "http://minio:9000/motit-uploads"
@@ -112,23 +113,19 @@ services:
     mem_limit: 4g
     command: >
       sh -c "
-      npx prisma generate &&
       npx prisma migrate deploy &&
-      npm run build:turbopack &&
       npm run start
       "
     healthcheck:
       test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3000/api/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://127.0.0.1:3000/api/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
       interval: 30s
       timeout: 30s
       retries: 5
-      start_period: 240s
+      start_period: 60s
 
   # ============================================
   # APP — DEV (hot-reload, bind mount)
@@ -137,6 +134,7 @@ services:
     build:
       context: ./motit-site-next
       dockerfile: Dockerfile
+      target: dev
     container_name: motit-app-dev
     restart: unless-stopped
     profiles: ["dev"]
@@ -150,8 +148,8 @@ services:
     env_file:
       - ./motit-site-next/.env
     environment:
-      DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site"
-      SHADOW_DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site_shadow"
+      DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site?connection_limit=3&pool_timeout=30&connect_timeout=30"
+      SHADOW_DATABASE_URL: "mysql://motit_user:MotitSecure2024%21@mysql:3306/motit_site_shadow?connection_limit=3&pool_timeout=30&connect_timeout=30"
       REDIS_URL: "redis://redis:6379"
       S3_ENDPOINT: "http://minio:9000"
       S3_PROXY_TARGET: "http://minio:9000/motit-uploads"
@@ -181,12 +179,10 @@ services:
       "
     healthcheck:
       test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3000/api/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://127.0.0.1:3000/api/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
       interval: 30s
       timeout: 30s
       retries: 5
@@ -204,12 +200,13 @@ services:
           path: ./motit-site-next/package.json
 
   # ============================================
-  # WS (общий)
+  # WS (WebSocket-сервер)
   # ============================================
   ws:
     build:
       context: ./motit-site-next
       dockerfile: Dockerfile
+      target: dev
     container_name: motit-ws
     restart: unless-stopped
     depends_on:
@@ -234,12 +231,10 @@ services:
       "
     healthcheck:
       test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "const s=require('net').connect(3001,'127.0.0.1');s.on('connect',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1))",
-        ]
+        - "CMD"
+        - "node"
+        - "-e"
+        - "const s=require('net').connect(3001,'127.0.0.1');s.on('connect',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1))"
       interval: 30s
       timeout: 5s
       retries: 3
