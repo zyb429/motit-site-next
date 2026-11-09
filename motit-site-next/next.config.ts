@@ -1,3 +1,4 @@
+// next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -16,7 +17,8 @@ const nextConfig: NextConfig = {
     "fabric",
   ],
 
-  // Добавлен блок turbopack для подмены нативных модулей
+  // Добавлены заглушки для Node.js-модулей, чтобы Turbopack не пытался
+  // бандлить их в клиент (fs, net, tls нужны для MariaDB/Prisma).
   turbopack: {
     resolveAlias: {
       canvas: "./src/lib/empty-module.ts",
