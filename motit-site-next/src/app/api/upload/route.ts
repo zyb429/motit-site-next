@@ -1,13 +1,12 @@
 // src/app/api/upload/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { s3, S3_BUCKET, publicUrl } from "@/lib/s3";
+import { uploadToS3, describeS3Error } from "@/lib/s3";
 import { getAllowedMime } from "@/lib/settings";
 
-const MAX_SIZE = 20 * 1024 * 1024; // 20 МБ на файл
+const MAX_SIZE = 50 * 1024 * 1024; // 20 МБ на файл
 
 // Если браузер не отдал MIME, определяем по расширению
 const EXT_MIME_MAP: Record<string, string> = {
@@ -49,6 +48,20 @@ const EXT_MIME_MAP: Record<string, string> = {
   rar: "application/x-rar-compressed",
   gz: "application/gzip",
   "7z": "application/x-7z-compressed",
+
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
+  avi: "video/x-msvideo",
+  mkv: "video/x-matroska",
+  m4v: "video/x-m4v",
+  ogv: "video/ogg",
+
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  m4a: "audio/mp4",
+  aac: "audio/aac",
 };
 
 function resolveMime(file: File): string {
@@ -132,16 +145,8 @@ export async function POST(request: NextRequest) {
         ? `${folder}/${randomUUID()}.${ext}`
         : `uploads/${randomUUID()}.${ext}`;
 
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: S3_BUCKET,
-          Key: key,
-          Body: buffer,
-          ContentType: mime,
-        }),
-      );
-
-      const url = publicUrl(key);
+      // uploadToS3 делает ensureBucket() + логирование причины ошибки
+      const url = await uploadToS3({ key, body: buffer, contentType: mime });
 
       const record = await prisma.files.create({
         data: {
@@ -168,8 +173,15 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(created);
-  } catch (error) {
-    console.error("[api/upload] error:", error);
+  } catch (error: any) {
+    // Разворачиваем причину S3, если она есть, — иначе глухое ECONNRESET
+    const s3Info = error?.$metadata ? describeS3Error(error) : undefined;
+    console.error("[api/upload] error:", {
+      name: error?.name,
+      message: error?.message,
+      code: error?.cause?.code,
+      s3: s3Info,
+    });
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
       { status: 500 },

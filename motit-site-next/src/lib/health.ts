@@ -1,7 +1,7 @@
 // src/lib/health.ts
 import { prisma } from "@/lib/prisma";
 import { redis, pubsub } from "@/lib/redis";
-import { s3 } from "@/lib/s3";
+import { s3, S3_BUCKET, ensureBucket, describeS3Error } from "@/lib/s3";
 import { HeadBucketCommand } from "@aws-sdk/client-s3";
 
 export type CheckStatus = "ok" | "fail";
@@ -11,25 +11,37 @@ export type CheckResult = {
   detail?: string;
 };
 
-const S3_BUCKET = process.env.S3_BUCKET ?? "motit-uploads";
-
+/**
+ * Таймаут с реальной отменой через AbortController.
+ * fn получает signal — его нужно передать в отменяемую операцию
+ * (например, s3.send(..., { abortSignal: signal })).
+ */
 export function withTimeout<T>(
-  fn: () => Promise<T>,
+  fn: (signal: AbortSignal) => Promise<T>,
   ms: number,
   label: string,
 ): Promise<T> {
-  return Promise.race([
-    fn(),
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
-    ),
-  ]);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fn(controller.signal)
+    .catch((e) => {
+      // Приводим AbortError к понятному сообщению
+      if (controller.signal.aborted) {
+        throw new Error(`${label} timed out after ${ms}ms`);
+      }
+      throw e;
+    })
+    .finally(() => clearTimeout(timer));
 }
 
 export async function checkDb(): Promise<CheckResult> {
   const start = Date.now();
   try {
-    await withTimeout(() => prisma.$queryRaw`SELECT 1`, 2000, "db");
+    await withTimeout(
+      (_signal) => prisma.$queryRaw`SELECT 1`,
+      2000,
+      "db",
+    );
     return { status: "ok", latencyMs: Date.now() - start };
   } catch (e) {
     return {
@@ -43,7 +55,11 @@ export async function checkDb(): Promise<CheckResult> {
 export async function checkRedis(): Promise<CheckResult> {
   const start = Date.now();
   try {
-    await withTimeout(() => redis.ping(), 1000, "redis");
+    await withTimeout(
+      (_signal) => redis.ping(),
+      1000,
+      "redis",
+    );
     return { status: "ok", latencyMs: Date.now() - start };
   } catch (e) {
     return {
@@ -57,13 +73,12 @@ export async function checkRedis(): Promise<CheckResult> {
 export async function checkS3(): Promise<CheckResult> {
   const start = Date.now();
   try {
-    await withTimeout(
-      () => s3.send(new HeadBucketCommand({ Bucket: S3_BUCKET })),
-      2000,
-      "s3",
-    );
+    // ensureBucket кеширует успех и делает HeadBucket только один раз
+    // за всё время жизни процесса. Это сильно быстрее, чем HeadBucket на каждый /api/health.
+    await withTimeout((_signal) => ensureBucket(), 2000, "s3");
     return { status: "ok", latencyMs: Date.now() - start };
   } catch (e) {
+    console.error("[health] s3 fail:", describeS3Error(e));
     return {
       status: "fail",
       latencyMs: Date.now() - start,
@@ -72,7 +87,6 @@ export async function checkS3(): Promise<CheckResult> {
   }
 }
 
-// Используем ПЕРЕИСПОЛЬЗУЕМЫЙ pubsub-клиент, а не duplicate() на каждый вызов.
 export async function checkWsPubSub(): Promise<CheckResult> {
   const start = Date.now();
   const channel = "health:ping";
@@ -118,7 +132,6 @@ export async function checkAll() {
   return { db, redis: redisC, s3: s3C, wsPubSub: wsC };
 }
 
-// Редактирование detail для неавторизованных
 export function redact(
   checks: Record<string, CheckResult>,
   showDetail: boolean,

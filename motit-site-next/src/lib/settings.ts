@@ -48,6 +48,18 @@ export const ALL_MIME_OPTIONS: { group: string; mime: string; label: string }[] 
   { group: "Архивы", mime: "application/x-rar-compressed", label: "RAR" },
   { group: "Архивы", mime: "application/gzip", label: "GZ" },
   { group: "Архивы", mime: "application/x-7z-compressed", label: "7Z" },
+
+  // --- ДОБАВЛЯЕМ ВИДЕО ---
+  { group: "Видео", mime: "video/mp4", label: "MP4" },
+  { group: "Видео", mime: "video/webm", label: "WebM" },
+  { group: "Видео", mime: "video/quicktime", label: "MOV" },
+  { group: "Видео", mime: "video/x-msvideo", label: "AVI" },
+  { group: "Видео", mime: "video/x-matroska", label: "MKV" },
+
+  // --- ДОБАВЛЯЕМ АУДИО (опционально) ---
+  { group: "Аудио", mime: "audio/mpeg", label: "MP3" },
+  { group: "Аудио", mime: "audio/wav", label: "WAV" },
+  { group: "Аудио", mime: "audio/ogg", label: "OGG" },
 ];
 
 export const DEFAULT_ALLOWED_MIME: string[] = [
@@ -67,7 +79,6 @@ export async function getAllowedMime(): Promise<string[]> {
   });
   if (!row?.value) return DEFAULT_ALLOWED_MIME;
 
-  // value уже Json — не нужно JSON.parse
   if (Array.isArray(row.value) && row.value.every((v) => typeof v === "string")) {
     return row.value as string[];
   }
