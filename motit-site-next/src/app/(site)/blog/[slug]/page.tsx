@@ -26,6 +26,12 @@ import { lowlight } from "@/lib/lowlight";
 import { toHtml } from "hast-util-to-html";
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
 import { CodeBlockCopyHandler } from "@/components/blog/CodeBlockCopyHandler";
+import { SaveButton } from "@/components/blog/SaveButton";
+
+// ISR: страница перегенерируется раз в 60 секунд.
+// Если нужен полностью динамический рендер — замени на force-dynamic
+// и убери generateStaticParams ниже.
+export const revalidate = 60;
 
 const TIPTAP_EXTENSIONS = [
   StarterKit.configure({
@@ -290,6 +296,7 @@ export default async function BlogPostPage({
 
   const readingTime = getReadingTime();
 
+  // URL листинга с сохранением фильтров — для кнопки «Назад к новостям».
   const getBackUrl = () => {
     const p = new URLSearchParams();
     if (searchQuery) p.set("search", searchQuery);
@@ -300,6 +307,12 @@ export default async function BlogPostPage({
     const qs = p.toString();
     return `/blog${qs ? `?${qs}` : ""}`;
   };
+
+  // Канонический URL самого поста — для шаринга.
+  // Не зависит от фильтров листинга и не использует хрупкий .replace().
+  const postPath = `/blog/${safeSlug}`;
+  const siteBase = (settings?.siteUrl ?? "").trim().replace(/\/+$/, "");
+  const shareUrl = siteBase ? `${siteBase}${postPath}` : postPath;
 
   return (
     <main className="min-h-screen bg-(--bg-primary) py-8 md:py-12 transition-colors duration-300">
@@ -425,11 +438,14 @@ export default async function BlogPostPage({
                 )}
               </span>
             </div>
-            <BlogPostActions
-              title={post.title || ""}
-              excerpt={post.excerpt || ""}
-              url={getBackUrl().replace("/blog", `/blog/${safeSlug}`)}
-            />
+            <div className="flex items-center gap-2">
+              <SaveButton postId={post.id} />
+              <BlogPostActions
+                title={post.title || ""}
+                excerpt={post.excerpt || ""}
+                url={shareUrl}
+              />
+            </div>
           </div>
         </footer>
       </article>

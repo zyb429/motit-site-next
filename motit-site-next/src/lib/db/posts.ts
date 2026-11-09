@@ -21,6 +21,7 @@ export type PostListItem = {
   meta_description?: string | null;
   publishedAt: string | null;
   updatedAt: string | null;
+  content?: unknown; // ← добавлено для точного подсчёта времени чтения
   author: {
     id: number;
     username: string;
@@ -66,6 +67,7 @@ function mapPost(
     meta_description: p.meta_description ?? null,
     publishedAt: p.published_at ? p.published_at.toISOString() : null,
     updatedAt: p.updated_at ? p.updated_at.toISOString() : null,
+    content: p.content ?? null, // ← теперь контент всегда в списке
     author: p.author
       ? {
           id: p.author.id,

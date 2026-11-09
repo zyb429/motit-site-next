@@ -1,8 +1,8 @@
 // src/components/blog/BlogPostActions.tsx
 'use client';
 
-import { Share2, Bookmark, BookmarkCheck } from 'lucide-react';
-import { useState, useSyncExternalStore } from 'react';
+import { Share2 } from 'lucide-react';
+import { useSyncExternalStore } from 'react';
 
 interface BlogPostActionsProps {
   title: string;
@@ -24,19 +24,9 @@ export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
   const origin = useSyncExternalStore(emptySubscribe, getOrigin, getServerOrigin);
   const currentUrl = origin ? `${origin}${url}` : url;
 
-  const [isBookmarked, setIsBookmarked] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-      return Array.isArray(bookmarks) && bookmarks.includes(url);
-    } catch {
-      return false;
-    }
-  });
-
   const handleShare = async () => {
     const shareData = {
-      title: title,
+      title,
       text: excerpt || '',
       url: currentUrl,
     };
@@ -55,28 +45,6 @@ export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
     }
   };
 
-  const handleBookmark = () => {
-    let bookmarks: string[] = [];
-    try {
-      const raw = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-      bookmarks = Array.isArray(raw) ? raw : [];
-    } catch {
-      bookmarks = [];
-    }
-
-    const newBookmarks = isBookmarked
-      ? bookmarks.filter((b) => b !== url)
-      : [...new Set([...bookmarks, url])];
-
-    try {
-      localStorage.setItem('bookmarks', JSON.stringify(newBookmarks));
-    } catch {
-      // ignore
-    }
-
-    setIsBookmarked(!isBookmarked);
-  };
-
   return (
     <div className="flex items-center gap-3">
       <button
@@ -86,18 +54,6 @@ export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
         title="Поделиться"
       >
         <Share2 size={18} />
-      </button>
-      <button
-        onClick={handleBookmark}
-        className="p-2 text-(--text-muted) hover:text-(--accent) transition-colors rounded-lg hover:bg-(--accent-dim)"
-        aria-label={isBookmarked ? 'Удалить из закладок' : 'Добавить в закладки'}
-        title={isBookmarked ? 'Удалить из закладок' : 'Добавить в закладки'}
-      >
-        {isBookmarked ? (
-          <BookmarkCheck size={18} className="text-(--accent)" />
-        ) : (
-          <Bookmark size={18} />
-        )}
       </button>
     </div>
   );

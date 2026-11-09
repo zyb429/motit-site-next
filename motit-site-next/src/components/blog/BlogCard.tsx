@@ -20,28 +20,31 @@ interface BlogCardProps {
   locale?: LanguageCode;
 }
 
-type SlateNode = {
-  text?: string;
-  children?: SlateNode[];
-};
-
-const getTextFromContent = (content: unknown): string => {
+// Универсальный экстрактор текста (Tiptap / HTML / Slate / обычный)
+const extractText = (content: unknown): string => {
   if (!content) return "";
   if (typeof content === "string") {
+    const trimmed = content.trim();
+    if (trimmed.startsWith("<")) return trimmed.replace(/<[^>]*>/g, " ");
     try {
-      const parsed: unknown = JSON.parse(content);
-      return getTextFromContent(parsed);
+      return extractText(JSON.parse(trimmed));
     } catch {
-      return content.replace(/<[^>]*>/g, " ");
+      return trimmed;
     }
   }
   if (Array.isArray(content)) {
-    return content.map((item) => getTextFromContent(item)).join(" ");
+    return content.map(extractText).join(" ");
   }
   if (typeof content === "object") {
-    const node = content as SlateNode;
+    const node = content as any;
+    if (node.type === "text" && typeof node.text === "string") return node.text;
+    if (node.content && Array.isArray(node.content)) {
+      return node.content.map(extractText).join(" ");
+    }
+    if (node.children && Array.isArray(node.children)) {
+      return node.children.map(extractText).join(" ");
+    }
     if (node.text) return node.text;
-    if (node.children) return getTextFromContent(node.children);
   }
   return "";
 };
@@ -97,8 +100,10 @@ export function BlogCard({
     dateString ? formatDate(dateString, timezone, locale, dateOpts) : null;
 
   const getReadingTime = () => {
-    const text = getTextFromContent(excerpt || "");
-    const words = text.trim().split(/\s+/).filter(Boolean).length;
+    // Считаем по полному контенту. Если его нет — падаем на excerpt.
+    const rawContent = post.content;
+    const textToCount = rawContent ? extractText(rawContent) : extractText(excerpt);
+    const words = textToCount.trim().split(/\s+/).filter(Boolean).length;
     return Math.max(1, Math.ceil(words / 200));
   };
 
