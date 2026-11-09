@@ -47,3 +47,5 @@ next-env.d.ts
 *.swp
 *.swo
 motit-state-*.txt
+
+bun.lock
