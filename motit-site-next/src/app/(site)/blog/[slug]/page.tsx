@@ -29,9 +29,11 @@ import { CodeBlockCopyHandler } from "@/components/blog/CodeBlockCopyHandler";
 import { SaveButton } from "@/components/blog/SaveButton";
 
 // ISR: страница перегенерируется раз в 60 секунд.
-// Если нужен полностью динамический рендер — замени на force-dynamic
-// и убери generateStaticParams ниже.
+// На сборке пре-рендерим только первые 20 постов — остальные генерируются
+// по запросу (dynamicParams = true). Так мы не упираемся в пул соединений
+// MySQL при 11 воркерах Next.js.
 export const revalidate = 60;
+export const dynamicParams = true;
 
 const TIPTAP_EXTENSIONS = [
   StarterKit.configure({
@@ -72,7 +74,7 @@ interface BlogPostPageProps {
 
 export async function generateStaticParams() {
   try {
-    const posts = await getPostsPrisma({ status: "published", take: 100 });
+    const posts = await getPostsPrisma({ status: "published", take: 20 });
     return posts
       .filter((p) => p.slug)
       .map((p) => ({ slug: p.slug as string }));
@@ -311,7 +313,9 @@ export default async function BlogPostPage({
   // Канонический URL самого поста — для шаринга.
   // Не зависит от фильтров листинга и не использует хрупкий .replace().
   const postPath = `/blog/${safeSlug}`;
-  const siteBase = (settings?.siteUrl ?? "").trim().replace(/\/+$/, "");
+  const siteBase = (process.env.NEXT_PUBLIC_SITE_URL ?? "")
+    .trim()
+    .replace(/\/+$/, "");
   const shareUrl = siteBase ? `${siteBase}${postPath}` : postPath;
 
   return (

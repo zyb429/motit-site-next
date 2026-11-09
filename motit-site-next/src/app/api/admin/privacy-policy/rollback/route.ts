@@ -96,23 +96,28 @@ export async function POST(req: Request) {
 
       // ВАЖНО: при откате на file НЕ трогаем content —
       // иначе затрём ранее сохранённый текст с прошлой page/document-версии
-      const updateData: Prisma.PrivacyPolicyUpdateInput = {
-        displayMode: versionMode,
-        fileId: versionMode === "file" ? version.fileId ?? null : null,
-        fileName: versionMode === "file" ? version.fileName ?? null : null,
-      };
-      if (versionMode !== "file") {
-        updateData.content = restoredContent;
-      }
+    const isFileMode = versionMode === "file";
 
-      const createData: Prisma.PrivacyPolicyCreateInput = {
-        id: 1,
-        displayMode: versionMode,
-        fileId: versionMode === "file" ? version.fileId ?? null : null,
-        fileName: versionMode === "file" ? version.fileName ?? null : null,
-        // при первом создании в file-режиме контента нет
-        content: versionMode === "file" ? Prisma.DbNull : restoredContent,
-      };
+    const updateData: Prisma.PrivacyPolicyUpdateInput = {
+    displayMode: versionMode,
+    fileName: isFileMode ? version.fileName ?? null : null,
+    ...(isFileMode && version.fileId
+        ? { file: { connect: { id: version.fileId } } }
+        : { file: { disconnect: true } }),
+    };
+    if (!isFileMode) {
+    updateData.content = restoredContent;
+    }
+
+    const createData: Prisma.PrivacyPolicyCreateInput = {
+    id: 1,
+    displayMode: versionMode,
+    fileName: isFileMode ? version.fileName ?? null : null,
+    content: isFileMode ? Prisma.DbNull : restoredContent,
+    ...(isFileMode && version.fileId
+        ? { file: { connect: { id: version.fileId } } }
+        : {}),
+    };
 
       await tx.privacyPolicy.upsert({
         where: { id: 1 },

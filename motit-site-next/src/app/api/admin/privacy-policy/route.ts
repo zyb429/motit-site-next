@@ -109,27 +109,31 @@ export async function POST(req: Request) {
         });
       }
 
-      // 2. Формируем update: в режиме file НЕ трогаем content
+      const isFileMode = displayMode === "file";
+
+      // Update: relation file через connect/disconnect
       const updateData: Prisma.PrivacyPolicyUpdateInput = {
         displayMode,
-        fileId: displayMode === "file" ? nextFileId : null,
-        fileName: displayMode === "file" ? nextFileName : null,
+        fileName: isFileMode ? nextFileName : null,
+        ...(isFileMode && nextFileId
+          ? { file: { connect: { id: nextFileId } } }
+          : { file: { disconnect: true } }),
       };
-      if (displayMode !== "file") {
+      if (!isFileMode) {
         updateData.content = content as Prisma.InputJsonValue;
       }
 
-      // 3. Формируем create: при первом создании в режиме file
-      //    content = DbNull (пусто), т.к. политики ещё нет
+      // Create: relation file через connect
       const createData: Prisma.PrivacyPolicyCreateInput = {
         id: 1,
         displayMode,
-        fileId: displayMode === "file" ? nextFileId : null,
-        fileName: displayMode === "file" ? nextFileName : null,
-        content:
-          displayMode === "file"
-            ? Prisma.DbNull
-            : (content as Prisma.InputJsonValue),
+        fileName: isFileMode ? nextFileName : null,
+        content: isFileMode
+          ? Prisma.DbNull
+          : (content as Prisma.InputJsonValue),
+        ...(isFileMode && nextFileId
+          ? { file: { connect: { id: nextFileId } } }
+          : {}),
       };
 
       await tx.privacyPolicy.upsert({

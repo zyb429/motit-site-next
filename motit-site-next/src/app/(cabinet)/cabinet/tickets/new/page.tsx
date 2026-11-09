@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function NewTicketCategoryPage() {
   const user = await getCurrentUser();
-  const categories = await listTicketCategories({ role: user?.role });
+  const categories = await listTicketCategories({ role: user?.role ?? undefined });
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto bg-(--bg-primary)">
