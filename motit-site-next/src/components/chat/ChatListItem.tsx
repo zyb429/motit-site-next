@@ -7,11 +7,6 @@ import type { ChatListItem as ChatListItemType } from "@/lib/db/chat";
 import { ClientOnly } from "@/components/ClientOnly";
 import { formatChatListTime } from "@/lib/format-time";
 
-function preview(text: string, max = 50): string {
-  const clean = text.replace(/\s+/g, " ").trim();
-  return clean.length > max ? clean.slice(0, max) + "…" : clean;
-}
-
 export function ChatListItem({
   chat,
   currentUserUuid,
@@ -32,9 +27,12 @@ export function ChatListItem({
   onChatClickAction?: (chat: ChatListItemType) => void;
 }) {
   const otherMember = chat.members.find((m) => m.user.uuid !== currentUserUuid);
+
   const displayName =
     chat.kind === "direct"
-      ? otherMember?.user.full_name ?? otherMember?.user.username ?? "Без имени"
+      ? otherMember?.user.full_name ??
+        otherMember?.user.username ??
+        "Без имени"
       : chat.name ?? "Без названия";
 
   const KindIcon =
@@ -45,6 +43,36 @@ export function ChatListItem({
         : chat.kind === "group"
           ? Users
           : null;
+
+  const isSystemMessage =
+    chat.last_message?.kind === "system" ||
+    chat.last_message?.kind === "status_change";
+
+  const lastMessageAuthor = chat.last_message?.user;
+  const isMyMessage = lastMessageAuthor?.uuid === currentUserUuid;
+
+  // В группах/каналах/тикетах автора показываем всегда (даже для системных)
+  // В ЛС автора показываем только когда сообщение моё ("Вы:")
+  // В Saved Messages автора не показываем вообще
+  const isGroupLike =
+    chat.kind === "group" ||
+    chat.kind === "channel" ||
+    chat.kind === "private_channel" ||
+    chat.kind === "ticket";
+
+  let authorName: string | null = null;
+
+  if (chat.kind === "saved" || !lastMessageAuthor) {
+    authorName = null;
+  } else if (isMyMessage) {
+    authorName = "Вы:";
+  } else if (isGroupLike) {
+    const name = lastMessageAuthor.full_name ?? lastMessageAuthor.username;
+    authorName = name ? `${name}:` : null;
+  } else {
+    // ЛС, чужое сообщение — имя не нужно (оно уже в displayName)
+    authorName = null;
+  }
 
   return (
     <Link
@@ -69,7 +97,7 @@ export function ChatListItem({
             alt={displayName}
             className="w-full h-full object-cover"
           />
-        ) : otherMember?.user.avatar_url ? (
+        ) : chat.kind === "direct" && otherMember?.user.avatar_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={otherMember.user.avatar_url}
@@ -85,8 +113,9 @@ export function ChatListItem({
         )}
       </div>
 
-      {/* Текст */}
+      {/* Контент */}
       <div className="min-w-0 flex-1">
+        {/* Заголовок: Имя + Время + Иконки статуса */}
         <div className="flex items-center justify-between gap-2">
           <div className="text-sm font-medium text-(--text-primary) truncate">
             {displayName}
@@ -100,25 +129,38 @@ export function ChatListItem({
             )}
             {chat.last_message && (
               <div className="text-[10px] text-(--text-muted)">
-                <ClientOnly>{formatChatListTime(chat.last_message.created_at)}</ClientOnly>
+                <ClientOnly>
+                  {formatChatListTime(chat.last_message.created_at)}
+                </ClientOnly>
               </div>
             )}
           </div>
         </div>
+
+        {/* Превью последнего сообщения */}
         {chat.last_message && (
-          <div className="flex items-center gap-1 mt-0.5">
-            {chat.last_message.user && (
-              <span className="text-xs text-(--text-muted) shrink-0">
-                {chat.last_message.user.uuid === currentUserUuid
-                  ? "Вы:"
-                  : `${chat.last_message.user.full_name?.split(" ")[0] ?? ""}:`}
+          <div className="flex items-center gap-1 mt-0.5 min-w-0">
+            {/* Автор: в группах — всегда, в ЛС — только "Вы:" */}
+            {authorName && (
+              <span
+                className={`text-xs shrink-0 font-medium ${
+                  isSystemMessage
+                    ? "text-(--text-muted) opacity-70"
+                    : "text-(--text-muted)"
+                }`}
+              >
+                {authorName}
               </span>
             )}
-            <span className="text-xs text-(--text-muted) truncate">
-              {chat.last_message.kind === "system" ||
-              chat.last_message.kind === "status_change"
-                ? chat.last_message.content
-                : preview(chat.last_message.content)}
+            {/* Текст сообщения */}
+            <span
+              className={`text-xs truncate ${
+                isSystemMessage
+                  ? "text-(--text-muted) italic"
+                  : "text-(--text-muted)"
+              }`}
+            >
+              {chat.last_message.content}
             </span>
           </div>
         )}
@@ -127,18 +169,15 @@ export function ChatListItem({
       {/* Badge непрочитанных */}
       {chat.unread_count > 0 &&
         (chat.is_muted ? (
-          // Маленький кружок без числа — для замьюченных
           <div
             className="shrink-0 w-2.5 h-2.5 rounded-full bg-(--accent)"
             aria-label="Непрочитанные"
           />
         ) : (
-          // Кружок с числом — обычный непрочитанный
           <div className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-(--accent) text-(--bg-card) text-[10px] font-semibold flex items-center justify-center">
             {chat.unread_count > 99 ? "99+" : chat.unread_count}
           </div>
-        )
-      )}
+        ))}
     </Link>
   );
 }

@@ -37,6 +37,7 @@ type Chat = {
       avatar_url: string | null;
     };
   }>;
+  ticket: { uuid: string; title: string } | null;
 };
 
 export function ChatView({
@@ -44,11 +45,13 @@ export function ChatView({
   currentUserUuid,
   initialMessages,
   basePath,
+  isAdmin = false,
 }: {
   chat: Chat;
   currentUserUuid: string;
   initialMessages: ChatMessageItem[];
   basePath: string;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
 
@@ -602,6 +605,7 @@ export function ChatView({
           <ChatWindow
             chat={chat}
             currentUserUuid={currentUserUuid}
+            isAdmin={isAdmin}
             isOnlineAction={isOnline}
             messages={messages}
             onSendMessageAction={handleSend}

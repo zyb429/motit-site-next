@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   Users,
   Hash,
@@ -17,6 +18,8 @@ import {
   Info,
   ArrowLeft,
   Paperclip,
+  Ticket,
+  ExternalLink,
 } from "lucide-react";
 
 type ChatHeaderProps = {
@@ -33,8 +36,10 @@ type ChatHeaderProps = {
         avatar_url: string | null;
       };
     }>;
+    ticket?: { uuid: string; title: string } | null;
   };
   currentUserUuid: string;
+  isAdmin?: boolean; // ← добавили
   isOnlineAction?: (userUuid: string) => boolean;
   onSettingsAction?: () => void;
   onAddMembersAction?: () => void;
@@ -49,6 +54,7 @@ type ChatHeaderProps = {
 export function ChatHeader({
   chat,
   currentUserUuid,
+  isAdmin = false,
   isOnlineAction,
   onSettingsAction,
   onAddMembersAction,
@@ -59,9 +65,11 @@ export function ChatHeader({
   onOpenAttachmentsAction,
   attachmentsOpen = false,
 }: ChatHeaderProps) {
+  console.log("[ChatHeader] chat.ticket =", chat.ticket, "kind =", chat.kind);
   const router = useRouter();
   const pathname = usePathname();
   const basePath = pathname.split("/").slice(0, -1).join("/");
+  const ticketBase = isAdmin ? "/admin/tickets" : "/cabinet/tickets";
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -211,6 +219,19 @@ export function ChatHeader({
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
+        {/* Кнопка «К заявке» — только если чат привязан к тикету */}
+        {chat.ticket && (
+          <Link
+            href={`${ticketBase}/${chat.ticket.uuid}`}
+            className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--accent-dim) transition-colors text-xs font-medium"
+            title={`Перейти к заявке: ${chat.ticket.title}`}
+          >
+            <Ticket size={16} />
+            <span className="hidden sm:inline">К заявке</span>
+            <ExternalLink size={12} className="hidden sm:inline" />
+          </Link>
+        )}
+
         {onOpenAttachmentsAction && chat.kind !== "saved" && (
           <button
             type="button"

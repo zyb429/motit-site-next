@@ -23,6 +23,8 @@ export default async function ChatPage({
 
   const messages = await getMessages(uuid, user.uuid, { limit: 50 });
 
+  const isAdmin = true;
+
   return (
     <ChatView
       key={chat.uuid}
@@ -34,10 +36,12 @@ export default async function ChatPage({
           uuid: m.uuid,
           user: m.user,
         })),
+        ticket: chat.ticket ?? null,
       }}
       currentUserUuid={user.uuid}
       initialMessages={[...messages].reverse()}
       basePath="/admin/chat"
+      isAdmin={isAdmin}
     />
   );
 }

@@ -23,8 +23,10 @@ type ChatWindowProps = {
         avatar_url: string | null;
       };
     }>;
+    ticket: { uuid: string; title: string } | null;
   };
   currentUserUuid: string;
+  isAdmin?: boolean;
   messages: ChatMessageItem[];
   onSendMessageAction: (content: string) => Promise<void>;
   onTypingAction?: () => void;
@@ -67,6 +69,7 @@ type ChatWindowProps = {
 export function ChatWindow({
   chat,
   currentUserUuid,
+  isAdmin = false,
   messages,
   onSendMessageAction,
   onTypingAction,
@@ -114,6 +117,7 @@ export function ChatWindow({
       <ChatHeader
         chat={chat}
         currentUserUuid={currentUserUuid}
+        isAdmin={isAdmin}
         isOnlineAction={isOnlineAction}
         onInfoAction={onChatInfoAction}
         onSettingsAction={onChatSettingsAction}

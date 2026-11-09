@@ -211,6 +211,7 @@ export type ChatDetail = {
   created_at: Date | null;
   updated_at: Date | null;
   last_message_at: Date | null;
+  ticket: { uuid: string; title: string } | null;
 
   // свойства ТЕКУЩЕГО пользователя (из его membership)
   role: ChatMemberRole;
@@ -257,6 +258,9 @@ export async function getChatByUuid(
       created_by: {
         select: { uuid: true, full_name: true, username: true },
       },
+      ticket: {
+        select: { uuid: true, title: true },
+      },
     },
   });
 
@@ -273,7 +277,6 @@ export async function getChatByUuid(
     updated_at: chat.updated_at,
     last_message_at: chat.last_message_at,
 
-    // свойства текущего пользователя
     role: membership.role as ChatMemberRole,
     is_muted: membership.is_muted,
     is_pinned: membership.is_pinned,
@@ -289,7 +292,6 @@ export async function getChatByUuid(
         uuid: m.user.uuid,
         full_name: m.user.full_name,
         username: m.user.username,
-        // Приоритет: avatar_url → files.url
         avatar_url: m.user.avatar_url ?? m.user.avatar?.url ?? null,
       },
       role: m.role as ChatMemberRole,
@@ -297,6 +299,7 @@ export async function getChatByUuid(
       is_pinned: m.is_pinned,
       joined_at: m.joined_at,
     })),
+    ticket: chat.ticket ? { uuid: chat.ticket.uuid, title: chat.ticket.title } : null,
   };
 }
 
