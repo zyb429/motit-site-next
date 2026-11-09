@@ -3,12 +3,12 @@
 
 import { useState, type ChangeEvent, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
 
 const PRIORITIES = [
-  { code: "LOW",    label: "Низкий" },
+  { code: "LOW", label: "Низкий" },
   { code: "NORMAL", label: "Обычный" },
-  { code: "HIGH",   label: "Высокий" },
+  { code: "HIGH", label: "Высокий" },
   { code: "URGENT", label: "Срочный" },
 ];
 
@@ -88,7 +88,6 @@ export function NewTicketForm({
     categoryUuid ?? categories[0]?.uuid ?? null,
   );
 
-  // Пользовательские правки полей. null = «не редактировал», значение = «переопределил».
   const [customContactName, setCustomContactName] = useState<string | null>(null);
   const [customContactEmail, setCustomContactEmail] = useState<string | null>(null);
   const [customContactPhone, setCustomContactPhone] = useState<string | null>(null);
@@ -102,13 +101,10 @@ export function NewTicketForm({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Производные значения: считаем на каждом рендере ---
-
   const selectedClient = isAdmin
     ? clients.find((c) => c.uuid === selectedClientUuid) ?? null
     : null;
 
-  // Контакты: пользовательское значение, если задано, иначе из клиента/пропсов
   const contactName =
     customContactName ??
     (isAdmin && selectedClient ? selectedClient.name : null) ??
@@ -124,7 +120,6 @@ export function NewTicketForm({
     (isAdmin && selectedClient ? selectedClient.phone ?? "" : null) ??
     defaultPhone;
 
-  // Организация: пользовательское значение, иначе из клиента или primary
   const organizationUuid =
     customOrganizationUuid ??
     (isAdmin && selectedClient
@@ -133,8 +128,6 @@ export function NewTicketForm({
     organizations.find((o) => o.isPrimary)?.uuid ??
     organizations[0]?.uuid ??
     null;
-
-  // --- Обработчики ---
 
   function handleFileSelect(e: ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
@@ -186,17 +179,13 @@ export function NewTicketForm({
           organizationUuid,
           categoryUuid: selectedCategoryUuid,
           attachmentFileIds,
-          ...(isAdmin && selectedClientUuid
-            ? { clientUuid: selectedClientUuid }
-            : {}),
+          ...(isAdmin && selectedClientUuid ? { clientUuid: selectedClientUuid } : {}),
         }),
       });
 
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(
-          typeof d.error === "string" ? d.error : "Не удалось создать заявку",
-        );
+        throw new Error(typeof d.error === "string" ? d.error : "Не удалось создать заявку");
       }
 
       const data = await res.json();
@@ -211,15 +200,18 @@ export function NewTicketForm({
     }
   }
 
+  const inputClass =
+    "w-full px-3.5 py-2.5 bg-(--bg-secondary) border border-(--border) rounded-xl text-(--text-primary) placeholder:text-(--text-muted) focus:border-(--accent) focus:ring-2 focus:ring-(--accent-dim) outline-none transition-all text-sm";
+
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+    <form onSubmit={handleSubmit} className="mt-6 space-y-6">
       {isAdmin && (
-        <>
+        <div className="space-y-4 p-4 rounded-xl border border-(--border) bg-(--bg-card)">
           <Field label="Клиент *">
             <select
               value={selectedClientUuid ?? ""}
               onChange={(e) => setSelectedClientUuid(e.target.value || null)}
-              className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
+              className={inputClass}
             >
               {clients.map((c) => (
                 <option key={c.uuid} value={c.uuid}>
@@ -234,7 +226,7 @@ export function NewTicketForm({
               <select
                 value={selectedCategoryUuid ?? ""}
                 onChange={(e) => setSelectedCategoryUuid(e.target.value || null)}
-                className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
+                className={inputClass}
               >
                 {categories.map((c) => (
                   <option key={c.uuid} value={c.uuid}>
@@ -244,164 +236,113 @@ export function NewTicketForm({
               </select>
             </Field>
           )}
-        </>
+        </div>
       )}
 
-      <Field label="Фамилия, Имя, Отчество">
-        <input
-          value={contactName}
-          onChange={(e) => setCustomContactName(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
-        />
-      </Field>
-
-      <Field label="E-mail">
-        <input
-          type="email"
-          value={contactEmail}
-          onChange={(e) => setCustomContactEmail(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
-        />
-      </Field>
-
-      <Field label="Телефон">
-        <input
-          value={contactPhone}
-          onChange={(e) => setCustomContactPhone(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
-        />
-      </Field>
-
-      {!isAdmin && organizations.length > 0 && (
-        <Field label="Предприятие">
-          {organizations.length === 1 ? (
-            <input
-              value={
-                organizations[0].inn
-                  ? `${organizations[0].name} (ИНН ${organizations[0].inn})`
-                  : organizations[0].name
-              }
-              disabled
-              className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-muted)"
-            />
-          ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="ФИО">
+          <input value={contactName} onChange={(e) => setCustomContactName(e.target.value)} className={inputClass} />
+        </Field>
+        <Field label="E-mail">
+          <input type="email" value={contactEmail} onChange={(e) => setCustomContactEmail(e.target.value)} className={inputClass} />
+        </Field>
+        <Field label="Телефон">
+          <input value={contactPhone} onChange={(e) => setCustomContactPhone(e.target.value)} className={inputClass} />
+        </Field>
+        {!isAdmin && organizations.length > 0 && (
+          <Field label="Предприятие">
             <select
               value={organizationUuid ?? ""}
               onChange={(e) => setCustomOrganizationUuid(e.target.value || null)}
-              className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
+              className={inputClass}
             >
               {organizations.map((o) => (
                 <option key={o.uuid} value={o.uuid}>
                   {o.inn ? `${o.name} (ИНН ${o.inn})` : o.name}
-                  {o.isPrimary ? " — основное" : ""}
                 </option>
               ))}
             </select>
-          )}
+          </Field>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Приоритет">
+          <select value={priorityCode} onChange={(e) => setPriorityCode(e.target.value)} className={inputClass}>
+            {PRIORITIES.map((p) => (
+              <option key={p.code} value={p.code}>{p.label}</option>
+            ))}
+          </select>
         </Field>
-      )}
-
-      <Field label="Приоритет">
-        <select
-          value={priorityCode}
-          onChange={(e) => setPriorityCode(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
-        >
-          {PRIORITIES.map((p) => (
-            <option key={p.code} value={p.code}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-      </Field>
-
-      <Field label="Тема">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          maxLength={255}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
-        />
-      </Field>
+        <Field label="Тема">
+          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={255} className={inputClass} />
+        </Field>
+      </div>
 
       <Field label="Сообщение">
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          rows={8}
+          rows={6}
           maxLength={10_000}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none resize-y"
+          className={`${inputClass} resize-y`}
         />
       </Field>
 
       <Field label="Вложения">
-        <div className="border border-dashed border-(--border) rounded-lg p-4">
+        <div className="border-2 border-dashed border-(--border) rounded-xl p-4 hover:border-(--accent)/50 transition-colors">
           {files.length === 0 ? (
-            <p className="text-sm text-(--text-muted) text-center">
-              Перетащите файлы или нажмите «Добавить файл». До 5 файлов, до 10 МБ.
-            </p>
+            <p className="text-sm text-(--text-muted) text-center">Перетащите файлы или нажмите «Добавить»</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2 mb-3">
               {files.map((f, i) => (
-                <li
-                  key={i}
-                  className="flex items-center justify-between gap-3 text-sm"
-                >
+                <li key={i} className="flex items-center justify-between gap-3 text-sm bg-(--bg-secondary) p-2 rounded-lg">
                   <span className="truncate text-(--text-primary)">{f.name}</span>
-                  <span className="text-(--text-muted) text-xs">
-                    {(f.size / 1024 / 1024).toFixed(2)} МБ
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeFile(i)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <X size={14} />
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-(--text-muted) text-xs">{(f.size / 1024 / 1024).toFixed(2)} МБ</span>
+                    <button type="button" onClick={() => removeFile(i)} className="text-red-400 hover:text-red-300 p-1">
+                      <X size={14} />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
-          <label className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-(--border) text-(--accent) text-sm cursor-pointer hover:bg-(--accent-dim)">
+          <label className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-(--border) text-(--accent) text-sm cursor-pointer hover:bg-(--accent-dim) transition-colors">
             <Upload size={14} />
             Добавить файл
-            <input
-              type="file"
-              multiple
-              accept={ACCEPT}
-              onChange={handleFileSelect}
-              className="hidden"
-              disabled={files.length >= 5}
-            />
+            <input type="file" multiple accept={ACCEPT} onChange={handleFileSelect} className="hidden" disabled={files.length >= 5} />
           </label>
         </div>
       </Field>
 
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
 
       <button
         type="submit"
         disabled={saving || uploading}
-        className="px-5 py-2 rounded-lg bg-(--accent) text-(--bg-card) text-sm font-medium hover:opacity-90 disabled:opacity-50"
+        className="w-full sm:w-auto px-6 py-3 rounded-xl bg-(--accent) text-(--bg-primary) text-sm font-semibold hover:bg-(--accent-hover) disabled:opacity-50 transition-all shadow-sm flex items-center justify-center gap-2"
       >
-        {uploading ? "Загрузка файлов…" : saving ? "Отправка…" : "Создать обращение"}
+        {uploading ? (
+          <>
+            <Loader2 size={16} className="animate-spin" /> Загрузка файлов…
+          </>
+        ) : saving ? (
+          <>
+            <Loader2 size={16} className="animate-spin" /> Отправка…
+          </>
+        ) : (
+          "Создать обращение"
+        )}
       </button>
     </form>
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs text-(--text-muted) mb-1.5">
-        {label}
-      </label>
+      <label className="block text-sm font-medium text-(--text-secondary) mb-1.5">{label}</label>
       {children}
     </div>
   );

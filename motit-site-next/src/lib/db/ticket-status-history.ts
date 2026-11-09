@@ -1,17 +1,18 @@
 // src/lib/db/ticket-status-history.ts
 import { prisma } from "@/lib/prisma";
 
-export type LastStatusChange = {
-  changed_at: Date | null;
-  changed_by: {
-    uuid: string;
-    username: string | null;
-    full_name: string | null;
-  } | null;
-  status: { code: string | null; name: string | null; is_final: boolean | null } | null;
-  old_status: { code: string | null; name: string | null } | null;
-};
+import type {
+  StatusHistoryEntry,
+  LastStatusChange,
+} from "@/lib/tickets/status-history-types";
 
+// Реэкспорт типов и утилит для обратной совместимости
+export type { StatusHistoryEntry, LastStatusChange };
+export { timeAgo, shortUser } from "@/lib/tickets/status-history-types";
+
+// --------------------------------------------
+// Последняя смена статуса
+// --------------------------------------------
 export async function getLastStatusChange(
   ticketUuid: string,
 ): Promise<LastStatusChange | null> {
@@ -21,7 +22,7 @@ export async function getLastStatusChange(
     select: {
       created_at: true,
       changed_by: { select: { uuid: true, username: true, full_name: true } },
-      statuses:   { select: { code: true, name: true, is_final: true } },
+      statuses: { select: { code: true, name: true, is_final: true } },
       old_status: { select: { code: true, name: true } },
     },
   });
@@ -47,7 +48,7 @@ export async function getLastStatusChangesBatch(
       ticket_uuid: true,
       created_at: true,
       changed_by: { select: { uuid: true, username: true, full_name: true } },
-      statuses:   { select: { code: true, name: true, is_final: true } },
+      statuses: { select: { code: true, name: true, is_final: true } },
       old_status: { select: { code: true, name: true } },
     },
   });
@@ -64,44 +65,9 @@ export async function getLastStatusChangesBatch(
   return map;
 }
 
-export function timeAgo(date: Date | string | null | undefined): string {
-  if (!date) return "";
-  const d = typeof date === "string" ? new Date(date) : date;
-  const diff = Date.now() - d.getTime();
-  const sec = Math.floor(diff / 1000);
-  if (sec < 60) return "только что";
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min} мин назад`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} ч назад`;
-  const days = Math.floor(hr / 24);
-  if (days < 30) return `${days} дн назад`;
-  return d.toLocaleDateString("ru-RU");
-}
-
-export function shortUser(
-  u: { full_name?: string | null; username?: string | null } | null | undefined,
-): string {
-  if (!u) return "—";
-  return u.full_name?.trim() || u.username?.trim() || "—";
-}
-
 // --------------------------------------------
 // Полная история статусов
 // --------------------------------------------
-export type StatusHistoryEntry = {
-  changed_at: Date | null;
-  changed_by: {
-    uuid: string;
-    username: string | null;
-    full_name: string | null;
-  } | null;
-  status: { code: string | null; name: string | null; is_final: boolean | null } | null;
-  old_status: { code: string | null; name: string | null } | null;
-  comment: string | null;
-};
-
-/** Полная история смен статуса по одному тикету (от новых к старым). */
 export async function getStatusHistory(
   ticketUuid: string,
 ): Promise<StatusHistoryEntry[]> {
@@ -112,7 +78,7 @@ export async function getStatusHistory(
       created_at: true,
       comment: true,
       changed_by: { select: { uuid: true, username: true, full_name: true } },
-      statuses:   { select: { code: true, name: true, is_final: true } },
+      statuses: { select: { code: true, name: true, is_final: true } },
       old_status: { select: { code: true, name: true } },
     },
   });
@@ -126,7 +92,6 @@ export async function getStatusHistory(
   }));
 }
 
-/** Батч: полная история для набора тикетов. */
 export async function getStatusHistoryBatch(
   ticketUuids: string[],
 ): Promise<Map<string, StatusHistoryEntry[]>> {
@@ -141,7 +106,7 @@ export async function getStatusHistoryBatch(
       created_at: true,
       comment: true,
       changed_by: { select: { uuid: true, username: true, full_name: true } },
-      statuses:   { select: { code: true, name: true, is_final: true } },
+      statuses: { select: { code: true, name: true, is_final: true } },
       old_status: { select: { code: true, name: true } },
     },
   });
@@ -164,11 +129,6 @@ export async function getStatusHistoryBatch(
 // --------------------------------------------
 // Версия для клиентов: без автора смены
 // --------------------------------------------
-
-/**
- * Полная история статусов для клиента.
- * Не селектит changed_by, чтобы ФИО сотрудников не уходило клиенту.
- */
 export async function getStatusHistoryForClient(
   ticketUuid: string,
 ): Promise<StatusHistoryEntry[]> {
@@ -178,22 +138,20 @@ export async function getStatusHistoryForClient(
     select: {
       created_at: true,
       comment: true,
-      statuses:   { select: { code: true, name: true, is_final: true } },
+      statuses: { select: { code: true, name: true, is_final: true } },
       old_status: { select: { code: true, name: true } },
-      // changed_by намеренно не выбираем
     },
   });
 
   return rows.map((row) => ({
     changed_at: row.created_at ?? null,
-    changed_by: null,   // всегда null для клиента
+    changed_by: null,
     status: row.statuses ?? null,
     old_status: row.old_status ?? null,
     comment: row.comment ?? null,
   }));
 }
 
-/** Батч-версия для списка клиента. */
 export async function getStatusHistoryBatchForClient(
   ticketUuids: string[],
 ): Promise<Map<string, StatusHistoryEntry[]>> {
@@ -207,9 +165,8 @@ export async function getStatusHistoryBatchForClient(
       ticket_uuid: true,
       created_at: true,
       comment: true,
-      statuses:   { select: { code: true, name: true, is_final: true } },
+      statuses: { select: { code: true, name: true, is_final: true } },
       old_status: { select: { code: true, name: true } },
-      // changed_by намеренно не выбираем
     },
   });
 
@@ -228,7 +185,6 @@ export async function getStatusHistoryBatchForClient(
   return map;
 }
 
-/** Последняя смена статуса для клиента. */
 export async function getLastStatusChangeForClient(
   ticketUuid: string,
 ): Promise<LastStatusChange | null> {
@@ -236,7 +192,6 @@ export async function getLastStatusChangeForClient(
   return history[0] ?? null;
 }
 
-/** Батч последних смен статуса для клиента. */
 export async function getLastStatusChangesBatchForClient(
   ticketUuids: string[],
 ): Promise<Map<string, LastStatusChange>> {

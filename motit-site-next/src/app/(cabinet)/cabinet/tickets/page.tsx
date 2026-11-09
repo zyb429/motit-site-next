@@ -9,7 +9,7 @@ import {
   getStatusHistoryBatchForClient,
 } from "@/lib/db/ticket-status-history";
 import { LastStatusChangeBlock } from "@/components/helpdesk/LastStatusChange";
-import { Plus, MessageSquare, User2 } from "lucide-react";
+import { Plus, MessageSquare, Clock, ArrowRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +20,9 @@ type CreatorInfo = {
   full_name: string | null;
 };
 
-async function attachCreators<
-  T extends { created_by_id: number | null }
->(tickets: T[]): Promise<(T & { created_by: CreatorInfo | null })[]> {
+async function attachCreators<T extends { created_by_id: number | null }>(
+  tickets: T[],
+): Promise<(T & { created_by: CreatorInfo | null })[]> {
   const ids = [
     ...new Set(tickets.map((t) => t.created_by_id).filter(Boolean)),
   ] as number[];
@@ -67,96 +67,135 @@ export default async function TicketsPage() {
   ]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-(--text-primary)">
-            Мои обращения
-          </h1>
-          <p className="text-(--text-secondary) text-sm mt-1">
-            Всего: {tickets.length}
-          </p>
-        </div>
-        <Link
-          href="/cabinet/tickets/new"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-(--accent) text-(--bg-card) text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          <Plus size={16} />
-          Новое обращение
-        </Link>
-      </div>
+    <div className="flex-1 min-h-0 overflow-y-auto bg-(--bg-primary)">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        <div className="max-w-4xl mx-auto">
+          {/* Заголовок */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-(--text-primary) tracking-tight">
+                Мои обращения
+              </h1>
+              <p className="text-sm text-(--text-muted) mt-1.5">
+                {tickets.length === 0
+                  ? "У вас пока нет обращений"
+                  : `${tickets.length} ${tickets.length === 1 ? "обращение" : tickets.length < 5 ? "обращения" : "обращений"}`}
+              </p>
+            </div>
+            <Link
+              href="/cabinet/tickets/new"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-(--accent) text-(--bg-primary) text-sm font-semibold hover:bg-(--accent-hover) active:scale-[0.98] transition-all shadow-sm shadow-(--accent-dim) w-full sm:w-auto"
+            >
+              <Plus size={16} />
+              Новое обращение
+            </Link>
+          </div>
 
-      {tickets.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-(--border) rounded-xl">
-          <p className="text-(--text-secondary) text-sm">
-            У вас пока нет обращений
-          </p>
-          <Link
-            href="/cabinet/tickets/new"
-            className="inline-block mt-4 text-(--accent) text-sm hover:underline"
-          >
-            Создать первое обращение →
-          </Link>
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {tickets.map((t) => {
-            const isSelfCreated = t.created_by?.uuid === t.client_uuid;
-            const creatorLabel = isSelfCreated
-              ? "клиент"
-              : t.created_by
-                ? `${t.created_by.full_name || t.created_by.username} (сотрудник)`
-                : "—";
+          {tickets.length === 0 ? (
+            <div className="text-center py-16 sm:py-24 border-2 border-dashed border-(--border) rounded-3xl bg-(--bg-card)/50">
+              <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-(--bg-secondary) flex items-center justify-center">
+                <MessageSquare size={28} className="text-(--text-muted) opacity-50" />
+              </div>
+              <p className="text-base font-semibold text-(--text-primary) mb-1.5">
+                Пока нет обращений
+              </p>
+              <p className="text-sm text-(--text-muted) mb-5 max-w-xs mx-auto">
+                Создайте первое обращение — мы ответим как можно скорее
+              </p>
+              <Link
+                href="/cabinet/tickets/new"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-(--accent) text-(--bg-primary) text-sm font-semibold hover:bg-(--accent-hover) transition-all"
+              >
+                <Plus size={16} />
+                Создать обращение
+              </Link>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {tickets.map((t) => {
+                const isSelfCreated = t.created_by?.uuid === t.client_uuid;
+                const creatorLabel = isSelfCreated
+                  ? "Вы"
+                  : t.created_by?.full_name || t.created_by?.username || "—";
 
-            return (
-              <li key={t.uuid}>
-                <Link
-                  href={`/cabinet/tickets/${t.uuid}`}
-                  className="block p-4 rounded-xl bg-(--bg-card) border border-(--border) hover:border-(--accent) transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-(--text-primary) font-medium truncate">
-                        {t.title}
-                      </div>
-                      {t.description && (
-                        <div className="text-sm text-(--text-secondary) line-clamp-2 mt-1">
-                          {t.description}
+                return (
+                  <li key={t.uuid}>
+                    <div className="group relative rounded-2xl bg-(--bg-card) border border-(--border) hover:border-(--accent)/40 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/30 transition-all duration-200 overflow-hidden">
+                      {/* Левая цветная полоска статуса */}
+                      <div
+                        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+                        style={{
+                          backgroundColor:
+                            t.statuses?.color ?? "var(--border)",
+                        }}
+                      />
+
+                      <div className="pl-5 pr-4 sm:pr-5 py-4 sm:py-5">
+                        {/* Верхняя строка: бейджи + дата */}
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <StatusBadge code={t.statuses?.code} />
+                            <PriorityBadge code={t.priorities?.code} />
+                          </div>
+                          <span className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) shrink-0">
+                            <Clock size={12} />
+                            {t.updated_at
+                              ? new Date(t.updated_at).toLocaleDateString("ru-RU", {
+                                  day: "numeric",
+                                  month: "short",
+                                })
+                              : "—"}
+                          </span>
                         </div>
-                      )}
+
+                        {/* Кликабельная зона: заголовок + описание */}
+                        <Link href={`/cabinet/tickets/${t.uuid}`} className="block">
+                          <h3 className="text-base sm:text-lg font-semibold text-(--text-primary) group-hover:text-(--accent) transition-colors line-clamp-2 leading-snug">
+                            {t.title}
+                          </h3>
+                          {t.description && (
+                            <p className="text-sm text-(--text-secondary) line-clamp-2 mt-1.5 leading-relaxed">
+                              {t.description}
+                            </p>
+                          )}
+                        </Link>
+
+                        {/* Метаданные + «Перейти» */}
+                        <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-(--border)">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-(--text-muted) min-w-0">
+                            <span className="inline-flex items-center gap-1.5">
+                              <MessageSquare size={12} />
+                              {t._count.ticket_comments}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 truncate">
+                              {creatorLabel}
+                            </span>
+                          </div>
+                          <Link
+                            href={`/cabinet/tickets/${t.uuid}`}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-(--accent) hover:text-(--accent-hover) shrink-0 transition-colors"
+                          >
+                            Перейти
+                            <ArrowRight size={12} />
+                          </Link>
+                        </div>
+
+                        {/* История статуса */}
+                        <div className="mt-2">
+                          <LastStatusChangeBlock
+                            change={lastChanges.get(t.uuid) ?? null}
+                            history={histories.get(t.uuid)}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <StatusBadge code={t.statuses?.code} />
-                      <PriorityBadge code={t.priorities?.code} />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-(--text-muted)">
-                    <span className="flex items-center gap-1">
-                      <MessageSquare size={12} />
-                      {t._count.ticket_comments} сообщений
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <User2 size={12} />
-                      Создал: {creatorLabel}
-                    </span>
-                    <span>
-                      Обновлён{" "}
-                      {t.updated_at
-                        ? new Date(t.updated_at).toLocaleString("ru-RU")
-                        : "—"}
-                    </span>
-                  </div>
-                  <LastStatusChangeBlock
-                    change={lastChanges.get(t.uuid) ?? null}
-                    history={histories.get(t.uuid)}
-                    className="mt-2"
-                  />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

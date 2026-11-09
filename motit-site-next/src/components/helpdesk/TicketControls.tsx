@@ -3,6 +3,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 interface Option {
   code: string;
@@ -66,14 +67,17 @@ export function TicketControls({
     startTransition(() => router.refresh());
   }
 
+  const selectClass =
+    "w-full px-3.5 py-2.5 rounded-xl bg-(--bg-secondary) border border-(--border) text-(--text-primary) text-sm focus:border-(--accent) focus:ring-2 focus:ring-(--accent-dim) outline-none transition-all disabled:opacity-50";
+
   return (
-    <div className="mt-6 p-4 rounded-xl bg-(--bg-card) border border-(--border) grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="mt-6 p-5 rounded-xl bg-(--bg-card) border border-(--border) grid grid-cols-1 md:grid-cols-3 gap-4">
       <Field label="Статус">
         <select
           value={currentStatus ?? ""}
           disabled={isPending}
           onChange={(e) => patch({ statusCode: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
+          className={selectClass}
         >
           {statuses.map((s) => (
             <option key={s.code} value={s.code}>
@@ -88,7 +92,7 @@ export function TicketControls({
           value={currentPriority ?? ""}
           disabled={isPending}
           onChange={(e) => patch({ priorityCode: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none"
+          className={selectClass}
         >
           {priorities.map((p) => (
             <option key={p.code} value={p.code}>
@@ -104,7 +108,7 @@ export function TicketControls({
           disabled={isPending || !canAssign}
           onChange={(e) => patch({ assigneeUuid: e.target.value || null })}
           title={!canAssign ? "Только администратор может менять исполнителя" : undefined}
-          className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-primary) focus:border-(--accent) outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+          className={selectClass}
         >
           <option value="">— не назначен —</option>
           {agents.map((a) => (
@@ -115,9 +119,12 @@ export function TicketControls({
         </select>
       </Field>
 
-      {error && (
-        <p className="md:col-span-3 text-red-400 text-sm">{error}</p>
+      {isPending && (
+        <div className="md:col-span-3 flex items-center gap-2 text-xs text-(--text-muted)">
+          <Loader2 size={12} className="animate-spin" /> Сохранение…
+        </div>
       )}
+      {error && <p className="md:col-span-3 text-red-400 text-sm">{error}</p>}
     </div>
   );
 }
@@ -131,7 +138,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs text-(--text-muted) mb-1.5">
+      <label className="block text-xs font-semibold text-(--text-muted) uppercase tracking-wider mb-1.5">
         {label}
       </label>
       {children}

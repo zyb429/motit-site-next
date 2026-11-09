@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTicketCategoryBySlug } from "@/lib/db/ticket-categories";
-import { NewTicketForm } from "@/components/helpdesk/NewTicketForm";
+import { NewTicketFormWrapper } from "./NewTicketFormWrapper";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +16,15 @@ export default async function NewTicketFormPage({
 }) {
   const { category: categorySlug } = await params;
 
-  const category = await getTicketCategoryBySlug(categorySlug);
-  if (!category) notFound();
-
   const user = await getCurrentUser();
   if (!user) return null;
+
+  if (categorySlug === "management-tasks" && user.role === "client") {
+    notFound();
+  }
+
+  const category = await getTicketCategoryBySlug(categorySlug);
+  if (!category) notFound();
 
   const dbUser = await prisma.users.findUnique({
     where: { id: user.id },
@@ -47,7 +51,7 @@ export default async function NewTicketFormPage({
     }));
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
       <Link
         href="/cabinet/tickets/new"
         className="inline-flex items-center gap-1 text-sm text-(--text-secondary) hover:text-(--accent) transition-colors"
@@ -56,19 +60,19 @@ export default async function NewTicketFormPage({
         К выбору категории
       </Link>
 
-      <div className="mt-4 flex items-center gap-3">
-        {category.icon && <span className="text-2xl">{category.icon}</span>}
+      <div className="mt-3 sm:mt-4 flex items-center gap-3">
+        {category.icon && <span className="text-xl sm:text-2xl">{category.icon}</span>}
         <div>
-          <h1 className="text-2xl font-bold text-(--text-primary)">
+          <h1 className="text-xl sm:text-2xl font-bold text-(--text-primary)">
             {category.name}
           </h1>
-          <p className="text-(--text-secondary) text-sm">
+          <p className="text-(--text-secondary) text-xs sm:text-sm">
             Опишите проблему как можно точнее
           </p>
         </div>
       </div>
 
-      <NewTicketForm
+      <NewTicketFormWrapper
         defaultFullName={dbUser?.full_name ?? user.full_name ?? ""}
         defaultEmail={dbUser?.email ?? user.email ?? ""}
         defaultPhone={dbUser?.phone ?? user.phone ?? ""}

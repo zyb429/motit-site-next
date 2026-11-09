@@ -39,13 +39,13 @@ export function SupportSidebar({ user }: { user: CurrentUser }) {
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 active
-                  ? "bg-(--accent-dim) text-(--accent)"
+                  ? "bg-(--accent-dim) text-(--accent) font-medium"
                   : "text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-dim)"
               }`}
             >
-              <Icon size={16} />
+              <Icon size={16} className="shrink-0" />
               {label}
             </Link>
           );

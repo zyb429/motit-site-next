@@ -5,9 +5,17 @@ import { serialize } from "@/lib/serialize";
 
 export async function listTicketCategories(params?: {
   includeInactive?: boolean;
+  role?: string;
 }) {
+  const where: any = params?.includeInactive ? {} : { is_active: true };
+
+  // Клиент не должен видеть служебную категорию
+  if (params?.role === "client") {
+    where.NOT = { slug: "management-tasks" };
+  }
+
   return serialize(await prisma.ticket_categories.findMany({
-    where: params?.includeInactive ? {} : { is_active: true },
+    where,
     orderBy: [{ sort_order: "asc" }, { name: "asc" }],
     include: {
       _count: { select: { tickets: true } },

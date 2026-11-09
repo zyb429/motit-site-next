@@ -44,6 +44,7 @@ export default async function AdminTicketPage({
   const { uuid } = await params;
   const ticket = await getTicket(uuid, user);
   if (!ticket) notFound();
+
   const isSiteRequest =
     !ticket.client_uuid && (ticket.contact_email || ticket.contact_name);
 
@@ -63,11 +64,16 @@ export default async function AdminTicketPage({
     listPriorities(),
   ]);
 
-  const isSelfCreated = ticket.created_by?.uuid != null && ticket.created_by.uuid === ticket.client_uuid;
+  const isSelfCreated =
+    ticket.created_by?.uuid != null &&
+    ticket.created_by.uuid === ticket.client_uuid;
+
   const creatorLabel = (() => {
     if (isSelfCreated) return "клиент";
     if (ticket.created_by) {
-      return `${ticket.created_by.full_name || ticket.created_by.username || "—"} (сотрудник)`;
+      return `${
+        ticket.created_by.full_name || ticket.created_by.username || "—"
+      } (сотрудник)`;
     }
     if (isSiteRequest) return "форма на сайте";
     return "—";
@@ -104,8 +110,7 @@ export default async function AdminTicketPage({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-(--text-muted) mt-1.5">
             {isSiteRequest ? (
               <span className="inline-flex items-center gap-1 text-(--accent)">
-                <Globe size={11} />
-                с сайта
+                <Globe size={11} />с сайта
               </span>
             ) : (
               ticket.ticket_category && (
@@ -124,7 +129,11 @@ export default async function AdminTicketPage({
             <span className="inline-flex items-center gap-1">
               <User2 size={11} />
               {creatorLabel}
-              {isSelfCreated ? " (клиент)" : ticket.created_by ? " (сотрудник)" : ""}
+              {isSelfCreated
+                ? " (клиент)"
+                : ticket.created_by
+                  ? " (сотрудник)"
+                  : ""}
             </span>
           </div>
         </div>
@@ -178,7 +187,8 @@ export default async function AdminTicketPage({
                   {ticket.contact_name || "—"}
                   {ticket.client?.username && (
                     <span className="text-(--text-muted) font-normal">
-                      {" "}(@{ticket.client.username})
+                      {" "}
+                      (@{ticket.client.username})
                     </span>
                   )}
                 </div>
@@ -266,7 +276,7 @@ export default async function AdminTicketPage({
       */}
       <TicketThread
         ticketUuid={ticket.uuid}
-        initialComments={ticket.ticket_comments ?? []}
+        initialComments={Array.isArray(ticket.ticket_comments) ? ticket.ticket_comments : []}
         canPostInternal={true}
         canPostExternal={!isSiteRequest}
       />
