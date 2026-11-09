@@ -45,7 +45,7 @@ export function PasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+    <form onSubmit={handleSubmit} className="mt-6 space-y-5">
       <Field label="Текущий пароль">
         <input
           type="password"

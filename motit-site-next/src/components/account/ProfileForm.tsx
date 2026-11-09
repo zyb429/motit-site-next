@@ -81,7 +81,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
   }
 
   return (
-    <div className="mt-8 space-y-8">
+    <div className="mt-6 space-y-8">
       {/* Аватар */}
       <div className="flex items-center gap-6">
         {avatar ? (
@@ -109,9 +109,10 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
           </label>
           {avatar && (
             <button
+              type="button"
               onClick={handleAvatarDelete}
               disabled={uploading}
-              className="text-xs text-red-400 hover:text-red-300 transition-colors"
+              className="text-xs text-red-400 hover:text-red-300 transition-colors text-left"
             >
               Удалить
             </button>
@@ -120,12 +121,12 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
       </div>
 
       {/* Поля профиля */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <Field label="Логин">
           <input
             value={user.username ?? ""}
             disabled
-            className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-muted)"
+            className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-muted) cursor-not-allowed"
           />
         </Field>
 
@@ -133,7 +134,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
           <input
             value={user.email ?? ""}
             disabled
-            className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-muted)"
+            className="w-full px-3 py-2 rounded-lg bg-(--bg-primary) border border-(--border) text-(--text-muted) cursor-not-allowed"
           />
         </Field>
 

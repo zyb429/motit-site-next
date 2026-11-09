@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Home,
@@ -15,10 +15,12 @@ import {
   ChevronRight,
   ChevronLeft,
   MessageSquare,
+  Bookmark,
 } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 
 interface SidebarProps {
   user: CurrentUser;
@@ -27,6 +29,7 @@ interface SidebarProps {
 const NAV = [
   { href: "/cabinet",               label: "Обзор",        Icon: LayoutDashboard },
   { href: "/cabinet/profile",       label: "Профиль",      Icon: User },
+  { href: "/cabinet/saved",         label: "Сохранённые",  Icon: Bookmark },
   { href: "/cabinet/security",      label: "Безопасность", Icon: Shield },
   { href: "/cabinet/tickets",       label: "Мои тикеты",   Icon: LifeBuoy },
   { href: "/cabinet/chat",          label: "Сообщения",    Icon: MessageSquare },
@@ -39,39 +42,15 @@ export function AccountSidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const canAccessAdmin = user.isAdmin || user.isWorker;
 
+  // Используем хук вместо useSyncExternalStore
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed(STORAGE_KEY);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Слушаем событие от MobileMenuButton (в layout)
   useEffect(() => {
     const handler = () => setMobileOpen(true);
     window.addEventListener("open-mobile-sidebar", handler);
     return () => window.removeEventListener("open-mobile-sidebar", handler);
   }, []);
-
-  const collapsed = useSyncExternalStore(
-    (onStoreChange) => {
-      window.addEventListener("storage", onStoreChange);
-      return () => window.removeEventListener("storage", onStoreChange);
-    },
-    () => {
-      try {
-        return localStorage.getItem(STORAGE_KEY) === "1";
-      } catch {
-        return false;
-      }
-    },
-    () => false,
-  );
-
-  const toggleCollapsed = () => {
-    try {
-      const next = localStorage.getItem(STORAGE_KEY) === "1" ? "0" : "1";
-      localStorage.setItem(STORAGE_KEY, next);
-      window.dispatchEvent(new Event("storage"));
-    } catch {
-      // ignore
-    }
-  };
 
   return (
     <>
@@ -120,7 +99,6 @@ export function AccountSidebar({ user }: SidebarProps) {
                 </div>
               </div>
 
-              {/* Кнопка сворачивания — только на десктопе */}
               <button
                 type="button"
                 onClick={toggleCollapsed}
@@ -151,7 +129,7 @@ export function AccountSidebar({ user }: SidebarProps) {
               const active =
                 href === "/cabinet"
                   ? pathname === "/cabinet"
-                  : pathname.startsWith(href);
+                  : pathname === href || pathname.startsWith(href + "/");
 
               return (
                 <Link

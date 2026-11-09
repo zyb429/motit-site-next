@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import {
   Inbox,
   MessageSquare,
@@ -20,11 +20,13 @@ import {
   Building2,
   User,
   ShieldCheck,
+  Bookmark, // ← Добавлена иконка для сохранённых постов
   type LucideIcon,
 } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 
 type NavItem = {
   href: string;
@@ -46,6 +48,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/posts", label: "Посты", icon: FileText },
       { href: "/admin/categories", label: "Категории", icon: FolderTree },
       { href: "/admin/settings/privacy-policy", label: "Политика конфиденциальности", icon: ShieldCheck },
+      { href: "/cabinet/saved", label: "Сохранённые посты", icon: Bookmark }, // ← Новый пункт
     ],
   },
   {
@@ -83,7 +86,7 @@ const GROUPS: NavGroup[] = [
 
 const COOKIE_KEY = "admin-sidebar-collapsed";
 
-export function AdminSidebar({
+function SidebarContent({
   user,
   initialCollapsed = false,
 }: {
@@ -94,36 +97,26 @@ export function AdminSidebar({
   const searchParams = useSearchParams();
   const currentQuery = searchParams.toString();
 
-  const [collapsed, setCollapsed] = useState<boolean>(initialCollapsed);
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed(COOKIE_KEY, initialCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Слушаем событие от MobileMenuButton (в layout)
   useEffect(() => {
     const handler = () => setMobileOpen(true);
     window.addEventListener("open-mobile-sidebar", handler);
     return () => window.removeEventListener("open-mobile-sidebar", handler);
   }, []);
 
-  const toggleCollapsed = () => {
-    setCollapsed((v) => {
-      const next = !v;
-      try {
-        const value = next ? "1" : "0";
-        document.cookie = `${COOKIE_KEY}=${value}; path=/; max-age=31536000; samesite=lax`;
-        localStorage.setItem(COOKIE_KEY, value);
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  };
-
   const isActive = (href: string, exact?: boolean) => {
     const [hrefPath, hrefQuery] = href.split("?");
 
-    const baseActive = exact
-      ? pathname === hrefPath
-      : pathname === hrefPath || pathname.startsWith(hrefPath + "/");
+    let baseActive = false;
+    if (hrefPath === "/admin") {
+      baseActive = pathname === "/admin" || pathname === "/admin/";
+    } else {
+      baseActive = exact
+        ? pathname === hrefPath
+        : pathname === hrefPath || pathname.startsWith(hrefPath + "/");
+    }
 
     if (!baseActive) return false;
 
@@ -131,12 +124,15 @@ export function AdminSidebar({
       return currentQuery === hrefQuery;
     }
 
+    if (exact && currentQuery !== "") {
+      return false;
+    }
+
     return currentQuery === "";
   };
 
   return (
     <>
-      {/* Backdrop — только на мобилке */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
@@ -156,7 +152,6 @@ export function AdminSidebar({
           lg:translate-x-0
         `}
       >
-        {/* Хедер */}
         <div className="h-20 border-b border-(--border) shrink-0 flex items-center justify-center px-3">
           {!collapsed ? (
             <div className="flex items-center justify-between w-full gap-2 min-w-0">
@@ -173,7 +168,6 @@ export function AdminSidebar({
                 </span>
               </Link>
 
-              {/* Кнопка сворачивания — только на десктопе */}
               <button
                 type="button"
                 onClick={toggleCollapsed}
@@ -197,7 +191,6 @@ export function AdminSidebar({
           )}
         </div>
 
-        {/* Навигация */}
         <nav className="flex-1 overflow-y-auto py-2">
           {GROUPS.map((group, gi) => (
             <div key={group.title} className={gi > 0 ? "mt-4" : ""}>
@@ -234,7 +227,6 @@ export function AdminSidebar({
           ))}
         </nav>
 
-        {/* Быстрые ссылки */}
         <div className="px-2 py-2 border-t border-(--border) space-y-0.5">
           <Link
             href="/cabinet"
@@ -261,7 +253,6 @@ export function AdminSidebar({
           </Link>
         </div>
 
-        {/* Футер */}
         <div className="px-2 py-3 border-t border-(--border)">
           {collapsed ? (
             <div className="flex flex-col items-center gap-2">
@@ -292,5 +283,19 @@ export function AdminSidebar({
         </div>
       </aside>
     </>
+  );
+}
+
+export function AdminSidebar({
+  user,
+  initialCollapsed = false,
+}: {
+  user: CurrentUser;
+  initialCollapsed?: boolean;
+}) {
+  return (
+    <Suspense fallback={<div className="w-64 h-full border-r border-(--border) bg-(--bg-card)" />}>
+      <SidebarContent user={user} initialCollapsed={initialCollapsed} />
+    </Suspense>
   );
 }
