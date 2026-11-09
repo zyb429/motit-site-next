@@ -39,6 +39,7 @@ async function main() {
 
   await prisma.ticket_categories.createMany({
     data: [
+      { name: "Поручения руководителя", slug: "management-tasks", icon: "📋", sort_order: 0 },
       { name: "Техническая поддержка", slug: "tech-support", icon: "🛠️", sort_order: 1 },
       { name: "СЗИ", slug: "szi", icon: "🔒", sort_order: 2 },
       { name: "Аудит, проектирование, создание и аттестация", slug: "audit", icon: "📋", sort_order: 3 },
