@@ -48,6 +48,18 @@ const nextConfig: NextConfig = {
     ],
     dangerouslyAllowLocalIP: true,
   },
+
+  outputFileTracingExcludes: {
+    '*': [
+      './public/**/*',
+      './.next/cache/**/*',
+      './generated/prisma/**/*.map',
+      './prisma/**/*',
+    ],
+    '/api/**': [
+      './public/**/*',
+    ],
+  },
 };
 
 export default nextConfig;
