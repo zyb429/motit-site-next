@@ -1,46 +1,67 @@
+// src/app/(admin)/admin/categories/[id]/CategoryEditForm.tsx
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
-import type { categories } from '@generated/prisma';
+import { generateSlug } from "@/lib/utils";
 
-type CategoryInput = Pick<
-  categories,
-  "id" | "document_id" | "name" | "slug" | "description" | "icon"
->;
+interface Category {
+  id: number;
+  document_id: string | null;
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+}
 
 export default function CategoryEditForm({
   initialCategory,
 }: {
-  initialCategory: CategoryInput;
+  initialCategory: Category;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [name, setName] = useState(initialCategory.name || "");
-  const [slug, setSlug] = useState(initialCategory.slug || "");
-  const [description, setDescription] = useState(
-    initialCategory.description || "",
-  );
-  const [icon, setIcon] = useState(initialCategory.icon || "");
+  const [isDeleting, startDeleteTransition] = useTransition();
+  const [name, setName] = useState(initialCategory.name);
+  const [slug, setSlug] = useState(initialCategory.slug);
+  const [description, setDescription] = useState(initialCategory.description);
+  const [icon, setIcon] = useState(initialCategory.icon);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const id = initialCategory.document_id || initialCategory.id;
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (!slugManuallyEdited) {
+      setSlug(generateSlug(value));
+    }
+  };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSlugChange = (value: string) => {
+    setSlug(value);
+    setSlugManuallyEdited(value.length > 0);
+  };
+
+  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
     e.preventDefault();
     setError(null);
 
+    const finalSlug = slug || generateSlug(name);
+    if (!name.trim()) {
+      setError("Укажите название");
+      return;
+    }
+
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/categories/${id}`, {
+        const res = await fetch(`/api/categories/${initialCategory.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             data: {
               name: name.trim(),
-              slug: slug.trim(),
+              slug: finalSlug,
               description: description || null,
               icon: icon || null,
             },
@@ -49,7 +70,7 @@ export default function CategoryEditForm({
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error?.message || "Ошибка обновления");
+          throw new Error(err.error?.message || err.error || "Ошибка сохранения");
         }
 
         router.push("/admin/categories");
@@ -60,119 +81,136 @@ export default function CategoryEditForm({
     });
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`Удалить категорию «${name}»?`)) return;
+  const handleDelete = () => {
+    if (!confirm("Вы уверены, что хотите удалить эту категорию?")) return;
 
-    startTransition(async () => {
+    startDeleteTransition(async () => {
       try {
-        const res = await fetch(`/api/categories/${id}`, {
+        const res = await fetch(`/api/categories/${initialCategory.id}`, {
           method: "DELETE",
         });
-        if (!res.ok) throw new Error("Ошибка удаления");
+        if (!res.ok) throw new Error("Не удалось удалить");
         router.push("/admin/categories");
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Ошибка");
+        setError(err instanceof Error ? err.message : "Ошибка удаления");
       }
     });
   };
 
+  // Те же классы, что и в CategoryForm
+  const inputClass =
+    "w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] outline-none transition-colors text-sm";
+
   return (
-    <div className="container mx-auto px-6 py-8 max-w-2xl">
-      <Link
-        href="/admin/categories"
-        className="text-gray-500 hover:text-gray-700 flex items-center gap-2 mb-4"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Назад
-      </Link>
+    <div className="grid w-full place-items-center px-4 py-6">
+      <div className="w-full max-w-2xl">
+        <Link
+          href="/admin/categories"
+          className="text-[var(--text-muted)] hover:text-[var(--text-primary)] inline-flex items-center gap-2 mb-6 transition-colors text-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Назад к категориям
+        </Link>
 
-      <h1 className="text-2xl font-bold mb-6">Редактирование категории</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-6">
+          Редактирование категории
+        </h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4"
-      >
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Название <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={isPending}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 space-y-5 shadow-sm"
+        >
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
+              Название <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              disabled={isPending || isDeleting}
+              className={inputClass}
+              placeholder="Например: Технологии"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Slug
-          </label>
-          <input
-            type="text"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            disabled={isPending}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono"
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
+              Slug (URL)
+            </label>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              disabled={isPending || isDeleting}
+              className={`${inputClass} font-mono`}
+            />
+            <p className="text-xs text-[var(--text-muted)] mt-1.5">
+              Генерируется автоматически из названия. Можно изменить вручную.
+            </p>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Описание
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            disabled={isPending}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            rows={3}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
+              Описание
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={isPending || isDeleting}
+              className={inputClass}
+              rows={3}
+              placeholder="Краткое описание категории..."
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Иконка
-          </label>
-          <input
-            type="text"
-            value={icon}
-            onChange={(e) => setIcon(e.target.value)}
-            disabled={isPending}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            maxLength={10}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
+              Иконка (эмодзи)
+            </label>
+            <input
+              type="text"
+              value={icon}
+              onChange={(e) => setIcon(e.target.value)}
+              disabled={isPending || isDeleting}
+              className={inputClass}
+              maxLength={10}
+              placeholder="📚"
+            />
+          </div>
 
-        {error && (
-          <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
-            {error}
-          </p>
-        )}
+          {error && (
+            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex items-start gap-2">
+              <span className="mt-0.5">⚠️</span>
+              <p>{error}</p>
+            </div>
+          )}
 
-        <div className="flex justify-between gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={isPending}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-          >
-            <Save className="w-4 h-4" />
-            {isPending ? "Сохранение..." : "Сохранить"}
-          </button>
+          <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+            <button
+              type="submit"
+              disabled={isPending || isDeleting}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--accent)] text-[var(--bg-primary)] rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors font-medium text-sm"
+            >
+              <Save className="w-4 h-4" />
+              {isPending ? "Сохранение..." : "Сохранить"}
+            </button>
 
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isPending}
-            className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 flex items-center gap-2"
-          >
-            <Trash2 className="w-4 h-4" />
-            Удалить
-          </button>
-        </div>
-      </form>
+            {/* Кнопка удаления с текстом */}
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isPending || isDeleting}
+              title="Удалить категорию"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors font-medium text-sm disabled:opacity-50 min-w-[120px]"
+            >
+              <Trash2 className="w-4 h-4" />
+              {isDeleting ? "Удаление..." : "Удалить"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

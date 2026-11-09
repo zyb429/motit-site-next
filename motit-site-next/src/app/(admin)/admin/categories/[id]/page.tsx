@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import CategoryEditForm from "./CategoryEditForm";
 
 async function getCategory(rawId: string) {
-  // поддержка числового id и documentId
   const num = Number(rawId);
   if (Number.isFinite(num) && num > 0) {
     const byId = await prisma.categories.findUnique({ where: { id: num } });

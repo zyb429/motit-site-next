@@ -72,108 +72,117 @@ export default function CategoryForm() {
     });
   };
 
+  // Используем общие классы для всех полей ввода
   const inputClass =
-    "w-full px-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none transition-colors";
+    "w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] outline-none transition-colors text-sm";
 
   return (
-    <div className="container mx-auto px-6 py-8 max-w-2xl">
-      <Link
-        href="/admin/categories"
-        className="text-(--text-muted) hover:text-(--text-primary) flex items-center gap-2 mb-4 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Назад
-      </Link>
+    <div className="grid w-full place-items-center px-4 py-6">
+      <div className="w-full max-w-2xl">
+        <Link
+          href="/admin/categories"
+          className="text-[var(--text-muted)] hover:text-[var(--text-primary)] inline-flex items-center gap-2 mb-6 transition-colors text-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Назад к категориям
+        </Link>
 
-      <h1 className="text-2xl font-bold text-(--text-primary) mb-6">
-        Новая категория
-      </h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-6">
+          Новая категория
+        </h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-(--bg-card) rounded-xl shadow-sm border border-(--border) p-6 space-y-4"
-      >
-        <div>
-          <label className="block text-sm font-medium text-(--text-primary) mb-1">
-            Название <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => handleNameChange(e.target.value)}
-            disabled={isPending}
-            className={inputClass}
-            placeholder="Например: Технологии"
-          />
-        </div>
+        {/* Убраны инлайн-стили, используется класс bg-[var(--bg-card)] */}
+        <form
+          onSubmit={handleSubmit}
+          className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 space-y-5 shadow-sm"
+        >
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
+              Название <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              disabled={isPending}
+              className={inputClass}
+              placeholder="Например: Технологии"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-(--text-primary) mb-1">
-            Slug
-          </label>
-          <input
-            type="text"
-            value={slug}
-            onChange={(e) => handleSlugChange(e.target.value)}
-            disabled={isPending}
-            className={`${inputClass} font-mono`}
-          />
-          <p className="text-xs text-(--text-muted) mt-1">
-            Генерируется автоматически из названия. Можно изменить вручную.
-          </p>
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
+              Slug (URL)
+            </label>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              disabled={isPending}
+              className={`${inputClass} font-mono`}
+            />
+            <p className="text-xs text-[var(--text-muted)] mt-1.5">
+              Генерируется автоматически из названия. Можно изменить вручную.
+            </p>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-(--text-primary) mb-1">
-            Описание
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            disabled={isPending}
-            className={inputClass}
-            rows={3}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
+              Описание
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={isPending}
+              className={inputClass}
+              rows={3}
+              placeholder="Краткое описание категории..."
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-(--text-primary) mb-1">
-            Иконка (эмодзи)
-          </label>
-          <input
-            type="text"
-            value={icon}
-            onChange={(e) => setIcon(e.target.value)}
-            disabled={isPending}
-            className={inputClass}
-            maxLength={10}
-            placeholder="📚"
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">
+              Иконка (эмодзи)
+            </label>
+            <input
+              type="text"
+              value={icon}
+              onChange={(e) => setIcon(e.target.value)}
+              disabled={isPending}
+              className={inputClass}
+              maxLength={10}
+              placeholder="📚"
+            />
+          </div>
 
-        {error && (
-          <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 p-3 rounded-lg">
-            {error}
-          </p>
-        )}
+          {error && (
+            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex items-start gap-2">
+              <span className="mt-0.5">⚠️</span>
+              <p>{error}</p>
+            </div>
+          )}
 
-        <div className="flex gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={isPending}
-            className="px-6 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) disabled:opacity-50 flex items-center gap-2 transition-colors font-medium"
-          >
-            <Save className="w-4 h-4" />
-            {isPending ? "Сохранение..." : "Создать"}
-          </button>
-          <Link
-            href="/admin/categories"
-            className="px-6 py-2 text-(--text-secondary) hover:bg-(--bg-secondary) rounded-lg transition-colors"
-          >
-            Отмена
-          </Link>
-        </div>
-      </form>
+          {/* Разносим кнопки по краям (как в редактировании) */}
+          <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+            <button
+              type="submit"
+              disabled={isPending}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--accent)] text-[var(--bg-primary)] rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors font-medium text-sm"
+            >
+              <Save className="w-4 h-4" />
+              {isPending ? "Сохранение..." : "Создать категорию"}
+            </button>
+            
+            {/* Кнопка "Отмена" с такими же размерами, как "Удалить" в редактировании */}
+            <Link
+              href="/admin/categories"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-[var(--text-secondary)] bg-[var(--bg-secondary)] hover:bg-[var(--border)] transition-colors font-medium text-sm min-w-[120px]"
+            >
+              Отмена
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
