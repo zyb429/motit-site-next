@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "prisma generate && next dev",
     "dev:webpack": "next dev --webpack",
     "dev:turbopack": "next dev --turbopack",
     "dev:all": "concurrently -n ws,next -c blue,green \"npm run ws\" \"npm run dev\"",
