@@ -6,12 +6,17 @@ import {
   Paperclip,
   Download,
   Image as ImageIcon,
-  X,
   FileText,
   FileArchive,
   FileSpreadsheet,
-  File,
+  File as FileIcon,
+  Play,
+  Music,
 } from "lucide-react";
+import {
+  MediaPreviewModal,
+  type PreviewFile,
+} from "@/components/chat/MediaPreviewModal";
 
 interface FileRecord {
   id: number;
@@ -32,147 +37,240 @@ interface Props {
   title?: string;
 }
 
-export function TicketAttachments({ attachments, title = "Вложения" }: Props) {
-  const [lightbox, setLightbox] = useState<FileRecord | null>(null);
+export function TicketAttachments({
+  attachments,
+  title = "Вложения",
+}: Props) {
+  const [previewFiles, setPreviewFiles] = useState<PreviewFile[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(-1);
 
   const files = attachments
-    .map((a) => a.files)
-    .filter((f): f is FileRecord => f !== null);
+    .map((attachment) => attachment.files)
+    .filter((file): file is FileRecord => file !== null);
+
+  const images = files.filter((file) =>
+    file.mime?.startsWith("image/")
+  );
+
+  const otherFiles = files.filter(
+    (file) => !file.mime?.startsWith("image/")
+  );
+
+  // Порядок переключения совпадает с порядком отображения:
+  // сначала изображения, затем остальные вложения.
+  const orderedFiles = [...images, ...otherFiles];
+
+  function openPreview(file: FileRecord) {
+    const mappedFiles: PreviewFile[] = orderedFiles.map((item) => ({
+      id: item.id,
+      uuid: item.uuid,
+      name: item.name || "Файл",
+      url: item.url,
+      mime: item.mime,
+      size: item.size,
+      kind: "attachment",
+    }));
+
+    const index = mappedFiles.findIndex(
+      (item) => item.uuid === file.uuid
+    );
+
+    if (index < 0) return;
+
+    setPreviewFiles(mappedFiles);
+    setPreviewIndex(index);
+  }
+
+  function closePreview() {
+    setPreviewIndex(-1);
+    setPreviewFiles([]);
+  }
+
+  function navigatePreview(index: number) {
+    if (index < 0 || index >= previewFiles.length) return;
+    setPreviewIndex(index);
+  }
 
   if (files.length === 0) return null;
 
-  const images = files.filter((f) => f.mime?.startsWith("image/"));
-  const docs = files.filter((f) => !f.mime?.startsWith("image/"));
+  const activeFile = previewFiles[previewIndex];
 
   return (
     <>
-      <div className="mt-6">
-        <h2 className="text-xs font-semibold text-(--text-muted) uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Paperclip size={14} />
+      <section className="mt-6 min-w-0">
+        <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--text-muted)">
+          <Paperclip size={14} className="shrink-0" />
           {title} ({files.length})
         </h2>
 
-        {/* Сетка изображений */}
+        {/* Изображения */}
         {images.length > 0 && (
-          <div
-            className={`grid gap-2 mb-3 ${
+          <ul
+            className={`mb-3 grid gap-2 ${
               images.length === 1
-                ? "grid-cols-1 max-w-sm"
+                ? "max-w-sm grid-cols-1"
                 : images.length === 2
-                  ? "grid-cols-2 max-w-md"
+                  ? "max-w-md grid-cols-2"
                   : "grid-cols-2 sm:grid-cols-3"
             }`}
           >
-            {images.map((f) => (
-              <button
-                key={f.uuid}
-                type="button"
-                onClick={() => setLightbox(f)}
-                className={`relative group overflow-hidden rounded-xl bg-(--bg-secondary) border border-(--border) hover:border-(--accent)/40 transition-all ${
-                  images.length === 1 ? "aspect-video" : "aspect-square"
-                }`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={f.url}
-                  alt={f.name ?? "Изображение"}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <ImageIcon
-                    size={24}
-                    className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg"
+            {images.map((file) => (
+              <li key={file.uuid} className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() => openPreview(file)}
+                  aria-label={`Открыть ${file.name || "изображение"}`}
+                  className={`group relative block w-full overflow-hidden rounded-xl border border-(--border) bg-(--bg-secondary) transition-colors hover:border-(--accent)/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent) ${
+                    images.length === 1
+                      ? "aspect-video"
+                      : "aspect-square"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={file.url}
+                    alt={file.name || "Изображение"}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                </div>
-              </button>
+
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                    <ImageIcon
+                      size={24}
+                      className="text-white opacity-0 drop-shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                    />
+                  </span>
+
+                  <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3 pb-2 pt-6 text-left">
+                    <span className="block truncate text-xs font-medium text-white">
+                      {file.name || "Изображение"}
+                    </span>
+                  </span>
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
 
-        {/* Список документов */}
-        {docs.length > 0 && (
+        {/* Видео, аудио и документы */}
+        {otherFiles.length > 0 && (
           <ul className="space-y-2">
-            {docs.map((f) => (
-              <li key={f.uuid}>
+            {otherFiles.map((file) => (
+              <li
+                key={file.uuid}
+                className="flex min-w-0 items-center gap-1 rounded-xl border border-(--border) bg-(--bg-card) transition-colors hover:border-(--accent)/40"
+              >
+                <button
+                  type="button"
+                  onClick={() => openPreview(file)}
+                  aria-label={`Открыть ${file.name || "файл"}`}
+                  className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent)"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-(--accent-dim) text-(--accent)">
+                    <AttachmentIcon mime={file.mime} />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-(--text-primary) transition-colors group-hover:text-(--accent)">
+                      {file.name || "Файл"}
+                    </span>
+
+                    <span className="mt-0.5 block truncate text-xs text-(--text-muted)">
+                      {getFileDescription(file)}
+                    </span>
+                  </span>
+                </button>
+
                 <a
-                  href={f.url}
+                  href={file.url}
+                  download={file.name || undefined}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-3 p-3 rounded-xl bg-(--bg-card) border border-(--border) hover:border-(--accent)/40 hover:shadow-sm transition-all"
+                  aria-label={`Скачать ${file.name || "файл"}`}
+                  title="Скачать файл"
+                  className="mr-2 shrink-0 rounded-lg p-2 text-(--text-muted) transition-colors hover:bg-(--bg-secondary) hover:text-(--accent)"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-(--accent-dim) flex items-center justify-center text-(--accent) shrink-0">
-                    <FileIcon mime={f.mime} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-(--text-primary) truncate group-hover:text-(--accent) transition-colors">
-                      {f.name ?? "Файл"}
-                    </div>
-                    <div className="text-xs text-(--text-muted) mt-0.5">
-                      {formatSize(f.size)}
-                      {f.mime ? ` · ${f.mime.split("/")[1]?.toUpperCase()}` : ""}
-                    </div>
-                  </div>
-                  <Download
-                    size={16}
-                    className="text-(--text-muted) group-hover:text-(--accent) shrink-0 transition-colors"
-                  />
+                  <Download size={16} />
                 </a>
               </li>
             ))}
           </ul>
         )}
-      </div>
+      </section>
 
-      {/* Lightbox для изображений */}
-      {lightbox && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-          onClick={() => setLightbox(null)}
-        >
-          <button
-            type="button"
-            onClick={() => setLightbox(null)}
-            className="absolute top-4 right-4 p-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
-            aria-label="Закрыть"
-          >
-            <X size={24} />
-          </button>
-
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={lightbox.url}
-            alt={lightbox.name ?? "Изображение"}
-            className="max-w-full max-h-full object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
-
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-black/60 text-white text-sm max-w-[90vw] truncate">
-            {lightbox.name ?? "Изображение"}
-            {lightbox.size ? ` · ${formatSize(lightbox.size)}` : ""}
-          </div>
-        </div>
+      {previewIndex >= 0 && activeFile && (
+        <MediaPreviewModal
+          file={activeFile}
+          siblings={previewFiles}
+          currentIndex={previewIndex}
+          onCloseAction={closePreview}
+          onNavigateAction={navigatePreview}
+        />
       )}
     </>
   );
 }
 
-// Иконка по типу файла
-function FileIcon({ mime }: { mime: string | null }) {
+function AttachmentIcon({ mime }: { mime: string | null }) {
   if (!mime) return <Paperclip size={18} />;
-  if (mime.includes("pdf")) return <FileText size={18} />;
-  if (mime.includes("zip") || mime.includes("compressed"))
+
+  if (mime.startsWith("video/")) {
+    return <Play size={18} fill="currentColor" />;
+  }
+
+  if (mime.startsWith("audio/")) {
+    return <Music size={18} />;
+  }
+
+  if (
+    mime.includes("zip") ||
+    mime.includes("compressed") ||
+    mime.includes("gzip") ||
+    mime.includes("tar")
+  ) {
     return <FileArchive size={18} />;
-  if (mime.includes("word") || mime.includes("document"))
-    return <FileText size={18} />;
-  if (mime.includes("sheet") || mime.includes("excel"))
+  }
+
+  if (mime.includes("sheet") || mime.includes("excel")) {
     return <FileSpreadsheet size={18} />;
-  return <File size={18} />;
+  }
+
+  if (
+    mime.includes("pdf") ||
+    mime.includes("word") ||
+    mime.includes("document") ||
+    mime.startsWith("text/")
+  ) {
+    return <FileText size={18} />;
+  }
+
+  return <FileIcon size={18} />;
+}
+
+function getFileDescription(file: FileRecord): string {
+  const mime = file.mime?.toLowerCase();
+
+  const type = !mime
+    ? "Файл"
+    : mime.startsWith("video/")
+      ? "Видео"
+      : mime.startsWith("audio/")
+        ? "Аудио"
+        : mime === "application/pdf"
+          ? "PDF"
+          : mime.split("/")[1]?.toUpperCase() || "Файл";
+
+  return [formatSize(file.size), type].filter(Boolean).join(" · ");
 }
 
 function formatSize(size: number | null): string {
-  if (!size) return "";
-  const bytes = Number(size);
-  if (bytes < 1024) return `${bytes} Б`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} МБ`;
+  if (size === null || !Number.isFinite(size) || size < 0) {
+    return "";
+  }
+
+  if (size < 1024) return `${size} Б`;
+  if (size < 1024 ** 2) return `${(size / 1024).toFixed(1)} КБ`;
+  if (size < 1024 ** 3) return `${(size / 1024 ** 2).toFixed(1)} МБ`;
+
+  return `${(size / 1024 ** 3).toFixed(1)} ГБ`;
 }
