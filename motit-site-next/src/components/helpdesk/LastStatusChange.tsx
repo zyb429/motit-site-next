@@ -1,7 +1,7 @@
-// src/components/helpdesk/LastStatusChange.tsx
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { History, ArrowRight, User2, ChevronDown, X, Clock } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import {
@@ -23,24 +23,70 @@ export function LastStatusChangeBlock({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [mounted, setMounted] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
+
+  // Позиционирование десктопного поповера
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const popoverWidth = 400;
+    const padding = 16;
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - padding) {
+      left = window.innerWidth - popoverWidth - padding;
+    }
+    setPosition({ top: rect.bottom + 8, left: Math.max(padding, left) });
+  }, []);
 
   useEffect(() => {
     if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      updatePosition();
+      window.addEventListener("resize", updatePosition);
+      window.addEventListener("scroll", updatePosition, true);
+      return () => {
+        window.removeEventListener("resize", updatePosition);
+        window.removeEventListener("scroll", updatePosition, true);
+      };
     }
+  }, [open, updatePosition]);
+
+  // Блокируем прокрутку только для открытой мобильной модалки.
+  useEffect(() => {
+    if (!open) return;
+
+    const media = window.matchMedia("(max-width: 639px)");
+    const previousOverflow = document.body.style.overflow;
+
+    const syncOverflow = () => {
+      document.body.style.overflow = media.matches
+        ? "hidden"
+        : previousOverflow;
+    };
+
+    syncOverflow();
+    media.addEventListener("change", syncOverflow);
+
     return () => {
-      document.body.style.overflow = "";
+      media.removeEventListener("change", syncOverflow);
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
+  // Закрытие по клику вне поповера (десктоп)
   useEffect(() => {
     if (!open) return;
     const onDocClick = (e: MouseEvent) => {
       if (window.innerWidth < 640) return;
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        popoverRef.current && !popoverRef.current.contains(target)
+      ) {
         setOpen(false);
       }
     };
@@ -48,6 +94,7 @@ export function LastStatusChangeBlock({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
 
+  // Закрытие по Escape
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -112,8 +159,9 @@ export function LastStatusChangeBlock({
   );
 
   return (
-    <div ref={rootRef} className={`relative ${className}`}>
+    <div className={`relative ${className}`}>
       <button
+        ref={buttonRef}
         type="button"
         onClick={(e) => {
           e.preventDefault();
@@ -158,71 +206,119 @@ export function LastStatusChangeBlock({
         )}
       </button>
 
-      {hasHistory && open && (
+      {hasHistory && open && mounted && (
         <>
-          {/* Десктоп: Popover */}
-          <div className="hidden sm:block absolute left-0 top-full z-50 mt-2 w-[400px] max-w-[calc(100vw-2rem)] rounded-2xl border border-(--border) bg-(--bg-card) shadow-2xl shadow-black/10 dark:shadow-black/40 overflow-hidden">
-            <div className="flex items-center gap-2 px-5 py-4 border-b border-(--border) bg-(--bg-secondary)/40">
-              <div className="w-8 h-8 rounded-lg bg-(--accent-dim) flex items-center justify-center">
-                <History size={16} className="text-(--accent)" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-(--text-primary)">
-                  История статусов
-                </div>
-                <div className="text-xs text-(--text-muted)">
-                  {history.length}{" "}
-                  {history.length === 1
-                    ? "запись"
-                    : history.length < 5
-                      ? "записи"
-                      : "записей"}
-                </div>
-              </div>
-            </div>
-            <div className="max-h-[400px] overflow-y-auto p-5">
-              {historyContent}
-            </div>
-          </div>
-
-          {/* Мобильные: модалка по центру */}
-          <div className="sm:hidden fixed inset-0 z-[100] flex items-center justify-center p-4 pt-safe pb-safe">
+          {/* Десктоп: поповер */}
+          {createPortal(
             <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setOpen(false)}
-              aria-hidden="true"
-            />
-            <div className="relative w-full max-w-md max-h-[85vh] rounded-2xl border border-(--border) bg-(--bg-card) shadow-2xl flex flex-col overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-(--border) shrink-0">
-                <div className="w-9 h-9 rounded-lg bg-(--accent-dim) flex items-center justify-center shrink-0">
-                  <History size={18} className="text-(--accent)" />
+              ref={popoverRef}
+              className="hidden sm:block rounded-2xl border border-(--border) bg-(--bg-card) shadow-2xl shadow-black/10 dark:shadow-black/40"
+              style={{
+                position: "fixed",
+                zIndex: 9999,
+                top: position.top,
+                left: position.left,
+                width: 400,
+                maxWidth: "calc(100vw - 2rem)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 px-5 py-4 border-b border-(--border) bg-(--bg-secondary)/40 rounded-t-2xl">
+                <div className="w-8 h-8 rounded-lg bg-(--accent-dim) flex items-center justify-center">
+                  <History size={16} className="text-(--accent)" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-base font-semibold text-(--text-primary)">
+
+                <div>
+                  <div className="text-sm font-semibold text-(--text-primary)">
                     История статусов
                   </div>
+
                   <div className="text-xs text-(--text-muted)">
                     {history.length}{" "}
-                    {history.length === 1
+                    {history.length % 10 === 1 &&
+                    history.length % 100 !== 11
                       ? "запись"
-                      : history.length < 5
+                      : history.length % 10 >= 2 &&
+                          history.length % 10 <= 4 &&
+                          (history.length % 100 < 12 ||
+                            history.length % 100 > 14)
                         ? "записи"
                         : "записей"}
                   </div>
                 </div>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="p-2 rounded-lg text-(--text-muted) hover:bg-(--bg-secondary) hover:text-(--text-primary) active:scale-95 transition-all"
-                  aria-label="Закрыть"
-                >
-                  <X size={20} />
-                </button>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4">
+
+              <div className="max-h-[400px] overflow-y-auto p-5">
                 {historyContent}
               </div>
-            </div>
-          </div>
+            </div>,
+            document.body
+          )}
+
+          {/* Мобильные: модалка по центру */}
+          {createPortal(
+            <div
+              className="sm:hidden flex items-center justify-center p-4 pt-safe pb-safe"
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 9999,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={() => setOpen(false)}
+                aria-hidden="true"
+              />
+
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="История статусов"
+                className="relative w-full max-w-md max-h-[85vh] rounded-2xl border border-(--border) bg-(--bg-card) shadow-2xl flex flex-col overflow-hidden"
+              >
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-(--border) shrink-0">
+                  <div className="w-9 h-9 rounded-lg bg-(--accent-dim) flex items-center justify-center shrink-0">
+                    <History size={18} className="text-(--accent)" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="text-base font-semibold text-(--text-primary)">
+                      История статусов
+                    </div>
+
+                    <div className="text-xs text-(--text-muted)">
+                      {history.length}{" "}
+                      {history.length % 10 === 1 &&
+                      history.length % 100 !== 11
+                        ? "запись"
+                        : history.length % 10 >= 2 &&
+                            history.length % 10 <= 4 &&
+                            (history.length % 100 < 12 ||
+                              history.length % 100 > 14)
+                          ? "записи"
+                          : "записей"}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="p-2 rounded-lg text-(--text-muted) hover:bg-(--bg-secondary) hover:text-(--text-primary) active:scale-95 transition-all"
+                    aria-label="Закрыть"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4">
+                  {historyContent}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
         </>
       )}
     </div>

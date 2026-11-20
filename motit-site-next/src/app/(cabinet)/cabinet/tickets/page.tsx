@@ -119,18 +119,18 @@ export default async function TicketsPage() {
                   : t.created_by?.full_name || t.created_by?.username || "—";
 
                 return (
-                  <li key={t.uuid}>
-                    <div className="group relative rounded-2xl bg-(--bg-card) border border-(--border) hover:border-(--accent)/40 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/30 transition-all duration-200 overflow-hidden">
+                  <li key={t.uuid} className="relative focus-within:z-50 hover:z-50">
+                    <div className="group relative rounded-2xl bg-(--bg-card) border border-(--border) hover:border-(--accent)/40 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/30 transition-all duration-200">
                       {/* Левая цветная полоска статуса */}
                       <div
-                        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+                        className="absolute inset-y-0 left-0 w-1 rounded-l-2xl pointer-events-none"
                         style={{
                           backgroundColor:
                             t.statuses?.color ?? "var(--border)",
                         }}
                       />
 
-                      <div className="pl-5 pr-4 sm:pr-5 py-4 sm:py-5">
+                      <div className="pl-6 pr-4 sm:pr-5 py-4 sm:py-5">
                         {/* Верхняя строка: бейджи + дата */}
                         <div className="flex items-start justify-between gap-3 mb-2">
                           <div className="flex flex-wrap items-center gap-1.5">
@@ -181,7 +181,7 @@ export default async function TicketsPage() {
                         </div>
 
                         {/* История статуса */}
-                        <div className="mt-2">
+                        <div className="relative z-10 mt-2 w-full min-w-0">
                           <LastStatusChangeBlock
                             change={lastChanges.get(t.uuid) ?? null}
                             history={histories.get(t.uuid)}
