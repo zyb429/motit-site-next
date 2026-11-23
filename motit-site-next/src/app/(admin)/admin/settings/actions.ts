@@ -9,21 +9,45 @@ import {
   isLanguage,
   isTimezone,
 } from "@/lib/i18n";
+import { logActivity } from "@/lib/activity";
 
 type Result = { ok?: boolean; error?: string };
+
+type SettingsSection =
+  | "general"
+  | "contacts"
+  | "social"
+  | "social_options"
+  | "seo"
+  | "analytics"
+  | "notifications"
+  | "appearance";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
   if (!user?.isAdmin) throw new Error("Forbidden");
+  return user;
 }
 
 async function updateSite(
   id: number,
   data: Record<string, unknown>,
+  section: SettingsSection,
 ): Promise<Result> {
   try {
-    await requireAdmin();
+    const user = await requireAdmin();
     await prisma.siteSettings.update({ where: { id }, data });
+
+    await logActivity({
+      actorUuid: user.uuid,
+      targetType: "settings",
+      action: "update",
+      meta: {
+        section,
+        fields: Object.keys(data),
+      },
+    });
+
     revalidatePath("/", "layout");
     return { ok: true };
   } catch (e) {
@@ -49,22 +73,24 @@ export async function updateGeneralSettings(
     return { error: "Некорректный часовой пояс" };
   }
 
-  return updateSite(Number(fd.get("id")), {
-    siteName: String(fd.get("siteName") ?? ""),
-    description: String(fd.get("description") ?? ""),
-    // `language` синхронизируем с `siteLocale`, чтобы старый код не сломался
-    language: siteLocaleRaw,
-    siteLocale: siteLocaleRaw,
-    adminLocale: adminLocaleRaw,
-    timezone: timezoneRaw,
-  });
+  return updateSite(
+    Number(fd.get("id")),
+    {
+      siteName: String(fd.get("siteName") ?? ""),
+      description: String(fd.get("description") ?? ""),
+      language: siteLocaleRaw,
+      siteLocale: siteLocaleRaw,
+      adminLocale: adminLocaleRaw,
+      timezone: timezoneRaw,
+    },
+    "general",
+  );
 }
 
 export async function updateContacts(
   _: unknown,
   fd: FormData,
 ): Promise<Result> {
-  // --- Email-адреса ---
   let contactEmails: { email: string; comment?: string }[] | null = null;
 
   const rawEmails = fd.get("contactEmails");
@@ -92,7 +118,6 @@ export async function updateContacts(
     }
   }
 
-  // --- Телефоны ---
   let contactPhones: { phone: string; comment?: string }[] | null = null;
 
   const rawPhones = fd.get("contactPhones");
@@ -120,7 +145,6 @@ export async function updateContacts(
     }
   }
 
-  // --- Адреса ---
   let addresses: { address: string; comment?: string }[] | null = null;
 
   const rawAddresses = fd.get("addresses");
@@ -148,15 +172,19 @@ export async function updateContacts(
     }
   }
 
-  return updateSite(Number(fd.get("id")), {
-    contactEmail: contactEmails?.[0]?.email ?? "",
-    contactEmails,
-    contactPhone: contactPhones?.[0]?.phone ?? "",
-    contactPhones,
-    address: addresses?.[0]?.address ?? "",
-    addresses,
-    workHours: String(fd.get("workHours") ?? ""),
-  });
+  return updateSite(
+    Number(fd.get("id")),
+    {
+      contactEmail: contactEmails?.[0]?.email ?? "",
+      contactEmails,
+      contactPhone: contactPhones?.[0]?.phone ?? "",
+      contactPhones,
+      address: addresses?.[0]?.address ?? "",
+      addresses,
+      workHours: String(fd.get("workHours") ?? ""),
+    },
+    "contacts",
+  );
 }
 
 export async function updateSocial(
@@ -170,21 +198,12 @@ export async function updateSocial(
   } catch {
     return { error: "Некорректный JSON" };
   }
-  return updateSite(Number(fd.get("id")), { socialLinks: parsed });
+  return updateSite(Number(fd.get("id")), { socialLinks: parsed }, "social");
 }
 
-/**
- * Сохраняет пользовательские соцсети в GlobalSettings.social_options.
- * Формат: [{ label, value, icon? }, ...]
- *
- * FormData:
- *  - id — id SiteSettings (не используется, оставлен для совместимости)
- *  - items — JSON-массив существующих элементов
- *  - newItem — JSON одного нового элемента
- */
 export async function updateSocialOptions(fd: FormData): Promise<Result> {
   try {
-    await requireAdmin();
+    const user = await requireAdmin();
 
     type Item = { label: string; value: string; icon?: string };
     const items: Item[] = [];
@@ -252,6 +271,16 @@ export async function updateSocialOptions(fd: FormData): Promise<Result> {
       create: { key: "social_options", value: items },
     });
 
+    await logActivity({
+      actorUuid: user.uuid,
+      targetType: "settings",
+      action: "update",
+      meta: {
+        section: "social_options",
+        count: items.length,
+      },
+    });
+
     revalidatePath("/admin/settings/social");
     revalidatePath("/admin/settings/puck-footer");
     revalidatePath("/", "layout");
@@ -268,29 +297,36 @@ export async function updateSocialOptions(fd: FormData): Promise<Result> {
 export async function updateSeo(_: unknown, fd: FormData): Promise<Result> {
   const ogImageSvgRaw = String(fd.get("ogImageSvg") ?? "");
   const trimmed = ogImageSvgRaw.trim();
-  // Сохраняем только если похоже на SVG, иначе — null
   const ogImageSvg = trimmed.toLowerCase().startsWith("<svg")
     ? trimmed
     : null;
 
-  return updateSite(Number(fd.get("id")), {
-    seoTitle: String(fd.get("seoTitle") ?? ""),
-    seoDescription: String(fd.get("seoDescription") ?? ""),
-    seoKeywords: String(fd.get("seoKeywords") ?? ""),
-    ogImageUrl: String(fd.get("ogImageUrl") ?? ""),
-    ogImageSvg,
-    robots: String(fd.get("robots") ?? "index,follow"),
-  });
+  return updateSite(
+    Number(fd.get("id")),
+    {
+      seoTitle: String(fd.get("seoTitle") ?? ""),
+      seoDescription: String(fd.get("seoDescription") ?? ""),
+      seoKeywords: String(fd.get("seoKeywords") ?? ""),
+      ogImageUrl: String(fd.get("ogImageUrl") ?? ""),
+      ogImageSvg,
+      robots: String(fd.get("robots") ?? "index,follow"),
+    },
+    "seo",
+  );
 }
 
 export async function updateAnalytics(
   _: unknown,
   fd: FormData,
 ): Promise<Result> {
-  return updateSite(Number(fd.get("id")), {
-    analyticsGaId: String(fd.get("analyticsGaId") ?? ""),
-    analyticsYmId: String(fd.get("analyticsYmId") ?? ""),
-  });
+  return updateSite(
+    Number(fd.get("id")),
+    {
+      analyticsGaId: String(fd.get("analyticsGaId") ?? ""),
+      analyticsYmId: String(fd.get("analyticsYmId") ?? ""),
+    },
+    "analytics",
+  );
 }
 
 export async function updateNotifications(
@@ -304,7 +340,11 @@ export async function updateNotifications(
   } catch {
     return { error: "Некорректный JSON" };
   }
-  return updateSite(Number(fd.get("id")), { notificationEmails: parsed });
+  return updateSite(
+    Number(fd.get("id")),
+    { notificationEmails: parsed },
+    "notifications",
+  );
 }
 
 export async function updateAppearance(
@@ -317,10 +357,14 @@ export async function updateAppearance(
     ? trimmed
     : null;
 
-  return updateSite(Number(fd.get("id")), {
-    logoLightUrl: String(fd.get("logoLightUrl") ?? ""),
-    logoDarkUrl: String(fd.get("logoDarkUrl") ?? ""),
-    faviconUrl: String(fd.get("faviconUrl") ?? ""),
-    faviconSvg,
-  });
+  return updateSite(
+    Number(fd.get("id")),
+    {
+      logoLightUrl: String(fd.get("logoLightUrl") ?? ""),
+      logoDarkUrl: String(fd.get("logoDarkUrl") ?? ""),
+      faviconUrl: String(fd.get("faviconUrl") ?? ""),
+      faviconSvg,
+    },
+    "appearance",
+  );
 }

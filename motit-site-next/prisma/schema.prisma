@@ -403,6 +403,8 @@ model tickets {
   status_history  ticket_status_history[]
   chat            chats?
 
+  activities Activity[] @relation("ActivityTicket")
+
   assignee      users?         @relation("TicketAssignee", fields: [assigned_to_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_assigned")
   ticket_category ticket_categories? @relation(fields: [category_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_category")
   client        users?         @relation("TicketClient", fields: [client_uuid], references: [uuid], onUpdate: NoAction, map: "fk_tickets_client")
@@ -493,6 +495,8 @@ model users {
   privacy_policy_versions PrivacyPolicyVersion[] @relation("PrivacyPolicyVersionAuthor")
 
   global_settings_updated GlobalSettings[] @relation("GlobalSettingsUpdatedBy")
+
+  activities Activity[] @relation("ActivityActor")
 
   chat_pinned_messages chat_pinned_messages[]
   user_pinned_messages user_pinned_messages[]
@@ -852,4 +856,35 @@ model PostListItem {
   @@unique([listId, postId], map: "idx_post_list_item_unique")
   @@index([listId, addedAt], map: "idx_post_list_item_list")
   @@index([postId], map: "idx_post_list_item_post")
+}
+
+model Activity {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid          String    @unique(map: "idx_activity_uuid") @default(dbgenerated("(uuid())")) @db.Char(36)
+
+  // Кто совершил действие (null — системное событие)
+  actor_uuid    String?   @db.Char(36)
+
+  // "site" | "post" | "ticket" | "settings" | "user"
+  target_type   String    @db.VarChar(50)
+  // id объекта (для site/settings может быть null)
+  target_id     String?   @db.VarChar(100)
+  // "create" | "update" | "delete" | "status_change" | "assign" | ...
+  action        String    @db.VarChar(50)
+
+  // Для target_type = "ticket" — ссылка на заявку
+  ticket_uuid   String?   @db.Char(36)
+
+  // Произвольные детали (заголовок, старый/новый статус, поля и т.п.)
+  meta          Json?
+
+  created_at    DateTime  @default(now()) @db.Timestamp(0)
+
+  actor   users?   @relation("ActivityActor", fields: [actor_uuid], references: [uuid], onDelete: SetNull, onUpdate: NoAction, map: "fk_activity_actor")
+  ticket  tickets? @relation("ActivityTicket", fields: [ticket_uuid], references: [uuid], onDelete: Cascade, onUpdate: NoAction, map: "fk_activity_ticket")
+
+  @@index([created_at], map: "idx_activity_created")
+  @@index([actor_uuid], map: "idx_activity_actor")
+  @@index([ticket_uuid], map: "idx_activity_ticket")
+  @@index([target_type, target_id], map: "idx_activity_target")
 }
