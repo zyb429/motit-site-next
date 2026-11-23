@@ -236,7 +236,9 @@ select {
   color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: 8px;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
 }
 input::placeholder,
 textarea::placeholder {
@@ -257,7 +259,9 @@ textarea:focus::placeholder {
 .reveal {
   opacity: 0;
   transform: translateY(30px);
-  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  transition:
+    opacity 0.7s ease-out,
+    transform 0.7s ease-out;
 }
 .reveal.visible {
   opacity: 1;
@@ -268,15 +272,33 @@ textarea:focus::placeholder {
   transform: none !important;
   transition: none !important;
 }
-.reveal-d1 { transition-delay: 0.08s; }
-.reveal-d2 { transition-delay: 0.16s; }
-.reveal-d3 { transition-delay: 0.24s; }
-.reveal-d4 { transition-delay: 0.32s; }
-.reveal-d5 { transition-delay: 0.4s; }
-.reveal-d6 { transition-delay: 0.48s; }
-.reveal-d7 { transition-delay: 0.56s; }
-.reveal-d8 { transition-delay: 0.64s; }
-.reveal-d9 { transition-delay: 0.72s; }
+.reveal-d1 {
+  transition-delay: 0.08s;
+}
+.reveal-d2 {
+  transition-delay: 0.16s;
+}
+.reveal-d3 {
+  transition-delay: 0.24s;
+}
+.reveal-d4 {
+  transition-delay: 0.32s;
+}
+.reveal-d5 {
+  transition-delay: 0.4s;
+}
+.reveal-d6 {
+  transition-delay: 0.48s;
+}
+.reveal-d7 {
+  transition-delay: 0.56s;
+}
+.reveal-d8 {
+  transition-delay: 0.64s;
+}
+.reveal-d9 {
+  transition-delay: 0.72s;
+}
 .hero-animate {
   opacity: 0;
   transform: translateY(30px);
@@ -373,7 +395,8 @@ textarea:focus::placeholder {
   background-color: var(--selection-bg) !important;
   color: var(--selection-color) !important;
 }
-.tiptap.ProseMirror:not(.readonly):not(.ProseMirror-hideselection) ::-moz-selection {
+.tiptap.ProseMirror:not(.readonly):not(.ProseMirror-hideselection)
+  ::-moz-selection {
   background-color: var(--selection-bg) !important;
   color: var(--selection-color) !important;
 }
@@ -475,7 +498,9 @@ textarea:focus::placeholder {
 }
 
 .puck-theme-wrapper [class*="PuckHeader"] button {
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .puck-theme-wrapper ::-webkit-scrollbar {
@@ -521,14 +546,16 @@ textarea:focus::placeholder {
 
 /* 1. Убираем лишние отступы у контейнера */
 .puck-theme-wrapper [class*="PuckDrawer"] {
-  padding: 8px 0 !important; 
+  padding: 8px 0 !important;
 }
 
 /* 2. Базовый стиль карточки: задаем margin по бокам и правильную ширину */
 .puck-theme-wrapper [class*="PuckDrawerItem"] {
   padding: 10px 12px !important;
   margin: 0 12px 6px 12px !important; /* Отступы по 12px слева и справа */
-  width: calc(100% - 24px) !important; /* Компенсируем margin, чтобы не было скролла */
+  width: calc(
+    100% - 24px
+  ) !important; /* Компенсируем margin, чтобы не было скролла */
   border-radius: 8px !important;
   border: 1px solid transparent !important;
   background-color: transparent !important;
