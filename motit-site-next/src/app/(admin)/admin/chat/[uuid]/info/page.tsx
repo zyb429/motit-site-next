@@ -60,10 +60,8 @@ export default async function AdminChatInfoPage({
     : null;
 
   const displayName = isDirect
-    ? otherMember?.user.full_name ??
-      otherMember?.user.username ??
-      "Без имени"
-    : chat.name ?? "Без названия";
+    ? (otherMember?.user.full_name ?? otherMember?.user.username ?? "Без имени")
+    : (chat.name ?? "Без названия");
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -71,8 +69,7 @@ export default async function AdminChatInfoPage({
         href={`/admin/chat/${chat.uuid}`}
         className="inline-flex items-center gap-1 text-sm text-(--text-muted) hover:text-(--accent) transition-colors"
       >
-        <ArrowLeft size={14} />
-        К чату
+        <ArrowLeft size={14} />К чату
       </Link>
 
       <div className="mt-6 flex items-center gap-4">
