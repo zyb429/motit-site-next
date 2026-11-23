@@ -209,11 +209,32 @@ export default async function AdminPage() {
                   const Icon = meta.icon;
                   const actor =
                     a.actor?.full_name || a.actor?.username || "Система";
+
+                  const activityMeta = (a.meta ?? {}) as Record<string, unknown>;
+
+                  const actorName =
+                    typeof activityMeta.actorName === "string"
+                      ? activityMeta.actorName
+                      : null;
+
+                  const assigneeName =
+                    typeof activityMeta.assigneeName === "string"
+                      ? activityMeta.assigneeName
+                      : null;
+
                   const actionLabel = ACTION_LABEL[a.action] ?? a.action;
                   const subject =
                     a.target_type === "ticket"
                       ? a.ticket?.title ?? "заявку"
                       : meta.label;
+
+                  const activityText =
+                    a.action === "assign"
+                      ? assigneeName
+                        ? `назначил(а) исполнителем ${assigneeName}`
+                        : "снял(а) исполнителя"
+                      : `${actionLabel} ${subject}`;
+
                   const date = new Date(a.created_at).toLocaleString("ru-RU", {
                     day: "numeric",
                     month: "short",
@@ -233,7 +254,7 @@ export default async function AdminPage() {
                           <p className="text-sm text-(--text-primary) truncate">
                             <span className="font-medium">{actor}</span>{" "}
                             <span className="text-(--text-secondary)">
-                              {actionLabel} {subject}
+                              {activityText}
                             </span>
                           </p>
                         </div>

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { getTicket, changeStatus, assignTicket, changePriority } from "@/lib/db/tickets";
 import { logActivity } from "@/lib/activity";
+import { prisma } from "@/lib/prisma";
 
 const patchSchema = z.object({
   statusCode: z.enum(["OPEN", "IN_PROGRESS", "WAITING_CLIENT", "RESOLVED", "CLOSED"]).optional(),
@@ -95,6 +96,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: 
   if (assigneeUuid !== undefined) {
     await assignTicket({ ticketUuid: uuid, assigneeUuid });
 
+    let assigneeName: string | null = null;
+
+    if (assigneeUuid) {
+      const assignee = await prisma.users.findUnique({
+        where: {
+          uuid: assigneeUuid,
+        },
+        select: {
+          full_name: true,
+          username: true,
+        },
+      });
+
+      assigneeName =
+        assignee?.full_name ||
+        assignee?.username ||
+        null;
+    }
+
     await logActivity({
       actorUuid: user.uuid,
       targetType: "ticket",
@@ -103,8 +123,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: 
       ticketUuid: uuid,
       meta: {
         title: existing.title,
+        actorName:
+          user.full_name ||
+          user.username,
+        assigneeName,
         from: existing.assignee?.uuid ?? null,
         to: assigneeUuid,
+        isInternal: false,
       },
     });
   }
