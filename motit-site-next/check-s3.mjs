@@ -16,7 +16,9 @@ try {
   await s3.send(new HeadBucketCommand({ Bucket: bucket }));
   console.log(`OK ${Date.now() - t}ms  endpoint=${endpoint} bucket=${bucket}`);
 } catch (e) {
-  console.error(`FAIL ${Date.now() - t}ms  endpoint=${endpoint} bucket=${bucket}`);
+  console.error(
+    `FAIL ${Date.now() - t}ms  endpoint=${endpoint} bucket=${bucket}`,
+  );
   console.error("  name:", e.name);
   console.error("  status:", e.$metadata?.httpStatusCode);
   console.error("  code:", e.cause?.code);

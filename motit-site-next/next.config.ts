@@ -50,15 +50,13 @@ const nextConfig: NextConfig = {
   },
 
   outputFileTracingExcludes: {
-    '*': [
-      './public/**/*',
-      './.next/cache/**/*',
-      './generated/prisma/**/*.map',
-      './prisma/**/*',
+    "*": [
+      "./public/**/*",
+      "./.next/cache/**/*",
+      "./generated/prisma/**/*.map",
+      "./prisma/**/*",
     ],
-    '/api/**': [
-      './public/**/*',
-    ],
+    "/api/**": ["./public/**/*"],
   },
 };
 
