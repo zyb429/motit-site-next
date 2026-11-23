@@ -1,8 +1,4 @@
-import {
-  BaseEditor,
-  type BaseElement,
-  type BaseText,
-} from "slate";
+import { BaseEditor, type BaseElement, type BaseText } from "slate";
 import { ReactEditor } from "slate-react";
 import { HistoryEditor } from "slate-history";
 
