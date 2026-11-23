@@ -20,19 +20,22 @@ import {
   Building2,
   User,
   ShieldCheck,
-  Bookmark, // ← Добавлена иконка для сохранённых постов
+  Bookmark,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import type { CurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
+import { NotificationBell } from "@/components/admin/NotificationBell";
 
 type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
   exact?: boolean;
+  adminOnly?: boolean;
 };
 
 type NavGroup = {
@@ -47,8 +50,18 @@ const GROUPS: NavGroup[] = [
       { href: "/admin", label: "Дашборд", icon: LayoutDashboard, exact: true },
       { href: "/admin/posts", label: "Посты", icon: FileText },
       { href: "/admin/categories", label: "Категории", icon: FolderTree },
-      { href: "/admin/settings/privacy-policy", label: "Политика конфиденциальности", icon: ShieldCheck },
-      { href: "/cabinet/saved", label: "Сохранённые посты", icon: Bookmark }, // ← Новый пункт
+      {
+        href: "/admin/settings/privacy-policy",
+        label: "Политика конфиденциальности",
+        icon: ShieldCheck,
+      },
+      { href: "/cabinet/saved", label: "Сохранённые посты", icon: Bookmark },
+      {
+        href: "/admin/announcements",
+        label: "Оповещения",
+        icon: Bell,
+        adminOnly: true,
+      },
     ],
   },
   {
@@ -56,7 +69,11 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/settings/puck-home", label: "Главная", icon: Home },
       { href: "/admin/settings/puck-header", label: "Хедер", icon: Globe },
-      { href: "/admin/settings/puck-footer", label: "Футер", icon: LayoutDashboard },
+      {
+        href: "/admin/settings/puck-footer",
+        label: "Футер",
+        icon: LayoutDashboard,
+      },
     ],
   },
   {
@@ -64,18 +81,39 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/users", label: "Пользователи", icon: Users },
       { href: "/admin/organizations", label: "Организации", icon: Building2 },
-      { href: "/admin/settings", label: "Настройки", icon: Settings, exact: true },
+      {
+        href: "/admin/settings",
+        label: "Настройки",
+        icon: Settings,
+        exact: true,
+      },
     ],
   },
   {
     title: "Тикеты",
     items: [
       { href: "/admin/tickets", label: "Обращения", icon: Inbox, exact: true },
-      { href: "/admin/tickets?segment=clients", label: "Клиентские", icon: Users },
-      { href: "/admin/tickets?segment=site", label: "Заявки с сайта", icon: Globe },
-      { href: "/admin/tickets?segment=internal", label: "Внутренние", icon: Building2 },
+      {
+        href: "/admin/tickets?segment=clients",
+        label: "Клиентские",
+        icon: Users,
+      },
+      {
+        href: "/admin/tickets?segment=site",
+        label: "Заявки с сайта",
+        icon: Globe,
+      },
+      {
+        href: "/admin/tickets?segment=internal",
+        label: "Внутренние",
+        icon: Building2,
+      },
       { href: "/admin/tickets/new", label: "Новое обращение", icon: Plus },
-      { href: "/admin/ticket-categories", label: "Категории обращений", icon: FolderTree },
+      {
+        href: "/admin/ticket-categories",
+        label: "Категории обращений",
+        icon: FolderTree,
+      },
     ],
   },
   {
@@ -97,7 +135,10 @@ function SidebarContent({
   const searchParams = useSearchParams();
   const currentQuery = searchParams.toString();
 
-  const [collapsed, toggleCollapsed] = useSidebarCollapsed(COOKIE_KEY, initialCollapsed);
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed(
+    COOKIE_KEY,
+    initialCollapsed,
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -168,26 +209,34 @@ function SidebarContent({
                 </span>
               </Link>
 
+              <div className="flex items-center gap-1">
+                <NotificationBell />
+
+                <button
+                  type="button"
+                  onClick={toggleCollapsed}
+                  title="Свернуть"
+                  aria-label="Свернуть меню"
+                  className="hidden lg:flex p-1.5 rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--accent-dim) transition-colors shrink-0"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <NotificationBell />
+
               <button
                 type="button"
                 onClick={toggleCollapsed}
-                title="Свернуть"
-                aria-label="Свернуть меню"
-                className="hidden lg:flex p-1.5 rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--accent-dim) transition-colors shrink-0"
+                title="Развернуть"
+                aria-label="Развернуть меню"
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--accent-dim) transition-colors"
               >
-                <ChevronLeft size={16} />
+                <ChevronRight size={20} />
               </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              title="Развернуть"
-              aria-label="Развернуть меню"
-              className="w-10 h-10 flex items-center justify-center rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--accent-dim) transition-colors"
-            >
-              <ChevronRight size={20} />
-            </button>
           )}
         </div>
 
@@ -200,28 +249,33 @@ function SidebarContent({
                 </div>
               )}
               <div className="px-2 space-y-0.5 mt-1">
-                {group.items.map(({ href, label, icon: Icon, exact }) => {
-                  const active = isActive(href, exact);
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      title={collapsed ? label : undefined}
-                      onClick={() => setMobileOpen(false)}
-                      className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                        active
-                          ? "bg-(--accent-dim) text-(--accent)"
-                          : "text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-dim)"
-                      } ${collapsed ? "justify-center" : ""}`}
-                    >
-                      {active && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r bg-(--accent)" />
-                      )}
-                      <Icon size={18} className="shrink-0" />
-                      {!collapsed && <span className="truncate">{label}</span>}
-                    </Link>
-                  );
-                })}
+                {group.items
+                  .filter((item) => !item.adminOnly || user.role === "admin")
+                  .map(({ href, label, icon: Icon, exact }) => {
+                    const active = isActive(href, exact);
+
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        title={collapsed ? label : undefined}
+                        onClick={() => setMobileOpen(false)}
+                        className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          active
+                            ? "bg-(--accent-dim) text-(--accent)"
+                            : "text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-dim)"
+                        } ${collapsed ? "justify-center" : ""}`}
+                      >
+                        {active && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r bg-(--accent)" />
+                        )}
+                        <Icon size={18} className="shrink-0" />
+                        {!collapsed && (
+                          <span className="truncate">{label}</span>
+                        )}
+                      </Link>
+                    );
+                  })}
               </div>
             </div>
           ))}
@@ -294,7 +348,11 @@ export function AdminSidebar({
   initialCollapsed?: boolean;
 }) {
   return (
-    <Suspense fallback={<div className="w-64 h-full border-r border-(--border) bg-(--bg-card)" />}>
+    <Suspense
+      fallback={
+        <div className="w-64 h-full border-r border-(--border) bg-(--bg-card)" />
+      }
+    >
       <SidebarContent user={user} initialCollapsed={initialCollapsed} />
     </Suspense>
   );
