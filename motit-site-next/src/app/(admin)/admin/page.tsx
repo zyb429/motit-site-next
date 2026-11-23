@@ -74,6 +74,28 @@ export default async function AdminPage() {
     getRecentActivity(user),
   ]);
 
+  const announcements = await prisma.announcements.findMany({
+    where: {
+      is_active: true,
+      OR: [
+        { audience: "all" },
+        ...(user.role ? [{ audience: user.role }] : []),
+      ],
+    },
+    include: {
+      created_by: {
+        select: {
+          username: true,
+          full_name: true,
+        },
+      },
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+    take: 5,
+  });
+
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
       <header className="shrink-0 bg-(--bg-card) border-b border-(--border)">
@@ -210,7 +232,10 @@ export default async function AdminPage() {
                   const actor =
                     a.actor?.full_name || a.actor?.username || "Система";
 
-                  const activityMeta = (a.meta ?? {}) as Record<string, unknown>;
+                  const activityMeta = (a.meta ?? {}) as Record<
+                    string,
+                    unknown
+                  >;
 
                   const actorName =
                     typeof activityMeta.actorName === "string"
@@ -225,7 +250,7 @@ export default async function AdminPage() {
                   const actionLabel = ACTION_LABEL[a.action] ?? a.action;
                   const subject =
                     a.target_type === "ticket"
-                      ? a.ticket?.title ?? "заявку"
+                      ? (a.ticket?.title ?? "заявку")
                       : meta.label;
 
                   const activityText =
@@ -265,6 +290,59 @@ export default async function AdminPage() {
                     </li>
                   );
                 })}
+              </ul>
+            )}
+          </div>
+
+          <div className="bg-(--bg-card) rounded-xl border border-(--border) p-6 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-(--text-primary)">
+                Оповещения
+              </h2>
+
+              {user.role === "admin" && (
+                <Link
+                  href="/admin/announcements/new"
+                  className="text-sm underline"
+                >
+                  Создать объявление
+                </Link>
+              )}
+            </div>
+
+            {announcements.length === 0 ? (
+              <p className="text-sm text-(--text-secondary)">
+                Активных объявлений пока нет.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {announcements.map((announcement) => (
+                  <li
+                    key={announcement.id}
+                    className="rounded-lg border border-(--border) p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="font-medium text-(--text-primary)">
+                        {announcement.title}
+                      </h3>
+                      <span className="text-xs text-(--text-muted)">
+                        {new Date(announcement.created_at).toLocaleDateString(
+                          "ru-RU",
+                        )}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 text-sm text-(--text-secondary) whitespace-pre-line">
+                      {announcement.message}
+                    </p>
+
+                    <p className="mt-2 text-xs text-(--text-muted)">
+                      {announcement.created_by?.full_name ||
+                        announcement.created_by?.username ||
+                        "Система"}
+                    </p>
+                  </li>
+                ))}
               </ul>
             )}
           </div>

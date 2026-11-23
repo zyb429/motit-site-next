@@ -60,9 +60,7 @@ export function LoginForm() {
 
         switch (code) {
           case "user_not_found":
-            throw new Error(
-              "Пользователь с таким именем или email не найден",
-            );
+            throw new Error("Пользователь с таким именем или email не найден");
           case "invalid_password":
             throw new Error("Неверный пароль");
           case "user_blocked":

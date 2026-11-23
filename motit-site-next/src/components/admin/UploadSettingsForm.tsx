@@ -67,7 +67,9 @@ export function UploadSettingsForm({ allOptions, initialAllowed }: Props) {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(typeof d.error === "string" ? d.error : "Не удалось сохранить");
+        throw new Error(
+          typeof d.error === "string" ? d.error : "Не удалось сохранить",
+        );
       }
       setMessage("Сохранено");
       router.refresh();

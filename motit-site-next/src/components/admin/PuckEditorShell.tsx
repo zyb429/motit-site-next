@@ -3,13 +3,7 @@
 import { Puck, type Config, type Data, createUsePuck } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import { useRouter } from "next/navigation";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Smartphone,
   Tablet,
@@ -42,7 +36,9 @@ const BASE_VIEWPORTS = [
 function useSyncPreviewTheme(previewTheme: "light" | "dark") {
   useEffect(() => {
     const applyTheme = () => {
-      const iframe = document.querySelector("iframe") as HTMLIFrameElement | null;
+      const iframe = document.querySelector(
+        "iframe",
+      ) as HTMLIFrameElement | null;
       if (!iframe) return;
 
       try {
