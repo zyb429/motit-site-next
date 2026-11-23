@@ -102,7 +102,9 @@ export function BlogCard({
   const getReadingTime = () => {
     // Считаем по полному контенту. Если его нет — падаем на excerpt.
     const rawContent = post.content;
-    const textToCount = rawContent ? extractText(rawContent) : extractText(excerpt);
+    const textToCount = rawContent
+      ? extractText(rawContent)
+      : extractText(excerpt);
     const words = textToCount.trim().split(/\s+/).filter(Boolean).length;
     return Math.max(1, Math.ceil(words / 200));
   };

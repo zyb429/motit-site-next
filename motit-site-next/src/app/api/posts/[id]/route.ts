@@ -135,7 +135,8 @@ export async function PUT(
     if (content !== undefined) data.content = content;
     if (excerpt !== undefined) data.excerpt = excerpt;
     if (meta_title !== undefined) data.meta_title = meta_title;
-    if (meta_description !== undefined) data.meta_description = meta_description;
+    if (meta_description !== undefined)
+      data.meta_description = meta_description;
     if (is_featured !== undefined) data.is_featured = is_featured;
     if (views !== undefined) data.views = views;
 

@@ -75,9 +75,7 @@ interface BlogPostPageProps {
 export async function generateStaticParams() {
   try {
     const posts = await getPostsPrisma({ status: "published", take: 20 });
-    return posts
-      .filter((p) => p.slug)
-      .map((p) => ({ slug: p.slug as string }));
+    return posts.filter((p) => p.slug).map((p) => ({ slug: p.slug as string }));
   } catch (error) {
     console.error("Error generating static params:", error);
     return [];
@@ -121,7 +119,8 @@ function highlightCodeBlocks(html: string): string {
     if (!$code.length) return;
 
     const className = $code.attr("class") || "";
-    const lang = className.replace("language-", "").split(" ")[0] || "plaintext";
+    const lang =
+      className.replace("language-", "").split(" ")[0] || "plaintext";
 
     const code = $code
       .text()
@@ -261,7 +260,9 @@ export default async function BlogPostPage({
     if (sp && typeof sp === "object") {
       searchQuery = sp.search || "";
       if (sp.category) {
-        categorySlugs = Array.isArray(sp.category) ? sp.category : [sp.category];
+        categorySlugs = Array.isArray(sp.category)
+          ? sp.category
+          : [sp.category];
       }
       if (sp.page) pageParam = String(sp.page);
       if (sp.view) viewParam = String(sp.view);

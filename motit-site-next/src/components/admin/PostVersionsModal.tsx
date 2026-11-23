@@ -94,10 +94,10 @@ export function PostVersionsModal({
     setPreviewLoading(true);
 
     try {
-      const res = await fetch(
-        `/api/posts/${postId}/versions/${versionId}`,
-        { signal: controller.signal, cache: "no-store" },
-      );
+      const res = await fetch(`/api/posts/${postId}/versions/${versionId}`, {
+        signal: controller.signal,
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as PreviewData;
       // если за это время пользователь уже выбрал другую версию — игнорируем
@@ -167,9 +167,7 @@ export function PostVersionsModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">
-          {loading && (
-            <p className="text-sm text-(--text-muted)">Загрузка…</p>
-          )}
+          {loading && <p className="text-sm text-(--text-muted)">Загрузка…</p>}
 
           {error && <p className="text-sm text-red-400">Ошибка: {error}</p>}
 
@@ -229,9 +227,7 @@ export function PostVersionsModal({
                       ) : previewData?.html ? (
                         <>
                           <div className="px-4 py-2 text-xs text-(--text-muted) border-b border-(--border)">
-                            {previewData.version.title ||
-                              "(без заголовка)"}{" "}
-                            ·{" "}
+                            {previewData.version.title || "(без заголовка)"} ·{" "}
                             {new Date(
                               previewData.version.created_at,
                             ).toLocaleString("ru-RU")}

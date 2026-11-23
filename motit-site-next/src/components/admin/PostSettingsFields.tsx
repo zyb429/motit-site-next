@@ -1,10 +1,7 @@
 // src/components/admin/PostSettingsFields.tsx
-"use client"
+"use client";
 
-import {
-  type ChangeEvent,
-  type RefObject,
-} from "react"
+import { type ChangeEvent, type RefObject } from "react";
 import {
   FileText,
   Tag,
@@ -12,34 +9,34 @@ import {
   Upload,
   Trash2,
   Loader2,
-} from "lucide-react"
+} from "lucide-react";
 
 type Category = {
-  id: number
-  name: string
-  documentId?: string
-  slug?: string
-}
+  id: number;
+  name: string;
+  documentId?: string;
+  slug?: string;
+};
 
-type PostStatus = "draft" | "published"
+type PostStatus = "draft" | "published";
 
 export type PostSettingsFieldsProps = {
-  categories: Category[]
-  categoryId: number | null
-  setCategoryId: (id: number | null) => void
-  postStatus: PostStatus
-  setPostStatus: (status: PostStatus) => void
-  excerpt: string
-  setExcerpt: (text: string) => void
-  featuredImagePreview: string | null
-  isEditingCover: boolean
-  onCoverEdit: () => void
-  onCoverRemove: () => void
-  onCoverSelect: (e: ChangeEvent<HTMLInputElement>) => void
-  fileInputRef: RefObject<HTMLInputElement | null>
-  isDisabled: boolean
-  inputClass: string
-}
+  categories: Category[];
+  categoryId: number | null;
+  setCategoryId: (id: number | null) => void;
+  postStatus: PostStatus;
+  setPostStatus: (status: PostStatus) => void;
+  excerpt: string;
+  setExcerpt: (text: string) => void;
+  featuredImagePreview: string | null;
+  isEditingCover: boolean;
+  onCoverEdit: () => void;
+  onCoverRemove: () => void;
+  onCoverSelect: (e: ChangeEvent<HTMLInputElement>) => void;
+  fileInputRef: RefObject<HTMLInputElement | null>;
+  isDisabled: boolean;
+  inputClass: string;
+};
 
 export function PostSettingsFields({
   categories,
@@ -141,8 +138,8 @@ export function PostSettingsFields({
             <button
               type="button"
               onClick={(e) => {
-                e.stopPropagation()
-                onCoverRemove()
+                e.stopPropagation();
+                onCoverRemove();
               }}
               disabled={isDisabled}
               /* На мобилке кнопка видна всегда, на десктопе — по hover */
@@ -177,5 +174,5 @@ export function PostSettingsFields({
         />
       </div>
     </div>
-  )
+  );
 }

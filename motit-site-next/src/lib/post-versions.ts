@@ -1,8 +1,8 @@
 // src/lib/post-versions.ts
-import { prisma } from "@/lib/prisma"
-import type { Prisma } from "@generated/prisma"
+import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@generated/prisma";
 
-const MAX_VERSIONS = 50 // ← лимит версий на пост
+const MAX_VERSIONS = 50; // ← лимит версий на пост
 
 export async function snapshotPost(postId: number, userId: number | null) {
   const post = await prisma.posts.findUnique({
@@ -16,8 +16,8 @@ export async function snapshotPost(postId: number, userId: number | null) {
       meta_title: true,
       meta_description: true,
     },
-  })
-  if (!post) return null
+  });
+  if (!post) return null;
 
   const created = await prisma.postVersion.create({
     data: {
@@ -31,7 +31,7 @@ export async function snapshotPost(postId: number, userId: number | null) {
       meta_description: post.meta_description,
       created_by_id: userId ?? null,
     },
-  })
+  });
 
   // Ограничение: удаляем версии старше последних MAX_VERSIONS
   const old = await prisma.postVersion.findMany({
@@ -39,23 +39,23 @@ export async function snapshotPost(postId: number, userId: number | null) {
     orderBy: { created_at: "desc" },
     skip: MAX_VERSIONS,
     select: { id: true },
-  })
+  });
 
   if (old.length > 0) {
     await prisma.postVersion.deleteMany({
       where: { id: { in: old.map((v) => v.id) } },
-    })
+    });
   }
 
-  return created
+  return created;
 }
 
 export async function rollbackToVersion(postId: number, versionId: number) {
   const version = await prisma.postVersion.findUnique({
     where: { id: versionId },
-  })
+  });
   if (!version || version.post_id !== postId) {
-    throw new Error("Версия не найдена или принадлежит другому посту")
+    throw new Error("Версия не найдена или принадлежит другому посту");
   }
 
   return prisma.posts.update({
@@ -70,5 +70,5 @@ export async function rollbackToVersion(postId: number, versionId: number) {
       meta_description: version.meta_description,
       updated_at: new Date(),
     },
-  })
+  });
 }

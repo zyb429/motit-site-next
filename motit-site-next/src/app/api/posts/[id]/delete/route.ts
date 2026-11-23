@@ -43,7 +43,9 @@ export async function DELETE(
       select: { title: true, slug: true },
     });
 
-    await prisma.posts_categories_links.deleteMany({ where: { post_id: postId } });
+    await prisma.posts_categories_links.deleteMany({
+      where: { post_id: postId },
+    });
     await prisma.posts.delete({ where: { id: postId } });
 
     await logActivity({

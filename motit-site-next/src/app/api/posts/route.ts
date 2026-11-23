@@ -13,10 +13,7 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json(
-        { error: "Не авторизован" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -171,8 +168,7 @@ export async function POST(request: NextRequest) {
     if (slugExists) {
       const slugDate = now;
 
-      const pad = (value: number) =>
-        String(value).padStart(2, "0");
+      const pad = (value: number) => String(value).padStart(2, "0");
 
       const datePart = [
         slugDate.getFullYear(),
@@ -215,9 +211,7 @@ export async function POST(request: NextRequest) {
         is_featured: is_featured ?? false,
         views: views ?? 0,
         author_id: authorId,
-        featured_image_id: featured_image
-          ? Number(featured_image)
-          : null,
+        featured_image_id: featured_image ? Number(featured_image) : null,
         published_at: isPublished ? now : null,
         created_at: now,
         updated_at: now,

@@ -1,8 +1,8 @@
 // src/components/blog/BlogPostActions.tsx
-'use client';
+"use client";
 
-import { Share2 } from 'lucide-react';
-import { useSyncExternalStore } from 'react';
+import { Share2 } from "lucide-react";
+import { useSyncExternalStore } from "react";
 
 interface BlogPostActionsProps {
   title: string;
@@ -17,17 +17,21 @@ function getOrigin() {
 }
 
 function getServerOrigin() {
-  return '';
+  return "";
 }
 
 export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
-  const origin = useSyncExternalStore(emptySubscribe, getOrigin, getServerOrigin);
+  const origin = useSyncExternalStore(
+    emptySubscribe,
+    getOrigin,
+    getServerOrigin,
+  );
   const currentUrl = origin ? `${origin}${url}` : url;
 
   const handleShare = async () => {
     const shareData = {
       title,
-      text: excerpt || '',
+      text: excerpt || "",
       url: currentUrl,
     };
 
@@ -36,11 +40,11 @@ export function BlogPostActions({ title, excerpt, url }: BlogPostActionsProps) {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(currentUrl);
-        alert('Ссылка скопирована в буфер обмена!');
+        alert("Ссылка скопирована в буфер обмена!");
       }
     } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
-        console.error('Ошибка при попытке поделиться:', error);
+      if (error instanceof Error && error.name !== "AbortError") {
+        console.error("Ошибка при попытке поделиться:", error);
       }
     }
   };

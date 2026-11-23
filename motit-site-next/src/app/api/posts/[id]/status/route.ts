@@ -40,10 +40,7 @@ export async function PATCH(
     const { post_status } = body;
 
     if (!post_status) {
-      return NextResponse.json(
-        { error: "Нужен post_status" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Нужен post_status" }, { status: 400 });
     }
 
     const now = new Date();
@@ -73,4 +70,3 @@ export async function PATCH(
     );
   }
 }
-

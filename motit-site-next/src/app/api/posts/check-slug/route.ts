@@ -7,10 +7,7 @@ export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
 
   if (!user) {
-    return NextResponse.json(
-      { error: "Не авторизован" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
   }
 
   const slug = request.nextUrl.searchParams.get("slug")?.trim();
