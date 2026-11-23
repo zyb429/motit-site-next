@@ -497,6 +497,7 @@ model users {
   global_settings_updated GlobalSettings[] @relation("GlobalSettingsUpdatedBy")
 
   activities Activity[] @relation("ActivityActor")
+  announcements_created announcements[] @relation("AnnouncementCreatedBy")
 
   chat_pinned_messages chat_pinned_messages[]
   user_pinned_messages user_pinned_messages[]
@@ -887,4 +888,20 @@ model Activity {
   @@index([actor_uuid], map: "idx_activity_actor")
   @@index([ticket_uuid], map: "idx_activity_ticket")
   @@index([target_type, target_id], map: "idx_activity_target")
+}
+
+model announcements {
+  id            Int      @id @default(autoincrement()) @db.UnsignedInt
+  uuid          String   @unique @default(uuid()) @db.Char(36)
+  title         String
+  message       String   @db.Text
+  audience      String   @default("all")
+  is_active     Boolean  @default(true)
+  created_by_id Int?     @db.UnsignedInt
+  created_at    DateTime @default(now()) @db.DateTime(6)
+  updated_at    DateTime @updatedAt @db.DateTime(6)
+
+  created_by users? @relation("AnnouncementCreatedBy", fields: [created_by_id], references: [id])
+
+  @@map("announcements")
 }

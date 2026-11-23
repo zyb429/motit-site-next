@@ -18,11 +18,41 @@ async function main() {
 
   await prisma.statuses.createMany({
     data: [
-      { code: "OPEN", name: "Открыт", color: "#2dd4bf", sort_order: 1, is_final: false },
-      { code: "IN_PROGRESS", name: "В работе", color: "#f59e0b", sort_order: 2, is_final: false },
-      { code: "WAITING_CLIENT", name: "Ждём клиента", color: "#60a5fa", sort_order: 3, is_final: false },
-      { code: "RESOLVED", name: "Решён", color: "#22c55e", sort_order: 4, is_final: true },
-      { code: "CLOSED", name: "Закрыт", color: "#6b7280", sort_order: 5, is_final: true },
+      {
+        code: "OPEN",
+        name: "Открыт",
+        color: "#2dd4bf",
+        sort_order: 1,
+        is_final: false,
+      },
+      {
+        code: "IN_PROGRESS",
+        name: "В работе",
+        color: "#f59e0b",
+        sort_order: 2,
+        is_final: false,
+      },
+      {
+        code: "WAITING_CLIENT",
+        name: "Ждём клиента",
+        color: "#60a5fa",
+        sort_order: 3,
+        is_final: false,
+      },
+      {
+        code: "RESOLVED",
+        name: "Решён",
+        color: "#22c55e",
+        sort_order: 4,
+        is_final: true,
+      },
+      {
+        code: "CLOSED",
+        name: "Закрыт",
+        color: "#6b7280",
+        sort_order: 5,
+        is_final: true,
+      },
     ],
     skipDuplicates: true,
   });
@@ -39,17 +69,52 @@ async function main() {
 
   await prisma.ticket_categories.createMany({
     data: [
-      { name: "Поручения руководителя", slug: "management-tasks", icon: "📋", sort_order: 0 },
-      { name: "Техническая поддержка", slug: "tech-support", icon: "🛠️", sort_order: 1 },
+      {
+        name: "Поручения руководителя",
+        slug: "management-tasks",
+        icon: "📋",
+        sort_order: 0,
+      },
+      {
+        name: "Техническая поддержка",
+        slug: "tech-support",
+        icon: "🛠️",
+        sort_order: 1,
+      },
       { name: "СЗИ", slug: "szi", icon: "🔒", sort_order: 2 },
-      { name: "Аудит, проектирование, создание и аттестация", slug: "audit", icon: "📋", sort_order: 3 },
+      {
+        name: "Аудит, проектирование, создание и аттестация",
+        slug: "audit",
+        icon: "📋",
+        sort_order: 3,
+      },
       { name: "Пинтест", slug: "pentest", icon: "🎯", sort_order: 4 },
       { name: "Умный дом", slug: "smart-home", icon: "🏠", sort_order: 5 },
-      { name: "Разработка программного обеспечения", slug: "software-dev", icon: "💻", sort_order: 6 },
-      { name: "Разработка и поддержка сайтов", slug: "web-dev", icon: "🌐", sort_order: 7 },
+      {
+        name: "Разработка программного обеспечения",
+        slug: "software-dev",
+        icon: "💻",
+        sort_order: 6,
+      },
+      {
+        name: "Разработка и поддержка сайтов",
+        slug: "web-dev",
+        icon: "🌐",
+        sort_order: 7,
+      },
       { name: "SOAR and SIEM", slug: "soar-siem", icon: "📊", sort_order: 8 },
-      { name: "Антивирусная защита", slug: "antivirus", icon: "🛡️", sort_order: 9 },
-      { name: "Продажа продуктов", slug: "products", icon: "🛒", sort_order: 10 },
+      {
+        name: "Антивирусная защита",
+        slug: "antivirus",
+        icon: "🛡️",
+        sort_order: 9,
+      },
+      {
+        name: "Продажа продуктов",
+        slug: "products",
+        icon: "🛒",
+        sort_order: 10,
+      },
     ],
     skipDuplicates: true,
   });
@@ -125,7 +190,9 @@ async function main() {
           {
             type: "heading",
             attrs: { level: 3 },
-            content: [{ type: "text", text: "2. Какие данные мы обрабатываем" }],
+            content: [
+              { type: "text", text: "2. Какие данные мы обрабатываем" },
+            ],
           },
           {
             type: "paragraph",
@@ -139,12 +206,62 @@ async function main() {
           {
             type: "bulletList",
             content: [
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "имя;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "адрес электронной почты;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "номер телефона;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "название компании;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "должность;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "текст сообщения." }] }] },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "имя;" }],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      { type: "text", text: "адрес электронной почты;" },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "номер телефона;" }],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "название компании;" }],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "должность;" }],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "текст сообщения." }],
+                  },
+                ],
+              },
             ],
           },
           {
@@ -168,7 +285,9 @@ async function main() {
           {
             type: "heading",
             attrs: { level: 3 },
-            content: [{ type: "text", text: "3. Цели обработки персональных данных" }],
+            content: [
+              { type: "text", text: "3. Цели обработки персональных данных" },
+            ],
           },
           {
             type: "paragraph",
@@ -182,17 +301,84 @@ async function main() {
           {
             type: "bulletList",
             content: [
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "обработка обращений и запросов, направленных через форму обратной связи;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "установление с пользователем обратной связи, включая направление ответов на обращения;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "подготовка и заключение договоров на оказание услуг, выставление счетов;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "ведение внутреннего учёта обращений в CRM-системе Оператора;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "анализ посещаемости Сайта и улучшение его работы с помощью обезличенных данных веб-аналитики." }] }] },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "обработка обращений и запросов, направленных через форму обратной связи;",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "установление с пользователем обратной связи, включая направление ответов на обращения;",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "подготовка и заключение договоров на оказание услуг, выставление счетов;",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "ведение внутреннего учёта обращений в CRM-системе Оператора;",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "анализ посещаемости Сайта и улучшение его работы с помощью обезличенных данных веб-аналитики.",
+                      },
+                    ],
+                  },
+                ],
+              },
             ],
           },
           {
             type: "heading",
             attrs: { level: 3 },
-            content: [{ type: "text", text: "4. Правовые основания обработки" }],
+            content: [
+              { type: "text", text: "4. Правовые основания обработки" },
+            ],
           },
           {
             type: "paragraph",
@@ -265,7 +451,9 @@ async function main() {
           {
             type: "heading",
             attrs: { level: 3 },
-            content: [{ type: "text", text: "6. Права субъекта персональных данных" }],
+            content: [
+              { type: "text", text: "6. Права субъекта персональных данных" },
+            ],
           },
           {
             type: "paragraph",
@@ -279,11 +467,76 @@ async function main() {
           {
             type: "bulletList",
             content: [
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "получать информацию, касающуюся обработки своих персональных данных;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "требовать внесения изменений в свои персональные данные, если они являются неполными, устаревшими или неточными;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "требовать прекращения обработки своих персональных данных, включая их удаление, при отсутствии оснований для обработки, предусмотренных законодательством;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "отозвать своё согласие на обработку персональных данных;" }] }] },
-              { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "обжаловать действия (бездействие) Оператора, нарушающие его права, в уполномоченный орган по защите персональных данных или в суд." }] }] },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "получать информацию, касающуюся обработки своих персональных данных;",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "требовать внесения изменений в свои персональные данные, если они являются неполными, устаревшими или неточными;",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "требовать прекращения обработки своих персональных данных, включая их удаление, при отсутствии оснований для обработки, предусмотренных законодательством;",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "отозвать своё согласие на обработку персональных данных;",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "обжаловать действия (бездействие) Оператора, нарушающие его права, в уполномоченный орган по защите персональных данных или в суд.",
+                      },
+                    ],
+                  },
+                ],
+              },
             ],
           },
           {
@@ -298,7 +551,9 @@ async function main() {
           {
             type: "heading",
             attrs: { level: 3 },
-            content: [{ type: "text", text: "7. Файлы cookie и веб-аналитика" }],
+            content: [
+              { type: "text", text: "7. Файлы cookie и веб-аналитика" },
+            ],
           },
           {
             type: "paragraph",
@@ -348,7 +603,7 @@ async function main() {
   });
 
   // === НОВЫЕ НАСТРОЙКИ ===
-  
+
   // 1. Переносим MIME-типы и posts_per_page в GlobalSettings
   await prisma.globalSettings.upsert({
     where: { key: "upload.allowed_mime" },
@@ -356,17 +611,32 @@ async function main() {
     create: {
       key: "upload.allowed_mime",
       value: [
-        "image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml",
-        "image/bmp", "text/plain", "text/markdown", "text/csv", "text/html",
-        "text/css", "application/json", "application/xml", "application/x-yaml",
-        "application/javascript", "application/typescript", "application/pdf",
+        "image/png",
+        "image/jpeg",
+        "image/gif",
+        "image/webp",
+        "image/svg+xml",
+        "image/bmp",
+        "text/plain",
+        "text/markdown",
+        "text/csv",
+        "text/html",
+        "text/css",
+        "application/json",
+        "application/xml",
+        "application/x-yaml",
+        "application/javascript",
+        "application/typescript",
+        "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.ms-powerpoint",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "application/zip", "application/x-rar-compressed", "application/gzip",
+        "application/zip",
+        "application/x-rar-compressed",
+        "application/gzip",
         "application/x-7z-compressed",
       ],
     },
@@ -389,7 +659,8 @@ async function main() {
     timezone: "Europe/Minsk",
 
     // SEO — дефолтные значения
-    seoTitle: "МОТИТ — IT-решения для бизнеса | Аудит, безопасность, разработка",
+    seoTitle:
+      "МОТИТ — IT-решения для бизнеса | Аудит, безопасность, разработка",
     seoDescription:
       "Комплексные IT-услуги для бизнеса: аудит информационной безопасности, пентест, СЗИ, разработка ПО и сайтов, умный дом. Более 10 лет опыта. Работаем по всей Беларуси.",
     seoKeywords:
@@ -411,12 +682,54 @@ async function main() {
 
   // 3. Поля формы контактов (upsert, чтобы обновлять существующие)
   const contactFields = [
-    { name: "name", label: "Имя", type: "text", required: true, placeholder: "Ваше имя", sortOrder: 1 },
-    { name: "email", label: "Email", type: "email", required: true, placeholder: "email@example.com", sortOrder: 2 },
-    { name: "phone", label: "Телефон", type: "tel", required: true, placeholder: "+375 (29) 123-45-67", sortOrder: 3 },
-    { name: "company_name", label: "Компания", type: "text", required: false, placeholder: "Название компании", sortOrder: 4 },
-    { name: "job_title", label: "Должность", type: "text", required: false, placeholder: "Ваша должность", sortOrder: 5 },
-    { name: "message", label: "Сообщение", type: "textarea", required: false, placeholder: "Ваше сообщение...", sortOrder: 6 },
+    {
+      name: "name",
+      label: "Имя",
+      type: "text",
+      required: true,
+      placeholder: "Ваше имя",
+      sortOrder: 1,
+    },
+    {
+      name: "email",
+      label: "Email",
+      type: "email",
+      required: true,
+      placeholder: "email@example.com",
+      sortOrder: 2,
+    },
+    {
+      name: "phone",
+      label: "Телефон",
+      type: "tel",
+      required: true,
+      placeholder: "+375 (29) 123-45-67",
+      sortOrder: 3,
+    },
+    {
+      name: "company_name",
+      label: "Компания",
+      type: "text",
+      required: false,
+      placeholder: "Название компании",
+      sortOrder: 4,
+    },
+    {
+      name: "job_title",
+      label: "Должность",
+      type: "text",
+      required: false,
+      placeholder: "Ваша должность",
+      sortOrder: 5,
+    },
+    {
+      name: "message",
+      label: "Сообщение",
+      type: "textarea",
+      required: false,
+      placeholder: "Ваше сообщение...",
+      sortOrder: 6,
+    },
   ];
 
   for (const field of contactFields) {
@@ -465,7 +778,9 @@ async function main() {
 
   const adminRole = await prisma.roles.findUnique({ where: { name: "admin" } });
   if (!adminRole) {
-    throw new Error("Role 'admin' not found after createMany — check seed order.");
+    throw new Error(
+      "Role 'admin' not found after createMany — check seed order.",
+    );
   }
 
   await prisma.users_role_lnk.upsert({
@@ -476,13 +791,15 @@ async function main() {
     create: { user_id: admin.id, role_id: adminRole.id },
   });
 
-  console.log(`✓ Admin user ready: ${admin.email} (password: ${adminPassword})`);
+  console.log(
+    `✓ Admin user ready: ${admin.email} (password: ${adminPassword})`,
+  );
   console.log("✓ Seeds applied");
 }
 
 main()
-  .catch((e) => { 
-    console.error(e); 
-    process.exit(1); 
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
   })
   .finally(() => prisma.$disconnect());
