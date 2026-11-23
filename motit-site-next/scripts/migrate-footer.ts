@@ -19,7 +19,9 @@ async function migrateFooter() {
   // 1. Ищем старый компонент Footer
   const oldFooter = legacyData.content?.find((c: any) => c.type === "Footer");
   if (!oldFooter) {
-    console.log("Компонент Footer не найден. Возможно, миграция уже выполнена.");
+    console.log(
+      "Компонент Footer не найден. Возможно, миграция уже выполнена.",
+    );
     return;
   }
 
@@ -86,7 +88,7 @@ async function migrateFooter() {
 
   // 4. Заменяем Footer на FooterContainer
   const newContent = legacyData.content.map((c: any) =>
-    c.type === "Footer" ? newFooter : c
+    c.type === "Footer" ? newFooter : c,
   );
 
   const newData = { ...legacyData, content: newContent };

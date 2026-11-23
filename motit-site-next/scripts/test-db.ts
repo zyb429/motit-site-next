@@ -7,21 +7,27 @@ import { prisma } from "../src/lib/prisma";
 async function main() {
   console.log("=== POSTS ===");
   const posts = await getPostsPrisma({ take: 5 });
-  console.log(posts.map(p => ({
-    id: p.id,
-    title: p.title,
-    status: p.post_status,
-    author: p.author?.username,
-    cats: p.categories.map(c => c.name),
-  })));
+  console.log(
+    posts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      status: p.post_status,
+      author: p.author?.username,
+      cats: p.categories.map((c) => c.name),
+    })),
+  );
 
   console.log("\n=== CATEGORIES ===");
   console.log(await getCategoriesPrisma());
 
   console.log("\n=== USERS ===");
-  console.log((await getUsersPrisma()).map(u => ({
-    id: u.id, username: u.username, role: u.role?.name,
-  })));
+  console.log(
+    (await getUsersPrisma()).map((u) => ({
+      id: u.id,
+      username: u.username,
+      role: u.role?.name,
+    })),
+  );
 
   console.log("\n=== ROLES ===");
   console.log(await getRolesPrisma());
@@ -31,5 +37,8 @@ async function main() {
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1); })
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());

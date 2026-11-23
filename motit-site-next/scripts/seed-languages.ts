@@ -1,6 +1,6 @@
 // scripts/seed-languages.ts
-import { all } from "lowlight"
-import { prisma } from "../src/lib/prisma"
+import { all } from "lowlight";
+import { prisma } from "../src/lib/prisma";
 
 const POPULAR = new Set([
   "plaintext",
@@ -31,7 +31,7 @@ const POPULAR = new Set([
   "graphql",
   "kotlin",
   "swift",
-])
+]);
 
 const LABELS: Record<string, string> = {
   plaintext: "Plain text",
@@ -62,48 +62,48 @@ const LABELS: Record<string, string> = {
   graphql: "GraphQL",
   kotlin: "Kotlin",
   swift: "Swift",
-}
+};
 
 function labelFor(code: string) {
-  return LABELS[code] ?? code.charAt(0).toUpperCase() + code.slice(1)
+  return LABELS[code] ?? code.charAt(0).toUpperCase() + code.slice(1);
 }
 
 async function main() {
-  const codes = Object.keys(all).sort((a, b) => a.localeCompare(b))
-  console.log(`Найдено ${codes.length} языков в highlight.js`)
+  const codes = Object.keys(all).sort((a, b) => a.localeCompare(b));
+  console.log(`Найдено ${codes.length} языков в highlight.js`);
 
-  let created = 0
-  let updated = 0
+  let created = 0;
+  let updated = 0;
 
   for (const code of codes) {
-    const existing = await prisma.codeLanguage.findUnique({ where: { code } })
+    const existing = await prisma.codeLanguage.findUnique({ where: { code } });
     const data = {
       code,
       label: labelFor(code),
       enabled: POPULAR.has(code),
       sortOrder: POPULAR.has(code) ? 0 : 100,
-    }
+    };
 
     if (existing) {
-      await prisma.codeLanguage.update({ where: { code }, data })
-      updated++
+      await prisma.codeLanguage.update({ where: { code }, data });
+      updated++;
     } else {
-      await prisma.codeLanguage.create({ data })
-      created++
+      await prisma.codeLanguage.create({ data });
+      created++;
     }
   }
 
-  console.log(`Готово: создано ${created}, обновлено ${updated}`)
+  console.log(`Готово: создано ${created}, обновлено ${updated}`);
   console.log(
     `Включено по умолчанию: ${codes.filter((c) => POPULAR.has(c)).length}`,
-  )
+  );
 }
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

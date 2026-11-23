@@ -1,6 +1,6 @@
 // scripts/backfill-chats.ts
 import "dotenv/config";
-import { PrismaClient } from '@generated/prisma';
+import { PrismaClient } from "@generated/prisma";
 import { randomUUID } from "crypto";
 
 const prisma = new PrismaClient();
@@ -71,7 +71,8 @@ async function main() {
       }
 
       // 4. Обновляем last_message_at
-      const lastComment = ticket.ticket_comments[ticket.ticket_comments.length - 1];
+      const lastComment =
+        ticket.ticket_comments[ticket.ticket_comments.length - 1];
       if (lastComment) {
         await tx.chats.update({
           where: { uuid: chat.uuid },

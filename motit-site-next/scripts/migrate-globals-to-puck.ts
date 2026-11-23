@@ -74,25 +74,57 @@ function footerToProps(v: any) {
 }
 
 async function main() {
-  const header = await prisma.globalSettings.findUnique({ where: { key: "header" } });
+  const header = await prisma.globalSettings.findUnique({
+    where: { key: "header" },
+  });
   if (header?.value) {
     await prisma.globalSettings.upsert({
       where: { key: "puck_header" },
-      create: { key: "puck_header", value: { content: [{ type: "Header", props: headerToProps(header.value) }], root: { props: {} }, zones: {} } as any },
-      update: { value: { content: [{ type: "Header", props: headerToProps(header.value) }], root: { props: {} }, zones: {} } as any },
+      create: {
+        key: "puck_header",
+        value: {
+          content: [{ type: "Header", props: headerToProps(header.value) }],
+          root: { props: {} },
+          zones: {},
+        } as any,
+      },
+      update: {
+        value: {
+          content: [{ type: "Header", props: headerToProps(header.value) }],
+          root: { props: {} },
+          zones: {},
+        } as any,
+      },
     });
     console.log("puck_header ← header");
   }
 
-  const footer = await prisma.globalSettings.findUnique({ where: { key: "footer" } });
+  const footer = await prisma.globalSettings.findUnique({
+    where: { key: "footer" },
+  });
   if (footer?.value) {
     await prisma.globalSettings.upsert({
       where: { key: "puck_footer" },
-      create: { key: "puck_footer", value: { content: [{ type: "Footer", props: footerToProps(footer.value) }], root: { props: {} }, zones: {} } as any },
-      update: { value: { content: [{ type: "Footer", props: footerToProps(footer.value) }], root: { props: {} }, zones: {} } as any },
+      create: {
+        key: "puck_footer",
+        value: {
+          content: [{ type: "Footer", props: footerToProps(footer.value) }],
+          root: { props: {} },
+          zones: {},
+        } as any,
+      },
+      update: {
+        value: {
+          content: [{ type: "Footer", props: footerToProps(footer.value) }],
+          root: { props: {} },
+          zones: {},
+        } as any,
+      },
     });
     console.log("puck_footer ← footer");
   }
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

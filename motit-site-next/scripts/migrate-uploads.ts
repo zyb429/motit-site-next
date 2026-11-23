@@ -52,11 +52,15 @@ async function main() {
       const buffer = readFileSync(filePath);
       const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
       const contentType =
-        ext === "png" ? "image/png"
-        : ext === "jpg" || ext === "jpeg" ? "image/jpeg"
-        : ext === "webp" ? "image/webp"
-        : ext === "gif" ? "image/gif"
-        : "application/octet-stream";
+        ext === "png"
+          ? "image/png"
+          : ext === "jpg" || ext === "jpeg"
+            ? "image/jpeg"
+            : ext === "webp"
+              ? "image/webp"
+              : ext === "gif"
+                ? "image/gif"
+                : "application/octet-stream";
 
       await s3.send(
         new PutObjectCommand({
