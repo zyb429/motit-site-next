@@ -236,7 +236,9 @@ function ContactValue({ item }: { item: ContactItem }) {
     );
   }
 
-  return <span className="text-base text-(--text-secondary)">{item.value}</span>;
+  return (
+    <span className="text-base text-(--text-secondary)">{item.value}</span>
+  );
 }
 
 // ============================================
@@ -255,12 +257,17 @@ export default function ContactView({
   const scheduleLines = workHours ? groupToLines(parseToDays(workHours)) : [];
 
   return (
-    <section id="contact" className="section-padding bg-(--bg-primary) transition-colors duration-300">
+    <section
+      id="contact"
+      className="section-padding bg-(--bg-primary) transition-colors duration-300"
+    >
       <div className="content-container">
         <div className="mb-12 md:mb-16">
           <span className="section-label block mb-3">{label}</span>
           <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
-          <p className="section-subtitle max-w-150 text-(--text-secondary)">{subtitle}</p>
+          <p className="section-subtitle max-w-150 text-(--text-secondary)">
+            {subtitle}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 lg:gap-16">

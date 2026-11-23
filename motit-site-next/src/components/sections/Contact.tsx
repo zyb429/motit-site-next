@@ -15,12 +15,16 @@ export type ContactProps = Omit<ContactViewProps, "fields">;
 
 type Option = { label: string; value: string };
 
-function parseOptions(raw: Prisma.JsonValue | null | undefined): Option[] | null {
+function parseOptions(
+  raw: Prisma.JsonValue | null | undefined,
+): Option[] | null {
   if (!Array.isArray(raw)) return null;
   const out: Option[] = [];
   for (const o of raw) {
     if (
-      o && typeof o === "object" && !Array.isArray(o) &&
+      o &&
+      typeof o === "object" &&
+      !Array.isArray(o) &&
       typeof (o as any).label === "string" &&
       typeof (o as any).value === "string"
     ) {

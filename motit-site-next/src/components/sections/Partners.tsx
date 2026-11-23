@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useRef, useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
+import { useRef, useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 
 export type PartnersProps = {
   label: string;
@@ -87,7 +87,7 @@ export default function Partners({
     [isDragging, startX, scrollLeft],
   );
 
-  const isExternal = footerButtonHref?.startsWith('http');
+  const isExternal = footerButtonHref?.startsWith("http");
 
   return (
     <section className="section-padding bg-(--bg-primary) transition-colors duration-300">
@@ -95,7 +95,9 @@ export default function Partners({
         <div className="text-center mb-10 md:mb-14">
           <span className="section-label block mb-3">{label}</span>
           <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
-          <p className="section-subtitle max-w-[600px] mx-auto text-(--text-secondary)">{subtitle}</p>
+          <p className="section-subtitle max-w-[600px] mx-auto text-(--text-secondary)">
+            {subtitle}
+          </p>
         </div>
       </div>
 
@@ -109,26 +111,36 @@ export default function Partners({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleMouseUp}
-        style={{ scrollbarWidth: 'none', overflowY: 'visible', paddingTop: '10px', paddingBottom: '10px' }}
+        style={{
+          scrollbarWidth: "none",
+          overflowY: "visible",
+          paddingTop: "10px",
+          paddingBottom: "10px",
+        }}
       >
         {doubled.map((partner, index) => {
           const isHovered = hoveredIndex === index;
           return (
             <a
               key={index}
-              href={partner.website || '#'}
-              target={partner.website ? '_blank' : undefined}
-              rel={partner.website ? 'noopener noreferrer' : undefined}
+              href={partner.website || "#"}
+              target={partner.website ? "_blank" : undefined}
+              rel={partner.website ? "noopener noreferrer" : undefined}
               className="shrink-0 group relative transition-all duration-150"
               style={{
-                width: 'clamp(150px, 18vw, 210px)',
-                backgroundColor: isHovered ? 'var(--bg-card-hover)' : 'var(--bg-card)',
-                border: `1px solid ${isHovered ? 'var(--border-hover)' : 'var(--border)'}`,
-                borderRadius: '20px',
-                transform: isHovered ? 'translateY(-4px) scale(1.03)' : 'translateY(0) scale(1)',
+                width: "clamp(150px, 18vw, 210px)",
+                backgroundColor: isHovered
+                  ? "var(--bg-card-hover)"
+                  : "var(--bg-card)",
+                border: `1px solid ${isHovered ? "var(--border-hover)" : "var(--border)"}`,
+                borderRadius: "20px",
+                transform: isHovered
+                  ? "translateY(-4px) scale(1.03)"
+                  : "translateY(0) scale(1)",
                 zIndex: isHovered ? 10 : 1,
-                position: 'relative',
-                transition: 'transform 0.15s ease-out, background-color 0.15s ease-out, border-color 0.15s ease-out',
+                position: "relative",
+                transition:
+                  "transform 0.15s ease-out, background-color 0.15s ease-out, border-color 0.15s ease-out",
               }}
               onMouseEnter={() => setHoveredIndex(index)}
               onMouseLeave={() => setHoveredIndex(null)}
@@ -136,7 +148,10 @@ export default function Partners({
               draggable={false}
             >
               <div className="flex flex-col items-center justify-center p-4">
-                <div className="w-full aspect-3/2 rounded-xl flex items-center justify-center mb-2 p-2 overflow-hidden relative" style={{ backgroundColor: '#ffffff' }}>
+                <div
+                  className="w-full aspect-3/2 rounded-xl flex items-center justify-center mb-2 p-2 overflow-hidden relative"
+                  style={{ backgroundColor: "#ffffff" }}
+                >
                   {partner.logo && (
                     <Image
                       src={partner.logo}
@@ -152,10 +167,10 @@ export default function Partners({
                   <div
                     className="absolute inset-0 z-2 rounded-xl pointer-events-none"
                     style={{
-                      backgroundColor: 'var(--accent)',
+                      backgroundColor: "var(--accent)",
                       opacity: isHovered ? 0 : 0.4,
-                      mixBlendMode: 'multiply',
-                      transition: 'opacity 0.15s ease-out',
+                      mixBlendMode: "multiply",
+                      transition: "opacity 0.15s ease-out",
                     }}
                   />
                 </div>
@@ -171,9 +186,9 @@ export default function Partners({
       <div className="text-center mt-10 md:mt-12">
         <p className="text-sm mb-3 text-(--text-muted)">{footerText}</p>
         <a
-          href={footerButtonHref || '#contact'}
-          target={isExternal ? '_blank' : undefined}
-          rel={isExternal ? 'noopener noreferrer' : undefined}
+          href={footerButtonHref || "#contact"}
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noopener noreferrer" : undefined}
           className="btn-ghost text-xs"
         >
           {footerButtonLabel}

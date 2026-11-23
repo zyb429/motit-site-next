@@ -16,7 +16,15 @@ export type HeroProps = {
   imageUrl: string | null;
 };
 
-export default function Hero({ label, title, subtitle, desc, ctaLabel, ctaHref, imageUrl }: HeroProps) {
+export default function Hero({
+  label,
+  title,
+  subtitle,
+  desc,
+  ctaLabel,
+  ctaHref,
+  imageUrl,
+}: HeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -24,23 +32,114 @@ export default function Hero({ label, title, subtitle, desc, ctaLabel, ctaHref, 
     const section = sectionRef.current;
     const content = contentRef.current;
     if (!section || !content) return;
-    if (typeof document !== "undefined" && document.querySelector(".Puck")) return;
+    if (typeof document !== "undefined" && document.querySelector(".Puck"))
+      return;
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ delay: 0.4 });
-      tl.from(".hero-label", { opacity: 0, y: 30, duration: 0.6, ease: "power3.out" })
-        .from(".hero-title", { opacity: 0, y: 50, duration: 0.8, ease: "power3.out" }, "-=0.3")
-        .from(".hero-subtitle", { opacity: 0, y: 40, duration: 0.7, ease: "power3.out" }, "-=0.4")
-        .from(".hero-desc", { opacity: 0, y: 30, duration: 0.6, ease: "power3.out" }, "-=0.3")
-        .from(".hero-cta", { opacity: 0, y: 20, duration: 0.5, ease: "power3.out" }, "-=0.2");
-      gsap.to(content, { y: -60, opacity: 0, ease: "none", scrollTrigger: { trigger: section, start: "top top", end: "bottom top", scrub: true } });
-      gsap.to(".hero-bg-sparkle-1", { y: -120, x: 80, rotation: 360, duration: 10, repeat: -1, ease: "sine.inOut", yoyo: true });
-      gsap.to(".hero-bg-sparkle-2", { y: 100, x: -60, rotation: -360, duration: 12, repeat: -1, ease: "sine.inOut", yoyo: true });
-      gsap.to(".hero-bg-sparkle-3", { y: -80, x: 120, rotation: 720, duration: 15, repeat: -1, ease: "sine.inOut", yoyo: true });
-      gsap.to(".hero-bg-sparkle-4", { y: 140, x: -100, rotation: -720, duration: 14, repeat: -1, ease: "sine.inOut", yoyo: true });
-      gsap.to(".hero-bg-sparkle-5", { y: -60, x: 200, rotation: 540, duration: 18, repeat: -1, ease: "sine.inOut", yoyo: true });
-      gsap.to(".hero-bg-sparkle-6", { y: 80, x: -150, rotation: -540, duration: 16, repeat: -1, ease: "sine.inOut", yoyo: true });
-      gsap.to(".hero-bg-sparkle-1, .hero-bg-sparkle-2, .hero-bg-sparkle-3, .hero-bg-sparkle-4, .hero-bg-sparkle-5, .hero-bg-sparkle-6", { scale: 2, opacity: 0.7, duration: 2, repeat: -1, yoyo: true, ease: "sine.inOut", stagger: 0.2 });
+      tl.from(".hero-label", {
+        opacity: 0,
+        y: 30,
+        duration: 0.6,
+        ease: "power3.out",
+      })
+        .from(
+          ".hero-title",
+          { opacity: 0, y: 50, duration: 0.8, ease: "power3.out" },
+          "-=0.3",
+        )
+        .from(
+          ".hero-subtitle",
+          { opacity: 0, y: 40, duration: 0.7, ease: "power3.out" },
+          "-=0.4",
+        )
+        .from(
+          ".hero-desc",
+          { opacity: 0, y: 30, duration: 0.6, ease: "power3.out" },
+          "-=0.3",
+        )
+        .from(
+          ".hero-cta",
+          { opacity: 0, y: 20, duration: 0.5, ease: "power3.out" },
+          "-=0.2",
+        );
+      gsap.to(content, {
+        y: -60,
+        opacity: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: section,
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+      gsap.to(".hero-bg-sparkle-1", {
+        y: -120,
+        x: 80,
+        rotation: 360,
+        duration: 10,
+        repeat: -1,
+        ease: "sine.inOut",
+        yoyo: true,
+      });
+      gsap.to(".hero-bg-sparkle-2", {
+        y: 100,
+        x: -60,
+        rotation: -360,
+        duration: 12,
+        repeat: -1,
+        ease: "sine.inOut",
+        yoyo: true,
+      });
+      gsap.to(".hero-bg-sparkle-3", {
+        y: -80,
+        x: 120,
+        rotation: 720,
+        duration: 15,
+        repeat: -1,
+        ease: "sine.inOut",
+        yoyo: true,
+      });
+      gsap.to(".hero-bg-sparkle-4", {
+        y: 140,
+        x: -100,
+        rotation: -720,
+        duration: 14,
+        repeat: -1,
+        ease: "sine.inOut",
+        yoyo: true,
+      });
+      gsap.to(".hero-bg-sparkle-5", {
+        y: -60,
+        x: 200,
+        rotation: 540,
+        duration: 18,
+        repeat: -1,
+        ease: "sine.inOut",
+        yoyo: true,
+      });
+      gsap.to(".hero-bg-sparkle-6", {
+        y: 80,
+        x: -150,
+        rotation: -540,
+        duration: 16,
+        repeat: -1,
+        ease: "sine.inOut",
+        yoyo: true,
+      });
+      gsap.to(
+        ".hero-bg-sparkle-1, .hero-bg-sparkle-2, .hero-bg-sparkle-3, .hero-bg-sparkle-4, .hero-bg-sparkle-5, .hero-bg-sparkle-6",
+        {
+          scale: 2,
+          opacity: 0.7,
+          duration: 2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          stagger: 0.2,
+        },
+      );
     }, section);
 
     return () => ctx.revert();
@@ -53,8 +152,15 @@ export default function Hero({ label, title, subtitle, desc, ctaLabel, ctaHref, 
   };
 
   return (
-    <section ref={sectionRef} id="hero" className="relative min-h-[100dvh] flex items-center overflow-hidden bg-(--bg-primary) transition-colors duration-300">
-      <div ref={contentRef} className="relative z-[2] content-container w-full pt-20">
+    <section
+      ref={sectionRef}
+      id="hero"
+      className="relative min-h-[100dvh] flex items-center overflow-hidden bg-(--bg-primary) transition-colors duration-300"
+    >
+      <div
+        ref={contentRef}
+        className="relative z-[2] content-container w-full pt-20"
+      >
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="hero-bg-sparkle-1 absolute top-1/4 left-1/4 w-3 h-3 bg-(--accent) rounded-full opacity-30 blur-[1.5px]" />
           <div className="hero-bg-sparkle-2 absolute top-1/3 right-1/4 w-2.5 h-2.5 bg-(--accent-hover) rounded-full opacity-40 blur-[1px]" />
@@ -80,10 +186,27 @@ export default function Hero({ label, title, subtitle, desc, ctaLabel, ctaHref, 
           {desc}
         </p>
         <div className="hero-cta mt-10 flex flex-wrap gap-4">
-          {ctaLabel && <button onClick={handleCtaClick} className="btn-primary">{ctaLabel}</button>}
-          <a href="https://help.motit.by" target="_blank" rel="noopener noreferrer" className="btn-secondary">Техподдержка</a>
+          {ctaLabel && (
+            <button onClick={handleCtaClick} className="btn-primary">
+              {ctaLabel}
+            </button>
+          )}
+          <a
+            href="https://help.motit.by"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary"
+          >
+            Техподдержка
+          </a>
         </div>
-        {imageUrl && <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover -z-10 opacity-30" />}
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover -z-10 opacity-30"
+          />
+        )}
       </div>
     </section>
   );

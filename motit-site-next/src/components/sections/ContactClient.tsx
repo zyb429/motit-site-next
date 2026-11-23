@@ -21,12 +21,20 @@ const inputStyle: React.CSSProperties = {
   fontSize: "16px",
 };
 
-const focusIn = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+const focusIn = (
+  e: React.FocusEvent<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >,
+) => {
   e.currentTarget.style.borderColor = "var(--accent)";
   e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-dim)";
 };
 
-const focusOut = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+const focusOut = (
+  e: React.FocusEvent<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >,
+) => {
   e.currentTarget.style.borderColor = "var(--border)";
   e.currentTarget.style.boxShadow = "none";
 };
@@ -42,7 +50,7 @@ export default function ContactClient({
 }) {
   const [fields, setFields] = useState<Field[]>(initialFields);
   const [isLoadingFields, setIsLoadingFields] = useState(false);
-  
+
   const [formState, setFormState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [isPrivacyAgreed, setIsPrivacyAgreed] = useState(false);
@@ -139,7 +147,11 @@ export default function ContactClient({
     }
 
     const emailField = fields.find((f) => f.type === "email");
-    if (emailField && data[emailField.name] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data[emailField.name])) {
+    if (
+      emailField &&
+      data[emailField.name] &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data[emailField.name])
+    ) {
       setFormState("error");
       setErrorMessage("Введите корректный email");
       setTimeout(() => setFormState("idle"), 3000);
@@ -172,7 +184,9 @@ export default function ContactClient({
       console.error("Ошибка отправки:", error);
       setFormState("error");
       setErrorMessage(
-        error instanceof Error ? error.message : "Произошла ошибка. Попробуйте позже.",
+        error instanceof Error
+          ? error.message
+          : "Произошла ошибка. Попробуйте позже.",
       );
       setTimeout(() => {
         setFormState("idle");
@@ -183,14 +197,19 @@ export default function ContactClient({
 
   return (
     <div ref={sectionRef} className="reveal reveal-d1" style={{ opacity: 1 }}>
-      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
-        
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4"
+      >
         {isLoadingFields && (
           <p className="text-(--text-muted)">Загрузка полей формы...</p>
         )}
 
         {!isLoadingFields && fields.length === 0 && (
-          <p className="text-(--text-muted)">Поля формы не настроены в админке.</p>
+          <p className="text-(--text-muted)">
+            Поля формы не настроены в админке.
+          </p>
         )}
 
         {fields.map((field) => {
@@ -206,7 +225,9 @@ export default function ContactClient({
           }
 
           const basePlaceholder = field.placeholder?.trim() || field.label;
-          const placeholder = field.required ? `${basePlaceholder} *` : basePlaceholder;
+          const placeholder = field.required
+            ? `${basePlaceholder} *`
+            : basePlaceholder;
 
           if (field.type === "select") {
             return (
@@ -292,9 +313,7 @@ export default function ContactClient({
           </label>
 
           {privacyError && (
-            <p className="text-sm text-red-500 pl-8">
-              {privacyError}
-            </p>
+            <p className="text-sm text-red-500 pl-8">{privacyError}</p>
           )}
         </div>
 
@@ -310,10 +329,16 @@ export default function ContactClient({
 
         <button
           type="submit"
-          disabled={formState === "loading" || formState === "success" || isLoadingFields}
+          disabled={
+            formState === "loading" ||
+            formState === "success" ||
+            isLoadingFields
+          }
           className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-70"
         >
-          {formState === "loading" && <Loader2 size={18} className="animate-spin" />}
+          {formState === "loading" && (
+            <Loader2 size={18} className="animate-spin" />
+          )}
           {formState === "success" && <Check size={18} />}
           {formState === "idle" && "Отправить"}
           {formState === "loading" && "Отправка..."}

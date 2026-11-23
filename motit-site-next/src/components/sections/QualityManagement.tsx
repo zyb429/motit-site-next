@@ -1,12 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { FileText, ExternalLink, ShieldCheck, ChevronDown, Award, Download } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import {
+  FileText,
+  ExternalLink,
+  ShieldCheck,
+  ChevronDown,
+  Award,
+  Download,
+} from "lucide-react";
 
 export type CertificateFile =
-  | string
-  | { url: string; fileId?: number; name?: string }
-  | null;
+  string | { url: string; fileId?: number; name?: string } | null;
 
 export type QualityManagementProps = {
   label: string;
@@ -20,7 +25,7 @@ export type QualityManagementProps = {
     subtitle: string;
     description: string;
     file: CertificateFile;
-    icon: 'award' | 'shield';
+    icon: "award" | "shield";
     expiryDate: string;
   }>;
   puck?: { isEditing?: boolean };
@@ -29,9 +34,9 @@ export type QualityManagementProps = {
 const ICONS = { award: Award, shield: ShieldCheck } as const;
 
 function resolveFileUrl(file: CertificateFile): string {
-  if (!file) return '';
-  if (typeof file === 'string') return file;
-  return file.url ?? '';
+  if (!file) return "";
+  if (typeof file === "string") return file;
+  return file.url ?? "";
 }
 
 export default function QualityManagement({
@@ -56,8 +61,10 @@ export default function QualityManagement({
 
     const observer = new IntersectionObserver(
       (entries) =>
-        entries.forEach((e) => e.isIntersecting && e.target.classList.add('visible')),
-      { threshold: 0.1 }
+        entries.forEach(
+          (e) => e.isIntersecting && e.target.classList.add("visible"),
+        ),
+      { threshold: 0.1 },
     );
     observer.observe(section);
     return () => observer.disconnect();
@@ -72,16 +79,20 @@ export default function QualityManagement({
         <div className="text-center mb-6 md:mb-8">
           <span className="section-label block mb-3">{label}</span>
           <h2 className="section-title mb-4 text-(--text-primary)">{title}</h2>
-          <p className="section-subtitle max-w-[560px] mx-auto text-(--text-secondary)">{subtitle}</p>
+          <p className="section-subtitle max-w-[560px] mx-auto text-(--text-secondary)">
+            {subtitle}
+          </p>
         </div>
 
         {policyTitle && (
           <div className="mb-4">
             <a
-              href={policyUrl || '#'}
-              onClick={(e) => { if (!policyUrl) e.preventDefault(); }}
-              target={policyUrl ? '_blank' : undefined}
-              rel={policyUrl ? 'noopener noreferrer' : undefined}
+              href={policyUrl || "#"}
+              onClick={(e) => {
+                if (!policyUrl) e.preventDefault();
+              }}
+              target={policyUrl ? "_blank" : undefined}
+              rel={policyUrl ? "noopener noreferrer" : undefined}
               className="flex items-center justify-between rounded-xl p-5 md:p-6 transition-all duration-150 hover:-translate-y-1 bg-(--bg-card) border border-(--border) border-l-[3px] border-l-(--accent)"
             >
               <div className="flex items-center gap-4">
@@ -108,10 +119,14 @@ export default function QualityManagement({
         )}
 
         {(certificates ?? []).length > 0 && (
-          <div ref={sectionRef} className="reveal reveal-d2" style={{ opacity: 1 }}>
+          <div
+            ref={sectionRef}
+            className="reveal reveal-d2"
+            style={{ opacity: 1 }}
+          >
             <button
               onClick={() => !inEditor && setIsOpen(!isOpen)}
-              className={`w-full flex items-center justify-between rounded-xl p-5 md:p-6 text-left cursor-pointer transition-all duration-300 bg-(--bg-card) border ${opened ? 'border-(--accent)' : 'border-(--border)'}`}
+              className={`w-full flex items-center justify-between rounded-xl p-5 md:p-6 text-left cursor-pointer transition-all duration-300 bg-(--bg-card) border ${opened ? "border-(--accent)" : "border-(--border)"}`}
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-(--accent-dim)">
@@ -130,24 +145,27 @@ export default function QualityManagement({
                 size={22}
                 className="flex-shrink-0 transition-transform duration-300 text-(--accent)"
                 style={{
-                  transform: opened ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transform: opened ? "rotate(180deg)" : "rotate(0deg)",
                 }}
               />
             </button>
             <div
               className="overflow-hidden transition-all duration-300 ease-out"
-              style={{ maxHeight: opened ? '2000px' : '0', opacity: opened ? 1 : 0 }}
+              style={{
+                maxHeight: opened ? "2000px" : "0",
+                opacity: opened ? 1 : 0,
+              }}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 {certificates.map((cert, i) => {
                   const Icon = ICONS[cert.icon] ?? Award;
                   const fileUrl = resolveFileUrl(cert.file);
-                  const Wrapper = fileUrl ? 'a' : 'div';
+                  const Wrapper = fileUrl ? "a" : "div";
                   const wrapperProps = fileUrl
                     ? {
                         href: fileUrl,
-                        target: '_blank',
-                        rel: 'noopener noreferrer',
+                        target: "_blank",
+                        rel: "noopener noreferrer",
                       }
                     : {};
                   return (
@@ -176,12 +194,15 @@ export default function QualityManagement({
                       </p>
                       {cert.expiryDate && (
                         <p className="text-xs mt-2 text-(--text-muted)">
-                          Действителен до{' '}
-                          {new Date(cert.expiryDate).toLocaleDateString('ru-RU', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
+                          Действителен до{" "}
+                          {new Date(cert.expiryDate).toLocaleDateString(
+                            "ru-RU",
+                            {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )}
                         </p>
                       )}
                     </Wrapper>
