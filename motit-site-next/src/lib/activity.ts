@@ -1,10 +1,10 @@
 // src/lib/activity.ts
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@generated/prisma";
+import { Prisma } from "@generated/prisma";
 
 export type LogActivityInput = {
   actorUuid?: string | number | null;
-  targetType: "site" | "post" | "ticket" | "settings" | "user";
+  targetType: "site" | "post" | "ticket" | "settings" | "user" | "announcement";
   targetId?: string | number | null;
   action: string;
   ticketUuid?: string | number | null;
@@ -36,7 +36,7 @@ export async function logActivity({
       target_id: normalizeId(targetId),
       action,
       ticket_uuid: normalizeId(ticketUuid),
-      meta,
+      meta: meta ?? Prisma.JsonNull,
     },
     select: {
       uuid: true,

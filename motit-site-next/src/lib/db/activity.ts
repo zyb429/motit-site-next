@@ -59,9 +59,7 @@ export async function getRecentActivity(
     take: Number.isFinite(take)
       ? Math.min(100, Math.max(1, Math.trunc(take)))
       : 20,
-    skip: Number.isFinite(skip)
-      ? Math.max(0, Math.trunc(skip))
-      : 0,
+    skip: Number.isFinite(skip) ? Math.max(0, Math.trunc(skip)) : 0,
   };
 
   // Администратору доступны все записанные события.
@@ -105,9 +103,7 @@ export async function getRecentActivity(
     ],
   };
 
-  const conditions: Prisma.ActivityWhereInput[] = [
-    relatedActivity,
-  ];
+  const conditions: Prisma.ActivityWhereInput[] = [relatedActivity];
 
   if (isClient) {
     // Комментарий доступен клиенту только при явном
