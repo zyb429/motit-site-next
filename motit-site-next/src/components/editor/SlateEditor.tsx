@@ -181,36 +181,39 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
   const editor = useMemo(() => withHistory(withReact(createEditor())), []);
 
   // Безопасное создание значения
-  const getSafeValue = useCallback((value?: CustomElement[] | null): CustomElement[] => {
-    if (!value || !Array.isArray(value) || value.length === 0) {
-      return INITIAL_VALUE;
-    }
-
-    const isValid = value.every((node) => {
-      if (
-        !node.children ||
-        !Array.isArray(node.children) ||
-        node.children.length === 0
-      ) {
-        console.warn("Узел без children:", node);
-        return false;
+  const getSafeValue = useCallback(
+    (value?: CustomElement[] | null): CustomElement[] => {
+      if (!value || !Array.isArray(value) || value.length === 0) {
+        return INITIAL_VALUE;
       }
 
-      const hasValidChildren = node.children.every((child: Descendant) => {
-        if (Text.isText(child)) return true;
-        console.warn("Дочерний элемент без text:", child);
-        return false;
+      const isValid = value.every((node) => {
+        if (
+          !node.children ||
+          !Array.isArray(node.children) ||
+          node.children.length === 0
+        ) {
+          console.warn("Узел без children:", node);
+          return false;
+        }
+
+        const hasValidChildren = node.children.every((child: Descendant) => {
+          if (Text.isText(child)) return true;
+          console.warn("Дочерний элемент без text:", child);
+          return false;
+        });
+
+        return hasValidChildren;
       });
 
-      return hasValidChildren;
-    });
-
-    if (!isValid) {
-      console.warn("Некорректная структура, используем INITIAL_VALUE");
-      return INITIAL_VALUE;
-    }
-    return value;
-  }, []);
+      if (!isValid) {
+        console.warn("Некорректная структура, используем INITIAL_VALUE");
+        return INITIAL_VALUE;
+      }
+      return value;
+    },
+    [],
+  );
 
   const [value, setValue] = useState<CustomElement[]>(() =>
     getSafeValue(initialValue),

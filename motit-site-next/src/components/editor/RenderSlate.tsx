@@ -26,9 +26,7 @@ const renderTextNode = (node: Text, key: number): React.ReactNode => {
   // Порядок важен: code → underline → italic → bold (изнутри наружу)
   if (node.code) {
     content = (
-      <code className="bg-gray-800 px-1 py-0.5 rounded text-sm">
-        {content}
-      </code>
+      <code className="bg-gray-800 px-1 py-0.5 rounded text-sm">{content}</code>
     );
   }
   if (node.underline) content = <u>{content}</u>;
