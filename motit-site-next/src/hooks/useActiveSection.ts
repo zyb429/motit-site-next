@@ -15,7 +15,7 @@ export function useActiveSection(sectionIds: string[]) {
       {
         // Секция считается активной, если она занимает хотя бы 30% экрана
         rootMargin: "-30% 0px -60% 0px",
-      }
+      },
     );
 
     sectionIds.forEach((id) => {

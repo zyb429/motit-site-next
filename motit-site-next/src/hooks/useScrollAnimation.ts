@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -20,7 +20,7 @@ interface ScrollAnimationOptions {
 
 export function useScrollAnimation(
   selector: string,
-  options: ScrollAnimationOptions = {}
+  options: ScrollAnimationOptions = {},
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -39,8 +39,8 @@ export function useScrollAnimation(
       duration = 0.8,
       delay = 0,
       stagger = 0.12,
-      ease = 'power3.out',
-      start = 'top 85%',
+      ease = "power3.out",
+      start = "top 85%",
     } = options;
 
     const fromVars: gsap.TweenVars = {
@@ -54,7 +54,7 @@ export function useScrollAnimation(
       scrollTrigger: {
         trigger: container,
         start,
-        toggleActions: 'play none none none',
+        toggleActions: "play none none none",
       },
     };
 
@@ -82,11 +82,11 @@ export function useParallax(speed: number = 0.5) {
     const ctx = gsap.context(() => {
       gsap.to(element, {
         y: () => speed * 100,
-        ease: 'none',
+        ease: "none",
         scrollTrigger: {
           trigger: element,
-          start: 'top bottom',
-          end: 'bottom top',
+          start: "top bottom",
+          end: "bottom top",
           scrub: true,
         },
       });

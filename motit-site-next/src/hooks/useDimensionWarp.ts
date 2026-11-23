@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
 
 const vertexShader = `
 void main() {
@@ -137,7 +137,9 @@ void main() {
 }
 `;
 
-export function useDimensionWarp(containerRef: React.RefObject<HTMLDivElement | null>) {
+export function useDimensionWarp(
+  containerRef: React.RefObject<HTMLDivElement | null>,
+) {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const frameRef = useRef<number>(0);
   const currentSpeedRef = useRef(0);
@@ -146,7 +148,10 @@ export function useDimensionWarp(containerRef: React.RefObject<HTMLDivElement | 
     const container = containerRef.current;
     if (!container) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      alpha: false,
+    });
     rendererRef.current = renderer;
 
     const dpr = Math.min(window.devicePixelRatio, 1.5);
@@ -154,9 +159,9 @@ export function useDimensionWarp(containerRef: React.RefObject<HTMLDivElement | 
     const h = window.innerHeight;
     renderer.setSize(w, h);
     renderer.setPixelRatio(dpr);
-    renderer.domElement.style.width = '100%';
-    renderer.domElement.style.height = '100%';
-    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+    renderer.domElement.style.display = "block";
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -182,12 +187,13 @@ export function useDimensionWarp(containerRef: React.RefObject<HTMLDivElement | 
 
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
-      if (document.visibilityState === 'hidden') return;
+      if (document.visibilityState === "hidden") return;
 
       const elapsed = clock.getElapsedTime();
       uniforms.uTime.value = elapsed * 0.3;
 
-      const scrollPos = window.scrollY / (document.body.scrollHeight - window.innerHeight || 1);
+      const scrollPos =
+        window.scrollY / (document.body.scrollHeight - window.innerHeight || 1);
       const targetSpeed = scrollPos * 1.5;
       currentSpeedRef.current += (targetSpeed - currentSpeedRef.current) * 0.03;
       uniforms.uSpeed.value = currentSpeedRef.current;
@@ -204,10 +210,10 @@ export function useDimensionWarp(containerRef: React.RefObject<HTMLDivElement | 
       uniforms.uResolution.value.set(nw * dpr, nh * dpr);
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(frameRef.current);
       geometry.dispose();
       material.dispose();

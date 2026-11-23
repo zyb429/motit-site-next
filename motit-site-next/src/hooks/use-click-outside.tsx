@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useEffect, type RefObject } from "react"
+import { useEffect, type RefObject } from "react";
 
 /**
  * Вызывает handler при клике вне элемента ref.
@@ -10,29 +10,29 @@ export function useClickOutside(
   ref: RefObject<HTMLElement | null>,
   handler: (event: MouseEvent) => void,
   enabled = true,
-  ignoreSelector?: string
+  ignoreSelector?: string,
 ) {
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) return;
 
     const onClick = (e: MouseEvent) => {
-      const el = ref.current
-      if (!el) return
+      const el = ref.current;
+      if (!el) return;
 
-      const target = e.target as Node
+      const target = e.target as Node;
 
       // клик внутри элемента — не трогаем
-      if (el.contains(target)) return
+      if (el.contains(target)) return;
 
       // клик по игнорируемому селектору (например, кнопка тулбара) — не трогаем
       if (ignoreSelector && (target as HTMLElement).closest?.(ignoreSelector)) {
-        return
+        return;
       }
 
-      handler(e)
-    }
+      handler(e);
+    };
 
-    document.addEventListener("mousedown", onClick)
-    return () => document.removeEventListener("mousedown", onClick)
-  }, [ref, handler, enabled, ignoreSelector])
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [ref, handler, enabled, ignoreSelector]);
 }

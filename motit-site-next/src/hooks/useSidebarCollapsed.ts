@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback } from "react";
  */
 export function useSidebarCollapsed(
   storageKey: string,
-  initialCollapsed = false
+  initialCollapsed = false,
 ): [boolean, () => void] {
   // Инициализируем состояние из initialCollapsed (для SSR)
   const [collapsed, setCollapsed] = useState<boolean>(initialCollapsed);
@@ -42,17 +42,17 @@ export function useSidebarCollapsed(
     setCollapsed((prev) => {
       const next = !prev;
       const value = next ? "1" : "0";
-      
+
       try {
         // Сохраняем в localStorage
         localStorage.setItem(storageKey, value);
-        
+
         // Сохраняем в cookie (на год)
         document.cookie = `${storageKey}=${value}; path=/; max-age=31536000; samesite=lax`;
       } catch {
         // ignore
       }
-      
+
       return next;
     });
   }, [storageKey]);

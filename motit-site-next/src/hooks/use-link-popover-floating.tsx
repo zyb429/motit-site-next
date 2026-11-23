@@ -1,25 +1,25 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useState } from "react"
-import type { Editor } from "@tiptap/react"
+import { useCallback, useEffect, useState } from "react";
+import type { Editor } from "@tiptap/react";
 import {
   useFloating,
   offset,
   flip,
   shift,
   autoUpdate,
-} from "@floating-ui/react"
-import { useClickOutside } from "@/hooks/use-click-outside"
-import { useEscapeKey } from "@/hooks/use-escape-key"
+} from "@floating-ui/react";
+import { useClickOutside } from "@/hooks/use-click-outside";
+import { useEscapeKey } from "@/hooks/use-escape-key";
 
 export interface UseLinkPopoverFloatingOptions {
-  editor: Editor | null
+  editor: Editor | null;
   /**
    * Селектор элементов, клик по которым не должен закрывать попап.
    * По умолчанию — кнопка ссылки в тулбаре (aria-label="Link"),
    * чтобы избежать мерцания при повторном нажатии.
    */
-  ignoreSelector?: string
+  ignoreSelector?: string;
 }
 
 /**
@@ -28,9 +28,9 @@ export interface UseLinkPopoverFloatingOptions {
  */
 function getSelectionRect(editor: Editor) {
   try {
-    const { from, to } = editor.state.selection
-    const start = editor.view.coordsAtPos(from)
-    const end = editor.view.coordsAtPos(to)
+    const { from, to } = editor.state.selection;
+    const start = editor.view.coordsAtPos(from);
+    const end = editor.view.coordsAtPos(to);
 
     return {
       x: Math.min(start.left, end.left),
@@ -41,7 +41,7 @@ function getSelectionRect(editor: Editor) {
       left: Math.min(start.left, end.left),
       right: Math.max(start.right, end.right),
       bottom: Math.max(start.bottom, end.bottom),
-    }
+    };
   } catch {
     return {
       x: 0,
@@ -52,7 +52,7 @@ function getSelectionRect(editor: Editor) {
       left: 0,
       right: 1,
       bottom: 1,
-    }
+    };
   }
 }
 
@@ -65,7 +65,7 @@ export function useLinkPopoverFloating({
   editor,
   ignoreSelector = '[aria-label="Link"]',
 }: UseLinkPopoverFloatingOptions) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   const { refs, floatingStyles } = useFloating({
     open: isOpen,
@@ -74,37 +74,37 @@ export function useLinkPopoverFloating({
     strategy: "fixed",
     middleware: [offset(8), flip(), shift()],
     whileElementsMounted: autoUpdate,
-  })
+  });
 
   const setReferenceFromSelection = useCallback(() => {
-    if (!editor) return
+    if (!editor) return;
     refs.setReference({
       getBoundingClientRect: () => getSelectionRect(editor),
-    })
-  }, [editor, refs])
+    });
+  }, [editor, refs]);
 
   const open = useCallback(() => {
-    if (!editor) return
-    setReferenceFromSelection()
-    setIsOpen(true)
-  }, [editor, setReferenceFromSelection])
+    if (!editor) return;
+    setReferenceFromSelection();
+    setIsOpen(true);
+  }, [editor, setReferenceFromSelection]);
 
-  const close = useCallback(() => setIsOpen(false), [])
+  const close = useCallback(() => setIsOpen(false), []);
 
   // Пересчитываем позицию при изменении выделения, пока попап открыт.
   useEffect(() => {
-    if (!editor || !isOpen) return
+    if (!editor || !isOpen) return;
 
-    const update = () => setReferenceFromSelection()
-    editor.on("selectionUpdate", update)
+    const update = () => setReferenceFromSelection();
+    editor.on("selectionUpdate", update);
 
     return () => {
-      editor.off("selectionUpdate", update)
-    }
-  }, [editor, isOpen, setReferenceFromSelection])
+      editor.off("selectionUpdate", update);
+    };
+  }, [editor, isOpen, setReferenceFromSelection]);
 
-  useEscapeKey(close, isOpen)
-  useClickOutside(refs.floating, close, isOpen, ignoreSelector)
+  useEscapeKey(close, isOpen);
+  useClickOutside(refs.floating, close, isOpen, ignoreSelector);
 
   return {
     isOpen,
@@ -112,5 +112,5 @@ export function useLinkPopoverFloating({
     close,
     setFloatingRef: refs.setFloating,
     floatingStyles,
-  }
+  };
 }
