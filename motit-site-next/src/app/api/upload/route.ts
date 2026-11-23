@@ -81,10 +81,10 @@ function sanitizeFolder(raw: string | null): string {
   if (!raw) return "";
   return raw
     .trim()
-    .replace(/^\/+|\/+$/g, "")        // убрать ведущие/хвостовые слэши
+    .replace(/^\/+|\/+$/g, "") // убрать ведущие/хвостовые слэши
     .replace(/[^a-zA-Z0-9/_-]/g, "") // только безопасные символы
-    .replace(/\/+/g, "/")             // убрать двойные слэши
-    .replace(/\.\./g, "");            // убрать ".."
+    .replace(/\/+/g, "/") // убрать двойные слэши
+    .replace(/\.\./g, ""); // убрать ".."
 }
 
 export async function POST(request: NextRequest) {

@@ -44,8 +44,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const resetUrl = `${siteUrl}/reset-password?token=${token}`;
 
     await transporter.sendMail({
@@ -79,4 +78,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

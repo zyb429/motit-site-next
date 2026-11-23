@@ -19,7 +19,9 @@ export async function GET(req: Request) {
   lines.push("# HELP health_check_status 1 if ok, 0 if fail");
   lines.push("# TYPE health_check_status gauge");
   for (const [name, r] of Object.entries(checks)) {
-    lines.push(`health_check_status{check="${name}"} ${r.status === "ok" ? 1 : 0}`);
+    lines.push(
+      `health_check_status{check="${name}"} ${r.status === "ok" ? 1 : 0}`,
+    );
   }
 
   lines.push("# HELP health_check_latency_ms latency of the check");

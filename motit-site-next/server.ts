@@ -119,25 +119,19 @@ io.on("connection", async (socket) => {
     socket.leave(`chat:${chatUuid}`);
   });
 
-  socket.on(
-    "typing:start",
-    ({ chatUuid }: { chatUuid: string }) => {
-      pub.publish(
-        `typing:${chatUuid}`,
-        JSON.stringify({ chatUuid, userUuid, typing: true }),
-      );
-    },
-  );
+  socket.on("typing:start", ({ chatUuid }: { chatUuid: string }) => {
+    pub.publish(
+      `typing:${chatUuid}`,
+      JSON.stringify({ chatUuid, userUuid, typing: true }),
+    );
+  });
 
-  socket.on(
-    "typing:stop",
-    ({ chatUuid }: { chatUuid: string }) => {
-      pub.publish(
-        `typing:${chatUuid}`,
-        JSON.stringify({ chatUuid, userUuid, typing: false }),
-      );
-    },
-  );
+  socket.on("typing:stop", ({ chatUuid }: { chatUuid: string }) => {
+    pub.publish(
+      `typing:${chatUuid}`,
+      JSON.stringify({ chatUuid, userUuid, typing: false }),
+    );
+  });
 
   socket.on("disconnect", () => {
     clearInterval(heartbeat);

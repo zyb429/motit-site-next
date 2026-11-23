@@ -40,9 +40,7 @@ export async function GET(req: NextRequest) {
       pick(
         /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"]+)["']/i,
       ) ??
-      pick(
-        /<meta[^>]+name=["']description["'][^>]+content=["']([^"]+)["']/i,
-      );
+      pick(/<meta[^>]+name=["']description["'][^>]+content=["']([^"]+)["']/i);
     const image = pick(
       /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i,
     );

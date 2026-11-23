@@ -93,7 +93,7 @@ export function describeS3Error(err: any) {
   return {
     name: err?.name,
     message: err?.message,
-    code: err?.cause?.code,          // ENOTFOUND / ECONNREFUSED / ETIMEDOUT / ...
+    code: err?.cause?.code, // ENOTFOUND / ECONNREFUSED / ETIMEDOUT / ...
     cause: err?.cause,
     httpStatusCode: err?.$metadata?.httpStatusCode,
     attempts: err?.$metadata?.attempts,

@@ -33,10 +33,12 @@ export async function PATCH(req: Request) {
 
   const parsed = patchSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   await setAllowedMime(parsed.data.mime);
   return NextResponse.json({ success: true });
 }
-

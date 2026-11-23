@@ -24,7 +24,8 @@ export async function POST(request: Request) {
     };
 
     const privacyAgreed = !!body.privacyAgreed;
-    const privacyAgreedAt: string = body.privacyAgreedAt ?? new Date().toISOString();
+    const privacyAgreedAt: string =
+      body.privacyAgreedAt ?? new Date().toISOString();
 
     // ---------- 1. Валидация ----------
     if (!privacyAgreed) {
@@ -40,12 +41,19 @@ export async function POST(request: Request) {
 
     if (!legacy.name || String(legacy.name).trim().length < 2) {
       return NextResponse.json(
-        { success: false, error: "Имя должно содержать минимум 2 символа", field: "name" },
+        {
+          success: false,
+          error: "Имя должно содержать минимум 2 символа",
+          field: "name",
+        },
         { status: 400 },
       );
     }
 
-    if (!legacy.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(legacy.email))) {
+    if (
+      !legacy.email ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(legacy.email))
+    ) {
       return NextResponse.json(
         { success: false, error: "Введите корректный email", field: "email" },
         { status: 400 },
@@ -60,7 +68,9 @@ export async function POST(request: Request) {
         name: String(legacy.name).trim(),
         email: String(legacy.email).trim(),
         phone: legacy.phone ? String(legacy.phone).trim() : null,
-        company_name: legacy.company_name ? String(legacy.company_name).trim() : null,
+        company_name: legacy.company_name
+          ? String(legacy.company_name).trim()
+          : null,
         job_title: legacy.job_title ? String(legacy.job_title).trim() : null,
         message: legacy.message ? String(legacy.message).trim() : null,
         privacyAgreed,
@@ -255,7 +265,10 @@ function buildHtml(d: {
   privacyAgreedAt?: string;
 }) {
   const esc = (s?: string) =>
-    (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    (s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
 
   // Если есть fields — рендерим их таблицей, иначе старый набор
   const fieldRows = Object.keys(d.fields ?? {}).length

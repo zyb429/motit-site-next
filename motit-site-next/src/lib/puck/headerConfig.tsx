@@ -12,7 +12,10 @@ export function createHeaderConfig(): Config<HeaderConfig> {
     components: {
       Header: {
         fields: {
-          logoText: { type: "text", label: "Логотип: текст (если нет картинки)" },
+          logoText: {
+            type: "text",
+            label: "Логотип: текст (если нет картинки)",
+          },
           logoHref: { type: "text", label: "Логотип: ссылка" },
           logoLightUrl: {
             ...imageUploadField,

@@ -24,7 +24,10 @@ export function formatChatListTime(date: Date | string | null): string {
   const messageDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
   if (messageDay.getTime() === today.getTime()) {
-    return d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString("ru-RU", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
   if (messageDay.getTime() === yesterday.getTime()) {
     return "Вчера";

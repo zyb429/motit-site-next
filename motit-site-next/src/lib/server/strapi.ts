@@ -19,15 +19,17 @@ export async function getDraftModeStatus(): Promise<boolean> {
 /**
  * Серверная функция для получения публикационного статуса
  */
-export async function getPublicationState(): Promise<'live' | 'preview'> {
+export async function getPublicationState(): Promise<"live" | "preview"> {
   const isDraftMode = await getDraftModeStatus();
-  return isDraftMode ? 'preview' : 'live';
+  return isDraftMode ? "preview" : "live";
 }
 
 /**
  * Серверная функция для получения статуса поста
  */
-export async function getPostStatus(): Promise<'draft' | 'published' | 'archived' | undefined> {
+export async function getPostStatus(): Promise<
+  "draft" | "published" | "archived" | undefined
+> {
   const isDraftMode = await getDraftModeStatus();
-  return isDraftMode ? 'draft' : undefined;
+  return isDraftMode ? "draft" : undefined;
 }

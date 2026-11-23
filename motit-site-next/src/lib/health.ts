@@ -37,11 +37,7 @@ export function withTimeout<T>(
 export async function checkDb(): Promise<CheckResult> {
   const start = Date.now();
   try {
-    await withTimeout(
-      (_signal) => prisma.$queryRaw`SELECT 1`,
-      2000,
-      "db",
-    );
+    await withTimeout((_signal) => prisma.$queryRaw`SELECT 1`, 2000, "db");
     return { status: "ok", latencyMs: Date.now() - start };
   } catch (e) {
     return {
@@ -55,11 +51,7 @@ export async function checkDb(): Promise<CheckResult> {
 export async function checkRedis(): Promise<CheckResult> {
   const start = Date.now();
   try {
-    await withTimeout(
-      (_signal) => redis.ping(),
-      1000,
-      "redis",
-    );
+    await withTimeout((_signal) => redis.ping(), 1000, "redis");
     return { status: "ok", latencyMs: Date.now() - start };
   } catch (e) {
     return {

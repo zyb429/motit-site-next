@@ -45,15 +45,23 @@ export const TIMEZONE_OPTIONS: {
   { value: "Europe/London", label: "Лондон (Europe/London, UTC+0/1)" },
   { value: "UTC", label: "UTC" },
   { value: "Asia/Almaty", label: "Алматы (Asia/Almaty, UTC+5/6)" },
-  { value: "Asia/Yekaterinburg", label: "Екатеринбург (Asia/Yekaterinburg, UTC+5/6)" },
-  { value: "Asia/Novosibirsk", label: "Новосибирск (Asia/Novosibirsk, UTC+6/7)" },
-  { value: "Asia/Vladivostok", label: "Владивосток (Asia/Vladivostok, UTC+10/11)" },
+  {
+    value: "Asia/Yekaterinburg",
+    label: "Екатеринбург (Asia/Yekaterinburg, UTC+5/6)",
+  },
+  {
+    value: "Asia/Novosibirsk",
+    label: "Новосибирск (Asia/Novosibirsk, UTC+6/7)",
+  },
+  {
+    value: "Asia/Vladivostok",
+    label: "Владивосток (Asia/Vladivostok, UTC+10/11)",
+  },
 ];
 
 export function isLanguage(v: unknown): v is LanguageCode {
   return (
-    typeof v === "string" &&
-    (LANGUAGE_VALUES as readonly string[]).includes(v)
+    typeof v === "string" && (LANGUAGE_VALUES as readonly string[]).includes(v)
   );
 }
 
@@ -65,5 +73,7 @@ export function isAdminLanguage(v: unknown): v is AdminLanguageCode {
 }
 
 export function isTimezone(v: unknown): v is TimezoneCode {
-  return typeof v === "string" && (TIMEZONE_VALUES as readonly string[]).includes(v);
+  return (
+    typeof v === "string" && (TIMEZONE_VALUES as readonly string[]).includes(v)
+  );
 }
