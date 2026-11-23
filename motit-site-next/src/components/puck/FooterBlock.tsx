@@ -137,9 +137,7 @@ export function FooterBlock(props: FooterBlockProps) {
                   {(props.social || []).map((s, i) => {
                     const isCustom = s.name === CUSTOM_SOCIAL_VALUE;
                     const Icon = SOCIAL_ICONS[s.name?.toLowerCase()] ?? Globe;
-                    const label = isCustom
-                      ? s.customName || "Соцсеть"
-                      : s.name;
+                    const label = isCustom ? s.customName || "Соцсеть" : s.name;
                     const iconUrl = s.customIcon || s.icon;
 
                     return (

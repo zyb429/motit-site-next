@@ -14,7 +14,8 @@ export type CertificateFileValue =
 
 function normalize(v: CertificateFileValue) {
   if (!v) return { url: "", fileId: undefined, name: undefined };
-  if (typeof v === "string") return { url: v, fileId: undefined, name: undefined };
+  if (typeof v === "string")
+    return { url: v, fileId: undefined, name: undefined };
   return v;
 }
 
@@ -71,7 +72,9 @@ function FileInput({
 
       // /api/upload возвращает массив:
       // [{ id, documentId, name, url, mime, size }]
-      const uploaded = Array.isArray(data) ? data[0] : data?.data?.[0] ?? data;
+      const uploaded = Array.isArray(data)
+        ? data[0]
+        : (data?.data?.[0] ?? data);
 
       if (!uploaded?.url) {
         throw new Error("Некорректный ответ загрузки: нет url");
@@ -143,7 +146,7 @@ function FileInput({
 
 function makeFileField(
   label: string,
-  folder: string
+  folder: string,
 ): CustomField<CertificateFileValue> {
   return {
     type: "custom",
@@ -160,10 +163,10 @@ function makeFileField(
 
 export const certificateFileField = makeFileField(
   "Файл сертификата (PDF или изображение)",
-  "certificates"
+  "certificates",
 );
 
 export const policyFileField = makeFileField(
   "Файл политики (PDF или изображение)",
-  "policies"
+  "policies",
 );

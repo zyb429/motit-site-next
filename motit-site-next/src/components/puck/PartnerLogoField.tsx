@@ -46,7 +46,8 @@ export const partnerLogoField: CustomField<string> = {
         });
 
         // Ленивый импорт: загружается только при клике в браузере
-        const { openEditorModal } = await import("@rageshpikalmunde/rp-image-editor");
+        const { openEditorModal } =
+          await import("@rageshpikalmunde/rp-image-editor");
         const result = await openEditorModal({
           image: file,
           config: {
@@ -61,7 +62,9 @@ export const partnerLogoField: CustomField<string> = {
         await uploadFile(result.file);
       } catch (err) {
         console.error("Logo edit error:", err);
-        setError(err instanceof Error ? err.message : "Не удалось отредактировать");
+        setError(
+          err instanceof Error ? err.message : "Не удалось отредактировать",
+        );
       } finally {
         setEditing(false);
       }
@@ -88,7 +91,8 @@ export const partnerLogoField: CustomField<string> = {
         setError(null);
 
         // Ленивый импорт: загружается только при клике в браузере
-        const { openEditorModal } = await import("@rageshpikalmunde/rp-image-editor");
+        const { openEditorModal } =
+          await import("@rageshpikalmunde/rp-image-editor");
         const result = await openEditorModal({
           image: file,
           config: {
@@ -102,7 +106,9 @@ export const partnerLogoField: CustomField<string> = {
         await uploadFile(result.file);
       } catch (err) {
         console.error("Logo edit error:", err);
-        setError(err instanceof Error ? err.message : "Не удалось отредактировать");
+        setError(
+          err instanceof Error ? err.message : "Не удалось отредактировать",
+        );
       } finally {
         setEditing(false);
       }

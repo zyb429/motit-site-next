@@ -12,7 +12,12 @@ export type HeaderBlockProps = {
   logoHref: string;
   logoLightUrl?: string | null;
   logoDarkUrl?: string | null;
-  nav: Array<{ label: string; href: string; external?: boolean; icon?: string }>;
+  nav: Array<{
+    label: string;
+    href: string;
+    external?: boolean;
+    icon?: string;
+  }>;
   ctaLabel?: string;
   ctaHref?: string;
   ctaEnabled?: boolean;
@@ -76,7 +81,11 @@ export function HeaderBlock({
 
   const isActive = (href: string) => {
     const [cleanPath, hash] = href.split("#");
-    if (pathname !== cleanPath && !(cleanPath === "/blog" && pathname?.startsWith("/blog"))) return false;
+    if (
+      pathname !== cleanPath &&
+      !(cleanPath === "/blog" && pathname?.startsWith("/blog"))
+    )
+      return false;
     if (hash) return activeSection === hash;
     return !activeSection;
   };
@@ -91,7 +100,11 @@ export function HeaderBlock({
     >
       <Container>
         <div className="flex h-16 items-center justify-between">
-          <Link href={logoHref} className="flex shrink-0 items-center" aria-label={logoText || "На главную"}>
+          <Link
+            href={logoHref}
+            className="flex shrink-0 items-center"
+            aria-label={logoText || "На главную"}
+          >
             {currentLogo ? (
               <div className="relative h-12 sm:h-14 flex items-center justify-start">
                 <img
@@ -116,7 +129,9 @@ export function HeaderBlock({
                 target={link.external ? "_blank" : undefined}
                 rel={link.external ? "noopener noreferrer" : undefined}
                 className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                  isActive(link.href) ? "text-(--accent)" : "text-(--text-secondary) hover:text-(--accent)"
+                  isActive(link.href)
+                    ? "text-(--accent)"
+                    : "text-(--text-secondary) hover:text-(--accent)"
                 }`}
               >
                 {link.icon === "headphones" && <Headphones size={16} />}
@@ -141,11 +156,25 @@ export function HeaderBlock({
             aria-label="Toggle menu"
             aria-expanded={isMobileMenuOpen}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
               {isMobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               )}
             </svg>
           </button>
@@ -163,7 +192,9 @@ export function HeaderBlock({
                 rel={link.external ? "noopener noreferrer" : undefined}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                  isActive(link.href) ? "text-(--accent)" : "text-(--text-secondary) hover:text-(--accent)"
+                  isActive(link.href)
+                    ? "text-(--accent)"
+                    : "text-(--text-secondary) hover:text-(--accent)"
                 }`}
               >
                 {link.icon === "headphones" && <Headphones size={16} />}
