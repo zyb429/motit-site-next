@@ -107,7 +107,11 @@ export function TicketControls({
           value={currentAssigneeUuid ?? ""}
           disabled={isPending || !canAssign}
           onChange={(e) => patch({ assigneeUuid: e.target.value || null })}
-          title={!canAssign ? "Только администратор может менять исполнителя" : undefined}
+          title={
+            !canAssign
+              ? "Только администратор может менять исполнителя"
+              : undefined
+          }
           className={selectClass}
         >
           <option value="">— не назначен —</option>

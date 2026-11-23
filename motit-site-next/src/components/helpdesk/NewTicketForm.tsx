@@ -84,14 +84,22 @@ export function NewTicketForm({
   const [selectedClientUuid, setSelectedClientUuid] = useState<string | null>(
     isAdmin ? (clientUuid ?? clients[0]?.uuid ?? null) : null,
   );
-  const [selectedCategoryUuid, setSelectedCategoryUuid] = useState<string | null>(
-    categoryUuid ?? categories[0]?.uuid ?? null,
-  );
+  const [selectedCategoryUuid, setSelectedCategoryUuid] = useState<
+    string | null
+  >(categoryUuid ?? categories[0]?.uuid ?? null);
 
-  const [customContactName, setCustomContactName] = useState<string | null>(null);
-  const [customContactEmail, setCustomContactEmail] = useState<string | null>(null);
-  const [customContactPhone, setCustomContactPhone] = useState<string | null>(null);
-  const [customOrganizationUuid, setCustomOrganizationUuid] = useState<string | null>(null);
+  const [customContactName, setCustomContactName] = useState<string | null>(
+    null,
+  );
+  const [customContactEmail, setCustomContactEmail] = useState<string | null>(
+    null,
+  );
+  const [customContactPhone, setCustomContactPhone] = useState<string | null>(
+    null,
+  );
+  const [customOrganizationUuid, setCustomOrganizationUuid] = useState<
+    string | null
+  >(null);
 
   const [priorityCode, setPriorityCode] = useState("NORMAL");
   const [title, setTitle] = useState("");
@@ -102,7 +110,7 @@ export function NewTicketForm({
   const [error, setError] = useState<string | null>(null);
 
   const selectedClient = isAdmin
-    ? clients.find((c) => c.uuid === selectedClientUuid) ?? null
+    ? (clients.find((c) => c.uuid === selectedClientUuid) ?? null)
     : null;
 
   const contactName =
@@ -117,13 +125,13 @@ export function NewTicketForm({
 
   const contactPhone =
     customContactPhone ??
-    (isAdmin && selectedClient ? selectedClient.phone ?? "" : null) ??
+    (isAdmin && selectedClient ? (selectedClient.phone ?? "") : null) ??
     defaultPhone;
 
   const organizationUuid =
     customOrganizationUuid ??
     (isAdmin && selectedClient
-      ? selectedClient.organizationUuid ?? null
+      ? (selectedClient.organizationUuid ?? null)
       : null) ??
     organizations.find((o) => o.isPrimary)?.uuid ??
     organizations[0]?.uuid ??
@@ -147,7 +155,8 @@ export function NewTicketForm({
     if (contactName.trim().length < 1) return setError("Укажите ФИО");
     if (!contactEmail.includes("@")) return setError("Некорректный email");
     if (title.trim().length < 3) return setError("Тема — минимум 3 символа");
-    if (description.trim().length < 10) return setError("Сообщение — минимум 10 символов");
+    if (description.trim().length < 10)
+      return setError("Сообщение — минимум 10 символов");
 
     setSaving(true);
     try {
@@ -179,13 +188,17 @@ export function NewTicketForm({
           organizationUuid,
           categoryUuid: selectedCategoryUuid,
           attachmentFileIds,
-          ...(isAdmin && selectedClientUuid ? { clientUuid: selectedClientUuid } : {}),
+          ...(isAdmin && selectedClientUuid
+            ? { clientUuid: selectedClientUuid }
+            : {}),
         }),
       });
 
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(typeof d.error === "string" ? d.error : "Не удалось создать заявку");
+        throw new Error(
+          typeof d.error === "string" ? d.error : "Не удалось создать заявку",
+        );
       }
 
       const data = await res.json();
@@ -225,12 +238,15 @@ export function NewTicketForm({
             <Field label="Категория">
               <select
                 value={selectedCategoryUuid ?? ""}
-                onChange={(e) => setSelectedCategoryUuid(e.target.value || null)}
+                onChange={(e) =>
+                  setSelectedCategoryUuid(e.target.value || null)
+                }
                 className={inputClass}
               >
                 {categories.map((c) => (
                   <option key={c.uuid} value={c.uuid}>
-                    {c.icon ? `${c.icon} ` : ""}{c.name}
+                    {c.icon ? `${c.icon} ` : ""}
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -241,19 +257,34 @@ export function NewTicketForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="ФИО">
-          <input value={contactName} onChange={(e) => setCustomContactName(e.target.value)} className={inputClass} />
+          <input
+            value={contactName}
+            onChange={(e) => setCustomContactName(e.target.value)}
+            className={inputClass}
+          />
         </Field>
         <Field label="E-mail">
-          <input type="email" value={contactEmail} onChange={(e) => setCustomContactEmail(e.target.value)} className={inputClass} />
+          <input
+            type="email"
+            value={contactEmail}
+            onChange={(e) => setCustomContactEmail(e.target.value)}
+            className={inputClass}
+          />
         </Field>
         <Field label="Телефон">
-          <input value={contactPhone} onChange={(e) => setCustomContactPhone(e.target.value)} className={inputClass} />
+          <input
+            value={contactPhone}
+            onChange={(e) => setCustomContactPhone(e.target.value)}
+            className={inputClass}
+          />
         </Field>
         {!isAdmin && organizations.length > 0 && (
           <Field label="Предприятие">
             <select
               value={organizationUuid ?? ""}
-              onChange={(e) => setCustomOrganizationUuid(e.target.value || null)}
+              onChange={(e) =>
+                setCustomOrganizationUuid(e.target.value || null)
+              }
               className={inputClass}
             >
               {organizations.map((o) => (
@@ -268,14 +299,25 @@ export function NewTicketForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Приоритет">
-          <select value={priorityCode} onChange={(e) => setPriorityCode(e.target.value)} className={inputClass}>
+          <select
+            value={priorityCode}
+            onChange={(e) => setPriorityCode(e.target.value)}
+            className={inputClass}
+          >
             {PRIORITIES.map((p) => (
-              <option key={p.code} value={p.code}>{p.label}</option>
+              <option key={p.code} value={p.code}>
+                {p.label}
+              </option>
             ))}
           </select>
         </Field>
         <Field label="Тема">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={255} className={inputClass} />
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={255}
+            className={inputClass}
+          />
         </Field>
       </div>
 
@@ -292,15 +334,28 @@ export function NewTicketForm({
       <Field label="Вложения">
         <div className="border-2 border-dashed border-(--border) rounded-xl p-4 hover:border-(--accent)/50 transition-colors">
           {files.length === 0 ? (
-            <p className="text-sm text-(--text-muted) text-center">Перетащите файлы или нажмите «Добавить»</p>
+            <p className="text-sm text-(--text-muted) text-center">
+              Перетащите файлы или нажмите «Добавить»
+            </p>
           ) : (
             <ul className="space-y-2 mb-3">
               {files.map((f, i) => (
-                <li key={i} className="flex items-center justify-between gap-3 text-sm bg-(--bg-secondary) p-2 rounded-lg">
-                  <span className="truncate text-(--text-primary)">{f.name}</span>
+                <li
+                  key={i}
+                  className="flex items-center justify-between gap-3 text-sm bg-(--bg-secondary) p-2 rounded-lg"
+                >
+                  <span className="truncate text-(--text-primary)">
+                    {f.name}
+                  </span>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-(--text-muted) text-xs">{(f.size / 1024 / 1024).toFixed(2)} МБ</span>
-                    <button type="button" onClick={() => removeFile(i)} className="text-red-400 hover:text-red-300 p-1">
+                    <span className="text-(--text-muted) text-xs">
+                      {(f.size / 1024 / 1024).toFixed(2)} МБ
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      className="text-red-400 hover:text-red-300 p-1"
+                    >
                       <X size={14} />
                     </button>
                   </div>
@@ -311,12 +366,23 @@ export function NewTicketForm({
           <label className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-(--border) text-(--accent) text-sm cursor-pointer hover:bg-(--accent-dim) transition-colors">
             <Upload size={14} />
             Добавить файл
-            <input type="file" multiple accept={ACCEPT} onChange={handleFileSelect} className="hidden" disabled={files.length >= 5} />
+            <input
+              type="file"
+              multiple
+              accept={ACCEPT}
+              onChange={handleFileSelect}
+              className="hidden"
+              disabled={files.length >= 5}
+            />
           </label>
         </div>
       </Field>
 
-      {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
+      {error && (
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
 
       <button
         type="submit"
@@ -339,10 +405,18 @@ export function NewTicketForm({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <label className="block text-sm font-medium text-(--text-secondary) mb-1.5">{label}</label>
+      <label className="block text-sm font-medium text-(--text-secondary) mb-1.5">
+        {label}
+      </label>
       {children}
     </div>
   );

@@ -20,7 +20,14 @@ import {
 } from "@/lib/db/ticket-status-history";
 import { LastStatusChangeBlock } from "@/components/helpdesk/LastStatusChange";
 import {
-  User2, AlertCircle, Globe, Mail, Phone, Inbox, Users, Building2,
+  User2,
+  AlertCircle,
+  Globe,
+  Mail,
+  Phone,
+  Inbox,
+  Users,
+  Building2,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -39,57 +46,47 @@ export default async function AdminTicketsPage({
     (params.segment as "all" | "clients" | "site" | "internal" | undefined) ??
     "all";
 
-  const [
-    statuses,
-    priorities,
-    categories,
-    agents,
-    segmentCounts,
-    result,
-  ] = await Promise.all([
-    listStatuses(),
-    listPriorities(),
-    prisma.ticket_categories.findMany({
-      where: { is_active: true },
-      select: { uuid: true, name: true, icon: true },
-      orderBy: { sort_order: "asc" },
-    }),
-    prisma.users.findMany({
-      where: {
-        users_role_lnk: {
-          some: { roles: { name: { in: ["admin", "worker"] } } },
+  const [statuses, priorities, categories, agents, segmentCounts, result] =
+    await Promise.all([
+      listStatuses(),
+      listPriorities(),
+      prisma.ticket_categories.findMany({
+        where: { is_active: true },
+        select: { uuid: true, name: true, icon: true },
+        orderBy: { sort_order: "asc" },
+      }),
+      prisma.users.findMany({
+        where: {
+          users_role_lnk: {
+            some: { roles: { name: { in: ["admin", "worker"] } } },
+          },
+          blocked: false,
         },
-        blocked: false,
-      },
-      select: { id: true, username: true, full_name: true },
-      orderBy: { full_name: "asc" },
-    }),
-    getSegmentCounts(user),
-    listTickets({
-      user,
-      statusCode: params.status,
-      priorityCode: params.priority,
-      categoryUuid: params.category,
-      categorySlug: params.categorySlug,
-      segment,
-      assigneeId:
-        params.assigneeId === "me" || params.assigneeId === "unassigned"
-          ? params.assigneeId
-          : params.assigneeId
-            ? Number(params.assigneeId)
-            : undefined,
-      search: params.search,
-      sort: params.sort as
-        | "created"
-        | "updated"
-        | "priority"
-        | "deadline"
-        | undefined,
-      dir: params.dir as "asc" | "desc" | undefined,
-      page,
-      pageSize: 20,
-    }),
-  ]);
+        select: { id: true, username: true, full_name: true },
+        orderBy: { full_name: "asc" },
+      }),
+      getSegmentCounts(user),
+      listTickets({
+        user,
+        statusCode: params.status,
+        priorityCode: params.priority,
+        categoryUuid: params.category,
+        categorySlug: params.categorySlug,
+        segment,
+        assigneeId:
+          params.assigneeId === "me" || params.assigneeId === "unassigned"
+            ? params.assigneeId
+            : params.assigneeId
+              ? Number(params.assigneeId)
+              : undefined,
+        search: params.search,
+        sort: params.sort as
+          "created" | "updated" | "priority" | "deadline" | undefined,
+        dir: params.dir as "asc" | "desc" | undefined,
+        page,
+        pageSize: 20,
+      }),
+    ]);
 
   const { items, total, totalPages, statusCounts } = result;
   const [lastChanges, histories] = await Promise.all([
@@ -108,10 +105,30 @@ export default async function AdminTicketsPage({
       <div className="flex flex-wrap gap-2 mb-3">
         {(
           [
-            { value: "all",      label: "Все",        icon: Inbox,     count: segmentCounts.all },
-            { value: "clients",  label: "Клиентские", icon: Users,     count: segmentCounts.clients },
-            { value: "site",     label: "С сайта",    icon: Globe,     count: segmentCounts.site },
-            { value: "internal", label: "Внутренние", icon: Building2, count: segmentCounts.internal },
+            {
+              value: "all",
+              label: "Все",
+              icon: Inbox,
+              count: segmentCounts.all,
+            },
+            {
+              value: "clients",
+              label: "Клиентские",
+              icon: Users,
+              count: segmentCounts.clients,
+            },
+            {
+              value: "site",
+              label: "С сайта",
+              icon: Globe,
+              count: segmentCounts.site,
+            },
+            {
+              value: "internal",
+              label: "Внутренние",
+              icon: Building2,
+              count: segmentCounts.internal,
+            },
           ] as const
         ).map((s) => {
           const Icon = s.icon;
@@ -142,7 +159,7 @@ export default async function AdminTicketsPage({
       {statuses.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {statuses.map((s) => {
-            const count = s.code ? statusCounts[s.code] ?? 0 : 0;
+            const count = s.code ? (statusCounts[s.code] ?? 0) : 0;
             const active = params.status === s.code;
             return (
               <Link
@@ -157,7 +174,9 @@ export default async function AdminTicketsPage({
                 }`}
               >
                 {s.name}
-                <span className="ml-1.5 text-xs text-(--text-muted)">{count}</span>
+                <span className="ml-1.5 text-xs text-(--text-muted)">
+                  {count}
+                </span>
               </Link>
             );
           })}
@@ -167,7 +186,10 @@ export default async function AdminTicketsPage({
       <TicketFilters
         basePath="/admin/tickets"
         statuses={statuses.map((s) => ({ value: s.code ?? "", label: s.name }))}
-        priorities={priorities.map((p) => ({ value: p.code ?? "", label: p.name }))}
+        priorities={priorities.map((p) => ({
+          value: p.code ?? "",
+          label: p.name,
+        }))}
         categories={categories.map((c) => ({
           value: c.uuid,
           label: `${c.icon ?? ""} ${c.name}`.trim(),
@@ -230,8 +252,7 @@ export default async function AdminTicketsPage({
                       )}
                       {isSiteRequest && (
                         <span className="inline-flex items-center gap-1 text-(--accent)">
-                          <Globe size={11} />
-                          с сайта
+                          <Globe size={11} />с сайта
                         </span>
                       )}
                       {isOverdue && (

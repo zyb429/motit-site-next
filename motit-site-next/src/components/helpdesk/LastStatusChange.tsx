@@ -2,7 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { History, ArrowRight, User2, ChevronDown, X, Clock } from "lucide-react";
+import {
+  History,
+  ArrowRight,
+  User2,
+  ChevronDown,
+  X,
+  Clock,
+} from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
 import {
   timeAgo,
@@ -84,8 +91,10 @@ export function LastStatusChangeBlock({
       if (window.innerWidth < 640) return;
       const target = e.target as Node;
       if (
-        buttonRef.current && !buttonRef.current.contains(target) &&
-        popoverRef.current && !popoverRef.current.contains(target)
+        buttonRef.current &&
+        !buttonRef.current.contains(target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(target)
       ) {
         setOpen(false);
       }
@@ -123,7 +132,10 @@ export function LastStatusChangeBlock({
               {h.old_status?.code && (
                 <>
                   <StatusBadge code={h.old_status.code} />
-                  <ArrowRight size={12} className="text-(--text-muted) shrink-0" />
+                  <ArrowRight
+                    size={12}
+                    className="text-(--text-muted) shrink-0"
+                  />
                 </>
               )}
               {h.status?.code && <StatusBadge code={h.status.code} />}
@@ -174,7 +186,10 @@ export function LastStatusChangeBlock({
             : "cursor-default text-(--text-muted)"
         }`}
       >
-        <History size={14} className="shrink-0 transition-colors group-hover:text-(--accent)" />
+        <History
+          size={14}
+          className="shrink-0 transition-colors group-hover:text-(--accent)"
+        />
         <span className="font-medium">Статус:</span>
         {change.old_status?.code && (
           <>
@@ -200,7 +215,9 @@ export function LastStatusChangeBlock({
           <ChevronDown
             size={14}
             className={`shrink-0 transition-all duration-200 ${
-              open ? "rotate-180 text-(--accent)" : "group-hover:text-(--accent)"
+              open
+                ? "rotate-180 text-(--accent)"
+                : "group-hover:text-(--accent)"
             }`}
           />
         )}
@@ -235,8 +252,7 @@ export function LastStatusChangeBlock({
 
                   <div className="text-xs text-(--text-muted)">
                     {history.length}{" "}
-                    {history.length % 10 === 1 &&
-                    history.length % 100 !== 11
+                    {history.length % 10 === 1 && history.length % 100 !== 11
                       ? "запись"
                       : history.length % 10 >= 2 &&
                           history.length % 10 <= 4 &&
@@ -252,7 +268,7 @@ export function LastStatusChangeBlock({
                 {historyContent}
               </div>
             </div>,
-            document.body
+            document.body,
           )}
 
           {/* Мобильные: модалка по центру */}
@@ -290,8 +306,7 @@ export function LastStatusChangeBlock({
 
                     <div className="text-xs text-(--text-muted)">
                       {history.length}{" "}
-                      {history.length % 10 === 1 &&
-                      history.length % 100 !== 11
+                      {history.length % 10 === 1 && history.length % 100 !== 11
                         ? "запись"
                         : history.length % 10 >= 2 &&
                             history.length % 10 <= 4 &&
@@ -317,7 +332,7 @@ export function LastStatusChangeBlock({
                 </div>
               </div>
             </div>,
-            document.body
+            document.body,
           )}
         </>
       )}

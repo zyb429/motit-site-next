@@ -2,10 +2,22 @@
 
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import Image from "next/image";
-import { Paperclip, Lock, X, Send, Loader2, FileText, Play, Music } from "lucide-react";
+import {
+  Paperclip,
+  Lock,
+  X,
+  Send,
+  Loader2,
+  FileText,
+  Play,
+  Music,
+} from "lucide-react";
 
 // Импортируем компоненты из чатов
-import { MediaPreviewModal, type PreviewFile } from "@/components/chat/MediaPreviewModal";
+import {
+  MediaPreviewModal,
+  type PreviewFile,
+} from "@/components/chat/MediaPreviewModal";
 import { LinkPreview } from "@/components/chat/LinkPreview";
 
 interface FileRecord {
@@ -91,7 +103,7 @@ export function TicketThread({
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(
         textareaRef.current.scrollHeight,
-        200
+        200,
       )}px`;
     }
   }, [text]);
@@ -117,7 +129,7 @@ export function TicketThread({
   function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
     const clipboardItems = e.clipboardData.items;
     const files: File[] = [];
-    
+
     for (let i = 0; i < clipboardItems.length; i++) {
       if (clipboardItems[i].kind === "file") {
         const file = clipboardItems[i].getAsFile();
@@ -179,7 +191,8 @@ export function TicketThread({
     if (!file || !file.type.startsWith("image/") || !file.previewUrl) return;
 
     try {
-      const { openEditorModal } = await import("@rageshpikalmunde/rp-image-editor");
+      const { openEditorModal } =
+        await import("@rageshpikalmunde/rp-image-editor");
 
       const result = await openEditorModal({
         image: file,
@@ -193,7 +206,9 @@ export function TicketThread({
 
       if (!result?.file) return;
 
-      const newFile = new File([result.file], file.name, { type: result.file.type }) as LocalFile;
+      const newFile = new File([result.file], file.name, {
+        type: result.file.type,
+      }) as LocalFile;
       newFile.previewUrl = URL.createObjectURL(result.file);
 
       setSelectedFiles((prev) => {
@@ -206,7 +221,11 @@ export function TicketThread({
       });
     } catch (err) {
       console.error("Editor error:", err);
-      alert(err instanceof Error ? err.message : "Не удалось отредактировать изображение");
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Не удалось отредактировать изображение",
+      );
     }
   }
 
@@ -217,7 +236,7 @@ export function TicketThread({
 
     try {
       const uploadedFileIds: number[] = [];
-      
+
       if (selectedFiles.length > 0) {
         const formData = new FormData();
         selectedFiles.forEach((file) => formData.append("files", file));
@@ -231,12 +250,12 @@ export function TicketThread({
           const errData = await uploadRes.json().catch(() => ({}));
           throw new Error(errData.error || "Ошибка загрузки файлов");
         }
-        
-        const uploadedFiles = await uploadRes.json(); 
-        
+
+        const uploadedFiles = await uploadRes.json();
+
         if (Array.isArray(uploadedFiles)) {
           uploadedFiles.forEach((f: any) => {
-             if (f.id) uploadedFileIds.push(f.id);
+            if (f.id) uploadedFileIds.push(f.id);
           });
         }
       }
@@ -246,7 +265,7 @@ export function TicketThread({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: text.trim(),
-          isInternal: isInternal, 
+          isInternal: isInternal,
           attachmentFileIds: uploadedFileIds,
         }),
       });
@@ -254,20 +273,23 @@ export function TicketThread({
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         const errorMsg = Array.isArray(d.error) ? d.error[0]?.message : d.error;
-        throw new Error(typeof errorMsg === "string" ? errorMsg : "Не удалось отправить");
+        throw new Error(
+          typeof errorMsg === "string" ? errorMsg : "Не удалось отправить",
+        );
       }
 
       const data = await res.json();
       const created: Comment | undefined = data?.data;
       if (created) setItems((prev) => [...prev, created]);
-      
+
       setText("");
-      selectedFiles.forEach(f => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
+      selectedFiles.forEach(
+        (f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl),
+      );
       setSelectedFiles([]);
-      
+
       if (textareaRef.current) textareaRef.current.style.height = "auto";
       setTimeout(() => textareaRef.current?.focus(), 50);
-
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка отправки");
     } finally {
@@ -280,7 +302,8 @@ export function TicketThread({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-(--text-primary)">{title}</h2>
         <span className="text-xs text-(--text-muted)">
-          {safeItems.length} {safeItems.length === 1 ? "сообщение" : "сообщений"}
+          {safeItems.length}{" "}
+          {safeItems.length === 1 ? "сообщение" : "сообщений"}
         </span>
       </div>
 
@@ -293,7 +316,8 @@ export function TicketThread({
         )}
 
         {safeItems.map((c) => {
-          const authorName = c.users?.full_name || c.users?.username || "Пользователь";
+          const authorName =
+            c.users?.full_name || c.users?.username || "Пользователь";
           const initial = authorName.charAt(0).toUpperCase();
           const isInternalMsg = Boolean(c.is_internal);
 
@@ -317,7 +341,13 @@ export function TicketThread({
               <div className="shrink-0">
                 {c.users?.avatar_url ? (
                   <div className="relative w-10 h-10 rounded-full overflow-hidden bg-(--bg-secondary) ring-2 ring-(--bg-card)">
-                    <Image src={c.users.avatar_url} alt={authorName} fill className="object-cover" sizes="40px" />
+                    <Image
+                      src={c.users.avatar_url}
+                      alt={authorName}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
                   </div>
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-(--accent-dim) flex items-center justify-center text-(--accent) font-semibold text-sm ring-2 ring-(--bg-card)">
@@ -328,9 +358,18 @@ export function TicketThread({
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
-                  <span className="text-sm font-semibold text-(--text-primary)">{authorName}</span>
+                  <span className="text-sm font-semibold text-(--text-primary)">
+                    {authorName}
+                  </span>
                   <span className="text-xs text-(--text-muted)">
-                    {c.created_at ? new Date(c.created_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                    {c.created_at
+                      ? new Date(c.created_at).toLocaleString("ru-RU", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
                   </span>
                   {isInternalMsg && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-500 font-semibold text-[10px] uppercase tracking-wide ml-auto">
@@ -341,14 +380,14 @@ export function TicketThread({
                 </div>
 
                 {/* Текст сообщения */}
-                <div className={`text-sm leading-relaxed whitespace-pre-wrap ${isInternalMsg ? "text-amber-100/90" : "text-(--text-secondary)"}`}>
+                <div
+                  className={`text-sm leading-relaxed whitespace-pre-wrap ${isInternalMsg ? "text-amber-100/90" : "text-(--text-secondary)"}`}
+                >
                   {c.content}
                 </div>
 
                 {/* Превью ссылки (если есть ссылка в тексте) */}
-                {hasLink && (
-                  <LinkPreview text={c.content} />
-                )}
+                {hasLink && <LinkPreview text={c.content} />}
 
                 {commentFiles.length > 0 && (
                   <ul className="mt-3 flex flex-wrap gap-2">
@@ -362,7 +401,7 @@ export function TicketThread({
                           <button
                             type="button"
                             onClick={() => {
-                              // ВСЕГДА открываем в MediaPreviewModal, 
+                              // ВСЕГДА открываем в MediaPreviewModal,
                               // он сам разберется: картинка, видео, PDF или скачивание
                               openPreview(f, commentFiles);
                             }}
@@ -370,7 +409,11 @@ export function TicketThread({
                           >
                             {isImage ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={f.url} alt={f.name ?? "Файл"} className="w-8 h-8 rounded object-cover" />
+                              <img
+                                src={f.url}
+                                alt={f.name ?? "Файл"}
+                                className="w-8 h-8 rounded object-cover"
+                              />
                             ) : isVideo ? (
                               <div className="w-8 h-8 rounded bg-black/40 flex items-center justify-center text-(--accent)">
                                 <Play size={14} fill="currentColor" />
@@ -381,10 +424,15 @@ export function TicketThread({
                               </div>
                             ) : (
                               <div className="w-8 h-8 rounded bg-(--bg-secondary) flex items-center justify-center">
-                                <Paperclip size={14} className="text-(--accent)" />
+                                <Paperclip
+                                  size={14}
+                                  className="text-(--accent)"
+                                />
                               </div>
                             )}
-                            <span className="truncate max-w-[180px]">{f.name ?? "Файл"}</span>
+                            <span className="truncate max-w-[180px]">
+                              {f.name ?? "Файл"}
+                            </span>
                           </button>
                         </li>
                       );
@@ -400,15 +448,14 @@ export function TicketThread({
       {/* Форма ответа */}
       {canPost && ticketUuid && (
         <div className="rounded-2xl bg-(--bg-card) border border-(--border) shadow-sm overflow-hidden focus-within:border-(--accent)/50 focus-within:ring-1 focus-within:ring-(--accent)/20 transition-all">
-          
           {/* Превью выбранных файлов */}
           {selectedFiles.length > 0 && (
             <div className="px-3 pt-3 pb-2 flex flex-wrap gap-2 border-b border-(--border)/50 bg-(--bg-secondary)/30">
               {selectedFiles.map((file, idx) => {
                 const isImage = file.type.startsWith("image/");
                 return (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     className="relative group w-16 h-16 rounded-xl bg-(--bg-card) border border-(--border) overflow-hidden flex items-center justify-center shrink-0 shadow-sm"
                   >
                     {isImage && file.previewUrl ? (
@@ -422,13 +469,19 @@ export function TicketThread({
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center p-1 text-center w-full h-full">
-                        <FileText size={20} className="text-(--text-muted) mb-1" />
-                        <span className="text-[9px] text-(--text-muted) truncate w-full px-1" title={file.name}>
+                        <FileText
+                          size={20}
+                          className="text-(--text-muted) mb-1"
+                        />
+                        <span
+                          className="text-[9px] text-(--text-muted) truncate w-full px-1"
+                          title={file.name}
+                        >
                           {file.name}
                         </span>
                       </div>
                     )}
-                    
+
                     <button
                       type="button"
                       onClick={(e) => {
@@ -452,18 +505,32 @@ export function TicketThread({
               onChange={(e) => setText(e.target.value)}
               onPaste={handlePaste}
               onKeyDown={handleKeyDown}
-              placeholder={isInternal ? "Внутренняя заметка (клиент не увидит)…" : "Написать сообщение…"}
+              placeholder={
+                isInternal
+                  ? "Внутренняя заметка (клиент не увидит)…"
+                  : "Написать сообщение…"
+              }
               rows={1}
               className="w-full resize-none px-2 py-1.5 bg-transparent border-0 text-sm text-(--text-primary) placeholder:text-(--text-muted) focus:ring-0 outline-none leading-relaxed max-h-[200px] overflow-y-auto"
               style={{ minHeight: "40px" }}
             />
 
-            {error && <div className="mt-1 text-xs font-medium text-red-400 px-2">{error}</div>}
+            {error && (
+              <div className="mt-1 text-xs font-medium text-red-400 px-2">
+                {error}
+              </div>
+            )}
 
             <div className="flex items-end justify-between gap-2 mt-2 pt-2 border-t border-(--border)/50">
               <div className="flex items-center gap-1 pb-1">
-                <input type="file" multiple ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
-                
+                <input
+                  type="file"
+                  multiple
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -479,14 +546,16 @@ export function TicketThread({
                     type="button"
                     onClick={() => setIsInternal((v) => !v)}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      isInternal 
-                        ? "bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30" 
+                      isInternal
+                        ? "bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30"
                         : "text-(--text-muted) hover:bg-(--bg-secondary) hover:text-(--text-primary)"
                     }`}
                     title="Внутренняя заметка — клиент не увидит"
                   >
                     <Lock size={14} strokeWidth={2.5} />
-                    <span className="hidden sm:inline">{isInternal ? "Внутренняя" : "Заметка"}</span>
+                    <span className="hidden sm:inline">
+                      {isInternal ? "Внутренняя" : "Заметка"}
+                    </span>
                   </button>
                 )}
               </div>
@@ -497,12 +566,16 @@ export function TicketThread({
                 disabled={sending || !hasContent}
                 className={`flex items-center justify-center gap-2 transition-all shadow-sm ${
                   hasContent
-                    ? "px-5 py-2.5 rounded-xl bg-(--accent) text-white text-sm font-semibold hover:opacity-90" 
+                    ? "px-5 py-2.5 rounded-xl bg-(--accent) text-white text-sm font-semibold hover:opacity-90"
                     : "w-10 h-10 rounded-full bg-(--bg-secondary) text-(--text-muted) opacity-50 cursor-not-allowed"
                 }`}
               >
                 {sending ? (
-                  <Loader2 size={18} strokeWidth={2.5} className="animate-spin" />
+                  <Loader2
+                    size={18}
+                    strokeWidth={2.5}
+                    className="animate-spin"
+                  />
                 ) : hasContent ? (
                   <>
                     <span className="hidden sm:inline">Отправить</span>

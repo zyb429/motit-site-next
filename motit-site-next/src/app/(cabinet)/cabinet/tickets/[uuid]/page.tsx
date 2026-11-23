@@ -58,8 +58,7 @@ export default async function TicketPage({
               href="/cabinet/tickets"
               className="inline-flex items-center gap-1.5 text-sm text-(--text-muted) hover:text-(--accent) transition-colors mb-5"
             >
-              <ArrowLeft size={16} />
-              К списку обращений
+              <ArrowLeft size={16} />К списку обращений
             </Link>
 
             {/* Заголовок */}

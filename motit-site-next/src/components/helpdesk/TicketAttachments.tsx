@@ -37,10 +37,7 @@ interface Props {
   title?: string;
 }
 
-export function TicketAttachments({
-  attachments,
-  title = "Вложения",
-}: Props) {
+export function TicketAttachments({ attachments, title = "Вложения" }: Props) {
   const [previewFiles, setPreviewFiles] = useState<PreviewFile[]>([]);
   const [previewIndex, setPreviewIndex] = useState(-1);
 
@@ -48,13 +45,9 @@ export function TicketAttachments({
     .map((attachment) => attachment.files)
     .filter((file): file is FileRecord => file !== null);
 
-  const images = files.filter((file) =>
-    file.mime?.startsWith("image/")
-  );
+  const images = files.filter((file) => file.mime?.startsWith("image/"));
 
-  const otherFiles = files.filter(
-    (file) => !file.mime?.startsWith("image/")
-  );
+  const otherFiles = files.filter((file) => !file.mime?.startsWith("image/"));
 
   // Порядок переключения совпадает с порядком отображения:
   // сначала изображения, затем остальные вложения.
@@ -71,9 +64,7 @@ export function TicketAttachments({
       kind: "attachment",
     }));
 
-    const index = mappedFiles.findIndex(
-      (item) => item.uuid === file.uuid
-    );
+    const index = mappedFiles.findIndex((item) => item.uuid === file.uuid);
 
     if (index < 0) return;
 
@@ -121,9 +112,7 @@ export function TicketAttachments({
                   onClick={() => openPreview(file)}
                   aria-label={`Открыть ${file.name || "изображение"}`}
                   className={`group relative block w-full overflow-hidden rounded-xl border border-(--border) bg-(--bg-secondary) transition-colors hover:border-(--accent)/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent) ${
-                    images.length === 1
-                      ? "aspect-video"
-                      : "aspect-square"
+                    images.length === 1 ? "aspect-video" : "aspect-square"
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}

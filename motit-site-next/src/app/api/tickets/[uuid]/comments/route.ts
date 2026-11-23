@@ -37,9 +37,7 @@ export async function POST(
   const isSiteRequest =
     !ticket.client_uuid && (ticket.contact_email || ticket.contact_name);
 
-  const isInternal = isSiteRequest
-    ? true
-    : isAgent && !!parsed.data.isInternal;
+  const isInternal = isSiteRequest ? true : isAgent && !!parsed.data.isInternal;
 
   const comment = await addComment({
     ticketUuid: uuid,

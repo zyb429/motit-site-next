@@ -6,9 +6,9 @@ import { listPriorities } from "@/lib/db/tickets";
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const items = await listPriorities();
   return NextResponse.json({ data: items });
 }
-

@@ -10,7 +10,12 @@ import {
 
 const patchSchema = z.object({
   name: z.string().min(1).max(255).optional(),
-  slug: z.string().min(1).max(255).regex(/^[a-z0-9-]+$/).optional(),
+  slug: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
   description: z.string().max(2000).optional().nullable(),
   icon: z.string().max(50).optional().nullable(),
   sortOrder: z.number().int().min(0).optional(),
@@ -28,12 +33,16 @@ export async function PATCH(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
+  if (!admin)
+    return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
 
   const { uuid } = await params;
   const parsed = patchSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   try {
@@ -49,7 +58,8 @@ export async function DELETE(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
+  if (!admin)
+    return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
 
   const { uuid } = await params;
   try {
@@ -62,4 +72,3 @@ export async function DELETE(
     );
   }
 }
-

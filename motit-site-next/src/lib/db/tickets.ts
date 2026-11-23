@@ -37,7 +37,7 @@ const ticketInclude = {
     },
   },
   ticket_category: {
-    select: { id: true, uuid: true, name: true, slug: true, icon: true },  // ticket_category.id — BigInt
+    select: { id: true, uuid: true, name: true, slug: true, icon: true }, // ticket_category.id — BigInt
   },
   organization: { select: { id: true, uuid: true, name: true, inn: true } }, // organizations.id — BigInt
   attachments: { where: { comment_uuid: null }, include: { files: true } },
@@ -71,7 +71,7 @@ async function attachCreators<T extends { created_by_id: number | null }>(
 
   return tickets.map((t) => ({
     ...t,
-    created_by: t.created_by_id ? byId.get(t.created_by_id) ?? null : null,
+    created_by: t.created_by_id ? (byId.get(t.created_by_id) ?? null) : null,
   }));
 }
 
@@ -165,10 +165,7 @@ export async function listTickets(params: {
     if (segment === "site") {
       segmentFilter = {
         client_uuid: null,
-        OR: [
-          { contact_email: { not: null } },
-          { contact_name: { not: null } },
-        ],
+        OR: [{ contact_email: { not: null } }, { contact_name: { not: null } }],
       };
     } else if (segment === "clients") {
       segmentFilter = {
@@ -247,7 +244,9 @@ export async function listTickets(params: {
   const statusByUuid = new Map(statuses.map((s) => [s.uuid, s]));
   const statusCounts: Record<string, number> = {};
   for (const row of byStatus) {
-    const code = row.status_uuid ? statusByUuid.get(row.status_uuid)?.code : null;
+    const code = row.status_uuid
+      ? statusByUuid.get(row.status_uuid)?.code
+      : null;
     if (code) statusCounts[code] = row._count._all ?? 0;
   }
 
@@ -426,7 +425,8 @@ export async function addComment(params: {
   isInternal?: boolean;
   attachmentFileIds?: number[];
 }) {
-  const { ticketUuid, userUuid, content, isInternal, attachmentFileIds } = params;
+  const { ticketUuid, userUuid, content, isInternal, attachmentFileIds } =
+    params;
 
   const comment = await prisma.ticket_comments.create({
     data: {
@@ -710,10 +710,7 @@ export async function getSegmentCounts(user: {
     prisma.tickets.count({
       where: {
         client_uuid: null,
-        OR: [
-          { contact_email: { not: null } },
-          { contact_name: { not: null } },
-        ],
+        OR: [{ contact_email: { not: null } }, { contact_name: { not: null } }],
       },
     }),
     prisma.tickets.count({

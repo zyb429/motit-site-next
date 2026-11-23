@@ -92,8 +92,7 @@ export default async function AdminTicketPage({
         href="/admin/tickets"
         className="inline-flex items-center gap-1 text-sm text-(--text-muted) hover:text-(--accent) transition-colors"
       >
-        <ArrowLeft size={14} />
-        К списку обращений
+        <ArrowLeft size={14} />К списку обращений
       </Link>
 
       {/* Шапка тикета */}
@@ -150,7 +149,10 @@ export default async function AdminTicketPage({
         currentPriority={ticket.priorities?.code ?? null}
         currentAssigneeUuid={ticket.assignee?.uuid ?? null}
         statuses={statuses.map((s) => ({ code: s.code ?? "", name: s.name }))}
-        priorities={priorities.map((p) => ({ code: p.code ?? "", name: p.name }))}
+        priorities={priorities.map((p) => ({
+          code: p.code ?? "",
+          name: p.name,
+        }))}
         agents={agents.map((a) => ({
           uuid: a.uuid,
           name: a.full_name || a.username || "—",
@@ -178,7 +180,10 @@ export default async function AdminTicketPage({
         <div className="space-y-3 text-sm">
           {(ticket.contact_name || ticket.client) && (
             <div className="flex items-start gap-2">
-              <User2 size={14} className="text-(--text-muted) shrink-0 mt-0.5" />
+              <User2
+                size={14}
+                className="text-(--text-muted) shrink-0 mt-0.5"
+              />
               <div className="min-w-0">
                 <div className="text-[10px] uppercase tracking-wider text-(--text-muted)">
                   Контактное лицо
@@ -197,7 +202,10 @@ export default async function AdminTicketPage({
           )}
 
           <div className="flex items-start gap-2">
-            <Building2 size={14} className="text-(--text-muted) shrink-0 mt-0.5" />
+            <Building2
+              size={14}
+              className="text-(--text-muted) shrink-0 mt-0.5"
+            />
             <div className="min-w-0">
               <div className="text-[10px] uppercase tracking-wider text-(--text-muted)">
                 Организация
@@ -218,7 +226,10 @@ export default async function AdminTicketPage({
               <div className="space-y-3">
                 {ticket.contact_email && (
                   <div className="flex items-start gap-2 mt-3">
-                    <Mail size={14} className="text-(--text-muted) shrink-0 mt-0.5" />
+                    <Mail
+                      size={14}
+                      className="text-(--text-muted) shrink-0 mt-0.5"
+                    />
                     <div className="min-w-0">
                       <div className="text-[10px] uppercase tracking-wider text-(--text-muted)">
                         Email
@@ -235,7 +246,10 @@ export default async function AdminTicketPage({
 
                 {ticket.contact_phone && (
                   <div className="flex items-start gap-2">
-                    <Phone size={14} className="text-(--text-muted) shrink-0 mt-0.5" />
+                    <Phone
+                      size={14}
+                      className="text-(--text-muted) shrink-0 mt-0.5"
+                    />
                     <div className="min-w-0">
                       <div className="text-[10px] uppercase tracking-wider text-(--text-muted)">
                         Телефон
@@ -276,7 +290,9 @@ export default async function AdminTicketPage({
       */}
       <TicketThread
         ticketUuid={ticket.uuid}
-        initialComments={Array.isArray(ticket.ticket_comments) ? ticket.ticket_comments : []}
+        initialComments={
+          Array.isArray(ticket.ticket_comments) ? ticket.ticket_comments : []
+        }
         canPostInternal={true}
         canPostExternal={!isSiteRequest}
       />

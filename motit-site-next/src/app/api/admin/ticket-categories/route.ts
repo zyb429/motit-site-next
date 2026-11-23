@@ -10,7 +10,11 @@ import {
 
 const createSchema = z.object({
   name: z.string().min(1).max(255),
-  slug: z.string().min(1).max(255).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[a-z0-9-]+$/),
   description: z.string().max(2000).optional().nullable(),
   icon: z.string().max(50).optional().nullable(),
   sortOrder: z.number().int().min(0).optional(),
@@ -24,7 +28,8 @@ async function requireAdmin() {
 
 export async function GET() {
   const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
+  if (!admin)
+    return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
 
   const items = await listTicketCategories({ includeInactive: true });
   return NextResponse.json({ data: items });
@@ -32,11 +37,15 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
+  if (!admin)
+    return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
 
   const parsed = createSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   try {
@@ -49,4 +58,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

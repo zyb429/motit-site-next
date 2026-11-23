@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 
 export default async function NewTicketCategoryPage() {
   const user = await getCurrentUser();
-  const categories = await listTicketCategories({ role: user?.role ?? undefined });
+  const categories = await listTicketCategories({
+    role: user?.role ?? undefined,
+  });
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto bg-(--bg-primary)">
@@ -18,8 +20,7 @@ export default async function NewTicketCategoryPage() {
             href="/cabinet/tickets"
             className="inline-flex items-center gap-1.5 text-sm text-(--text-muted) hover:text-(--accent) transition-colors mb-6"
           >
-            <ArrowLeft size={16} />
-            К списку обращений
+            <ArrowLeft size={16} />К списку обращений
           </Link>
 
           <h1 className="text-2xl sm:text-3xl font-bold text-(--text-primary) tracking-tight">
@@ -32,7 +33,10 @@ export default async function NewTicketCategoryPage() {
           {categories.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed border-(--border) rounded-3xl bg-(--bg-card)/50">
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-(--bg-secondary) flex items-center justify-center">
-                <MessageSquare size={28} className="text-(--text-muted) opacity-50" />
+                <MessageSquare
+                  size={28}
+                  className="text-(--text-muted) opacity-50"
+                />
               </div>
               <p className="text-base font-semibold text-(--text-primary) mb-1">
                 Категории ещё не созданы

@@ -12,8 +12,7 @@ export default function NewTicketCategoryPage() {
         href="/admin/ticket-categories"
         className="inline-flex items-center gap-1 text-sm text-(--text-muted) hover:text-(--accent)"
       >
-        <ArrowLeft size={14} />
-        К списку
+        <ArrowLeft size={14} />К списку
       </Link>
 
       <h1 className="text-2xl font-bold text-(--text-primary) mt-4">

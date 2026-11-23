@@ -40,8 +40,7 @@ export default async function AdminNewTicketPage() {
           href="/admin/tickets"
           className="inline-flex items-center gap-1 text-sm text-(--text-muted) hover:text-(--accent)"
         >
-          <ArrowLeft size={14} />
-          К списку обращений
+          <ArrowLeft size={14} />К списку обращений
         </Link>
 
         <h1 className="text-2xl font-bold text-(--text-primary) mt-4">

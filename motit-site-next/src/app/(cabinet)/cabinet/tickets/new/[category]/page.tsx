@@ -56,12 +56,13 @@ export default async function NewTicketFormPage({
         href="/cabinet/tickets/new"
         className="inline-flex items-center gap-1 text-sm text-(--text-secondary) hover:text-(--accent) transition-colors"
       >
-        <ArrowLeft size={14} />
-        К выбору категории
+        <ArrowLeft size={14} />К выбору категории
       </Link>
 
       <div className="mt-3 sm:mt-4 flex items-center gap-3">
-        {category.icon && <span className="text-xl sm:text-2xl">{category.icon}</span>}
+        {category.icon && (
+          <span className="text-xl sm:text-2xl">{category.icon}</span>
+        )}
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-(--text-primary)">
             {category.name}

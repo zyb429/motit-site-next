@@ -40,7 +40,7 @@ async function attachCreators<T extends { created_by_id: number | null }>(
 
   return tickets.map((t) => ({
     ...t,
-    created_by: t.created_by_id ? byId.get(t.created_by_id) ?? null : null,
+    created_by: t.created_by_id ? (byId.get(t.created_by_id) ?? null) : null,
   }));
 }
 
@@ -94,7 +94,10 @@ export default async function TicketsPage() {
           {tickets.length === 0 ? (
             <div className="text-center py-16 sm:py-24 border-2 border-dashed border-(--border) rounded-3xl bg-(--bg-card)/50">
               <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-(--bg-secondary) flex items-center justify-center">
-                <MessageSquare size={28} className="text-(--text-muted) opacity-50" />
+                <MessageSquare
+                  size={28}
+                  className="text-(--text-muted) opacity-50"
+                />
               </div>
               <p className="text-base font-semibold text-(--text-primary) mb-1.5">
                 Пока нет обращений
@@ -119,14 +122,16 @@ export default async function TicketsPage() {
                   : t.created_by?.full_name || t.created_by?.username || "—";
 
                 return (
-                  <li key={t.uuid} className="relative focus-within:z-50 hover:z-50">
+                  <li
+                    key={t.uuid}
+                    className="relative focus-within:z-50 hover:z-50"
+                  >
                     <div className="group relative rounded-2xl bg-(--bg-card) border border-(--border) hover:border-(--accent)/40 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/30 transition-all duration-200">
                       {/* Левая цветная полоска статуса */}
                       <div
                         className="absolute inset-y-0 left-0 w-1 rounded-l-2xl pointer-events-none"
                         style={{
-                          backgroundColor:
-                            t.statuses?.color ?? "var(--border)",
+                          backgroundColor: t.statuses?.color ?? "var(--border)",
                         }}
                       />
 
@@ -140,16 +145,22 @@ export default async function TicketsPage() {
                           <span className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) shrink-0">
                             <Clock size={12} />
                             {t.updated_at
-                              ? new Date(t.updated_at).toLocaleDateString("ru-RU", {
-                                  day: "numeric",
-                                  month: "short",
-                                })
+                              ? new Date(t.updated_at).toLocaleDateString(
+                                  "ru-RU",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                  },
+                                )
                               : "—"}
                           </span>
                         </div>
 
                         {/* Кликабельная зона: заголовок + описание */}
-                        <Link href={`/cabinet/tickets/${t.uuid}`} className="block">
+                        <Link
+                          href={`/cabinet/tickets/${t.uuid}`}
+                          className="block"
+                        >
                           <h3 className="text-base sm:text-lg font-semibold text-(--text-primary) group-hover:text-(--accent) transition-colors line-clamp-2 leading-snug">
                             {t.title}
                           </h3>

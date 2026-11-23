@@ -3,33 +3,50 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
-import { getTicket, changeStatus, assignTicket, changePriority } from "@/lib/db/tickets";
+import {
+  getTicket,
+  changeStatus,
+  assignTicket,
+  changePriority,
+} from "@/lib/db/tickets";
 import { logActivity } from "@/lib/activity";
 import { prisma } from "@/lib/prisma";
 
 const patchSchema = z.object({
-  statusCode: z.enum(["OPEN", "IN_PROGRESS", "WAITING_CLIENT", "RESOLVED", "CLOSED"]).optional(),
+  statusCode: z
+    .enum(["OPEN", "IN_PROGRESS", "WAITING_CLIENT", "RESOLVED", "CLOSED"])
+    .optional(),
   priorityCode: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).optional(),
   assigneeUuid: z.uuid().nullable().optional(),
 });
 
-export async function GET(_: Request, { params }: { params: Promise<{ uuid: string }> }) {
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ uuid: string }> },
+) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
   const ticket = await getTicket(uuid, user);
-  if (!ticket) return NextResponse.json({ error: "Не найдено" }, { status: 404 });
+  if (!ticket)
+    return NextResponse.json({ error: "Не найдено" }, { status: 404 });
 
   return NextResponse.json({ data: ticket });
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ uuid: string }> },
+) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const isAgent = user.role === "admin" || user.role === "worker";
-  if (!isAgent) return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
+  if (!isAgent)
+    return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
 
   const parsed = patchSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -43,7 +60,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: 
   const { statusCode, priorityCode, assigneeUuid } = parsed.data;
 
   const existing = await getTicket(uuid, user);
-  if (!existing) return NextResponse.json({ error: "Не найдено" }, { status: 404 });
+  if (!existing)
+    return NextResponse.json({ error: "Не найдено" }, { status: 404 });
 
   const isAdmin = user.role === "admin";
 
@@ -109,10 +127,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: 
         },
       });
 
-      assigneeName =
-        assignee?.full_name ||
-        assignee?.username ||
-        null;
+      assigneeName = assignee?.full_name || assignee?.username || null;
     }
 
     await logActivity({
@@ -123,9 +138,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ uuid: 
       ticketUuid: uuid,
       meta: {
         title: existing.title,
-        actorName:
-          user.full_name ||
-          user.username,
+        actorName: user.full_name || user.username,
         assigneeName,
         from: existing.assignee?.uuid ?? null,
         to: assigneeUuid,
