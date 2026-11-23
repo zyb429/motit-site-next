@@ -119,7 +119,9 @@ export function PrivacyEditorClient({
         }
 
         const data = await res.json();
-        const uploaded = Array.isArray(data) ? data[0] : data?.data?.[0] ?? data;
+        const uploaded = Array.isArray(data)
+          ? data[0]
+          : (data?.data?.[0] ?? data);
         if (!uploaded?.id || !uploaded?.url) {
           throw new Error("Некорректный ответ загрузки");
         }
@@ -133,9 +135,7 @@ export function PrivacyEditorClient({
         setMode("file");
       } catch (err) {
         console.error(err);
-        alert(
-          err instanceof Error ? err.message : "Не удалось загрузить файл",
-        );
+        alert(err instanceof Error ? err.message : "Не удалось загрузить файл");
       } finally {
         setIsUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -172,8 +172,8 @@ export function PrivacyEditorClient({
         body: JSON.stringify({
           content: mode === "file" ? null : content,
           displayMode: mode,
-          fileId: mode === "file" ? file?.id ?? null : null,
-          fileName: mode === "file" ? file?.name ?? null : null,
+          fileId: mode === "file" ? (file?.id ?? null) : null,
+          fileName: mode === "file" ? (file?.name ?? null) : null,
         }),
       });
       if (!res.ok) {
@@ -293,9 +293,7 @@ export function PrivacyEditorClient({
             <select
               id="privacy-mode-select"
               value={mode}
-              onChange={(e) =>
-                handleModeChange(e.target.value as PrivacyMode)
-              }
+              onChange={(e) => handleModeChange(e.target.value as PrivacyMode)}
               disabled={isDisabled}
               className="flex-1 min-w-0 rounded-md px-2 py-1.5 text-xs bg-(--bg-card) text-(--text-primary) border border-(--border) focus:border-(--accent) outline-none transition-colors disabled:opacity-50"
             >

@@ -4,12 +4,22 @@ import { useState, useRef, useEffect } from "react";
 import { HexColorPicker } from "react-colorful";
 
 const PRESETS = [
-  "#6366f1", "#2dd4bf", "#f59e0b", "#ef4444", "#ec4899",
-  "#8b5cf6", "#06b6d4", "#22c55e", "#0a1920", "#111827",
+  "#6366f1",
+  "#2dd4bf",
+  "#f59e0b",
+  "#ef4444",
+  "#ec4899",
+  "#8b5cf6",
+  "#06b6d4",
+  "#22c55e",
+  "#0a1920",
+  "#111827",
 ];
 
 // --- Утилиты конвертации ---
-function hexToRgba(hex: string): { r: number; g: number; b: number; a: number } | null {
+function hexToRgba(
+  hex: string,
+): { r: number; g: number; b: number; a: number } | null {
   const clean = hex.replace("#", "");
   if (clean.length === 6) {
     const r = parseInt(clean.slice(0, 2), 16);
@@ -86,9 +96,10 @@ export function ColorPicker({
   const safeRgba = isValidHex ? rgba : initialRgba;
 
   // Значение для скрытого поля (HEX, если альфа = 1, иначе RGBA-строка)
-  const finalValue = safeRgba.a < 1
-    ? toRgbaString(safeRgba.r, safeRgba.g, safeRgba.b, safeRgba.a)
-    : safeColor;
+  const finalValue =
+    safeRgba.a < 1
+      ? toRgbaString(safeRgba.r, safeRgba.g, safeRgba.b, safeRgba.a)
+      : safeColor;
 
   return (
     <div className="space-y-3" ref={ref}>
@@ -146,13 +157,17 @@ export function ColorPicker({
           <div className="flex items-center gap-1 flex-wrap">
             {(["r", "g", "b"] as const).map((field) => (
               <div key={field} className="flex items-center gap-1">
-                <span className="text-xs text-(--text-muted) uppercase">{field}</span>
+                <span className="text-xs text-(--text-muted) uppercase">
+                  {field}
+                </span>
                 <input
                   type="number"
                   min={0}
                   max={255}
                   value={rgba[field]}
-                  onChange={(e) => handleRgbaChange(field, Number(e.target.value))}
+                  onChange={(e) =>
+                    handleRgbaChange(field, Number(e.target.value))
+                  }
                   className="w-14 px-2 py-1 rounded border border-(--border) bg-(--bg-primary) text-(--text-primary) text-xs"
                 />
               </div>
@@ -200,7 +215,9 @@ export function ColorPicker({
                 max={max}
                 step={step}
                 value={value}
-                onChange={(e) => handleRgbaChange(field, Number(e.target.value))}
+                onChange={(e) =>
+                  handleRgbaChange(field, Number(e.target.value))
+                }
                 className="w-full cursor-pointer"
               />
             );

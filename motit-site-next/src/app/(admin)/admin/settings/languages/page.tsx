@@ -1,103 +1,103 @@
 // src/app/(admin)/admin/settings/languages/page.tsx
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { ArrowLeft, Code2 } from "lucide-react"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Code2 } from "lucide-react";
 
 type Lang = {
-  id: number
-  code: string
-  label: string
-  enabled: boolean
-  sortOrder: number
-}
+  id: number;
+  code: string;
+  label: string;
+  enabled: boolean;
+  sortOrder: number;
+};
 
 export default function LanguagesSettingsPage() {
-  const [langs, setLangs] = useState<Lang[]>([])
-  const [loading, setLoading] = useState(true)
-  const [newCode, setNewCode] = useState("")
-  const [newLabel, setNewLabel] = useState("")
-  const [busy, setBusy] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [filter, setFilter] = useState("")
+  const [langs, setLangs] = useState<Lang[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newCode, setNewCode] = useState("");
+  const [newLabel, setNewLabel] = useState("");
+  const [busy, setBusy] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState("");
 
   const load = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const res = await fetch("/api/admin/languages", { cache: "no-store" })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setLangs(await res.json())
+      const res = await fetch("/api/admin/languages", { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setLangs(await res.json());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка загрузки")
+      setError(e instanceof Error ? e.message : "Ошибка загрузки");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    load()
-  }, [])
+    load();
+  }, []);
 
   const toggle = async (lang: Lang) => {
-    setBusy(lang.id)
-    setError(null)
+    setBusy(lang.id);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/languages/${lang.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !lang.enabled }),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const updated = (await res.json()) as Lang
-      setLangs((prev) => prev.map((l) => (l.id === updated.id ? updated : l)))
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = (await res.json()) as Lang;
+      setLangs((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка обновления")
+      setError(e instanceof Error ? e.message : "Ошибка обновления");
     } finally {
-      setBusy(null)
+      setBusy(null);
     }
-  }
+  };
 
   const remove = async (lang: Lang) => {
-    if (!confirm(`Удалить язык "${lang.code}"?`)) return
-    setBusy(lang.id)
-    setError(null)
+    if (!confirm(`Удалить язык "${lang.code}"?`)) return;
+    setBusy(lang.id);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/languages/${lang.id}`, {
         method: "DELETE",
-      })
-      if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`)
-      setLangs((prev) => prev.filter((l) => l.id !== lang.id))
+      });
+      if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
+      setLangs((prev) => prev.filter((l) => l.id !== lang.id));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка удаления")
+      setError(e instanceof Error ? e.message : "Ошибка удаления");
     } finally {
-      setBusy(null)
+      setBusy(null);
     }
-  }
+  };
 
   const add = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const code = newCode.trim().toLowerCase()
-    if (!code) return
-    setError(null)
+    e.preventDefault();
+    const code = newCode.trim().toLowerCase();
+    if (!code) return;
+    setError(null);
     try {
       const res = await fetch("/api/admin/languages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, label: newLabel.trim() || code }),
-      })
-      const data = await res.json()
+      });
+      const data = await res.json();
       if (!res.ok) {
-        setError(data.error || `HTTP ${res.status}`)
-        return
+        setError(data.error || `HTTP ${res.status}`);
+        return;
       }
-      setLangs((prev) => [...prev, data as Lang])
-      setNewCode("")
-      setNewLabel("")
+      setLangs((prev) => [...prev, data as Lang]);
+      setNewCode("");
+      setNewLabel("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка добавления")
+      setError(e instanceof Error ? e.message : "Ошибка добавления");
     }
-  }
+  };
 
   const filtered = filter.trim()
     ? langs.filter(
@@ -105,9 +105,9 @@ export default function LanguagesSettingsPage() {
           l.code.toLowerCase().includes(filter.toLowerCase()) ||
           l.label.toLowerCase().includes(filter.toLowerCase()),
       )
-    : langs
+    : langs;
 
-  const enabledCount = langs.filter((l) => l.enabled).length
+  const enabledCount = langs.filter((l) => l.enabled).length;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
@@ -255,5 +255,5 @@ export default function LanguagesSettingsPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

@@ -503,8 +503,7 @@ function parsePhones(raw: unknown): PhoneItem[] {
     )
     .map((o) => ({
       phone: (o as any).phone.trim(),
-      comment:
-        typeof (o as any).comment === "string" ? (o as any).comment : "",
+      comment: typeof (o as any).comment === "string" ? (o as any).comment : "",
     }));
 }
 
@@ -618,8 +617,7 @@ function parseEmails(raw: unknown): EmailItem[] {
     )
     .map((o) => ({
       email: (o as any).email.trim(),
-      comment:
-        typeof (o as any).comment === "string" ? (o as any).comment : "",
+      comment: typeof (o as any).comment === "string" ? (o as any).comment : "",
     }));
 }
 
@@ -733,8 +731,7 @@ function parseAddresses(raw: unknown): AddressItem[] {
     )
     .map((o) => ({
       address: (o as any).address.trim(),
-      comment:
-        typeof (o as any).comment === "string" ? (o as any).comment : "",
+      comment: typeof (o as any).comment === "string" ? (o as any).comment : "",
     }));
 }
 

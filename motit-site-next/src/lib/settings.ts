@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 
 const ALLOWED_MIME_KEY = "upload.allowed_mime";
 
-export const ALL_MIME_OPTIONS: { group: string; mime: string; label: string }[] = [
+export const ALL_MIME_OPTIONS: {
+  group: string;
+  mime: string;
+  label: string;
+}[] = [
   { group: "Изображения", mime: "image/png", label: "PNG" },
   { group: "Изображения", mime: "image/jpeg", label: "JPEG" },
   { group: "Изображения", mime: "image/gif", label: "GIF" },
@@ -11,7 +15,11 @@ export const ALL_MIME_OPTIONS: { group: string; mime: string; label: string }[] 
   { group: "Изображения", mime: "image/svg+xml", label: "SVG" },
   { group: "Изображения", mime: "image/bmp", label: "BMP" },
   { group: "Изображения", mime: "image/x-icon", label: "ICO (favicon)" },
-  { group: "Изображения", mime: "image/vnd.microsoft.icon", label: "ICO (alt)" },
+  {
+    group: "Изображения",
+    mime: "image/vnd.microsoft.icon",
+    label: "ICO (alt)",
+  },
 
   { group: "Текст и код", mime: "text/plain", label: "TXT" },
   { group: "Текст и код", mime: "text/markdown", label: "Markdown" },
@@ -79,7 +87,10 @@ export async function getAllowedMime(): Promise<string[]> {
   });
   if (!row?.value) return DEFAULT_ALLOWED_MIME;
 
-  if (Array.isArray(row.value) && row.value.every((v) => typeof v === "string")) {
+  if (
+    Array.isArray(row.value) &&
+    row.value.every((v) => typeof v === "string")
+  ) {
     return row.value as string[];
   }
   return DEFAULT_ALLOWED_MIME;

@@ -4,11 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { CUSTOM_SOCIAL_VALUE } from "@/lib/social-options";
-import {
-  isAdminLanguage,
-  isLanguage,
-  isTimezone,
-} from "@/lib/i18n";
+import { isAdminLanguage, isLanguage, isTimezone } from "@/lib/i18n";
 import { logActivity } from "@/lib/activity";
 
 type Result = { ok?: boolean; error?: string };
@@ -187,10 +183,7 @@ export async function updateContacts(
   );
 }
 
-export async function updateSocial(
-  _: unknown,
-  fd: FormData,
-): Promise<Result> {
+export async function updateSocial(_: unknown, fd: FormData): Promise<Result> {
   const raw = String(fd.get("socialLinks") ?? "{}");
   let parsed: unknown;
   try {
@@ -297,9 +290,7 @@ export async function updateSocialOptions(fd: FormData): Promise<Result> {
 export async function updateSeo(_: unknown, fd: FormData): Promise<Result> {
   const ogImageSvgRaw = String(fd.get("ogImageSvg") ?? "");
   const trimmed = ogImageSvgRaw.trim();
-  const ogImageSvg = trimmed.toLowerCase().startsWith("<svg")
-    ? trimmed
-    : null;
+  const ogImageSvg = trimmed.toLowerCase().startsWith("<svg") ? trimmed : null;
 
   return updateSite(
     Number(fd.get("id")),
@@ -353,9 +344,7 @@ export async function updateAppearance(
 ): Promise<Result> {
   const faviconSvgRaw = String(fd.get("faviconSvg") ?? "");
   const trimmed = faviconSvgRaw.trim();
-  const faviconSvg = trimmed.toLowerCase().startsWith("<svg")
-    ? trimmed
-    : null;
+  const faviconSvg = trimmed.toLowerCase().startsWith("<svg") ? trimmed : null;
 
   return updateSite(
     Number(fd.get("id")),

@@ -223,7 +223,7 @@ export function PrivacyVersionsModal({
                         </div>
                         <div className="text-xs text-(--text-muted) truncate">
                           {v.displayMode === "file"
-                            ? v.fileName ?? "файл"
+                            ? (v.fileName ?? "файл")
                             : `Режим: ${MODE_LABELS[v.displayMode]}`}{" "}
                           · Автор:{" "}
                           {v.created_by?.full_name ||

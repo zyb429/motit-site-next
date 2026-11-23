@@ -70,7 +70,11 @@ export async function POST(req: Request) {
   let nextFileName: string | null = null;
 
   if (displayMode === "file") {
-    if (typeof fileId !== "number" || !Number.isInteger(fileId) || fileId <= 0) {
+    if (
+      typeof fileId !== "number" ||
+      !Number.isInteger(fileId) ||
+      fileId <= 0
+    ) {
       return NextResponse.json(
         { error: "fileId is required for mode=file" },
         { status: 400 },
@@ -91,7 +95,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const existing = await prisma.privacyPolicy.findUnique({ where: { id: 1 } });
+    const existing = await prisma.privacyPolicy.findUnique({
+      where: { id: 1 },
+    });
 
     await prisma.$transaction(async (tx) => {
       // 1. Сохраняем ПРЕДЫДУЩЕЕ состояние в историю (только если оно было)

@@ -97,28 +97,28 @@ export async function POST(req: Request) {
 
       // ВАЖНО: при откате на file НЕ трогаем content —
       // иначе затрём ранее сохранённый текст с прошлой page/document-версии
-    const isFileMode = versionMode === "file";
+      const isFileMode = versionMode === "file";
 
-    const updateData: Prisma.PrivacyPolicyUpdateInput = {
-    displayMode: versionMode,
-    fileName: isFileMode ? version.fileName ?? null : null,
-    ...(isFileMode && version.fileId
-        ? { file: { connect: { id: version.fileId } } }
-        : { file: { disconnect: true } }),
-    };
-    if (!isFileMode) {
-    updateData.content = restoredContent;
-    }
+      const updateData: Prisma.PrivacyPolicyUpdateInput = {
+        displayMode: versionMode,
+        fileName: isFileMode ? (version.fileName ?? null) : null,
+        ...(isFileMode && version.fileId
+          ? { file: { connect: { id: version.fileId } } }
+          : { file: { disconnect: true } }),
+      };
+      if (!isFileMode) {
+        updateData.content = restoredContent;
+      }
 
-    const createData: Prisma.PrivacyPolicyCreateInput = {
-    id: 1,
-    displayMode: versionMode,
-    fileName: isFileMode ? version.fileName ?? null : null,
-    content: isFileMode ? Prisma.DbNull : restoredContent,
-    ...(isFileMode && version.fileId
-        ? { file: { connect: { id: version.fileId } } }
-        : {}),
-    };
+      const createData: Prisma.PrivacyPolicyCreateInput = {
+        id: 1,
+        displayMode: versionMode,
+        fileName: isFileMode ? (version.fileName ?? null) : null,
+        content: isFileMode ? Prisma.DbNull : restoredContent,
+        ...(isFileMode && version.fileId
+          ? { file: { connect: { id: version.fileId } } }
+          : {}),
+      };
 
       await tx.privacyPolicy.upsert({
         where: { id: 1 },

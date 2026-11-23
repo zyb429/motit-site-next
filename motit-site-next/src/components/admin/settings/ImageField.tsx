@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, Loader2, Link as LinkIcon, ImageIcon, Pencil } from "lucide-react";
+import {
+  Upload,
+  X,
+  Loader2,
+  Link as LinkIcon,
+  ImageIcon,
+  Pencil,
+} from "lucide-react";
 
 export function ImageField({
   name,
@@ -62,7 +69,7 @@ export function ImageField({
       const data = await res.json();
       const url = Array.isArray(data)
         ? data[0]?.url
-        : data.url ?? data.file?.url;
+        : (data.url ?? data.file?.url);
 
       if (!url) throw new Error("API не вернул URL");
       setValue(url);
@@ -112,9 +119,8 @@ export function ImageField({
         return;
       }
 
-      const { openEditorModal } = await import(
-        "@rageshpikalmunde/rp-image-editor"
-      );
+      const { openEditorModal } =
+        await import("@rageshpikalmunde/rp-image-editor");
 
       const result = await openEditorModal({
         image: file,

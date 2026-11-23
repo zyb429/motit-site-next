@@ -164,7 +164,9 @@ export default function SettingsPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between py-2 border-b border-(--border)">
                 <span className="text-(--text-secondary)">Next.js</span>
-                <span className="text-(--text-primary) font-medium">16.3.5</span>
+                <span className="text-(--text-primary) font-medium">
+                  16.3.5
+                </span>
               </div>
               <div className="flex justify-between py-2 border-b border-(--border)">
                 <span className="text-(--text-secondary)">БД</span>

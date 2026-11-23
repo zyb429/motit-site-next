@@ -27,13 +27,19 @@ const inputCls =
   "w-full rounded-lg px-3 py-2 text-sm bg-(--bg-primary) text-(--text-primary) border border-(--border) focus:border-(--accent) outline-none";
 
 export default function ContactFieldsEditor() {
-  const [status, setStatus] = useState<"idle" | "loading" | "saving" | "error" | "success">("loading");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "saving" | "error" | "success"
+  >("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const { control, register, handleSubmit, reset, watch, formState } = useForm<FormValues>({
-    defaultValues: { fields: [] },
+  const { control, register, handleSubmit, reset, watch, formState } =
+    useForm<FormValues>({
+      defaultValues: { fields: [] },
+    });
+  const { fields, append, remove, move } = useFieldArray({
+    control,
+    name: "fields",
   });
-  const { fields, append, remove, move } = useFieldArray({ control, name: "fields" });
 
   // начальная загрузка
   useEffect(() => {
@@ -70,7 +76,9 @@ export default function ContactFieldsEditor() {
     for (const f of data.fields) {
       if (!NAME_RE.test(f.name)) {
         setStatus("error");
-        setErrorMsg(`Некорректное имя поля: «${f.name}». Разрешены a-z, 0-9, _ и первый символ — буква или _`);
+        setErrorMsg(
+          `Некорректное имя поля: «${f.name}». Разрешены a-z, 0-9, _ и первый символ — буква или _`,
+        );
         return;
       }
     }
@@ -81,7 +89,7 @@ export default function ContactFieldsEditor() {
       type: f.type,
       required: !!f.required,
       placeholder: f.placeholder || null,
-      options: f.type === "select" ? f.options ?? [] : null,
+      options: f.type === "select" ? (f.options ?? []) : null,
       sortOrder: i,
       enabled: f.enabled !== false,
     }));
@@ -109,7 +117,9 @@ export default function ContactFieldsEditor() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-(--text-primary)">Поля формы контактов</h1>
+        <h1 className="text-lg font-semibold text-(--text-primary)">
+          Поля формы контактов
+        </h1>
         <button
           type="button"
           onClick={() =>
@@ -131,16 +141,23 @@ export default function ContactFieldsEditor() {
       </div>
 
       {fields.length === 0 && (
-        <p className="text-sm text-(--text-muted)">Полей нет. Добавьте первое.</p>
+        <p className="text-sm text-(--text-muted)">
+          Полей нет. Добавьте первое.
+        </p>
       )}
 
       {fields.map((field, i) => {
         const type = watchedFields?.[i]?.type ?? "text";
         return (
-          <div key={field.id} className="rounded-xl border border-(--border) p-4 space-y-3 bg-(--bg-card)">
+          <div
+            key={field.id}
+            className="rounded-xl border border-(--border) p-4 space-y-3 bg-(--bg-card)"
+          >
             <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_180px_auto] gap-3">
               <div>
-                <label className="block text-xs text-(--text-muted) mb-1">Имя (name)</label>
+                <label className="block text-xs text-(--text-muted) mb-1">
+                  Имя (name)
+                </label>
                 <input
                   {...register(`fields.${i}.name` as const)}
                   placeholder="contact_name"
@@ -148,7 +165,9 @@ export default function ContactFieldsEditor() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-(--text-muted) mb-1">Подпись (label)</label>
+                <label className="block text-xs text-(--text-muted) mb-1">
+                  Подпись (label)
+                </label>
                 <input
                   {...register(`fields.${i}.label` as const)}
                   placeholder="Имя и фамилия"
@@ -156,8 +175,13 @@ export default function ContactFieldsEditor() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-(--text-muted) mb-1">Тип</label>
-                <select {...register(`fields.${i}.type` as const)} className={inputCls}>
+                <label className="block text-xs text-(--text-muted) mb-1">
+                  Тип
+                </label>
+                <select
+                  {...register(`fields.${i}.type` as const)}
+                  className={inputCls}
+                >
                   <option value="text">text</option>
                   <option value="email">email</option>
                   <option value="tel">tel</option>
@@ -197,7 +221,9 @@ export default function ContactFieldsEditor() {
 
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
               <div>
-                <label className="block text-xs text-(--text-muted) mb-1">Placeholder</label>
+                <label className="block text-xs text-(--text-muted) mb-1">
+                  Placeholder
+                </label>
                 <input
                   {...register(`fields.${i}.placeholder` as const)}
                   placeholder="Введите имя..."
@@ -206,11 +232,17 @@ export default function ContactFieldsEditor() {
               </div>
               <div className="flex items-end gap-4">
                 <label className="flex items-center gap-2 text-sm text-(--text-primary)">
-                  <input type="checkbox" {...register(`fields.${i}.required` as const)} />
+                  <input
+                    type="checkbox"
+                    {...register(`fields.${i}.required` as const)}
+                  />
                   required
                 </label>
                 <label className="flex items-center gap-2 text-sm text-(--text-primary)">
-                  <input type="checkbox" {...register(`fields.${i}.enabled` as const)} />
+                  <input
+                    type="checkbox"
+                    {...register(`fields.${i}.enabled` as const)}
+                  />
                   enabled
                 </label>
               </div>
@@ -224,9 +256,14 @@ export default function ContactFieldsEditor() {
                   const opts: Option[] = optsField.value ?? [];
                   return (
                     <div className="space-y-2">
-                      <label className="block text-xs text-(--text-muted)">Опции (label — value)</label>
+                      <label className="block text-xs text-(--text-muted)">
+                        Опции (label — value)
+                      </label>
                       {opts.map((o, j) => (
-                        <div key={j} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                        <div
+                          key={j}
+                          className="grid grid-cols-[1fr_1fr_auto] gap-2"
+                        >
                           <input
                             value={o.label}
                             onChange={(e) => {
@@ -249,7 +286,9 @@ export default function ContactFieldsEditor() {
                           />
                           <button
                             type="button"
-                            onClick={() => optsField.onChange(opts.filter((_, k) => k !== j))}
+                            onClick={() =>
+                              optsField.onChange(opts.filter((_, k) => k !== j))
+                            }
                             className="px-2 py-2 rounded-lg text-red-400 border border-red-400/30"
                           >
                             ×
@@ -258,7 +297,12 @@ export default function ContactFieldsEditor() {
                       ))}
                       <button
                         type="button"
-                        onClick={() => optsField.onChange([...opts, { label: "", value: "" }])}
+                        onClick={() =>
+                          optsField.onChange([
+                            ...opts,
+                            { label: "", value: "" },
+                          ])
+                        }
                         className="text-sm text-(--accent)"
                       >
                         + Добавить опцию

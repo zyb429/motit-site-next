@@ -38,8 +38,16 @@ export default async function AppearanceSettingsPage() {
             settings={s}
             action={updateAppearance}
             fields={[
-              { kind: "image", name: "logoLightUrl", label: "Логотип (светлая тема)" },
-              { kind: "image", name: "logoDarkUrl", label: "Логотип (тёмная тема)" },
+              {
+                kind: "image",
+                name: "logoLightUrl",
+                label: "Логотип (светлая тема)",
+              },
+              {
+                kind: "image",
+                name: "logoDarkUrl",
+                label: "Логотип (тёмная тема)",
+              },
               {
                 kind: "image",
                 name: "faviconUrl",
