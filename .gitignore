@@ -1,53 +1,24 @@
-# === Strapi (удалён после миграции) ===
-motit-backend/
-motit-backend.backup.tar.gz
-
-# === Env (секреты) ===
-.env
-.env.local
-.env.*.local
-
-# === Backups and dumps ===
-*.sql
-*.sql.bak
-*.tar.gz
-mysql creds.txt
-
-# Исключение: миграции Prisma должны быть в git
-!motit-site-next/prisma/migrations/**/*.sql
-
-# === Node ===
-node_modules/
-.next/
-out/
-dist/
-
-# === OS / IDE ===
-.DS_Store
-*.log
-.idea/
-.vscode/
-
-# === Next.js ===
-motit-site-next/motit-site-next/.next/
-changes.txt
-*.bak
-*.swp
-package.json.bak
-**/schema.prisma.backup
-
-# === LibreOffice locks ===
-.~lock.*
-
-# === Temp files ===
-structure.txt
-
-# === Прочее ===
-права для паблика и аутентифицированного/
-
-# Prisma Client (генерируется автоматически)
-motit-site-next/generated/
+﻿# --- служебные дампы ---
+git-status.txt
+git-diff.txt
+git-diff-staged.txt
+git-diff-stat.txt
+git-untracked.txt
+all-changes.txt
 changes.diff
 changes.txt
-*.diff
 changes-files.txt
+
+# --- бэкапы ---
+*.bak
+
+# --- логи/сборка ---
+build.log
+*.log
+
+# --- сгенерированное ---
+motit-site-next/generated/
+
+# --- локальные SQL-хелперы ---
+motit-site-next/fix-migration-history.sql
+motit-site-next/scripts/reset-footer.sql
