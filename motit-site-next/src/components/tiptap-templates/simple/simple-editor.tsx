@@ -477,12 +477,6 @@ export function SimpleEditor({
   }, [linkPopover])
 
   useEffect(() => {
-    if (editor && !initialContent) {
-      onChange?.(editor.getJSON())
-    }
-  }, [editor, initialContent, onChange])
-
-  useEffect(() => {
     if (editor) editor.setEditable(editable)
   }, [editor, editable])
 

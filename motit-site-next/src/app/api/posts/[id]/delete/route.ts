@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { logActivity } from "@/lib/activity";
 
 async function findPostId(rawId: string): Promise<number | null> {
   const num = Number(rawId);
@@ -36,11 +37,25 @@ export async function DELETE(
       return NextResponse.json({ error: "Пост не найден" }, { status: 404 });
     }
 
-    // Сначала отвязываем связи
-    await prisma.posts_categories_links.deleteMany({ where: { post_id: postId } });
+    // Сохраняем title ДО удаления — для лога
+    const existing = await prisma.posts.findUnique({
+      where: { id: postId },
+      select: { title: true, slug: true },
+    });
 
-    // Потом сам пост
+    await prisma.posts_categories_links.deleteMany({ where: { post_id: postId } });
     await prisma.posts.delete({ where: { id: postId } });
+
+    await logActivity({
+      actorUuid: user.uuid,
+      targetType: "post",
+      targetId: postId,
+      action: "delete",
+      meta: {
+        title: existing?.title ?? null,
+        slug: existing?.slug ?? null,
+      },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -51,4 +66,3 @@ export async function DELETE(
     );
   }
 }
-

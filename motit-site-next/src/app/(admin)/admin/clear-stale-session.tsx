@@ -1,11 +1,18 @@
 // src/app/(admin)/admin/clear-stale-session.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { clearStaleSessionAction } from "./clear-stale-session-action";
 
 export function ClearStaleSession({ from = "/admin" }: { from?: string }) {
+  const hasStarted = useRef(false);
+
   useEffect(() => {
+    if (hasStarted.current) {
+      return;
+    }
+
+    hasStarted.current = true;
     void clearStaleSessionAction(from);
   }, [from]);
 

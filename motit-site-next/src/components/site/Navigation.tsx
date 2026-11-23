@@ -12,7 +12,7 @@ type NavigationProps = {
 const links = [
   { href: "/", label: "Главная" },
   { href: "/blog", label: "Блог" },
-  { href: "/about", label: "О нас" },
+  { href: "/#about", label: "О нас" },
   { href: "/#contact", label: "Контакты" },
 ];
 

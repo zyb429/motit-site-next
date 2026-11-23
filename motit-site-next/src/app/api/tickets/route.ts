@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createTicket, listTickets } from "@/lib/db/tickets";
 import { serialize } from "@/lib/serialize";
+import { logActivity } from "@/lib/activity";
 
 const createSchema = z.object({
   title: z.string().min(3).max(255),
@@ -106,6 +107,19 @@ export async function POST(req: Request) {
     clientUuid,
     createdById: user.id,
     createdByUuid: user.uuid,
+  });
+
+  // Логируем создание заявки
+  await logActivity({
+    actorUuid: user.uuid,
+    targetType: "ticket",
+    targetId: ticket.uuid,
+    action: "create",
+    ticketUuid: ticket.uuid,
+    meta: {
+      title: ticket.title,
+      clientUuid,
+    },
   });
 
   return NextResponse.json({ data: serialize(ticket) }, { status: 201 });

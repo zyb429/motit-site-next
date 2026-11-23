@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { snapshotPost } from "@/lib/post-versions";
+import { logActivity } from "@/lib/activity";
 
 async function findPostId(rawId: string): Promise<number | null> {
   const num = Number(rawId);
@@ -21,7 +22,6 @@ async function findPostId(rawId: string): Promise<number | null> {
   return byDoc?.id ?? null;
 }
 
-// GET /api/posts/:id
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -37,9 +37,7 @@ export async function GET(
       where: { id: postId },
       include: {
         author: { include: { avatar: true } },
-        posts_categories_links: {
-          include: { categories: true },
-        },
+        posts_categories_links: { include: { categories: true } },
         featured_image: true,
       },
     });
@@ -65,17 +63,17 @@ export async function GET(
         updatedAt: post.updated_at?.toISOString() ?? null,
         featured_image: post.featured_image
           ? {
-            id: post.featured_image.id,
-            url: post.featured_image.url ?? null,
-            name: post.featured_image.name ?? null,
-          }
+              id: post.featured_image.id,
+              url: post.featured_image.url ?? null,
+              name: post.featured_image.name ?? null,
+            }
           : null,
         author: post.author
           ? {
-            id: post.author.id,
-            username: post.author.username ?? "",
-            full_name: post.author.full_name ?? null,
-          }
+              id: post.author.id,
+              username: post.author.username ?? "",
+              full_name: post.author.full_name ?? null,
+            }
           : null,
         categories:
           post.posts_categories_links
@@ -95,7 +93,6 @@ export async function GET(
   }
 }
 
-// PUT /api/posts/:id
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -138,12 +135,10 @@ export async function PUT(
     if (content !== undefined) data.content = content;
     if (excerpt !== undefined) data.excerpt = excerpt;
     if (meta_title !== undefined) data.meta_title = meta_title;
-    if (meta_description !== undefined)
-      data.meta_description = meta_description;
+    if (meta_description !== undefined) data.meta_description = meta_description;
     if (is_featured !== undefined) data.is_featured = is_featured;
     if (views !== undefined) data.views = views;
 
-    // Featured image
     if (featured_image !== undefined) {
       data.featured_image_id = featured_image ? Number(featured_image) : null;
     }
@@ -153,7 +148,6 @@ export async function PUT(
       data.published_at = post_status === "published" ? now : null;
     }
 
-    // Автор
     if (author !== undefined) {
       if (typeof author === "number") data.author_id = author;
       else if (typeof author === "string") {
@@ -174,7 +168,6 @@ export async function PUT(
       }
     }
 
-    // Сохраняем снимок текущего состояния ДО обновления
     const userId = typeof user.id === "number" ? user.id : Number(user.id);
     await snapshotPost(postId, Number.isFinite(userId) ? userId : null);
 
@@ -184,7 +177,6 @@ export async function PUT(
       include: { featured_image: true },
     });
 
-    // Категории — заменяем связи
     if (Array.isArray(categories)) {
       const categoryIds: number[] = [];
       for (const c of categories) {
@@ -220,6 +212,19 @@ export async function PUT(
       }
     }
 
+    // Логируем обновление поста
+    await logActivity({
+      actorUuid: user.uuid,
+      targetType: "post",
+      targetId: updated.id,
+      action: "update",
+      meta: {
+        title: updated.title,
+        slug: updated.slug,
+        status: updated.post_status,
+      },
+    });
+
     return NextResponse.json({
       data: {
         id: updated.id,
@@ -231,10 +236,10 @@ export async function PUT(
         updatedAt: updated.updated_at?.toISOString() ?? null,
         featured_image: updated.featured_image
           ? {
-            id: updated.featured_image.id,
-            url: updated.featured_image.url ?? null,
-            name: updated.featured_image.name ?? null,
-          }
+              id: updated.featured_image.id,
+              url: updated.featured_image.url ?? null,
+              name: updated.featured_image.name ?? null,
+            }
           : null,
       },
     });
@@ -246,4 +251,3 @@ export async function PUT(
     );
   }
 }
-

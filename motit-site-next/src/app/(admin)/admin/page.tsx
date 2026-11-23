@@ -8,9 +8,13 @@ import {
   Settings,
   Home,
   PenSquare,
+  Ticket,
+  Globe,
+  SlidersHorizontal,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getRecentActivity } from "@/lib/db/activity";
 
 async function getCounts() {
   const [posts, categories] = await Promise.all([
@@ -20,33 +24,54 @@ async function getCounts() {
   return { posts, categories };
 }
 
-async function getRecentPosts() {
-  const rows = await prisma.posts.findMany({
-    orderBy: { updated_at: "desc" },
-    take: 5,
-    include: { users: true },
-  });
-  return rows.map((p) => ({
-    id: p.id,
-    documentId: p.document_id ?? null,
-    title: p.title ?? "",
-    updatedAt: p.updated_at?.toISOString() ?? null,
-    author: p.users
-      ? {
-          username: p.users.username ?? "",
-          full_name: p.users.full_name ?? null,
-        }
-      : null,
-  }));
-}
+const TARGET_META: Record<
+  string,
+  { icon: typeof FileText; label: string; href: (a: any) => string }
+> = {
+  post: {
+    icon: FileText,
+    label: "пост",
+    href: (a) => `/admin/posts/${a.target_id ?? ""}`,
+  },
+  ticket: {
+    icon: Ticket,
+    label: "заявку",
+    href: (a) => `/admin/tickets/${a.ticket?.uuid ?? a.target_id ?? ""}`,
+  },
+  settings: {
+    icon: SlidersHorizontal,
+    label: "настройки",
+    href: () => `/admin/settings`,
+  },
+  site: {
+    icon: Globe,
+    label: "страницу сайта",
+    href: () => `/admin/pages`,
+  },
+  user: {
+    icon: PenSquare,
+    label: "пользователя",
+    href: () => `/admin/users`,
+  },
+};
+
+const ACTION_LABEL: Record<string, string> = {
+  create: "создал(а)",
+  update: "обновил(а)",
+  delete: "удалил(а)",
+  status_change: "сменил(а) статус",
+  assign: "назначил(а)",
+  comment: "оставил(а) комментарий",
+  login: "вошёл(ла) в систему",
+};
 
 export default async function AdminPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login?from=/admin");
 
-  const [{ posts, categories }, recentPosts] = await Promise.all([
+  const [{ posts, categories }, recentActivity] = await Promise.all([
     getCounts(),
-    getRecentPosts(),
+    getRecentActivity(user),
   ]);
 
   return (
@@ -173,34 +198,43 @@ export default async function AdminPage() {
             <h2 className="text-lg font-semibold text-(--text-primary) mb-4">
               Последняя активность
             </h2>
-            {recentPosts.length === 0 ? (
+            {recentActivity.length === 0 ? (
               <p className="text-center py-8 text-(--text-secondary) text-sm">
-                Пока нет постов
+                Пока нет событий
               </p>
             ) : (
               <ul className="divide-y divide-(--border)">
-                {recentPosts.map((post) => {
-                  const author =
-                    post.author?.full_name || post.author?.username || "—";
-                  const date = post.updatedAt
-                    ? new Date(post.updatedAt).toLocaleDateString("ru-RU", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "—";
+                {recentActivity.map((a) => {
+                  const meta = TARGET_META[a.target_type] ?? TARGET_META.site;
+                  const Icon = meta.icon;
+                  const actor =
+                    a.actor?.full_name || a.actor?.username || "Система";
+                  const actionLabel = ACTION_LABEL[a.action] ?? a.action;
+                  const subject =
+                    a.target_type === "ticket"
+                      ? a.ticket?.title ?? "заявку"
+                      : meta.label;
+                  const date = new Date(a.created_at).toLocaleString("ru-RU", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
                   return (
-                    <li key={post.documentId || post.id} className="py-3">
+                    <li key={a.uuid} className="py-3">
                       <Link
-                        href={`/admin/posts/${post.documentId || post.id}`}
-                        className="flex items-center justify-between gap-4 group"
+                        href={meta.href(a)}
+                        className="flex items-center gap-3 group"
                       >
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-(--text-primary) group-hover:text-(--text-accent) truncate">
-                            {post.title || "Без названия"}
-                          </p>
-                          <p className="text-xs text-(--text-muted) mt-0.5">
-                            {author}
+                        <div className="w-8 h-8 rounded-lg bg-(--accent-dim) flex items-center justify-center shrink-0">
+                          <Icon className="w-4 h-4 text-(--accent)" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-(--text-primary) truncate">
+                            <span className="font-medium">{actor}</span>{" "}
+                            <span className="text-(--text-secondary)">
+                              {actionLabel} {subject}
+                            </span>
                           </p>
                         </div>
                         <span className="text-xs text-(--text-muted) shrink-0">

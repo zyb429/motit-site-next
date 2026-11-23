@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { addComment, getTicket } from "@/lib/db/tickets";
+import { logActivity } from "@/lib/activity";
 
 const schema = z.object({
   content: z.string().min(1).max(10_000),
@@ -33,14 +34,12 @@ export async function POST(
 
   const isAgent = user.role === "admin" || user.role === "worker";
 
-  // Анонимная заявка с сайта: клиента в системе нет,
-  // «внешний» комментарий отправить некому → форсим внутреннюю заметку.
   const isSiteRequest =
     !ticket.client_uuid && (ticket.contact_email || ticket.contact_name);
 
   const isInternal = isSiteRequest
-    ? true                                    // ← жёстко
-    : isAgent && !!parsed.data.isInternal;    // ← как было
+    ? true
+    : isAgent && !!parsed.data.isInternal;
 
   const comment = await addComment({
     ticketUuid: uuid,
@@ -50,6 +49,19 @@ export async function POST(
     attachmentFileIds: parsed.data.attachmentFileIds,
   });
 
+  // Логируем комментарий
+  await logActivity({
+    actorUuid: user.uuid,
+    targetType: "ticket",
+    targetId: uuid,
+    action: "comment",
+    ticketUuid: uuid,
+    meta: {
+      title: ticket.title,
+      isInternal,
+      commentUuid: comment.uuid,
+    },
+  });
+
   return NextResponse.json({ data: comment }, { status: 201 });
 }
-
