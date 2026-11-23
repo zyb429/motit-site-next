@@ -1,1 +1,1 @@
-export * from "./table-controls"
+export * from "./table-controls";

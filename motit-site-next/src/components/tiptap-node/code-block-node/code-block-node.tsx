@@ -1,37 +1,41 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { NodeViewWrapper, NodeViewContent, type NodeViewProps } from "@tiptap/react"
-import { Check, Copy } from "lucide-react"
+import { useState } from "react";
+import {
+  NodeViewWrapper,
+  NodeViewContent,
+  type NodeViewProps,
+} from "@tiptap/react";
+import { Check, Copy } from "lucide-react";
 
 export function CodeBlockNode(props: NodeViewProps) {
-  const { node } = props
-  const language = node.attrs.language || "plaintext"
-  const [copied, setCopied] = useState(false)
+  const { node } = props;
+  const language = node.attrs.language || "plaintext";
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    const text = node.textContent
+    const text = node.textContent;
     try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       // fallback для браузеров без clipboard API
-      const ta = document.createElement("textarea")
-      ta.value = text
-      ta.style.position = "fixed"
-      ta.style.opacity = "0"
-      document.body.appendChild(ta)
-      ta.select()
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
       try {
-        document.execCommand("copy")
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+        document.execCommand("copy");
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
       } finally {
-        document.body.removeChild(ta)
+        document.body.removeChild(ta);
       }
     }
-  }
+  };
 
   return (
     <NodeViewWrapper className="code-block-wrapper" data-language={language}>
@@ -51,5 +55,5 @@ export function CodeBlockNode(props: NodeViewProps) {
         <NodeViewContent as={"code" as any} className="code-block-content" />
       </pre>
     </NodeViewWrapper>
-  )
+  );
 }

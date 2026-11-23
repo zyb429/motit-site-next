@@ -1,16 +1,16 @@
-import type { Editor, NodeWithPos } from "@tiptap/core"
-import { Extension } from "@tiptap/core"
-import type { EditorState, Transaction } from "@tiptap/pm/state"
-import { getSelectedNodesOfType } from "@/lib/tiptap-utils"
-import { updateNodesAttr } from "@/lib/tiptap-utils"
+import type { Editor, NodeWithPos } from "@tiptap/core";
+import { Extension } from "@tiptap/core";
+import type { EditorState, Transaction } from "@tiptap/pm/state";
+import { getSelectedNodesOfType } from "@/lib/tiptap-utils";
+import { updateNodesAttr } from "@/lib/tiptap-utils";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     nodeBackground: {
-      setNodeBackgroundColor: (backgroundColor: string) => ReturnType
-      unsetNodeBackgroundColor: () => ReturnType
-      toggleNodeBackgroundColor: (backgroundColor: string) => ReturnType
-    }
+      setNodeBackgroundColor: (backgroundColor: string) => ReturnType;
+      unsetNodeBackgroundColor: () => ReturnType;
+      toggleNodeBackgroundColor: (backgroundColor: string) => ReturnType;
+    };
   }
 }
 
@@ -19,22 +19,22 @@ export interface NodeBackgroundOptions {
    * Node types that should support background colors
    * @default ["paragraph", "heading", "blockquote", "taskList", "bulletList", "orderedList", "tableCell", "tableHeader"]
    */
-  types: string[]
+  types: string[];
   /**
    * Use inline style instead of data attribute
    * @default true
    */
-  useStyle?: boolean
+  useStyle?: boolean;
   /**
    * The node attribute that stores the color. Set it to an attribute the
    * node types already define, such as ConvertKit's `background` on table
    * cells, so the color lands where those nodes render and export it.
    * @default "backgroundColor"
    */
-  attributeName: string
+  attributeName: string;
 }
 
-const DEFAULT_ATTRIBUTE_NAME = "backgroundColor"
+const DEFAULT_ATTRIBUTE_NAME = "backgroundColor";
 
 /**
  * The attribute the editor's NodeBackground extension writes, for UI that
@@ -42,12 +42,12 @@ const DEFAULT_ATTRIBUTE_NAME = "backgroundColor"
  */
 export function getNodeBackgroundAttributeName(editor: Editor | null): string {
   const attributeName: unknown = editor?.extensionManager.extensions.find(
-    (extension) => extension.name === "nodeBackground"
-  )?.options.attributeName
+    (extension) => extension.name === "nodeBackground",
+  )?.options.attributeName;
 
   return typeof attributeName === "string"
     ? attributeName
-    : DEFAULT_ATTRIBUTE_NAME
+    : DEFAULT_ATTRIBUTE_NAME;
 }
 
 /**
@@ -56,18 +56,18 @@ export function getNodeBackgroundAttributeName(editor: Editor | null): string {
 function getToggleColor(
   targets: NodeWithPos[],
   attributeName: string,
-  inputColor: string
+  inputColor: string,
 ): string | null {
-  if (targets.length === 0) return null
+  if (targets.length === 0) return null;
 
   for (const target of targets) {
-    const currentColor = target.node.attrs?.[attributeName] ?? null
+    const currentColor = target.node.attrs?.[attributeName] ?? null;
     if (currentColor !== inputColor) {
-      return inputColor
+      return inputColor;
     }
   }
 
-  return null
+  return null;
 }
 
 export const NodeBackground = Extension.create<NodeBackgroundOptions>({
@@ -87,11 +87,11 @@ export const NodeBackground = Extension.create<NodeBackgroundOptions>({
       ],
       useStyle: true,
       attributeName: DEFAULT_ATTRIBUTE_NAME,
-    }
+    };
   },
 
   addGlobalAttributes() {
-    const { attributeName } = this.options
+    const { attributeName } = this.options;
 
     return [
       {
@@ -101,31 +101,31 @@ export const NodeBackground = Extension.create<NodeBackgroundOptions>({
             default: null as string | null,
 
             parseHTML: (element: HTMLElement) => {
-              const styleColor = element.style?.backgroundColor
-              if (styleColor) return styleColor
+              const styleColor = element.style?.backgroundColor;
+              if (styleColor) return styleColor;
 
-              const dataColor = element.getAttribute("data-background-color")
-              return dataColor || null
+              const dataColor = element.getAttribute("data-background-color");
+              return dataColor || null;
             },
 
             renderHTML: (attributes) => {
-              const color = attributes[attributeName] as string | null
-              if (!color) return {}
+              const color = attributes[attributeName] as string | null;
+              if (!color) return {};
 
               if (this.options.useStyle) {
                 return {
                   style: `background-color: ${color}`,
-                }
+                };
               } else {
                 return {
                   "data-background-color": color,
-                }
+                };
               }
             },
           },
         },
       },
-    ]
+    ];
   },
 
   addCommands() {
@@ -135,35 +135,35 @@ export const NodeBackground = Extension.create<NodeBackgroundOptions>({
     const executeBackgroundCommand = (
       getTargetColor: (
         targets: NodeWithPos[],
-        inputColor?: string
-      ) => string | null
+        inputColor?: string,
+      ) => string | null,
     ) => {
       return (inputColor?: string) =>
         ({ state, tr }: { state: EditorState; tr: Transaction }) => {
           const targets = getSelectedNodesOfType(
             state.selection,
-            this.options.types
-          )
+            this.options.types,
+          );
 
-          if (targets.length === 0) return false
+          if (targets.length === 0) return false;
 
-          const targetColor = getTargetColor(targets, inputColor)
+          const targetColor = getTargetColor(targets, inputColor);
 
           return updateNodesAttr(
             tr,
             targets,
             this.options.attributeName,
-            targetColor
-          )
-        }
-    }
+            targetColor,
+          );
+        };
+    };
 
     return {
       /**
        * Set background color to specific value
        */
       setNodeBackgroundColor: executeBackgroundCommand(
-        (_, inputColor) => inputColor || null
+        (_, inputColor) => inputColor || null,
       ),
 
       /**
@@ -176,8 +176,8 @@ export const NodeBackground = Extension.create<NodeBackgroundOptions>({
        */
       toggleNodeBackgroundColor: executeBackgroundCommand(
         (targets, inputColor) =>
-          getToggleColor(targets, this.options.attributeName, inputColor || "")
+          getToggleColor(targets, this.options.attributeName, inputColor || ""),
       ),
-    }
+    };
   },
-})
+});

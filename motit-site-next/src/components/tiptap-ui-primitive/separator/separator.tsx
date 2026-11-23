@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import "@/components/tiptap-ui-primitive/separator/separator.scss"
-import { cn } from "@/lib/tiptap-utils"
+import "@/components/tiptap-ui-primitive/separator/separator.scss";
+import { cn } from "@/lib/tiptap-utils";
 
-export type Orientation = "horizontal" | "vertical"
+export type Orientation = "horizontal" | "vertical";
 
 export function Separator({
   decorative,
@@ -11,13 +11,13 @@ export function Separator({
   className,
   ...props
 }: React.ComponentProps<"div"> & {
-  orientation?: Orientation
-  decorative?: boolean
+  orientation?: Orientation;
+  decorative?: boolean;
 }) {
-  const ariaOrientation = orientation === "vertical" ? orientation : undefined
+  const ariaOrientation = orientation === "vertical" ? orientation : undefined;
   const semanticProps = decorative
     ? { role: "none" }
-    : { "aria-orientation": ariaOrientation, role: "separator" }
+    : { "aria-orientation": ariaOrientation, role: "separator" };
 
   return (
     <div
@@ -26,5 +26,5 @@ export function Separator({
       {...semanticProps}
       {...props}
     />
-  )
+  );
 }

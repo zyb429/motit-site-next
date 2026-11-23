@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useCurrentEditor } from "@tiptap/react"
-import { Button } from "@/components/tiptap-ui-primitive/button"
+import { useState, useEffect } from "react";
+import { useCurrentEditor } from "@tiptap/react";
+import { Button } from "@/components/tiptap-ui-primitive/button";
 import {
   ArrowUpToLine,
   ArrowDownToLine,
@@ -11,33 +11,33 @@ import {
   Trash2,
   Merge,
   Split,
-} from "lucide-react"
-import "./table-controls.scss"
+} from "lucide-react";
+import "./table-controls.scss";
 
 export function TableControls() {
-  const { editor } = useCurrentEditor()
-  const [isInTable, setIsInTable] = useState(false)
+  const { editor } = useCurrentEditor();
+  const [isInTable, setIsInTable] = useState(false);
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const updateState = () => {
       // Проверяем, находится ли курсор внутри таблицы
-      setIsInTable(editor.isActive("table"))
-    }
+      setIsInTable(editor.isActive("table"));
+    };
 
     // Проверяем сразу при монтировании и при каждом обновлении
-    updateState()
-    editor.on("selectionUpdate", updateState)
-    editor.on("transaction", updateState)
+    updateState();
+    editor.on("selectionUpdate", updateState);
+    editor.on("transaction", updateState);
 
     return () => {
-      editor.off("selectionUpdate", updateState)
-      editor.off("transaction", updateState)
-    }
-  }, [editor])
+      editor.off("selectionUpdate", updateState);
+      editor.off("transaction", updateState);
+    };
+  }, [editor]);
 
-  if (!editor || !isInTable) return null
+  if (!editor || !isInTable) return null;
 
   return (
     <div className="table-controls-wrapper">
@@ -131,5 +131,5 @@ export function TableControls() {
         </div>
       </div>
     </div>
-  )
+  );
 }

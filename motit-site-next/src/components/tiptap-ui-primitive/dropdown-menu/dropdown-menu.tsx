@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
-import { cn } from "@/lib/tiptap-utils"
-import { CheckIcon } from "@/components/tiptap-icons/check-icon"
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import { cn } from "@/lib/tiptap-utils";
+import { CheckIcon } from "@/components/tiptap-icons/check-icon";
 
-import "@/components/tiptap-ui-primitive/dropdown-menu/dropdown-menu.scss"
+import "@/components/tiptap-ui-primitive/dropdown-menu/dropdown-menu.scss";
 
 function DropdownMenu({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return (
     <DropdownMenuPrimitive.Root data-slot="tiptap-dropdown-menu" {...props} />
-  )
+  );
 }
 
 function DropdownMenuPortal({
@@ -22,7 +22,7 @@ function DropdownMenuPortal({
       data-slot="tiptap-dropdown-menu-portal"
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuTrigger({
@@ -33,7 +33,7 @@ function DropdownMenuTrigger({
       data-slot="tiptap-dropdown-menu-trigger"
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuContent({
@@ -53,7 +53,7 @@ function DropdownMenuContent({
         {...props}
       />
     </DropdownMenuPrimitive.Portal>
-  )
+  );
 }
 
 function DropdownMenuGroup({
@@ -66,7 +66,7 @@ function DropdownMenuGroup({
       className={cn("tiptap-dropdown-menu-group", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuItem({
@@ -75,8 +75,8 @@ function DropdownMenuItem({
   variant = "default",
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
-  inset?: boolean
-  variant?: "default" | "destructive"
+  inset?: boolean;
+  variant?: "default" | "destructive";
 }) {
   return (
     <DropdownMenuPrimitive.Item
@@ -86,7 +86,7 @@ function DropdownMenuItem({
       className={cn("tiptap-dropdown-menu-item", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuCheckboxItem({
@@ -96,7 +96,7 @@ function DropdownMenuCheckboxItem({
   inset,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem> & {
-  inset?: boolean
+  inset?: boolean;
 }) {
   return (
     <DropdownMenuPrimitive.CheckboxItem
@@ -116,7 +116,7 @@ function DropdownMenuCheckboxItem({
       </span>
       {children}
     </DropdownMenuPrimitive.CheckboxItem>
-  )
+  );
 }
 
 function DropdownMenuRadioGroup({
@@ -127,7 +127,7 @@ function DropdownMenuRadioGroup({
       data-slot="tiptap-dropdown-menu-radio-group"
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuRadioItem({
@@ -136,7 +136,7 @@ function DropdownMenuRadioItem({
   inset,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem> & {
-  inset?: boolean
+  inset?: boolean;
 }) {
   return (
     <DropdownMenuPrimitive.RadioItem
@@ -155,7 +155,7 @@ function DropdownMenuRadioItem({
       </span>
       {children}
     </DropdownMenuPrimitive.RadioItem>
-  )
+  );
 }
 
 function DropdownMenuLabel({
@@ -163,7 +163,7 @@ function DropdownMenuLabel({
   inset,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
-  inset?: boolean
+  inset?: boolean;
 }) {
   return (
     <DropdownMenuPrimitive.Label
@@ -172,7 +172,7 @@ function DropdownMenuLabel({
       className={cn("tiptap-dropdown-menu-label", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuSeparator({
@@ -185,7 +185,7 @@ function DropdownMenuSeparator({
       className={cn("tiptap-dropdown-menu-separator", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuShortcut({
@@ -198,7 +198,7 @@ function DropdownMenuShortcut({
       className={cn("tiptap-dropdown-menu-shortcut", className)}
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuSub({
@@ -209,7 +209,7 @@ function DropdownMenuSub({
       data-slot="tiptap-dropdown-menu-sub"
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuSubTrigger({
@@ -218,7 +218,7 @@ function DropdownMenuSubTrigger({
   children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
-  inset?: boolean
+  inset?: boolean;
 }) {
   return (
     <DropdownMenuPrimitive.SubTrigger
@@ -229,7 +229,7 @@ function DropdownMenuSubTrigger({
     >
       {children}
     </DropdownMenuPrimitive.SubTrigger>
-  )
+  );
 }
 
 function DropdownMenuSubContent({
@@ -242,7 +242,7 @@ function DropdownMenuSubContent({
       className={cn("tiptap-dropdown-menu-sub-content", className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -261,4 +261,4 @@ export {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
-}
+};

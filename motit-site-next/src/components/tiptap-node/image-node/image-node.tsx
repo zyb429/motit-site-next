@@ -23,9 +23,8 @@ export function ImageNode(props: NodeViewProps) {
       });
 
       // 2. ДИНАМИЧЕСКИЙ ИМПОРТ РЕДАКТОРА (только в браузере)
-      const { openEditorModal } = await import(
-        "@rageshpikalmunde/rp-image-editor"
-      );
+      const { openEditorModal } =
+        await import("@rageshpikalmunde/rp-image-editor");
 
       const result = await openEditorModal({
         image: file,

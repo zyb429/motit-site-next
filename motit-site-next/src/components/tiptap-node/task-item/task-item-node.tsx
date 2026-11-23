@@ -1,6 +1,10 @@
 "use client";
 
-import { NodeViewWrapper, NodeViewContent, type NodeViewProps } from "@tiptap/react";
+import {
+  NodeViewWrapper,
+  NodeViewContent,
+  type NodeViewProps,
+} from "@tiptap/react";
 
 export function TaskItemNode(props: NodeViewProps) {
   const { node, updateAttributes, editor } = props;

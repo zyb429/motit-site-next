@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/tiptap-ui-primitive/button"
-import { MoonStarIcon } from "@/components/tiptap-icons/moon-star-icon"
-import { SunIcon } from "@/components/tiptap-icons/sun-icon"
+import { Button } from "@/components/tiptap-ui-primitive/button";
+import { MoonStarIcon } from "@/components/tiptap-icons/moon-star-icon";
+import { SunIcon } from "@/components/tiptap-icons/sun-icon";
 
 interface ThemeToggleProps {
-  isDark: boolean
-  onToggle: () => void
-  disabled?: boolean
+  isDark: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
 }
 
 export function ThemeToggle({ isDark, onToggle, disabled }: ThemeToggleProps) {
@@ -25,5 +25,5 @@ export function ThemeToggle({ isDark, onToggle, disabled }: ThemeToggleProps) {
         <SunIcon className="tiptap-button-icon" />
       )}
     </Button>
-  )
+  );
 }

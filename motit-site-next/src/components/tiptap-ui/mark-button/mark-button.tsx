@@ -1,43 +1,46 @@
-"use client"
+"use client";
 
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from "react";
 
 // --- Lib ---
-import { parseShortcutKeys } from "@/lib/tiptap-utils"
+import { parseShortcutKeys } from "@/lib/tiptap-utils";
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor";
 
 // --- Tiptap UI ---
-import type { Mark, UseMarkConfig } from "@/components/tiptap-ui/mark-button"
-import { MARK_SHORTCUT_KEYS, useMark } from "@/components/tiptap-ui/mark-button"
+import type { Mark, UseMarkConfig } from "@/components/tiptap-ui/mark-button";
+import {
+  MARK_SHORTCUT_KEYS,
+  useMark,
+} from "@/components/tiptap-ui/mark-button";
 
 // --- UI Primitives ---
-import type { ButtonProps } from "@/components/tiptap-ui-primitive/button"
-import { Button } from "@/components/tiptap-ui-primitive/button"
-import { Badge } from "@/components/tiptap-ui-primitive/badge"
+import type { ButtonProps } from "@/components/tiptap-ui-primitive/button";
+import { Button } from "@/components/tiptap-ui-primitive/button";
+import { Badge } from "@/components/tiptap-ui-primitive/badge";
 
 export interface MarkButtonProps
   extends Omit<ButtonProps, "type">, UseMarkConfig {
   /**
    * Optional text to display alongside the icon.
    */
-  text?: string
+  text?: string;
   /**
    * Optional show shortcut keys in the button.
    * @default false
    */
-  showShortcut?: boolean
+  showShortcut?: boolean;
 }
 
 export function MarkShortcutBadge({
   type,
   shortcutKeys = MARK_SHORTCUT_KEYS[type],
 }: {
-  type: Mark
-  shortcutKeys?: string
+  type: Mark;
+  shortcutKeys?: string;
 }) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -58,9 +61,9 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
       children,
       ...buttonProps
     },
-    ref
+    ref,
   ) => {
-    const { editor } = useTiptapEditor(providedEditor)
+    const { editor } = useTiptapEditor(providedEditor);
     const {
       isVisible,
       handleMark,
@@ -74,19 +77,19 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
       type,
       hideWhenUnavailable,
       onToggled,
-    })
+    });
 
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleMark()
+        onClick?.(event);
+        if (event.defaultPrevented) return;
+        handleMark();
       },
-      [handleMark, onClick]
-    )
+      [handleMark, onClick],
+    );
 
     if (!isVisible) {
-      return null
+      return null;
     }
 
     return (
@@ -115,8 +118,8 @@ export const MarkButton = forwardRef<HTMLButtonElement, MarkButtonProps>(
           </>
         )}
       </Button>
-    )
-  }
-)
+    );
+  },
+);
 
-MarkButton.displayName = "MarkButton"
+MarkButton.displayName = "MarkButton";

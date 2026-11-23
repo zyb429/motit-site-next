@@ -27,8 +27,12 @@
     margin-bottom: 1.5em;
     padding-left: 1.5em;
 
-    &:first-child { margin-top: 0; }
-    &:last-child { margin-bottom: 0; }
+    &:first-child {
+      margin-top: 0;
+    }
+    &:last-child {
+      margin-bottom: 0;
+    }
 
     ol,
     ul {
@@ -201,8 +205,14 @@
         }
 
         input[type="checkbox"]:checked + span {
-          background: var(--tt-checklist-bg-active-color, var(--accent, #2dd4bf));
-          border-color: var(--tt-checklist-border-active-color, var(--accent, #2dd4bf));
+          background: var(
+            --tt-checklist-bg-active-color,
+            var(--accent, #2dd4bf)
+          );
+          border-color: var(
+            --tt-checklist-border-active-color,
+            var(--accent, #2dd4bf)
+          );
 
           &::before {
             opacity: 1;

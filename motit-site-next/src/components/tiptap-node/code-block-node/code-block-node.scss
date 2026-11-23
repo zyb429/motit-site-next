@@ -83,7 +83,10 @@
     color: #64748b;
     cursor: pointer;
     opacity: 0.7;
-    transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+    transition:
+      opacity 0.15s ease,
+      background-color 0.15s ease,
+      color 0.15s ease;
 
     &:hover {
       opacity: 1;
@@ -147,28 +150,52 @@
   color: #24292e !important;
   background: transparent !important;
 }
-.simple-editor-wrapper.light .tiptap.ProseMirror .code-block-wrapper .hljs-keyword {
+.simple-editor-wrapper.light
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-keyword {
   color: #d73a49 !important;
 }
-.simple-editor-wrapper.light .tiptap.ProseMirror .code-block-wrapper .hljs-string {
+.simple-editor-wrapper.light
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-string {
   color: #032f62 !important;
 }
-.simple-editor-wrapper.light .tiptap.ProseMirror .code-block-wrapper .hljs-number {
+.simple-editor-wrapper.light
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-number {
   color: #005cc5 !important;
 }
-.simple-editor-wrapper.light .tiptap.ProseMirror .code-block-wrapper .hljs-comment {
+.simple-editor-wrapper.light
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-comment {
   color: #6a737d !important;
 }
-.simple-editor-wrapper.light .tiptap.ProseMirror .code-block-wrapper .hljs-function {
+.simple-editor-wrapper.light
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-function {
   color: #6f42c1 !important;
 }
-.simple-editor-wrapper.light .tiptap.ProseMirror .code-block-wrapper .hljs-variable {
+.simple-editor-wrapper.light
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-variable {
   color: #e36209 !important;
 }
-.simple-editor-wrapper.light .tiptap.ProseMirror .code-block-wrapper .hljs-title {
+.simple-editor-wrapper.light
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-title {
   color: #6f42c1 !important;
 }
-.simple-editor-wrapper.light .tiptap.ProseMirror .code-block-wrapper .hljs-attr {
+.simple-editor-wrapper.light
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-attr {
   color: #005cc5 !important;
 }
 
@@ -181,25 +208,46 @@
   color: #e5e7eb !important;
   background: transparent !important;
 }
-.simple-editor-wrapper.dark .tiptap.ProseMirror .code-block-wrapper .hljs-keyword {
+.simple-editor-wrapper.dark
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-keyword {
   color: #ff7b72 !important;
 }
-.simple-editor-wrapper.dark .tiptap.ProseMirror .code-block-wrapper .hljs-string {
+.simple-editor-wrapper.dark
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-string {
   color: #a5d6ff !important;
 }
-.simple-editor-wrapper.dark .tiptap.ProseMirror .code-block-wrapper .hljs-number {
+.simple-editor-wrapper.dark
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-number {
   color: #79c0ff !important;
 }
-.simple-editor-wrapper.dark .tiptap.ProseMirror .code-block-wrapper .hljs-comment {
+.simple-editor-wrapper.dark
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-comment {
   color: #8b949e !important;
 }
-.simple-editor-wrapper.dark .tiptap.ProseMirror .code-block-wrapper .hljs-function {
+.simple-editor-wrapper.dark
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-function {
   color: #d2a8ff !important;
 }
-.simple-editor-wrapper.dark .tiptap.ProseMirror .code-block-wrapper .hljs-variable {
+.simple-editor-wrapper.dark
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-variable {
   color: #ffa657 !important;
 }
-.simple-editor-wrapper.dark .tiptap.ProseMirror .code-block-wrapper .hljs-title {
+.simple-editor-wrapper.dark
+  .tiptap.ProseMirror
+  .code-block-wrapper
+  .hljs-title {
   color: #d2a8ff !important;
 }
 .simple-editor-wrapper.dark .tiptap.ProseMirror .code-block-wrapper .hljs-attr {

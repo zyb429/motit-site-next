@@ -1,7 +1,7 @@
-import { memo } from "react"
-import { ChevronDownIcon } from "@/components/tiptap-icons/chevron-down-icon"
+import { memo } from "react";
+import { ChevronDownIcon } from "@/components/tiptap-icons/chevron-down-icon";
 
-type SvgProps = React.ComponentPropsWithoutRef<"svg">
+type SvgProps = React.ComponentPropsWithoutRef<"svg">;
 
 export const ChevronUpIcon = memo(
   ({ className, style, ...props }: SvgProps) => {
@@ -15,8 +15,8 @@ export const ChevronUpIcon = memo(
         }}
         {...props}
       />
-    )
-  }
-)
+    );
+  },
+);
 
-ChevronUpIcon.displayName = "ChevronUpIcon"
+ChevronUpIcon.displayName = "ChevronUpIcon";

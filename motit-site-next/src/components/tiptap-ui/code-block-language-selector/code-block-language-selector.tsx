@@ -1,54 +1,56 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useCurrentEditor } from "@tiptap/react"
+import { useEffect, useState } from "react";
+import { useCurrentEditor } from "@tiptap/react";
 
-type Lang = { code: string; label: string }
+type Lang = { code: string; label: string };
 
 export function CodeBlockLanguageSelector() {
-  const { editor } = useCurrentEditor()
-  const [isActive, setIsActive] = useState(false)
-  const [currentLang, setCurrentLang] = useState("plaintext")
-  const [languages, setLanguages] = useState<Lang[]>([])
+  const { editor } = useCurrentEditor();
+  const [isActive, setIsActive] = useState(false);
+  const [currentLang, setCurrentLang] = useState("plaintext");
+  const [languages, setLanguages] = useState<Lang[]>([]);
 
   // Список включённых языков — из БД
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
     fetch("/api/languages", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : []))
       .then((data: Lang[]) => {
-        if (!cancelled) setLanguages(data)
+        if (!cancelled) setLanguages(data);
       })
       .catch(() => {
-        if (!cancelled) setLanguages([])
-      })
+        if (!cancelled) setLanguages([]);
+      });
     return () => {
-      cancelled = true
-    }
-  }, [])
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) return;
 
     const update = () => {
-      const active = editor.isActive("codeBlock")
-      setIsActive(active)
+      const active = editor.isActive("codeBlock");
+      setIsActive(active);
       if (active) {
-        setCurrentLang(editor.getAttributes("codeBlock").language || "plaintext")
+        setCurrentLang(
+          editor.getAttributes("codeBlock").language || "plaintext",
+        );
       }
-    }
+    };
 
-    update()
-    editor.on("selectionUpdate", update)
-    editor.on("transaction", update)
+    update();
+    editor.on("selectionUpdate", update);
+    editor.on("transaction", update);
 
     return () => {
-      editor.off("selectionUpdate", update)
-      editor.off("transaction", update)
-    }
-  }, [editor])
+      editor.off("selectionUpdate", update);
+      editor.off("transaction", update);
+    };
+  }, [editor]);
 
-  if (!editor || !isActive) return null
+  if (!editor || !isActive) return null;
 
   return (
     <select
@@ -65,5 +67,5 @@ export function CodeBlockLanguageSelector() {
         </option>
       ))}
     </select>
-  )
+  );
 }

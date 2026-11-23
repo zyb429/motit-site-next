@@ -1,5 +1,5 @@
-import { Blockquote } from "@tiptap/extension-blockquote"
-import { mergeAttributes } from "@tiptap/core"
+import { Blockquote } from "@tiptap/extension-blockquote";
+import { mergeAttributes } from "@tiptap/core";
 
 export const CustomBlockquote = Blockquote.extend({
   addAttributes() {
@@ -9,11 +9,11 @@ export const CustomBlockquote = Blockquote.extend({
         default: null,
         parseHTML: (element) => element.getAttribute("data-author"),
         renderHTML: (attributes) => {
-          if (!attributes.author) return {}
-          return { "data-author": attributes.author }
+          if (!attributes.author) return {};
+          return { "data-author": attributes.author };
         },
       },
-    }
+    };
   },
 
   renderHTML({ HTMLAttributes }) {
@@ -24,6 +24,6 @@ export const CustomBlockquote = Blockquote.extend({
         class: "custom-blockquote",
       }),
       0,
-    ]
+    ];
   },
-})
+});
