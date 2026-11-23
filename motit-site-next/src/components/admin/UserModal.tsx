@@ -46,9 +46,7 @@ export function UserModal({ user, roles, onClose, onSaved }: Props) {
     setError(null);
 
     try {
-      const url = isEdit
-        ? `/api/admin/users/${user!.id}`
-        : "/api/admin/users";
+      const url = isEdit ? `/api/admin/users/${user!.id}` : "/api/admin/users";
       const method = isEdit ? "PATCH" : "POST";
 
       // Формируем payload — не отправляем пустые поля
@@ -180,9 +178,7 @@ export function UserModal({ user, roles, onClose, onSaved }: Props) {
           <Field label="Роль">
             <select
               value={String(form.roleId)}
-              onChange={(e) =>
-                setForm({ ...form, roleId: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, roleId: e.target.value })}
               className="w-full px-3 py-2 bg-(--bg-secondary) border border-(--border) rounded-lg text-(--text-primary) text-sm focus:border-(--accent) focus:outline-none disabled:opacity-50"
               disabled={saving}
             >

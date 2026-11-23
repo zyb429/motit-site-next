@@ -98,10 +98,9 @@ export function TicketCategoryForm({ initial }: Props) {
 
     setSaving(true);
     try {
-      const res = await fetch(
-        `/api/admin/ticket-categories/${initial!.uuid}`,
-        { method: "DELETE" },
-      );
+      const res = await fetch(`/api/admin/ticket-categories/${initial!.uuid}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error ?? "Не удалось удалить");

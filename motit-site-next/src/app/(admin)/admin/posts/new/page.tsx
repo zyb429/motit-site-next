@@ -51,7 +51,5 @@ export default async function CreatePostPage() {
 
   const categories = await getCategories();
 
-  return (
-    <CreatePostClient initialUser={user} initialCategories={categories} />
-  );
+  return <CreatePostClient initialUser={user} initialCategories={categories} />;
 }

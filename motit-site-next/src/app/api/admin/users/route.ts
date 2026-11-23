@@ -99,7 +99,10 @@ export async function POST(request: NextRequest) {
       typeof email !== "string" ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
     ) {
-      return NextResponse.json({ error: "Некорректный email" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Некорректный email" },
+        { status: 400 },
+      );
     }
     if (typeof password !== "string" || password.length < 6) {
       return NextResponse.json(
@@ -212,4 +215,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -158,7 +158,10 @@ export default async function AdminCategoriesPage({
                     Со статьями
                   </p>
                   <p className="text-lg sm:text-2xl font-bold text-(--accent) mt-0.5">
-                    {allCategories.filter((c) => (counts[c.slug] ?? 0) > 0).length}
+                    {
+                      allCategories.filter((c) => (counts[c.slug] ?? 0) > 0)
+                        .length
+                    }
                   </p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
@@ -225,7 +228,9 @@ export default async function AdminCategoriesPage({
                     <div className="flex items-start justify-between gap-2.5 mb-2 sm:mb-3">
                       <div className="w-8 h-8 sm:w-10 sm:h-10 bg-(--accent-dim) rounded-lg flex items-center justify-center shrink-0">
                         {cat.icon ? (
-                          <span className="text-base sm:text-lg">{cat.icon}</span>
+                          <span className="text-base sm:text-lg">
+                            {cat.icon}
+                          </span>
                         ) : (
                           <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-(--accent)" />
                         )}
@@ -244,7 +249,7 @@ export default async function AdminCategoriesPage({
                       <h3 className="text-sm sm:text-base font-semibold text-(--text-primary) line-clamp-1">
                         {cat.name || "Без названия"}
                       </h3>
-                      
+
                       <code className="text-[11px] sm:text-xs text-(--text-muted) bg-(--bg-secondary) px-1.5 py-0.5 rounded font-mono inline-block mt-1 self-start max-w-full truncate">
                         {cat.slug || catId}
                       </code>

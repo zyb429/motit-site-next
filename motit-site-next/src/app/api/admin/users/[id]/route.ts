@@ -30,7 +30,8 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { roleId, blocked, full_name, phone, username, email, password } = body ?? {};
+    const { roleId, blocked, full_name, phone, username, email, password } =
+      body ?? {};
 
     // 1. Смена роли
     if (roleId !== undefined) {
@@ -68,9 +69,7 @@ export async function PATCH(
           full_name: updated?.full_name ?? null,
           phone: updated?.phone ?? null,
           blocked: updated?.blocked ?? false,
-          role: role
-            ? { id: role.id, name: role.name ?? "" }
-            : null,
+          role: role ? { id: role.id, name: role.name ?? "" } : null,
         },
       });
     }
@@ -89,15 +88,15 @@ export async function PATCH(
     }
 
     if (full_name !== undefined) {
-      data.full_name = typeof full_name === "string" && full_name.trim()
-        ? full_name.trim()
-        : null;
+      data.full_name =
+        typeof full_name === "string" && full_name.trim()
+          ? full_name.trim()
+          : null;
     }
 
     if (phone !== undefined) {
-      data.phone = typeof phone === "string" && phone.trim()
-        ? phone.trim()
-        : null;
+      data.phone =
+        typeof phone === "string" && phone.trim() ? phone.trim() : null;
     }
 
     if (username !== undefined) {
@@ -155,9 +154,7 @@ export async function PATCH(
         full_name: updated.full_name ?? null,
         phone: updated.phone ?? null,
         blocked: updated.blocked ?? false,
-        role: role
-          ? { id: role.id, name: role.name ?? "" }
-          : null,
+        role: role ? { id: role.id, name: role.name ?? "" } : null,
       },
     });
   } catch (error) {
@@ -225,4 +222,3 @@ export async function DELETE(
     );
   }
 }
-

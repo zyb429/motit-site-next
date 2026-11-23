@@ -157,7 +157,10 @@ export function OrganizationsTable({
                   {o.email && <div className="truncate">{o.email}</div>}
                   {o.phone && <div>{o.phone}</div>}
                   {o.address && (
-                    <div className="truncate text-xs text-(--text-muted)" title={o.address}>
+                    <div
+                      className="truncate text-xs text-(--text-muted)"
+                      title={o.address}
+                    >
                       {o.address}
                     </div>
                   )}

@@ -105,14 +105,10 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error(
-      "[api/admin/users/:id/organizations] POST error:",
-      error,
-    );
+    console.error("[api/admin/users/:id/organizations] POST error:", error);
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
       { status: 500 },
     );
   }
 }
-

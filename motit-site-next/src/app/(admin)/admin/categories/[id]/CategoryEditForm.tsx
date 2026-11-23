@@ -43,7 +43,9 @@ export default function CategoryEditForm({
     setSlugManuallyEdited(value.length > 0);
   };
 
-  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
+  const handleSubmit = async (
+    e: SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     setError(null);
 
@@ -70,7 +72,9 @@ export default function CategoryEditForm({
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.error?.message || err.error || "Ошибка сохранения");
+          throw new Error(
+            err.error?.message || err.error || "Ошибка сохранения",
+          );
         }
 
         router.push("/admin/categories");

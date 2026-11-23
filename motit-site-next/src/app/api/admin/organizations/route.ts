@@ -86,10 +86,8 @@ export async function POST(request: NextRequest) {
         inn: typeof inn === "string" && inn.trim() ? inn.trim() : null,
         address:
           typeof address === "string" && address.trim() ? address.trim() : null,
-        email:
-          typeof email === "string" && email.trim() ? email.trim() : null,
-        phone:
-          typeof phone === "string" && phone.trim() ? phone.trim() : null,
+        email: typeof email === "string" && email.trim() ? email.trim() : null,
+        phone: typeof phone === "string" && phone.trim() ? phone.trim() : null,
         is_active: true,
         created_at: new Date(),
         updated_at: new Date(),
@@ -105,4 +103,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

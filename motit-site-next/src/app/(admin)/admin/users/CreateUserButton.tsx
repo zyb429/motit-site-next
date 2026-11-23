@@ -9,9 +9,9 @@ type Role = {
   id: number;
   name: string;
   type: string;
-}
+};
 
-export function CreateUserButton({ roles }: { roles: Role[]}) {
+export function CreateUserButton({ roles }: { roles: Role[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [creating, setCreating] = useState(false);

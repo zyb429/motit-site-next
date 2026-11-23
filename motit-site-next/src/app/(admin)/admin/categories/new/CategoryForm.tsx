@@ -172,7 +172,7 @@ export default function CategoryForm() {
               <Save className="w-4 h-4" />
               {isPending ? "Сохранение..." : "Создать категорию"}
             </button>
-            
+
             {/* Кнопка "Отмена" с такими же размерами, как "Удалить" в редактировании */}
             <Link
               href="/admin/categories"

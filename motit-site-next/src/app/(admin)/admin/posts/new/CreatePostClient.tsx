@@ -120,10 +120,7 @@ export default memo(function CreatePostClient({
   const categoryValue = watch("categoryId");
 
   const titleValue = watch("title") || "";
-  const slugValue = useMemo(
-    () => generateSlug(titleValue),
-    [titleValue],
-  );
+  const slugValue = useMemo(() => generateSlug(titleValue), [titleValue]);
 
   useEffect(() => {
     if (isEditMode || !titleValue.trim()) {
@@ -293,9 +290,8 @@ export default memo(function CreatePostClient({
         type: blob.type || "image/jpeg",
       });
 
-      const { openEditorModal } = await import(
-        "@rageshpikalmunde/rp-image-editor"
-      );
+      const { openEditorModal } =
+        await import("@rageshpikalmunde/rp-image-editor");
 
       const result = await openEditorModal({
         image: file,
@@ -595,17 +591,13 @@ export default memo(function CreatePostClient({
               <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden rounded-xl border border-[var(--border)] transition-colors focus-within:border-[var(--accent)] bg-[var(--bg-primary)]">
                 <SimpleEditor
                   initialContent={content}
-                  onChange={(json) =>
-                    setValue("content", JSON.stringify(json))
-                  }
+                  onChange={(json) => setValue("content", JSON.stringify(json))}
                   editable={!isDisabled}
                 />
               </div>
 
               {errors.content && (
-                <p className="text-red-400 text-sm">
-                  {errors.content.message}
-                </p>
+                <p className="text-red-400 text-sm">{errors.content.message}</p>
               )}
             </div>
           </div>

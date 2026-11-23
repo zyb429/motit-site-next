@@ -52,10 +52,11 @@ export function StatusToggleButton({ postId, currentStatus }: Props) {
       onClick={handleToggle}
       disabled={disabled}
       title={isPublished ? "Снять с публикации" : "Опубликовать"}
-      className={`p-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 ${isPublished
-        ? "text-yellow-500 hover:bg-yellow-500/40"
-        : "text-(--accent) hover:bg-(--accent-dim)"
-        }`}
+      className={`p-1.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 ${
+        isPublished
+          ? "text-yellow-500 hover:bg-yellow-500/40"
+          : "text-(--accent) hover:bg-(--accent-dim)"
+      }`}
     >
       {disabled ? (
         <Loader2 className="w-4 h-4 animate-spin" />
