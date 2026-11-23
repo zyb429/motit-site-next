@@ -73,16 +73,19 @@ export function MemberList({
                 </div>
               </div>
 
-              {canManage && !isCurrentUser && m.role !== "owner" && onRemoveAction && (
-                <button
-                  type="button"
-                  onClick={() => onRemoveAction(m.user.uuid)}
-                  className="p-1 text-(--text-muted) hover:text-red-400"
-                  title="Удалить из чата"
-                >
-                  <UserMinus size={12} />
-                </button>
-              )}
+              {canManage &&
+                !isCurrentUser &&
+                m.role !== "owner" &&
+                onRemoveAction && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveAction(m.user.uuid)}
+                    className="p-1 text-(--text-muted) hover:text-red-400"
+                    title="Удалить из чата"
+                  >
+                    <UserMinus size={12} />
+                  </button>
+                )}
             </li>
           );
         })}

@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useRef,
-  type KeyboardEvent,
-  type ChangeEvent,
-} from "react";
+import { useState, useRef, type KeyboardEvent, type ChangeEvent } from "react";
 import { EmojiPickerButton } from "./EmojiPickerButton";
 import { Send, Paperclip, X, CornerUpLeft, Pencil } from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
@@ -105,9 +100,8 @@ export function MessageInput({
     // canvas/fabric/jsdom загружаются только в браузере по клику.
     let openEditorModal: OpenEditorFn | undefined;
     try {
-      const mod: Record<string, unknown> = await import(
-        "@rageshpikalmunde/rp-image-editor"
-      );
+      const mod: Record<string, unknown> =
+        await import("@rageshpikalmunde/rp-image-editor");
       openEditorModal =
         (mod.openEditorModal as OpenEditorFn | undefined) ??
         (mod.default as OpenEditorFn | undefined) ??
@@ -155,7 +149,10 @@ export function MessageInput({
         onCancelEditAction?.();
         setText("");
       } else if (hasFiles) {
-        await onAttachAction?.(pending.map((p) => p.file), value);
+        await onAttachAction?.(
+          pending.map((p) => p.file),
+          value,
+        );
         pending.forEach((p) => {
           if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
         });
@@ -188,8 +185,7 @@ export function MessageInput({
           <CornerUpLeft size={14} className="text-(--accent) shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
             <div className="text-[10px] text-(--text-muted)">
-              Ответ{" "}
-              {replyTo.user?.full_name ?? replyTo.user?.username ?? "—"}
+              Ответ {replyTo.user?.full_name ?? replyTo.user?.username ?? "—"}
             </div>
             <div className="text-xs text-(--text-primary) truncate">
               {replyTo.content.slice(0, 100)}
@@ -313,7 +309,9 @@ export function MessageInput({
         <button
           type="button"
           onClick={handleSend}
-          disabled={(!text.trim() && pending.length === 0) || sending || disabled}
+          disabled={
+            (!text.trim() && pending.length === 0) || sending || disabled
+          }
           className="shrink-0 p-2 rounded-lg bg-(--accent) text-(--bg-card) hover:opacity-90 disabled:opacity-50 transition-opacity"
           title={editing ? "Сохранить (Enter)" : "Отправить (Enter)"}
         >

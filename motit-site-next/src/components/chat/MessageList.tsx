@@ -31,7 +31,10 @@ export function MessageList({
   onReplyAction?: (message: ChatMessageItem) => void;
   onCopyAction?: (message: ChatMessageItem) => void;
   onEditAction?: (message: ChatMessageItem) => void;
-  onDeleteAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
+  onDeleteAction?: (
+    message: ChatMessageItem,
+    scope: "self" | "everyone",
+  ) => void;
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
   onPinAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
@@ -67,7 +70,9 @@ export function MessageList({
     for (const m of uniqueMessages) {
       if (!m.created_at) continue;
       const d =
-        typeof m.created_at === "string" ? new Date(m.created_at) : m.created_at;
+        typeof m.created_at === "string"
+          ? new Date(m.created_at)
+          : m.created_at;
       const key = dayKey(d);
 
       if (key !== lastDay) {
@@ -85,7 +90,8 @@ export function MessageList({
     if (!container) return;
 
     const isNearBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      150;
 
     if (isNearBottom) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -157,7 +163,7 @@ export function MessageList({
                   isPinned={pinnedUuids?.has(item.message.uuid)}
                   replyToMessage={
                     item.message.reply_to_uuid
-                      ? messagesByUuid.get(item.message.reply_to_uuid) ?? null
+                      ? (messagesByUuid.get(item.message.reply_to_uuid) ?? null)
                       : null
                   }
                   onReplyAction={onReplyAction}

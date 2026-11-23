@@ -3,7 +3,14 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { FileText, ExternalLink, X, Film, Music, FileArchive } from "lucide-react";
+import {
+  FileText,
+  ExternalLink,
+  X,
+  Film,
+  Music,
+  FileArchive,
+} from "lucide-react";
 import type { ChatMessageItem } from "@/lib/db/chat";
 import type { PreviewFile } from "./MediaPreviewModal";
 

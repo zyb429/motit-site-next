@@ -27,7 +27,9 @@ export function DeleteMessageDialog({
     <div className="fixed inset-0 z-110 bg-black/50 flex items-center justify-center p-4">
       <div className="bg-(--bg-card) border border-(--border) rounded-xl w-full max-w-sm">
         <div className="p-4 border-b border-(--border)">
-          <h3 className="text-sm font-semibold text-(--text-primary)">Удалить сообщение?</h3>
+          <h3 className="text-sm font-semibold text-(--text-primary)">
+            Удалить сообщение?
+          </h3>
         </div>
         <div className="p-2">
           <button

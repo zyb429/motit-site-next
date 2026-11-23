@@ -43,7 +43,10 @@ type ChatWindowProps = {
   onEditAction?: (message: ChatMessageItem) => void;
   onCancelEditAction?: () => void;
   onEditSubmitAction?: (messageUuid: string, content: string) => Promise<void>;
-  onDeleteAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
+  onDeleteAction?: (
+    message: ChatMessageItem,
+    scope: "self" | "everyone",
+  ) => void;
   onCopyAction?: (message: ChatMessageItem) => void;
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;

@@ -15,7 +15,8 @@ import { serialize } from "@/lib/serialize";
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const chats = await listChatsForUser(user.uuid);
   return NextResponse.json({ data: serialize(chats) });
@@ -65,11 +66,15 @@ async function notifyNewChat(chatUuid: string, createdByUuid: string) {
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const parsed = createSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: z.flattenError(parsed.error) }, { status: 400 });
+    return NextResponse.json(
+      { error: z.flattenError(parsed.error) },
+      { status: 400 },
+    );
   }
 
   try {

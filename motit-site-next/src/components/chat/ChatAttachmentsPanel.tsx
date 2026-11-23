@@ -41,12 +41,15 @@ function hrefFor(url: string): string {
   return `https://${url}`;
 }
 
-function classify(mime: string | null): "image" | "video" | "audio" | "doc" | "other" {
+function classify(
+  mime: string | null,
+): "image" | "video" | "audio" | "doc" | "other" {
   if (!mime) return "other";
   if (mime.startsWith("image/")) return "image";
   if (mime.startsWith("video/")) return "video";
   if (mime.startsWith("audio/")) return "audio";
-  if (mime === "application/pdf" || mime.startsWith("application/")) return "doc";
+  if (mime === "application/pdf" || mime.startsWith("application/"))
+    return "doc";
   return "other";
 }
 
@@ -86,7 +89,11 @@ function dateLabel(iso: string) {
 
   if (iso === today.toISOString().slice(0, 10)) return "Сегодня";
   if (iso === yesterday.toISOString().slice(0, 10)) return "Вчера";
-  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+  return d.toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 export function ChatAttachmentsPanel({
@@ -108,7 +115,8 @@ export function ChatAttachmentsPanel({
   useEffect(() => {
     if (!ctxMenu) return;
     function onDocClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setCtxMenu(null);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setCtxMenu(null);
     }
     function onEsc(e: KeyboardEvent) {
       if (e.key === "Escape") setCtxMenu(null);
@@ -129,7 +137,11 @@ export function ChatAttachmentsPanel({
       const c = container.getBoundingClientRect();
       const a = active.getBoundingClientRect();
       if (a.left < c.left || a.right > c.right) {
-        active.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        active.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
       }
     }
   }, [tab]);
@@ -140,7 +152,10 @@ export function ChatAttachmentsPanel({
       if (m.deleted_at) continue;
       if (!m.created_at) continue;
       if (!m.attachments || m.attachments.length === 0) continue;
-      const d = typeof m.created_at === "string" ? new Date(m.created_at) : m.created_at;
+      const d =
+        typeof m.created_at === "string"
+          ? new Date(m.created_at)
+          : m.created_at;
       for (const a of m.attachments) rows.push({ date: d, att: a, message: m });
     }
     return rows;
@@ -152,7 +167,10 @@ export function ChatAttachmentsPanel({
       if (m.deleted_at) continue;
       if (!m.created_at) continue;
       if (!m.content) continue;
-      const d = typeof m.created_at === "string" ? new Date(m.created_at) : m.created_at;
+      const d =
+        typeof m.created_at === "string"
+          ? new Date(m.created_at)
+          : m.created_at;
       const seen = new Set<string>();
       for (const match of m.content.matchAll(URL_REGEX)) {
         const raw = match[0].replace(/[.,!?;:)\]}]+$/, "");
@@ -167,7 +185,10 @@ export function ChatAttachmentsPanel({
   }, [messages]);
 
   const counts = useMemo(() => {
-    let media = 0, video = 0, files = 0, voice = 0;
+    let media = 0,
+      video = 0,
+      files = 0,
+      voice = 0;
     for (const { att } of allAttachments) {
       const kind = classify(att.file.mime);
       if (kind === "image") media++;
@@ -175,7 +196,14 @@ export function ChatAttachmentsPanel({
       else if (kind === "audio") voice++;
       else if (kind === "doc" || kind === "other") files++;
     }
-    return { all: allAttachments.length, media, video, files, voice, links: linkRows.length };
+    return {
+      all: allAttachments.length,
+      media,
+      video,
+      files,
+      voice,
+      links: linkRows.length,
+    };
   }, [allAttachments, linkRows.length]);
 
   const filtered = useMemo(() => {
@@ -192,7 +220,10 @@ export function ChatAttachmentsPanel({
   }, [allAttachments, tab]);
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
-  const groupedLinks = useMemo(() => (tab === "links" ? groupByDate(linkRows) : []), [tab, linkRows]);
+  const groupedLinks = useMemo(
+    () => (tab === "links" ? groupByDate(linkRows) : []),
+    [tab, linkRows],
+  );
 
   const allPreviewFiles: PreviewFile[] = useMemo(
     () => allAttachments.map(({ att }) => toPreviewFile(att)),
@@ -200,12 +231,42 @@ export function ChatAttachmentsPanel({
   );
 
   const tabs = [
-    { key: "all" as Tab, label: "Все", icon: <LayoutGrid size={14} />, count: counts.all },
-    { key: "media" as Tab, label: "Фото", icon: <ImageIcon size={14} />, count: counts.media },
-    { key: "video" as Tab, label: "Видео", icon: <Film size={14} />, count: counts.video },
-    { key: "files" as Tab, label: "Файлы", icon: <FileText size={14} />, count: counts.files },
-    { key: "voice" as Tab, label: "Аудио", icon: <Music size={14} />, count: counts.voice },
-    { key: "links" as Tab, label: "Ссылки", icon: <ExternalLink size={14} />, count: counts.links },
+    {
+      key: "all" as Tab,
+      label: "Все",
+      icon: <LayoutGrid size={14} />,
+      count: counts.all,
+    },
+    {
+      key: "media" as Tab,
+      label: "Фото",
+      icon: <ImageIcon size={14} />,
+      count: counts.media,
+    },
+    {
+      key: "video" as Tab,
+      label: "Видео",
+      icon: <Film size={14} />,
+      count: counts.video,
+    },
+    {
+      key: "files" as Tab,
+      label: "Файлы",
+      icon: <FileText size={14} />,
+      count: counts.files,
+    },
+    {
+      key: "voice" as Tab,
+      label: "Аудио",
+      icon: <Music size={14} />,
+      count: counts.voice,
+    },
+    {
+      key: "links" as Tab,
+      label: "Ссылки",
+      icon: <ExternalLink size={14} />,
+      count: counts.links,
+    },
   ];
 
   function openAttachmentCtx(e: React.MouseEvent, row: Row) {
@@ -228,25 +289,40 @@ export function ChatAttachmentsPanel({
 
   async function copyLink() {
     if (!ctxMenu) return;
-    const url = ctxMenu.kind === "attachment" ? ctxMenu.row.att.file.url : ctxMenu.row.url;
+    const url =
+      ctxMenu.kind === "attachment"
+        ? ctxMenu.row.att.file.url
+        : ctxMenu.row.url;
     try {
       await navigator.clipboard.writeText(url);
     } catch {}
     setCtxMenu(null);
   }
 
-  const isEmpty = tab === "links" ? groupedLinks.length === 0 : grouped.length === 0;
+  const isEmpty =
+    tab === "links" ? groupedLinks.length === 0 : grouped.length === 0;
 
   return (
     <aside className="fixed inset-0 z-50 w-full lg:static lg:inset-auto lg:z-20 lg:w-[380px] shrink-0 h-full min-h-0 flex flex-col border-l border-(--border) bg-(--bg-card)">
       {/* Хедер */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-(--border)">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-(--text-primary)">Вложения</h3>
+          <h3 className="text-sm font-semibold text-(--text-primary)">
+            Вложения
+          </h3>
           <p className="text-[11px] text-(--text-muted)">
-            {counts.all} {counts.all === 1 ? "файл" : counts.all < 5 ? "файла" : "файлов"}
+            {counts.all}{" "}
+            {counts.all === 1 ? "файл" : counts.all < 5 ? "файла" : "файлов"}
             {counts.links > 0 && (
-              <> · {counts.links} {counts.links === 1 ? "ссылка" : counts.links < 5 ? "ссылки" : "ссылок"}</>
+              <>
+                {" "}
+                · {counts.links}{" "}
+                {counts.links === 1
+                  ? "ссылка"
+                  : counts.links < 5
+                    ? "ссылки"
+                    : "ссылок"}
+              </>
             )}
           </p>
         </div>
@@ -265,9 +341,16 @@ export function ChatAttachmentsPanel({
         <div
           ref={tabsRef}
           className="flex gap-1 p-2 overflow-x-auto"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+          style={{
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            WebkitOverflowScrolling: "touch",
+          }}
           onWheel={(e) => {
-            if (e.deltaY !== 0 && e.currentTarget.scrollWidth > e.currentTarget.clientWidth) {
+            if (
+              e.deltaY !== 0 &&
+              e.currentTarget.scrollWidth > e.currentTarget.clientWidth
+            ) {
               e.currentTarget.scrollLeft += e.deltaY;
             }
           }}
@@ -279,7 +362,9 @@ export function ChatAttachmentsPanel({
               type="button"
               onClick={() => setTab(t.key)}
               className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-colors ${
-                tab === t.key ? "bg-(--accent) text-white" : "text-(--text-muted) hover:bg-(--bg-primary)"
+                tab === t.key
+                  ? "bg-(--accent) text-white"
+                  : "text-(--text-muted) hover:bg-(--bg-primary)"
               }`}
             >
               {t.icon}
@@ -287,7 +372,9 @@ export function ChatAttachmentsPanel({
               {t.count > 0 && (
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                    tab === t.key ? "bg-white/20 text-white" : "bg-(--bg-secondary) text-(--text-muted)"
+                    tab === t.key
+                      ? "bg-white/20 text-white"
+                      : "bg-(--bg-secondary) text-(--text-muted)"
                   }`}
                 >
                   {t.count}
@@ -316,7 +403,9 @@ export function ChatAttachmentsPanel({
         {tab === "links" &&
           groupedLinks.map(([iso, items]) => (
             <div key={iso} className="mb-4">
-              <div className="text-xs font-medium text-(--text-muted) mb-2 px-1">{dateLabel(iso)}</div>
+              <div className="text-xs font-medium text-(--text-muted) mb-2 px-1">
+                {dateLabel(iso)}
+              </div>
               <div className="space-y-1">
                 {items.map((row, idx) => (
                   <a
@@ -331,9 +420,13 @@ export function ChatAttachmentsPanel({
                       <ExternalLink size={14} className="text-(--accent)" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-(--text-primary) truncate group-hover:underline">{row.url}</p>
+                      <p className="text-xs font-medium text-(--text-primary) truncate group-hover:underline">
+                        {row.url}
+                      </p>
                       <p className="text-[10px] text-(--text-muted) truncate">
-                        {row.message.user?.full_name ?? row.message.user?.username ?? "—"}
+                        {row.message.user?.full_name ??
+                          row.message.user?.username ??
+                          "—"}
                       </p>
                     </div>
                   </a>
@@ -356,105 +449,126 @@ export function ChatAttachmentsPanel({
 
             return (
               <div key={iso} className="mb-4">
-                <div className="text-xs font-medium text-(--text-muted) mb-2 px-1">{dateLabel(iso)}</div>
+                <div className="text-xs font-medium text-(--text-muted) mb-2 px-1">
+                  {dateLabel(iso)}
+                </div>
 
-                {(tab === "all" || tab === "media" || tab === "video") && visual.length > 0 && (
-                  <div className="grid grid-cols-3 gap-1 sm:gap-1.5 mb-2">
-                    {visual.map((row) => {
-                    const a = row.att;
-                    const preview = toPreviewFile(a);
-                    const isVid = classify(a.file.mime) === "video";
-                    return (
-                        <button
-                        key={a.uuid}
-                        type="button"
-                        onClick={() => onPreviewFileAction?.(preview, allPreviewFiles)}
-                        onContextMenu={(e) => openAttachmentCtx(e, row)}
-                        className="relative aspect-square rounded-md overflow-hidden bg-(--bg-primary) group"
-                        >
-                        {isVid ? (
-                            <>
-                            <video
-                                src={a.file.url}
-                                muted
-                                playsInline
-                                preload="metadata"
-                                className="w-full h-full object-cover"
-                                // Показываем первый кадр
-                                onLoadedMetadata={(e) => {
-                                (e.target as HTMLVideoElement).currentTime = 0.1;
-                                }}
-                            />
-                            {/* Иконка воспроизведения поверх */}
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-                                <div className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
-                                <Film size={16} className="text-black/80 ml-0.5" />
-                                </div>
-                            </div>
-                            {a.file.size && (
-                                <span className="absolute bottom-1 right-1 text-[9px] text-white bg-black/50 px-1 rounded">
-                                {formatSize(a.file.size)}
-                                </span>
-                            )}
-                            </>
-                        ) : (
-                            <Image
-                            src={a.file.url}
-                            alt={a.file.name}
-                            fill
-                            sizes="(max-width: 1024px) 33vw, 120px"
-                            className="object-cover group-hover:scale-105 transition-transform"
-                            />
-                        )}
-                        </button>
-                    );
-                    })}
-                  </div>
-                )}
-
-                {(tab === "all" || tab === "files" || tab === "voice") && docs.length > 0 && (
-                  <div className="space-y-1">
-                    {docs.map((row) => {
-                      const a = row.att;
-                      const kind = classify(a.file.mime);
-                      const Icon = kind === "audio" ? Music : kind === "doc" ? FileText : FileArchive;
-                      const preview = toPreviewFile(a);
-
-                      return (
-                        <div
-                          key={a.uuid}
-                          onContextMenu={(e) => openAttachmentCtx(e, row)}
-                          className="flex items-center gap-2 p-2 rounded-md bg-(--bg-primary) hover:bg-(--bg-secondary) transition-colors group"
-                        >
+                {(tab === "all" || tab === "media" || tab === "video") &&
+                  visual.length > 0 && (
+                    <div className="grid grid-cols-3 gap-1 sm:gap-1.5 mb-2">
+                      {visual.map((row) => {
+                        const a = row.att;
+                        const preview = toPreviewFile(a);
+                        const isVid = classify(a.file.mime) === "video";
+                        return (
                           <button
+                            key={a.uuid}
                             type="button"
-                            onClick={() => onPreviewFileAction?.(preview, allPreviewFiles)}
-                            className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                            onClick={() =>
+                              onPreviewFileAction?.(preview, allPreviewFiles)
+                            }
+                            onContextMenu={(e) => openAttachmentCtx(e, row)}
+                            className="relative aspect-square rounded-md overflow-hidden bg-(--bg-primary) group"
                           >
-                            <div className="w-8 h-8 rounded-md bg-(--accent-dim) flex items-center justify-center shrink-0">
-                              <Icon size={14} className="text-(--accent)" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-(--text-primary) truncate">{a.file.name}</p>
-                              <p className="text-[10px] text-(--text-muted)">{formatSize(a.file.size)}</p>
-                            </div>
+                            {isVid ? (
+                              <>
+                                <video
+                                  src={a.file.url}
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                  className="w-full h-full object-cover"
+                                  // Показываем первый кадр
+                                  onLoadedMetadata={(e) => {
+                                    (e.target as HTMLVideoElement).currentTime =
+                                      0.1;
+                                  }}
+                                />
+                                {/* Иконка воспроизведения поверх */}
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                                  <div className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
+                                    <Film
+                                      size={16}
+                                      className="text-black/80 ml-0.5"
+                                    />
+                                  </div>
+                                </div>
+                                {a.file.size && (
+                                  <span className="absolute bottom-1 right-1 text-[9px] text-white bg-black/50 px-1 rounded">
+                                    {formatSize(a.file.size)}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <Image
+                                src={a.file.url}
+                                alt={a.file.name}
+                                fill
+                                sizes="(max-width: 1024px) 33vw, 120px"
+                                className="object-cover group-hover:scale-105 transition-transform"
+                              />
+                            )}
                           </button>
-                          <a
-                            href={a.file.url}
-                            download={a.file.name}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1.5 rounded-md text-(--text-muted) hover:text-(--accent) hover:bg-(--bg-primary) transition-colors"
-                            aria-label="Скачать"
-                            onClick={(e) => e.stopPropagation()}
+                        );
+                      })}
+                    </div>
+                  )}
+
+                {(tab === "all" || tab === "files" || tab === "voice") &&
+                  docs.length > 0 && (
+                    <div className="space-y-1">
+                      {docs.map((row) => {
+                        const a = row.att;
+                        const kind = classify(a.file.mime);
+                        const Icon =
+                          kind === "audio"
+                            ? Music
+                            : kind === "doc"
+                              ? FileText
+                              : FileArchive;
+                        const preview = toPreviewFile(a);
+
+                        return (
+                          <div
+                            key={a.uuid}
+                            onContextMenu={(e) => openAttachmentCtx(e, row)}
+                            className="flex items-center gap-2 p-2 rounded-md bg-(--bg-primary) hover:bg-(--bg-secondary) transition-colors group"
                           >
-                            <Download size={14} />
-                          </a>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onPreviewFileAction?.(preview, allPreviewFiles)
+                              }
+                              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                            >
+                              <div className="w-8 h-8 rounded-md bg-(--accent-dim) flex items-center justify-center shrink-0">
+                                <Icon size={14} className="text-(--accent)" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-(--text-primary) truncate">
+                                  {a.file.name}
+                                </p>
+                                <p className="text-[10px] text-(--text-muted)">
+                                  {formatSize(a.file.size)}
+                                </p>
+                              </div>
+                            </button>
+                            <a
+                              href={a.file.url}
+                              download={a.file.name}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-md text-(--text-muted) hover:text-(--accent) hover:bg-(--bg-primary) transition-colors"
+                              aria-label="Скачать"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Download size={14} />
+                            </a>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
               </div>
             );
           })}
@@ -491,7 +605,9 @@ export function ChatAttachmentsPanel({
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left text-(--text-primary) hover:bg-(--bg-primary) transition-colors"
             >
               <Copy size={15} />
-              {ctxMenu.kind === "link" ? "Скопировать ссылку" : "Скопировать URL файла"}
+              {ctxMenu.kind === "link"
+                ? "Скопировать ссылку"
+                : "Скопировать URL файла"}
             </button>
           </div>,
           document.body,

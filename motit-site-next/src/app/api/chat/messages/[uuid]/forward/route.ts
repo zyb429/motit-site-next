@@ -16,7 +16,8 @@ export async function POST(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
   const parsed = schema.safeParse(await req.json());
@@ -38,7 +39,12 @@ export async function POST(
         orderBy: { created_at: "desc" },
         include: {
           user: {
-            select: { uuid: true, full_name: true, username: true, avatar_url: true },
+            select: {
+              uuid: true,
+              full_name: true,
+              username: true,
+              avatar_url: true,
+            },
           },
           attachments: { include: { file: true } },
           reactions: { select: { emoji: true, user_uuid: true } },
@@ -60,4 +66,3 @@ export async function POST(
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 }
-

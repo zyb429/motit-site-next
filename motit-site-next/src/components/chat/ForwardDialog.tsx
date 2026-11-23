@@ -27,8 +27,8 @@ export function ForwardDialog({
       const other = c.members.find((m) => m.user.uuid !== currentUserUuid);
       const name =
         c.kind === "direct"
-          ? other?.user.full_name ?? other?.user.username ?? ""
-          : c.name ?? "";
+          ? (other?.user.full_name ?? other?.user.username ?? "")
+          : (c.name ?? "");
       return name.toLowerCase().includes(q);
     });
   }, [chats, search, currentUserUuid]);
@@ -65,7 +65,9 @@ export function ForwardDialog({
     <div className="fixed inset-0 z-120 bg-black/50 flex items-center justify-center p-4">
       <div className="bg-(--bg-card) border border-(--border) rounded-xl w-full max-w-md max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-(--border)">
-          <h3 className="text-sm font-semibold text-(--text-primary)">Переслать в…</h3>
+          <h3 className="text-sm font-semibold text-(--text-primary)">
+            Переслать в…
+          </h3>
           <button
             type="button"
             onClick={onCloseAction}
@@ -114,7 +116,9 @@ export function ForwardDialog({
                         : "border-(--border)"
                     }`}
                   >
-                    {isSelected && <Check size={14} className="text-(--bg-card)" />}
+                    {isSelected && (
+                      <Check size={14} className="text-(--bg-card)" />
+                    )}
                   </div>
                   <div className="text-sm text-(--text-primary) truncate">
                     {chatName(c)}

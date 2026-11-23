@@ -173,13 +173,15 @@ export function ChatView({
               attachments: msg.attachments ?? [],
               reactions: [],
               read_receipts: [],
-              forwarded_from_message_uuid: msg.forwarded_from_message_uuid ?? null,
+              forwarded_from_message_uuid:
+                msg.forwarded_from_message_uuid ?? null,
               forwarded_from_chat_uuid: msg.forwarded_from_chat_uuid ?? null,
               forwarded_from_user_uuid: msg.forwarded_from_user_uuid ?? null,
             },
           ]),
         );
-        if (typeof document !== "undefined" && document.hasFocus()) markAsRead();
+        if (typeof document !== "undefined" && document.hasFocus())
+          markAsRead();
       },
       [currentUserUuid, markAsRead, addMessages],
     ),
@@ -189,12 +191,15 @@ export function ChatView({
         setTypingUsers((prev) => {
           if (payload.typing && !prev.includes(payload.userUuid))
             return [...prev, payload.userUuid];
-          if (!payload.typing) return prev.filter((u) => u !== payload.userUuid);
+          if (!payload.typing)
+            return prev.filter((u) => u !== payload.userUuid);
           return prev;
         });
         if (payload.typing) {
           setTimeout(() => {
-            setTypingUsers((prev) => prev.filter((u) => u !== payload.userUuid));
+            setTypingUsers((prev) =>
+              prev.filter((u) => u !== payload.userUuid),
+            );
           }, 3000);
         }
       },
@@ -214,7 +219,10 @@ export function ChatView({
               ...m,
               read_receipts: [
                 ...m.read_receipts,
-                { user_uuid: payload.userUuid, read_at: new Date(payload.readAt) },
+                {
+                  user_uuid: payload.userUuid,
+                  read_at: new Date(payload.readAt),
+                },
               ],
             };
           }),
@@ -225,7 +233,11 @@ export function ChatView({
     onDeletedAction: useCallback(
       (payload: {
         messageUuid: string;
-        deletedBy?: { uuid: string; full_name: string | null; username: string | null };
+        deletedBy?: {
+          uuid: string;
+          full_name: string | null;
+          username: string | null;
+        };
       }) => {
         setMessages((prev) =>
           prev.map((m) =>
@@ -242,46 +254,43 @@ export function ChatView({
       },
       [],
     ),
-    onEditedAction: useCallback(
-      (payload: MessageEditedPayload) => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.uuid === payload.message.uuid
-              ? { ...m, ...payload.message, edited_at: new Date(payload.message.edited_at) }
-              : m,
-          ),
+    onEditedAction: useCallback((payload: MessageEditedPayload) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.uuid === payload.message.uuid
+            ? {
+                ...m,
+                ...payload.message,
+                edited_at: new Date(payload.message.edited_at),
+              }
+            : m,
+        ),
+      );
+    }, []),
+    onPinnedAction: useCallback((payload: MessagePinnedPayload) => {
+      setPinned((prev) => {
+        const filtered = prev.filter(
+          (p) =>
+            !(p.scope === "everyone" && p.message.uuid === payload.messageUuid),
         );
-      },
-      [],
-    ),
-    onPinnedAction: useCallback(
-      (payload: MessagePinnedPayload) => {
-        setPinned((prev) => {
-          const filtered = prev.filter(
-            (p) => !(p.scope === "everyone" && p.message.uuid === payload.messageUuid),
-          );
-          const newPin: PinnedMessageItem = {
-            uuid: payload.messageUuid,
-            scope: "everyone",
-            message: payload.message as unknown as ChatMessageItem,
-            pinned_by: null,
-            pinned_at: new Date(payload.pinnedAt),
-          };
-          return [newPin, ...filtered];
-        });
-      },
-      [],
-    ),
-    onUnpinnedAction: useCallback(
-      (payload: MessageUnpinnedPayload) => {
-        setPinned((prev) =>
-          prev.filter(
-            (p) => !(p.scope === "everyone" && p.message.uuid === payload.messageUuid),
-          ),
-        );
-      },
-      [],
-    ),
+        const newPin: PinnedMessageItem = {
+          uuid: payload.messageUuid,
+          scope: "everyone",
+          message: payload.message as unknown as ChatMessageItem,
+          pinned_by: null,
+          pinned_at: new Date(payload.pinnedAt),
+        };
+        return [newPin, ...filtered];
+      });
+    }, []),
+    onUnpinnedAction: useCallback((payload: MessageUnpinnedPayload) => {
+      setPinned((prev) =>
+        prev.filter(
+          (p) =>
+            !(p.scope === "everyone" && p.message.uuid === payload.messageUuid),
+        ),
+      );
+    }, []),
     onChatRemovedAction: useCallback(
       (payload: { event: "chat:removed"; chatUuid: string }) => {
         if (payload.chatUuid === chat.uuid) {

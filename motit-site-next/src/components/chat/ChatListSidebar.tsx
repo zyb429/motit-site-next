@@ -64,8 +64,8 @@ export function ChatListSidebar({
             // Для обычных сообщений всегда используем msg.user.
             const nextUser =
               msg.kind === "system" || msg.kind === "status_change"
-                ? msg.user ?? c.last_message?.user ?? null
-                : msg.user ?? null;
+                ? (msg.user ?? c.last_message?.user ?? null)
+                : (msg.user ?? null);
 
             return {
               ...c,
@@ -73,11 +73,7 @@ export function ChatListSidebar({
               unread_count: isMine ? c.unread_count : c.unread_count + 1,
               last_message: {
                 content: msg.content,
-                kind: msg.kind as
-                  | "text"
-                  | "file"
-                  | "system"
-                  | "status_change",
+                kind: msg.kind as "text" | "file" | "system" | "status_change",
                 created_at: new Date(msg.created_at),
                 user: nextUser,
               },
@@ -174,9 +170,7 @@ export function ChatListSidebar({
     });
     if (!res.ok) {
       setChats((prev) =>
-        prev.map((c) =>
-          c.uuid === chat.uuid ? { ...c, is_muted: !next } : c,
-        ),
+        prev.map((c) => (c.uuid === chat.uuid ? { ...c, is_muted: !next } : c)),
       );
     }
   }

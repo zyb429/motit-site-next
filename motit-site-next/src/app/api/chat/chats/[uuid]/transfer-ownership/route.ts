@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { transferOwnership } from "@/lib/db/chat";
 
 const schema = z.object({
-  toUuid: z.uuid(),   // Zod v4
+  toUuid: z.uuid(), // Zod v4
 });
 
 export async function POST(
@@ -39,4 +39,3 @@ export async function POST(
     );
   }
 }
-

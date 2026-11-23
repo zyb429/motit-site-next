@@ -7,12 +7,7 @@ import { serialize } from "@/lib/serialize";
 // Типы
 // --------------------------------------------
 export type ChatKind =
-  | "direct"
-  | "group"
-  | "channel"
-  | "private_channel"
-  | "ticket"
-  | "saved";
+  "direct" | "group" | "channel" | "private_channel" | "ticket" | "saved";
 export type ChatMemberRole = "owner" | "admin" | "member";
 export type MessageKind = "text" | "file" | "system" | "status_change";
 
@@ -33,7 +28,11 @@ export type ChatListItem = {
     content: string;
     kind: MessageKind;
     created_at: Date | null;
-    user: { uuid: string; full_name: string | null; username: string | null } | null;
+    user: {
+      uuid: string;
+      full_name: string | null;
+      username: string | null;
+    } | null;
   } | null;
   // участники (для direct — собеседник)
   members: Array<{
@@ -55,7 +54,11 @@ export type ChatMessageItem = {
   reply_to_uuid: string | null;
   edited_at: Date | null;
   deleted_at: Date | null;
-  deleted_by?: { uuid: string; full_name: string | null; username: string | null } | null;
+  deleted_by?: {
+    uuid: string;
+    full_name: string | null;
+    username: string | null;
+  } | null;
   created_at: Date | null;
   user: {
     uuid: string;
@@ -101,16 +104,20 @@ export type PinnedMessageItem = {
 // --------------------------------------------
 async function assertChatMember(chatUuid: string, userUuid: string) {
   const member = await prisma.chat_members.findUnique({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+    where: {
+      chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+    },
   });
   if (!member) throw new Error("Нет доступа к этому чату");
   return member;
-};
+}
 
 // --------------------------------------------
 // Список чатов пользователя
 // --------------------------------------------
-export async function listChatsForUser(userUuid: string): Promise<ChatListItem[]> {
+export async function listChatsForUser(
+  userUuid: string,
+): Promise<ChatListItem[]> {
   const memberships = await prisma.chat_members.findMany({
     where: {
       user_uuid: userUuid,
@@ -143,10 +150,7 @@ export async function listChatsForUser(userUuid: string): Promise<ChatListItem[]
         },
       },
     },
-    orderBy: [
-      { is_pinned: "desc" },
-      { chat: { last_message_at: "desc" } },
-    ],
+    orderBy: [{ is_pinned: "desc" }, { chat: { last_message_at: "desc" } }],
   });
 
   return memberships.map((m) => {
@@ -182,7 +186,7 @@ export async function listChatsForUser(userUuid: string): Promise<ChatListItem[]
       })),
     };
   });
-};
+}
 
 // --------------------------------------------
 // Детали чата
@@ -299,7 +303,9 @@ export async function getChatByUuid(
       is_pinned: m.is_pinned,
       joined_at: m.joined_at,
     })),
-    ticket: chat.ticket ? { uuid: chat.ticket.uuid, title: chat.ticket.title } : null,
+    ticket: chat.ticket
+      ? { uuid: chat.ticket.uuid, title: chat.ticket.title }
+      : null,
   };
 }
 
@@ -333,14 +339,24 @@ export async function getOrCreateDirectChat(userA: string, userB: string) {
 
     await tx.chat_members.createMany({
       data: [
-        { uuid: randomUUID(), chat_uuid: chat.uuid, user_uuid: userA, role: "member" },
-        { uuid: randomUUID(), chat_uuid: chat.uuid, user_uuid: userB, role: "member" },
+        {
+          uuid: randomUUID(),
+          chat_uuid: chat.uuid,
+          user_uuid: userA,
+          role: "member",
+        },
+        {
+          uuid: randomUUID(),
+          chat_uuid: chat.uuid,
+          user_uuid: userB,
+          role: "member",
+        },
       ],
     });
 
     return serialize(chat);
   });
-};
+}
 
 // --------------------------------------------
 // Группа
@@ -356,8 +372,11 @@ export async function createGroupChat(params: {
   if (!name.trim()) throw new Error("Укажите название группы");
 
   // Убираем дубликаты + самого создателя
-  const uniqueMembers = [...new Set(memberUuids.filter((u) => u !== creatorUuid))];
-  if (uniqueMembers.length === 0) throw new Error("Добавьте хотя бы одного участника");
+  const uniqueMembers = [
+    ...new Set(memberUuids.filter((u) => u !== creatorUuid)),
+  ];
+  if (uniqueMembers.length === 0)
+    throw new Error("Добавьте хотя бы одного участника");
 
   return prisma.$transaction(async (tx) => {
     const chat = await tx.chats.create({
@@ -374,7 +393,12 @@ export async function createGroupChat(params: {
 
     await tx.chat_members.createMany({
       data: [
-        { uuid: randomUUID(), chat_uuid: chat.uuid, user_uuid: creatorUuid, role: "owner" },
+        {
+          uuid: randomUUID(),
+          chat_uuid: chat.uuid,
+          user_uuid: creatorUuid,
+          role: "owner",
+        },
         ...uniqueMembers.map((uuid) => ({
           uuid: randomUUID(),
           chat_uuid: chat.uuid,
@@ -386,7 +410,7 @@ export async function createGroupChat(params: {
 
     return serialize(chat);
   });
-};
+}
 
 // --------------------------------------------
 // Канал (публичный или приватный)
@@ -425,7 +449,7 @@ export async function createChannel(params: {
 
     return serialize(chat);
   });
-};
+}
 
 // --------------------------------------------
 // Сообщения: чтение с пагинацией
@@ -461,12 +485,25 @@ export async function getMessages(
     take: limit,
     include: {
       user: {
-        select: { uuid: true, full_name: true, username: true, avatar_url: true, avatar: { select: { url: true } } },
+        select: {
+          uuid: true,
+          full_name: true,
+          username: true,
+          avatar_url: true,
+          avatar: { select: { url: true } },
+        },
       },
       attachments: {
         include: {
           file: {
-            select: { id: true, uuid: true, name: true, url: true, mime: true, size: true },
+            select: {
+              id: true,
+              uuid: true,
+              name: true,
+              url: true,
+              mime: true,
+              size: true,
+            },
           },
         },
       },
@@ -519,7 +556,14 @@ export async function sendMessage(params: {
   replyToUuid?: string;
   attachmentFileIds?: number[];
 }): Promise<ChatMessageItem> {
-  const { chatUuid, userUuid, content, kind = "text", replyToUuid, attachmentFileIds } = params;
+  const {
+    chatUuid,
+    userUuid,
+    content,
+    kind = "text",
+    replyToUuid,
+    attachmentFileIds,
+  } = params;
 
   if (!content.trim() && !attachmentFileIds?.length) {
     throw new Error("Пустое сообщение");
@@ -528,7 +572,9 @@ export async function sendMessage(params: {
   return prisma.$transaction(async (tx) => {
     // Проверка членства
     const member = await tx.chat_members.findUnique({
-      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+      },
     });
     if (!member) throw new Error("Нет доступа к этому чату");
 
@@ -569,7 +615,14 @@ export async function sendMessage(params: {
         attachments: {
           include: {
             file: {
-              select: { id: true, uuid: true, name: true, url: true, mime: true, size: true },
+              select: {
+                id: true,
+                uuid: true,
+                name: true,
+                url: true,
+                mime: true,
+                size: true,
+              },
             },
           },
         },
@@ -592,7 +645,9 @@ export async function sendMessage(params: {
 
     // У автора unread_count = 0
     await tx.chat_members.update({
-      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+      },
       data: { last_read_at: now, unread_count: 0 },
     });
 
@@ -614,7 +669,10 @@ export async function sendMessage(params: {
               message.user.avatar_url ?? message.user.avatar?.url ?? null,
           }
         : null,
-      attachments: message.attachments.map((a) => ({ uuid: a.uuid, file: a.file })),
+      attachments: message.attachments.map((a) => ({
+        uuid: a.uuid,
+        file: a.file,
+      })),
       reactions: message.reactions,
       read_receipts: message.read_receipts,
       forwarded_from_message_uuid: message.forwarded_from_message_uuid,
@@ -622,7 +680,7 @@ export async function sendMessage(params: {
       forwarded_from_user_uuid: message.forwarded_from_user_uuid,
     };
   });
-};
+}
 
 // --------------------------------------------
 // Удаление сообщения
@@ -662,7 +720,10 @@ export async function deleteMessageForUser(
 
   await prisma.chat_message_deletions.upsert({
     where: {
-      message_uuid_user_uuid: { message_uuid: messageUuid, user_uuid: userUuid },
+      message_uuid_user_uuid: {
+        message_uuid: messageUuid,
+        user_uuid: userUuid,
+      },
     },
     create: {
       message_uuid: messageUuid,
@@ -672,7 +733,11 @@ export async function deleteMessageForUser(
     update: {},
   });
 
-  return { scope: "self" as const, chatUuid: message.chat_uuid, deletedBy: null };
+  return {
+    scope: "self" as const,
+    chatUuid: message.chat_uuid,
+    deletedBy: null,
+  };
 }
 
 // --------------------------------------------
@@ -699,7 +764,9 @@ export async function forwardMessage(params: {
 
   for (const chatUuid of targetChatUuids) {
     const member = await prisma.chat_members.findUnique({
-      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+      },
     });
     if (!member) continue;
 
@@ -739,7 +806,14 @@ export async function forwardMessage(params: {
         attachments: {
           include: {
             file: {
-              select: { id: true, uuid: true, name: true, url: true, mime: true, size: true },
+              select: {
+                id: true,
+                uuid: true,
+                name: true,
+                url: true,
+                mime: true,
+                size: true,
+              },
             },
           },
         },
@@ -772,14 +846,18 @@ export async function markChatAsRead(chatUuid: string, userUuid: string) {
 
   return prisma.$transaction(async (tx) => {
     const membership = await tx.chat_members.findUnique({
-      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+      },
     });
     if (!membership) {
       throw new Error("Вы больше не участник этого чата");
     }
 
     await tx.chat_members.update({
-      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+      },
       data: { last_read_at: now, unread_count: 0 },
     });
 
@@ -813,14 +891,18 @@ export async function markChatAsRead(chatUuid: string, userUuid: string) {
 // --------------------------------------------
 export async function markChatAsUnread(chatUuid: string, userUuid: string) {
   const membership = await prisma.chat_members.findUnique({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+    where: {
+      chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+    },
   });
   if (!membership) throw new Error("Нет доступа");
 
-  return serialize(await prisma.chat_members.update({
-    where: { id: membership.id },
-    data: { unread_count: Math.max(membership.unread_count, 1) },
-  }));
+  return serialize(
+    await prisma.chat_members.update({
+      where: { id: membership.id },
+      data: { unread_count: Math.max(membership.unread_count, 1) },
+    }),
+  );
 }
 
 // --------------------------------------------
@@ -858,7 +940,10 @@ function canPinForEveryone(
   memberRole: ChatMemberRole,
 ): { allowed: boolean; reason?: string } {
   if (chatKind === "saved") {
-    return { allowed: false, reason: "В Saved Messages закрепление недоступно" };
+    return {
+      allowed: false,
+      reason: "В Saved Messages закрепление недоступно",
+    };
   }
   if (chatKind === "direct" || chatKind === "ticket") {
     return { allowed: true };
@@ -932,10 +1017,14 @@ export async function removeChatMember(
 ) {
   const [by, target] = await Promise.all([
     prisma.chat_members.findUnique({
-      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: byUuid } },
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: byUuid },
+      },
     }),
     prisma.chat_members.findUnique({
-      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid } },
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid },
+      },
     }),
   ]);
 
@@ -962,10 +1051,13 @@ export async function removeChatMember(
     }),
   ]);
   const actorName = actor?.full_name ?? actor?.username ?? "Кто-то";
-  const targetName = targetUser?.full_name ?? targetUser?.username ?? "пользователя";
+  const targetName =
+    targetUser?.full_name ?? targetUser?.username ?? "пользователя";
 
   await prisma.chat_members.delete({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid } },
+    where: {
+      chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid },
+    },
   });
 
   const systemMessage = await createSystemMessage({
@@ -980,7 +1072,11 @@ export async function removeChatMember(
 // --------------------------------------------
 // Реакции
 // --------------------------------------------
-export async function toggleReaction(messageUuid: string, userUuid: string, emoji: string) {
+export async function toggleReaction(
+  messageUuid: string,
+  userUuid: string,
+  emoji: string,
+) {
   const existing = await prisma.chat_reactions.findUnique({
     where: {
       message_uuid_user_uuid_emoji: {
@@ -1005,7 +1101,7 @@ export async function toggleReaction(messageUuid: string, userUuid: string, emoj
     },
   });
   return { action: "added" as const };
-};
+}
 
 // --------------------------------------------
 // Поиск пользователей для добавления в чат
@@ -1044,7 +1140,7 @@ export async function searchUsersForChat(
     take: limit,
     orderBy: { full_name: "asc" },
   });
-};
+}
 
 // --------------------------------------------
 // Saved Messages — чат с самим собой
@@ -1110,17 +1206,19 @@ export async function updateChat(params: {
     throw new Error("Этот чат нельзя редактировать");
   }
 
-  return serialize(await prisma.chats.update({
-    where: { uuid: chatUuid },
-    data: {
-      ...(name !== undefined ? { name: name?.trim() || null } : {}),
-      ...(description !== undefined
-        ? { description: description?.trim() || null }
-        : {}),
-      ...(avatar_url !== undefined ? { avatar_url } : {}),
-      updated_at: new Date(),
-    },
-  }));
+  return serialize(
+    await prisma.chats.update({
+      where: { uuid: chatUuid },
+      data: {
+        ...(name !== undefined ? { name: name?.trim() || null } : {}),
+        ...(description !== undefined
+          ? { description: description?.trim() || null }
+          : {}),
+        ...(avatar_url !== undefined ? { avatar_url } : {}),
+        updated_at: new Date(),
+      },
+    }),
+  );
 }
 
 // --------------------------------------------
@@ -1132,7 +1230,9 @@ export async function deleteChat(
   scope?: "self" | "everyone",
 ) {
   const membership = await prisma.chat_members.findUnique({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+    where: {
+      chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+    },
   });
   if (!membership) throw new Error("Нет доступа");
 
@@ -1182,26 +1282,34 @@ export async function deleteChat(
 // --------------------------------------------
 export async function toggleMuteChat(chatUuid: string, userUuid: string) {
   const membership = await prisma.chat_members.findUnique({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+    where: {
+      chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+    },
   });
   if (!membership) throw new Error("Нет доступа");
 
-  return serialize(await prisma.chat_members.update({
-    where: { id: membership.id },
-    data: { is_muted: !membership.is_muted },
-  }));
+  return serialize(
+    await prisma.chat_members.update({
+      where: { id: membership.id },
+      data: { is_muted: !membership.is_muted },
+    }),
+  );
 }
 
 export async function togglePinChat(chatUuid: string, userUuid: string) {
   const membership = await prisma.chat_members.findUnique({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid } },
+    where: {
+      chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: userUuid },
+    },
   });
   if (!membership) throw new Error("Нет доступа");
 
-  return serialize(await prisma.chat_members.update({
-    where: { id: membership.id },
-    data: { is_pinned: !membership.is_pinned },
-  }));
+  return serialize(
+    await prisma.chat_members.update({
+      where: { id: membership.id },
+      data: { is_pinned: !membership.is_pinned },
+    }),
+  );
 }
 
 // --------------------------------------------
@@ -1217,10 +1325,14 @@ export async function changeMemberRole(params: {
 
   const [by, target] = await Promise.all([
     prisma.chat_members.findUnique({
-      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: byUuid } },
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: byUuid },
+      },
     }),
     prisma.chat_members.findUnique({
-      where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid } },
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid },
+      },
     }),
   ]);
 
@@ -1232,7 +1344,9 @@ export async function changeMemberRole(params: {
   }
 
   if ((role as string) === "owner") {
-    throw new Error("Передача владения возможна только через отдельную операцию");
+    throw new Error(
+      "Передача владения возможна только через отдельную операцию",
+    );
   }
 
   const check = canManageMember(by.role as ActorRole, target.role as ActorRole);
@@ -1245,10 +1359,14 @@ export async function changeMemberRole(params: {
     throw new Error("Админ не может снять другого админа");
   }
 
-  return serialize(await prisma.chat_members.update({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid } },
-    data: { role },
-  }));
+  return serialize(
+    await prisma.chat_members.update({
+      where: {
+        chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: targetUuid },
+      },
+      data: { role },
+    }),
+  );
 }
 
 // --------------------------------------------
@@ -1268,10 +1386,14 @@ export async function transferOwnership(params: {
   return prisma.$transaction(async (tx) => {
     const [from, to] = await Promise.all([
       tx.chat_members.findUnique({
-        where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: fromUuid } },
+        where: {
+          chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: fromUuid },
+        },
       }),
       tx.chat_members.findUnique({
-        where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: toUuid } },
+        where: {
+          chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: toUuid },
+        },
       }),
     ]);
 
@@ -1295,7 +1417,11 @@ export async function transferOwnership(params: {
     return {
       fromUuid,
       toUuid,
-      newOwner: { uuid: to.uuid, user_uuid: to.user_uuid, role: "owner" as const },
+      newOwner: {
+        uuid: to.uuid,
+        user_uuid: to.user_uuid,
+        role: "owner" as const,
+      },
     };
   });
 }
@@ -1384,7 +1510,14 @@ export async function pinMessage(params: {
       attachments: {
         include: {
           file: {
-            select: { id: true, uuid: true, name: true, url: true, mime: true, size: true },
+            select: {
+              id: true,
+              uuid: true,
+              name: true,
+              url: true,
+              mime: true,
+              size: true,
+            },
           },
         },
       },
@@ -1393,10 +1526,16 @@ export async function pinMessage(params: {
     },
   });
   if (!message) throw new Error("Сообщение не найдено");
-  if (message.deleted_at) throw new Error("Нельзя закрепить удалённое сообщение");
+  if (message.deleted_at)
+    throw new Error("Нельзя закрепить удалённое сообщение");
 
   const member = await prisma.chat_members.findUnique({
-    where: { chat_uuid_user_uuid: { chat_uuid: message.chat_uuid, user_uuid: userUuid } },
+    where: {
+      chat_uuid_user_uuid: {
+        chat_uuid: message.chat_uuid,
+        user_uuid: userUuid,
+      },
+    },
     include: { chat: { select: { kind: true } } },
   });
   if (!member) throw new Error("Нет доступа к чату");
@@ -1480,7 +1619,12 @@ export async function unpinMessage(params: {
   if (!message) throw new Error("Сообщение не найдено");
 
   const member = await prisma.chat_members.findUnique({
-    where: { chat_uuid_user_uuid: { chat_uuid: message.chat_uuid, user_uuid: userUuid } },
+    where: {
+      chat_uuid_user_uuid: {
+        chat_uuid: message.chat_uuid,
+        user_uuid: userUuid,
+      },
+    },
     include: { chat: { select: { kind: true } } },
   });
   if (!member) throw new Error("Нет доступа к чату");
@@ -1527,7 +1671,14 @@ export async function listPinnedMessages(
     attachments: {
       include: {
         file: {
-          select: { id: true, uuid: true, name: true, url: true, mime: true, size: true },
+          select: {
+            id: true,
+            uuid: true,
+            name: true,
+            url: true,
+            mime: true,
+            size: true,
+          },
         },
       },
     },

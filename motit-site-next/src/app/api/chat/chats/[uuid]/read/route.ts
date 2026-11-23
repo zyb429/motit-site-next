@@ -10,7 +10,8 @@ export async function POST(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
 
@@ -29,9 +30,11 @@ export async function POST(
       );
     }
 
-    return NextResponse.json({ success: true, markedCount: result.markedCount });
+    return NextResponse.json({
+      success: true,
+      markedCount: result.markedCount,
+    });
   } catch {
     return NextResponse.json({ error: "Ошибка" }, { status: 400 });
   }
 }
-

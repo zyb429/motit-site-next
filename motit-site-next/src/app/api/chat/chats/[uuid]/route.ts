@@ -12,7 +12,8 @@ export async function PATCH(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
   const body = await req.json().catch(() => ({}));
@@ -39,7 +40,8 @@ export async function DELETE(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
 
@@ -84,4 +86,3 @@ export async function DELETE(
     );
   }
 }
-

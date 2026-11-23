@@ -16,7 +16,8 @@ export async function PATCH(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
   const parsed = patchSchema.safeParse(await req.json());
@@ -33,7 +34,14 @@ export async function PATCH(
     where: { uuid },
     data: { content: parsed.data.content, edited_at: new Date() },
     include: {
-      user: { select: { uuid: true, full_name: true, username: true, avatar_url: true } },
+      user: {
+        select: {
+          uuid: true,
+          full_name: true,
+          username: true,
+          avatar_url: true,
+        },
+      },
       attachments: { include: { file: true } },
       reactions: true,
       read_receipts: true,
@@ -57,11 +65,13 @@ export async function DELETE(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
   const url = new URL(req.url);
-  const scope = url.searchParams.get("scope") === "everyone" ? "everyone" : "self";
+  const scope =
+    url.searchParams.get("scope") === "everyone" ? "everyone" : "self";
 
   try {
     const result = await deleteMessageForUser(uuid, user.uuid, scope);
@@ -85,4 +95,3 @@ export async function DELETE(
     );
   }
 }
-

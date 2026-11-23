@@ -120,16 +120,14 @@ export function ChatHeader({
     );
   }
 
-  const otherMember = chat.members.find(
-    (m) => m.user.uuid !== currentUserUuid,
-  );
+  const otherMember = chat.members.find((m) => m.user.uuid !== currentUserUuid);
 
   const displayName =
     chat.kind === "direct"
-      ? otherMember?.user.full_name ??
+      ? (otherMember?.user.full_name ??
         otherMember?.user.username ??
-        "Без имени"
-      : chat.name ?? "Без названия";
+        "Без имени")
+      : (chat.name ?? "Без названия");
 
   const KindIcon =
     chat.kind === "private_channel"
@@ -146,7 +144,7 @@ export function ChatHeader({
 
   const isDirectOnline =
     chat.kind === "direct" && otherMember
-      ? isOnlineAction?.(otherMember.user.uuid) ?? false
+      ? (isOnlineAction?.(otherMember.user.uuid) ?? false)
       : false;
 
   const canAddMembers =
@@ -310,7 +308,8 @@ export function ChatHeader({
                   />
                 )}
 
-                {(canLeave && onLeaveAction) || (canDelete && onDeleteAction) ? (
+                {(canLeave && onLeaveAction) ||
+                (canDelete && onDeleteAction) ? (
                   <div className="my-1 border-t border-(--border)" />
                 ) : null}
 

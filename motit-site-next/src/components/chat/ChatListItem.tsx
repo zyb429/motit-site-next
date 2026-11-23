@@ -19,21 +19,17 @@ export function ChatListItem({
   currentUserUuid: string;
   href: string;
   isActive: boolean;
-  onContextMenuAction?: (
-    chat: ChatListItemType,
-    x: number,
-    y: number,
-  ) => void;
+  onContextMenuAction?: (chat: ChatListItemType, x: number, y: number) => void;
   onChatClickAction?: (chat: ChatListItemType) => void;
 }) {
   const otherMember = chat.members.find((m) => m.user.uuid !== currentUserUuid);
 
   const displayName =
     chat.kind === "direct"
-      ? otherMember?.user.full_name ??
+      ? (otherMember?.user.full_name ??
         otherMember?.user.username ??
-        "Без имени"
-      : chat.name ?? "Без названия";
+        "Без имени")
+      : (chat.name ?? "Без названия");
 
   const KindIcon =
     chat.kind === "private_channel"

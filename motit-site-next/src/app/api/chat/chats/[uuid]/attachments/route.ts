@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendMessage } from "@/lib/db/chat";
 import { uploadToS3 } from "@/lib/s3";
-import { redis } from "@/lib/redis";                          // ← добавлено
+import { redis } from "@/lib/redis"; // ← добавлено
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +22,9 @@ export async function POST(
   const { uuid: chatUuid } = await params;
 
   const member = await prisma.chat_members.findUnique({
-    where: { chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: user.uuid } },
+    where: {
+      chat_uuid_user_uuid: { chat_uuid: chatUuid, user_uuid: user.uuid },
+    },
   });
   if (!member) {
     return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
@@ -54,7 +56,9 @@ export async function POST(
         url,
         mime,
         size: file.size,
-        ext: safeName.includes(".") ? safeName.split(".").pop()!.toLowerCase() : null,
+        ext: safeName.includes(".")
+          ? safeName.split(".").pop()!.toLowerCase()
+          : null,
         provider: "s3",
         folder_path: `chat/${chatUuid}`,
         created_at: new Date(),
@@ -76,7 +80,7 @@ export async function POST(
   });
 
   // Broadcast через Redis — как в POST /messages
-  await redis.publish(`chat:${chatUuid}:messages`, JSON.stringify(message));   // ← добавлено
+  await redis.publish(`chat:${chatUuid}:messages`, JSON.stringify(message)); // ← добавлено
 
   return NextResponse.json({ data: [message] });
 }

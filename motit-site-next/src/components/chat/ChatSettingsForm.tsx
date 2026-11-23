@@ -211,10 +211,7 @@ export function ChatSettingsForm({
     }
   }
 
-  async function handleChangeRole(
-    userUuid: string,
-    role: "admin" | "member",
-  ) {
+  async function handleChangeRole(userUuid: string, role: "admin" | "member") {
     const res = await fetch(
       `/api/chat/chats/${chat.uuid}/members/${userUuid}`,
       {

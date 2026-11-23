@@ -25,11 +25,10 @@ export function PinnedBanner({
     current.message.user?.username ??
     "Без имени";
 
-  const preview =
-    current.message.deleted_at
-      ? "Сообщение удалено"
-      : current.message.content.slice(0, 120) ||
-        (current.message.attachments.length > 0 ? "Вложение" : "Сообщение");
+  const preview = current.message.deleted_at
+    ? "Сообщение удалено"
+    : current.message.content.slice(0, 120) ||
+      (current.message.attachments.length > 0 ? "Вложение" : "Сообщение");
 
   return (
     <div className="border-b border-(--border) bg-(--bg-elevated) px-3 py-2 flex items-center gap-2">
@@ -52,7 +51,9 @@ export function PinnedBanner({
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            onClick={() => setIndex((i) => (i - 1 + pinned.length) % pinned.length)}
+            onClick={() =>
+              setIndex((i) => (i - 1 + pinned.length) % pinned.length)
+            }
             className="p-1 rounded hover:bg-(--bg-hover)"
             aria-label="Предыдущий закреп"
           >

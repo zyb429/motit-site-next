@@ -52,7 +52,11 @@ export type MessageReadHandler = (payload: {
 
 export type MessageDeletedHandler = (payload: {
   messageUuid: string;
-  deletedBy?: { uuid: string; full_name: string | null; username: string | null };
+  deletedBy?: {
+    uuid: string;
+    full_name: string | null;
+    username: string | null;
+  };
 }) => void;
 
 export type ChatRemovedHandler = (payload: {
@@ -149,10 +153,13 @@ export function useChatSocket({
     const handlePresence: PresenceHandler = (p) => onPresenceAction?.(p);
     const handleRead: MessageReadHandler = (p) => onReadAction?.(p);
     const handleDeleted: MessageDeletedHandler = (p) => onDeletedAction?.(p);
-    const handleChatRemoved: ChatRemovedHandler = (p) => onChatRemovedAction?.(p);
-    const handleChatUpdated: ChatUpdatedHandler = (p) => onChatUpdatedAction?.(p);
+    const handleChatRemoved: ChatRemovedHandler = (p) =>
+      onChatRemovedAction?.(p);
+    const handleChatUpdated: ChatUpdatedHandler = (p) =>
+      onChatUpdatedAction?.(p);
     const handleEdited: MessageEditedHandler = (p) => onEditedAction?.(p);
-    const handleChatCreated: ChatCreatedHandler = (p) => onChatCreatedAction?.(p);
+    const handleChatCreated: ChatCreatedHandler = (p) =>
+      onChatCreatedAction?.(p);
     const handlePinned: MessagePinnedHandler = (p) => onPinnedAction?.(p);
     const handleUnpinned: MessageUnpinnedHandler = (p) => onUnpinnedAction?.(p);
 

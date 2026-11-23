@@ -87,10 +87,7 @@ export function EmojiPickerButton({
       </button>
 
       {open && (
-        <div
-          ref={pickerRef}
-          className="absolute bottom-full mb-2 left-0 z-130"
-        >
+        <div ref={pickerRef} className="absolute bottom-full mb-2 left-0 z-130">
           <Suspense
             fallback={
               <div className="bg-(--bg-card) border border-(--border) rounded-xl p-4 text-xs text-(--text-muted) shadow-2xl">

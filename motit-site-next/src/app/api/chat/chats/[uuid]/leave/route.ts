@@ -10,7 +10,8 @@ export async function POST(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
 
@@ -18,9 +19,13 @@ export async function POST(
     where: { uuid },
     select: { uuid: true, kind: true },
   });
-  if (!chat) return NextResponse.json({ error: "Чат не найден" }, { status: 404 });
+  if (!chat)
+    return NextResponse.json({ error: "Чат не найден" }, { status: 404 });
   if (chat.kind === "direct" || chat.kind === "saved") {
-    return NextResponse.json({ error: "Из личного чата нельзя выйти" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Из личного чата нельзя выйти" },
+      { status: 400 },
+    );
   }
 
   const me = await prisma.users.findUnique({
@@ -43,4 +48,3 @@ export async function POST(
 
   return NextResponse.json({ success: true });
 }
-

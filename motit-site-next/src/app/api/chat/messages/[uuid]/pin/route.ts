@@ -31,7 +31,11 @@ export async function POST(
   }
 
   try {
-    const pinned = await pinMessage({ messageUuid: uuid, userUuid: user.uuid, scope });
+    const pinned = await pinMessage({
+      messageUuid: uuid,
+      userUuid: user.uuid,
+      scope,
+    });
 
     if (scope === "everyone") {
       await redis.publish(
@@ -75,7 +79,11 @@ export async function DELETE(
   }
 
   try {
-    const result = await unpinMessage({ messageUuid: uuid, userUuid: user.uuid, scope });
+    const result = await unpinMessage({
+      messageUuid: uuid,
+      userUuid: user.uuid,
+      scope,
+    });
 
     if (scope === "everyone") {
       await redis.publish(
@@ -97,4 +105,3 @@ export async function DELETE(
     return NextResponse.json({ error: msg }, { status });
   }
 }
-

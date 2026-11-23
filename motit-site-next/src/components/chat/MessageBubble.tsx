@@ -35,7 +35,10 @@ export function MessageBubble({
   onReplyAction?: (message: ChatMessageItem) => void;
   onCopyAction?: (message: ChatMessageItem) => void;
   onEditAction?: (message: ChatMessageItem) => void;
-  onDeleteAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
+  onDeleteAction?: (
+    message: ChatMessageItem,
+    scope: "self" | "everyone",
+  ) => void;
   onReactAction?: (message: ChatMessageItem, emoji: string) => void;
   onForwardAction?: (message: ChatMessageItem) => void;
   onPinAction?: (message: ChatMessageItem, scope: "self" | "everyone") => void;
@@ -43,7 +46,8 @@ export function MessageBubble({
   onPreviewFileAction?: (file: PreviewFile, allFiles: PreviewFile[]) => void;
 }) {
   const isOwn = message.user?.uuid === currentUserUuid;
-  const isSystem = message.kind === "system" || message.kind === "status_change";
+  const isSystem =
+    message.kind === "system" || message.kind === "status_change";
 
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const mounted = useSyncExternalStore(

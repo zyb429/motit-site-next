@@ -41,7 +41,12 @@ function detectKind(file: PreviewFile): FileKind {
   if (/\.(mp4|webm|mov|mkv|ogv|avi)$/.test(name)) return "video";
   if (/\.(mp3|wav|ogg|oga|m4a|aac|flac|opus)$/.test(name)) return "audio";
   if (/\.pdf$/.test(name)) return "pdf";
-  if (/\.(txt|md|markdown|json|xml|csv|log|yaml|yml|html?|css|js|ts|tsx|jsx)$/.test(name)) return "text";
+  if (
+    /\.(txt|md|markdown|json|xml|csv|log|yaml|yml|html?|css|js|ts|tsx|jsx)$/.test(
+      name,
+    )
+  )
+    return "text";
 
   return "other";
 }
@@ -105,7 +110,9 @@ function LinkPreviewBlock({ url }: { url: string }) {
           src={data.image}
           alt=""
           className="w-full h-48 object-cover"
-          onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+          onError={(e) =>
+            ((e.target as HTMLImageElement).style.display = "none")
+          }
         />
       )}
       <div className="p-4">

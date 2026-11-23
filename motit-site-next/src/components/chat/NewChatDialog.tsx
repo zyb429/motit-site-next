@@ -44,7 +44,9 @@ export function NewChatDialog({
     }
 
     const timer = setTimeout(async () => {
-      const exclude = [currentUserUuid, ...selected.map((s) => s.uuid)].join(",");
+      const exclude = [currentUserUuid, ...selected.map((s) => s.uuid)].join(
+        ",",
+      );
       const res = await fetch(
         `/api/chat/users/search?q=${encodeURIComponent(query)}&exclude=${exclude}`,
       );
@@ -243,7 +245,9 @@ export function NewChatDialog({
                     />
                   ) : (
                     <span className="text-xs font-medium text-(--text-muted)">
-                      {(u.full_name ?? u.username ?? "?").slice(0, 1).toUpperCase()}
+                      {(u.full_name ?? u.username ?? "?")
+                        .slice(0, 1)
+                        .toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -269,9 +273,7 @@ export function NewChatDialog({
 
         {/* Ошибка + кнопка */}
         <div className="p-3 border-t border-(--border)">
-          {error && (
-            <p className="text-xs text-red-400 mb-2">{error}</p>
-          )}
+          {error && <p className="text-xs text-red-400 mb-2">{error}</p>}
           <button
             type="button"
             onClick={handleCreate}

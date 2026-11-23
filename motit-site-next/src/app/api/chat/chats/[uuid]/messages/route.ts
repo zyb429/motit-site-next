@@ -11,7 +11,8 @@ export async function GET(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
   const url = new URL(req.url);
@@ -39,12 +40,16 @@ export async function POST(
   { params }: { params: Promise<{ uuid: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const { uuid } = await params;
   const parsed = sendSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: z.flattenError(parsed.error) }, { status: 400 });
+    return NextResponse.json(
+      { error: z.flattenError(parsed.error) },
+      { status: 400 },
+    );
   }
 
   try {
@@ -66,4 +71,3 @@ export async function POST(
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 }
-

@@ -30,11 +30,7 @@ export function ChatList({
   basePath: string;
   onNewChatAction?: () => void;
   onSavedAction?: () => void;
-  onContextMenuAction?: (
-    chat: ChatListItemType,
-    x: number,
-    y: number,
-  ) => void;
+  onContextMenuAction?: (chat: ChatListItemType, x: number, y: number) => void;
   onChatClickAction?: (chat: ChatListItemType) => void;
 }) {
   const [search, setSearch] = useState("");
@@ -98,8 +94,8 @@ export function ChatList({
       );
       const name =
         c.kind === "direct"
-          ? otherMember?.user.full_name ?? otherMember?.user.username ?? ""
-          : c.name ?? "";
+          ? (otherMember?.user.full_name ?? otherMember?.user.username ?? "")
+          : (c.name ?? "");
       return name.toLowerCase().includes(q);
     });
   }, [activeChats, search, currentUserUuid]);

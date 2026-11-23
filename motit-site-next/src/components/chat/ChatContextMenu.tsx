@@ -88,7 +88,9 @@ export function ChatContextMenu({
         />
         <MenuItem
           icon={chat.is_muted ? <Bell size={14} /> : <BellOff size={14} />}
-          label={chat.is_muted ? "Включить уведомления" : "Отключить уведомления"}
+          label={
+            chat.is_muted ? "Включить уведомления" : "Отключить уведомления"
+          }
           onClickAction={() => run(onMuteAction)}
         />
         {chat.unread_count > 0 ? (
