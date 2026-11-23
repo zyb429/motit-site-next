@@ -11,12 +11,14 @@ const MAX_SIZE = 3 * 1024 * 1024; // 3 МБ
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
 
-  if (!file) return NextResponse.json({ error: "Файл не найден" }, { status: 400 });
+  if (!file)
+    return NextResponse.json({ error: "Файл не найден" }, { status: 400 });
   if (!file.type.startsWith("image/")) {
     return NextResponse.json({ error: "Только изображения" }, { status: 400 });
   }
@@ -69,7 +71,8 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   await prisma.users.update({
     where: { id: user.id },
@@ -78,4 +81,3 @@ export async function DELETE() {
 
   return NextResponse.json({ success: true });
 }
-

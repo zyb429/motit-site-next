@@ -52,7 +52,7 @@ export function AddToListModal({
 
   const toggleList = async (listId: number) => {
     const isSelected = selectedIds.has(listId);
-    
+
     // Оптимистичное обновление
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -91,7 +91,9 @@ export function AddToListModal({
       {/* Модалка */}
       <div className="relative w-full max-w-sm rounded-xl bg-(--bg-card) border border-(--border) shadow-xl overflow-hidden animate-in zoom-in-95 duration-150">
         <div className="flex items-center justify-between p-4 border-b border-(--border)">
-          <h3 className="font-semibold text-(--text-primary)">Сохранить в список</h3>
+          <h3 className="font-semibold text-(--text-primary)">
+            Сохранить в список
+          </h3>
           <button
             onClick={onClose}
             className="p-1 rounded-md text-(--text-muted) hover:bg-(--bg-secondary) transition-colors"
@@ -117,12 +119,16 @@ export function AddToListModal({
                   onClick={() => toggleList(list.id)}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-(--bg-secondary) transition-colors text-left group"
                 >
-                  <span className="text-sm text-(--text-primary)">{list.name}</span>
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                    selectedIds.has(list.id)
-                      ? "bg-(--accent) border-(--accent) text-(--bg-primary)"
-                      : "border-(--border) group-hover:border-(--text-muted)"
-                  }`}>
+                  <span className="text-sm text-(--text-primary)">
+                    {list.name}
+                  </span>
+                  <div
+                    className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                      selectedIds.has(list.id)
+                        ? "bg-(--accent) border-(--accent) text-(--bg-primary)"
+                        : "border-(--border) group-hover:border-(--text-muted)"
+                    }`}
+                  >
                     {selectedIds.has(list.id) && <Check size={14} />}
                   </div>
                 </button>

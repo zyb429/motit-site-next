@@ -7,7 +7,8 @@ import { getCurrentUser } from "@/lib/auth";
 /** GET: все списки пользователя + количество постов */
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const lists = await prisma.postList.findMany({
     where: { userId: user.id },
@@ -21,7 +22,8 @@ export async function GET() {
 /** POST: создать новый список. Body: { name: string } */
 export async function POST(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: unknown;
   try {

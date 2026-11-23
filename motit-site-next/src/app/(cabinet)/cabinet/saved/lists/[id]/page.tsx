@@ -42,7 +42,7 @@ export default async function ListPage({
             <ArrowLeft className="w-4 h-4" />
             Назад к сохранённым
           </Link>
-          
+
           <div className="flex items-start justify-between gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-(--text-primary) tracking-tight line-clamp-2 min-w-0">
               {list.name}
@@ -52,15 +52,20 @@ export default async function ListPage({
             </div>
           </div>
           <p className="text-xs sm:text-sm text-(--text-muted) mt-1 sm:mt-2">
-            {list.items.length} {list.items.length === 1 ? "пост" : "постов"} в списке
+            {list.items.length} {list.items.length === 1 ? "пост" : "постов"} в
+            списке
           </p>
         </div>
 
         {list.items.length === 0 ? (
           <div className="text-center py-10 sm:py-12 border-2 border-dashed border-(--border) rounded-2xl">
             <Bookmark className="w-10 h-10 sm:w-12 sm:h-12 text-(--text-muted) mx-auto mb-3 opacity-20" />
-            <p className="text-sm sm:text-base text-(--text-muted) font-medium">В этом списке пока нет постов</p>
-            <p className="text-xs sm:text-sm text-(--text-muted) mt-1 px-4">Добавьте их через кнопку «Сохранить» на странице статьи</p>
+            <p className="text-sm sm:text-base text-(--text-muted) font-medium">
+              В этом списке пока нет постов
+            </p>
+            <p className="text-xs sm:text-sm text-(--text-muted) mt-1 px-4">
+              Добавьте их через кнопку «Сохранить» на странице статьи
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2.5 sm:gap-3">

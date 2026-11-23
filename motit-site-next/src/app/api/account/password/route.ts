@@ -13,7 +13,8 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) {
@@ -29,12 +30,21 @@ export async function POST(req: Request) {
   });
 
   if (!dbUser?.password_hash) {
-    return NextResponse.json({ error: "Пароль не установлен" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Пароль не установлен" },
+      { status: 400 },
+    );
   }
 
-  const ok = await bcrypt.compare(parsed.data.currentPassword, dbUser.password_hash);
+  const ok = await bcrypt.compare(
+    parsed.data.currentPassword,
+    dbUser.password_hash,
+  );
   if (!ok) {
-    return NextResponse.json({ error: "Неверный текущий пароль" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Неверный текущий пароль" },
+      { status: 400 },
+    );
   }
 
   const hash = await bcrypt.hash(parsed.data.newPassword, 10);
@@ -46,4 +56,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ success: true });
 }
-

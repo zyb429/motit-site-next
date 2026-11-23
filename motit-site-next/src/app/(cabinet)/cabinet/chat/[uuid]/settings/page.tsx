@@ -32,8 +32,7 @@ export default async function CabinetChatSettingsPage({
         href={`/cabinet/chat/${chat.uuid}`}
         className="inline-flex items-center gap-1 text-sm text-(--text-muted) hover:text-(--accent) transition-colors"
       >
-        <ArrowLeft size={14} />
-        К чату
+        <ArrowLeft size={14} />К чату
       </Link>
 
       <h1 className="text-xl font-bold text-(--text-primary) mt-6">

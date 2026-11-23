@@ -9,7 +9,8 @@ export async function DELETE(
   { params }: { params: Promise<{ listId: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { listId } = await params;
   const list = await prisma.postList.findFirst({

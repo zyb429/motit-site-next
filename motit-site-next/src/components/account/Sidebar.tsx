@@ -21,19 +21,20 @@ import type { CurrentUser } from "@/lib/auth";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
+import { NotificationBell } from "@/components/admin/NotificationBell";
 
 interface SidebarProps {
   user: CurrentUser;
 }
 
 const NAV = [
-  { href: "/cabinet",               label: "Обзор",        Icon: LayoutDashboard },
-  { href: "/cabinet/profile",       label: "Профиль",      Icon: User },
-  { href: "/cabinet/saved",         label: "Сохранённые",  Icon: Bookmark },
-  { href: "/cabinet/security",      label: "Безопасность", Icon: Shield },
-  { href: "/cabinet/tickets",       label: "Мои тикеты",   Icon: LifeBuoy },
-  { href: "/cabinet/chat",          label: "Сообщения",    Icon: MessageSquare },
-  { href: "/cabinet/organizations", label: "Организации",  Icon: Building2 },
+  { href: "/cabinet", label: "Обзор", Icon: LayoutDashboard },
+  { href: "/cabinet/profile", label: "Профиль", Icon: User },
+  { href: "/cabinet/saved", label: "Сохранённые", Icon: Bookmark },
+  { href: "/cabinet/security", label: "Безопасность", Icon: Shield },
+  { href: "/cabinet/tickets", label: "Мои тикеты", Icon: LifeBuoy },
+  { href: "/cabinet/chat", label: "Сообщения", Icon: MessageSquare },
+  { href: "/cabinet/organizations", label: "Организации", Icon: Building2 },
 ];
 
 const STORAGE_KEY = "account-sidebar-collapsed";
@@ -90,6 +91,7 @@ export function AccountSidebar({ user }: SidebarProps) {
                   {user.username.charAt(0).toUpperCase()}
                 </div>
               )}
+
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-(--text-primary) truncate">
                   {user.full_name || user.username}
@@ -98,6 +100,8 @@ export function AccountSidebar({ user }: SidebarProps) {
                   @{user.username}
                 </div>
               </div>
+
+              <NotificationBell />
 
               <button
                 type="button"
@@ -110,15 +114,19 @@ export function AccountSidebar({ user }: SidebarProps) {
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              title="Развернуть"
-              aria-label="Развернуть меню"
-              className="w-10 h-10 flex items-center justify-center rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--accent-dim) transition-colors"
-            >
-              <ChevronRight size={20} />
-            </button>
+            <div className="flex flex-col items-center gap-2">
+              <NotificationBell />
+
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                title="Развернуть"
+                aria-label="Развернуть меню"
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-(--text-muted) hover:text-(--accent) hover:bg-(--accent-dim) transition-colors"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
           )}
         </div>
 

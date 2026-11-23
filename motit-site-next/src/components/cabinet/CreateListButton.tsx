@@ -134,9 +134,7 @@ export function CreateListButton() {
                   if (e.key === "Enter") handleCreate();
                 }}
               />
-              {error && (
-                <p className="text-red-400 text-xs mt-2">{error}</p>
-              )}
+              {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
             </div>
 
             {/* Футер */}

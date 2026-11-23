@@ -7,7 +7,8 @@ import { getCurrentUser } from "@/lib/auth";
 /** GET: список избранных постов пользователя */
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const items = await prisma.favorite.findMany({
     where: { userId: user.id },
@@ -28,7 +29,8 @@ export async function GET() {
 /** POST: toggle избранного. Body: { postId: number } */
 export async function POST(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: unknown;
   try {
@@ -43,7 +45,8 @@ export async function POST(req: Request) {
   }
 
   const post = await prisma.posts.findUnique({ where: { id: postId } });
-  if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+  if (!post)
+    return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
   const existing = await prisma.favorite.findUnique({
     where: { userId_postId: { userId: user.id, postId } },

@@ -58,7 +58,10 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
     const fd = new FormData();
     fd.append("file", file);
 
-    const res = await fetch("/api/account/avatar", { method: "POST", body: fd });
+    const res = await fetch("/api/account/avatar", {
+      method: "POST",
+      body: fd,
+    });
     setUploading(false);
 
     if (!res.ok) {

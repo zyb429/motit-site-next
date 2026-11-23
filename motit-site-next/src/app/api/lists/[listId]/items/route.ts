@@ -9,7 +9,8 @@ export async function POST(
   { params }: { params: Promise<{ listId: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { listId } = await params;
   const body = (await req.json().catch(() => ({}))) as { postId?: unknown };
@@ -21,7 +22,8 @@ export async function POST(
   const list = await prisma.postList.findFirst({
     where: { id: Number(listId), userId: user.id },
   });
-  if (!list) return NextResponse.json({ error: "List not found" }, { status: 404 });
+  if (!list)
+    return NextResponse.json({ error: "List not found" }, { status: 404 });
 
   await prisma.postListItem.upsert({
     where: { listId_postId: { listId: list.id, postId } },
@@ -37,7 +39,8 @@ export async function DELETE(
   { params }: { params: Promise<{ listId: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { listId } = await params;
   const body = (await req.json().catch(() => ({}))) as { postId?: unknown };

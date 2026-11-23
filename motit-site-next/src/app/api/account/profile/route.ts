@@ -13,11 +13,15 @@ const schema = z.object({
 
 export async function PATCH(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const updated = await prisma.users.update({
@@ -36,4 +40,3 @@ export async function PATCH(req: Request) {
 
   return NextResponse.json({ data: updated });
 }
-

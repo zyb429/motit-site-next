@@ -75,7 +75,11 @@ export function SavedPostActions({
             className="p-2 rounded-lg text-(--text-muted) hover:bg-(--bg-secondary) transition-colors"
             disabled={loading}
           >
-            {loading ? <Loader2 size={18} className="animate-spin" /> : <MoreHorizontal size={18} />}
+            {loading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <MoreHorizontal size={18} />
+            )}
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
@@ -105,7 +109,11 @@ export function SavedPostActions({
             className="p-2 rounded-lg text-(--text-muted) hover:bg-(--bg-secondary) transition-colors"
             disabled={loading}
           >
-            {loading ? <Loader2 size={18} className="animate-spin" /> : <MoreHorizontal size={18} />}
+            {loading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <MoreHorizontal size={18} />
+            )}
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
@@ -124,7 +132,8 @@ export function SavedPostActions({
               onSelect={handleRemove}
               className="flex items-center gap-2 px-2 py-1.5 text-sm text-red-500 rounded cursor-pointer outline-none hover:bg-red-500/10"
             >
-              <Trash2 size={14} /> {listId ? "Убрать из списка" : "Убрать из избранного"}
+              <Trash2 size={14} />{" "}
+              {listId ? "Убрать из списка" : "Убрать из избранного"}
             </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Portal>

@@ -96,7 +96,9 @@ export default async function SavedPage({
 
           {filteredLists.length === 0 ? (
             <p className="text-sm text-(--text-muted)">
-              {query ? "Списки не найдены." : "Пользовательских списков пока нет."}
+              {query
+                ? "Списки не найдены."
+                : "Пользовательских списков пока нет."}
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -135,7 +137,9 @@ export default async function SavedPage({
 
           {filteredFavorites.length === 0 ? (
             <p className="text-sm text-(--text-muted)">
-              {query ? "Ничего не найдено по вашему запросу." : "Пока ничего не сохранено."}
+              {query
+                ? "Ничего не найдено по вашему запросу."
+                : "Пока ничего не сохранено."}
             </p>
           ) : (
             <div className="flex flex-col gap-2.5 sm:gap-3">

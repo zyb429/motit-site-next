@@ -2,13 +2,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  Calendar,
-  Mail,
-  Phone,
-  Shield,
-  Ticket,
-} from "lucide-react";
+import { Calendar, Mail, Phone, Shield, Ticket } from "lucide-react";
 import { SavedPostsWidget } from "@/components/cabinet/SavedPostsWidget";
 
 export const dynamic = "force-dynamic";
@@ -58,11 +52,7 @@ export default async function CabinetPage() {
             }
             Icon={Shield}
           />
-          <Card
-            title="Обращения"
-            value={String(ticketsCount)}
-            Icon={Ticket}
-          />
+          <Card title="Обращения" value={String(ticketsCount)} Icon={Ticket} />
         </div>
 
         <div className="mt-8 space-y-3">
@@ -181,7 +171,9 @@ function Card({
         <Icon size={14} className="text-(--accent)" />
         {title}
       </div>
-      <div className="text-xl font-bold text-(--text-primary) mt-2">{value}</div>
+      <div className="text-xl font-bold text-(--text-primary) mt-2">
+        {value}
+      </div>
     </div>
   );
 }
