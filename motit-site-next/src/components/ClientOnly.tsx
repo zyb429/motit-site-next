@@ -13,8 +13,8 @@ export function ClientOnly({
 }) {
   const mounted = useSyncExternalStore(
     emptySubscribe,
-    () => true,   // на клиенте — true
-    () => false,  // на сервере — false
+    () => true, // на клиенте — true
+    () => false, // на сервере — false
   );
 
   return <>{mounted ? children : fallback}</>;

@@ -25,7 +25,7 @@ export class SafeBoundary extends Component<Props, State> {
       // Возвращаем false, чтобы компонент НЕ показывал fallback,
       // а просто продолжил рендерить детей (игнорируем ошибку)
       console.warn("[SafeBoundary] Игнорируем ошибку расширения:", msg);
-      return { hasError: false }; 
+      return { hasError: false };
     }
     // Остальные ошибки пробрасываем дальше
     throw error;
