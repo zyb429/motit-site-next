@@ -5,6 +5,7 @@ import {
   useState,
   useEffect,
   useTransition,
+  useMemo,
   memo,
   useCallback,
   useRef,
@@ -77,7 +78,9 @@ export default memo(function CreatePostClient({
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
   const isEditMode = Boolean(editId);
-
+  const [slugStatus, setSlugStatus] = useState<
+    "idle" | "checking" | "available" | "taken"
+  >("idle");
   const [isPending, startTransition] = useTransition();
   const [content, setContent] = useState<CustomElement[] | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -115,6 +118,54 @@ export default memo(function CreatePostClient({
   const excerptValue = watch("excerpt") || "";
   const postStatusValue = watch("post_status");
   const categoryValue = watch("categoryId");
+
+  const titleValue = watch("title") || "";
+  const slugValue = useMemo(
+    () => generateSlug(titleValue),
+    [titleValue],
+  );
+
+  useEffect(() => {
+    if (isEditMode || !titleValue.trim()) {
+      setSlugStatus("idle");
+      return;
+    }
+
+    setSlugStatus("checking");
+
+    const controller = new AbortController();
+    let isActive = true;
+
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/posts/check-slug?slug=${encodeURIComponent(slugValue)}`,
+          {
+            signal: controller.signal,
+          },
+        );
+
+        if (!response.ok || !isActive) {
+          if (isActive) setSlugStatus("idle");
+          return;
+        }
+
+        const result = await response.json();
+
+        if (!isActive) return;
+
+        setSlugStatus(result.available ? "available" : "taken");
+      } catch {
+        if (isActive) setSlugStatus("idle");
+      }
+    }, 500);
+
+    return () => {
+      isActive = false;
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [isEditMode, titleValue, slugValue]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -372,7 +423,6 @@ export default memo(function CreatePostClient({
           } else {
             router.push("/admin/posts");
           }
-          router.refresh();
         } catch (error) {
           console.error("Error:", error);
           alert(error instanceof Error ? error.message : "Произошла ошибка");
@@ -519,6 +569,25 @@ export default memo(function CreatePostClient({
               {errors.title && (
                 <p className="text-red-400 text-xs sm:text-sm -mt-1 sm:-mt-4">
                   {errors.title.message}
+                </p>
+              )}
+
+              {!isEditMode && slugStatus === "checking" && (
+                <p className="text-xs text-[var(--text-muted)]">
+                  Проверяем доступность URL…
+                </p>
+              )}
+
+              {!isEditMode && slugStatus === "taken" && (
+                <p className="text-xs text-amber-400">
+                  URL «{slugValue}» уже занят. При сохранении к нему будет
+                  добавлена дата и время.
+                </p>
+              )}
+
+              {!isEditMode && slugStatus === "available" && (
+                <p className="text-xs text-emerald-400">
+                  URL «{slugValue}» доступен.
                 </p>
               )}
 
