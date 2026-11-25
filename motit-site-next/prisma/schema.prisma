@@ -203,6 +203,7 @@ model posts {
   users                  users?                   @relation("PostCreatedBy", fields: [created_by_id], references: [id], onUpdate: NoAction, map: "fk_posts_created_by")
   featured_image         files?                   @relation("PostFeaturedImage", fields: [featured_image_id], references: [id], onUpdate: NoAction, map: "fk_posts_featured_image")
   posts_categories_links posts_categories_links[]
+  collaborators          PostCollaborator[]
 
   @@index([author_id], map: "idx_posts_author_id")
   @@index([created_by_id], map: "idx_posts_created_by_id")
@@ -477,6 +478,7 @@ model users {
   clients               clients?
   posts                 posts[]                 @relation("PostCreatedBy")
   postsAuthored         posts[]                 @relation("PostAuthor")
+  post_collaborations   PostCollaborator[]
   post_versions         PostVersion[]           @relation("PostVersionAuthor")
   ticket_comments       ticket_comments[]
   ticketsAssigned       tickets[]               @relation("TicketAssignee")
@@ -921,4 +923,21 @@ model EmailChangeToken {
   @@index([user_uuid])
   @@index([token])
   @@map("email_change_tokens")
+}
+
+model PostCollaborator {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  post_id    Int      @db.UnsignedInt
+  user_id    Int      @db.UnsignedInt
+  role       String   @default("editor") @db.VarChar(20) // editor | viewer
+  created_at DateTime @default(now()) @db.DateTime(6)
+  updated_at DateTime @updatedAt @db.DateTime(6)
+
+  post posts @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_post_collaborators_post")
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_post_collaborators_user")
+
+  @@unique([post_id, user_id], map: "idx_post_collaborators_unique")
+  @@index([post_id], map: "idx_post_collaborators_post")
+  @@index([user_id], map: "idx_post_collaborators_user")
+  @@map("post_collaborators")
 }
