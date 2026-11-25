@@ -62,6 +62,7 @@ export async function GET() {
     start(controller) {
       let lastAnnouncementId = 0;
       let lastMessageId = "0";
+      let isFirstLoad = true;
 
       const close = () => {
         if (isClosed) return;
@@ -206,8 +207,19 @@ export async function GET() {
                 (item) => item.id.toString() > lastMessageId,
               );
 
+        // Отправляем только если это первый запуск или появились новые элементы
+        const shouldSend =
+          isFirstLoad ||
+          newAnnouncements.length > 0 ||
+          newMessages.length > 0 ||
+          newestAnnouncementId !== lastAnnouncementId ||
+          newestMessageId !== lastMessageId;
+
         lastAnnouncementId = newestAnnouncementId;
         lastMessageId = newestMessageId;
+        isFirstLoad = false;
+
+        if (!shouldSend) return;
 
         send("notifications", {
           announcements,

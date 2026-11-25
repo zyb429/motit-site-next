@@ -53,8 +53,18 @@ export function NotificationBell() {
   const isPlayingSoundRef = useRef(false);
   const lastPayloadRef = useRef<string>("");
 
+  // SSE — стабильные рефы
+  const sourceRef = useRef<EventSource | null>(null);
+  const reconnectRef = useRef<number | undefined>(undefined);
+  const notifyRef = useRef<(keys: string[]) => void>(() => {});
+  const mountedRef = useRef(false);
+
   useEffect(() => {
     setMounted(true);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const playNotificationSound = useCallback(() => {
@@ -146,6 +156,11 @@ export function NotificationBell() {
     [playNotificationSound],
   );
 
+  // Держим актуальную notifyNewItems в рефе, чтобы SSE-эффект не зависел от неё
+  useEffect(() => {
+    notifyRef.current = notifyNewItems;
+  }, [notifyNewItems]);
+
   const loadReadIds = useCallback(() => {
     try {
       const raw = localStorage.getItem(READ_KEY);
@@ -161,84 +176,119 @@ export function NotificationBell() {
     loadReadIds();
   }, [loadReadIds]);
 
+  // SSE-подключение — ОДИН раз за жизнь компонента
   useEffect(() => {
-    let source: EventSource | null = null;
-    let reconnectTimeout: number | undefined;
+    // В StrictMode эффект вызывается дважды; монтируем только когда mountedRef уже true
+    if (!mountedRef.current) {
+      // На первом проходе mountedRef ещё false (порядок эффектов):
+      // mounted-эффект выше идёт раньше, но на всякий случай подстрахуемся.
+      // Если mountedRef всё ещё false — дождёмся следующего тика.
+      const t = window.setTimeout(() => {
+        if (mountedRef.current) start();
+      }, 0);
+      return () => window.clearTimeout(t);
+    }
+    return start();
 
-    const connect = () => {
-      source = new EventSource("/api/notifications/stream");
+    function start() {
+      let closed = false;
 
-      source.addEventListener("notifications", (event) => {
-        try {
-          const data = JSON.parse(event.data) as {
-            announcements: Announcement[];
-            messages: ChatMessage[];
-            newAnnouncements: Announcement[];
-            newMessages: ChatMessage[];
-          };
-
-          const incomingMessages = data.messages ?? [];
-
-          const incomingMessageIds = new Set(
-            incomingMessages.map((message) => String(message.id)),
-          );
-
-          let newMessageKeys: string[] = [];
-
-          if (!isFirstMessagesLoadRef.current) {
-            newMessageKeys = incomingMessages
-              .filter((message) => {
-                const id = String(message.id);
-
-                return (
-                  !previousMessageIdsRef.current.has(id) &&
-                  !notifiedIdsRef.current.has(`message:${id}`)
-                );
-              })
-              .map((message) => `message:${String(message.id)}`);
-          }
-
-          previousMessageIdsRef.current = incomingMessageIds;
-          isFirstMessagesLoadRef.current = false;
-
-          const announcementsPayload = JSON.stringify(data.announcements ?? []);
-          const messagesPayload = JSON.stringify(incomingMessages);
-          const nextPayload = `${announcementsPayload}|${messagesPayload}`;
-
-          if (lastPayloadRef.current !== nextPayload) {
-            lastPayloadRef.current = nextPayload;
-
-            setAnnouncements(data.announcements ?? []);
-            setMessages(incomingMessages);
-          }
-
-          const announcementKeys = (data.newAnnouncements ?? []).map(
-            (item) => `announcement:${item.id}`,
-          );
-
-          notifyNewItems([...announcementKeys, ...newMessageKeys]);
-        } catch {
-          // Игнорируем некорректный payload
+      const connect = () => {
+        if (closed) return;
+        if (sourceRef.current) {
+          sourceRef.current.close();
+          sourceRef.current = null;
         }
-      });
 
-      source.onerror = () => {
-        source?.close();
+        const source = new EventSource("/api/notifications/stream");
+        sourceRef.current = source;
 
-        reconnectTimeout = window.setTimeout(connect, 3000);
+        source.addEventListener("notifications", (event) => {
+          try {
+            const data = JSON.parse(event.data) as {
+              announcements: Announcement[];
+              messages: ChatMessage[];
+              newAnnouncements: Announcement[];
+              newMessages: ChatMessage[];
+            };
+
+            const incomingMessages = data.messages ?? [];
+
+            const incomingMessageIds = new Set(
+              incomingMessages.map((message) => String(message.id)),
+            );
+
+            let newMessageKeys: string[] = [];
+
+            if (!isFirstMessagesLoadRef.current) {
+              newMessageKeys = incomingMessages
+                .filter((message) => {
+                  const id = String(message.id);
+
+                  return (
+                    !previousMessageIdsRef.current.has(id) &&
+                    !notifiedIdsRef.current.has(`message:${id}`)
+                  );
+                })
+                .map((message) => `message:${String(message.id)}`);
+            }
+
+            previousMessageIdsRef.current = incomingMessageIds;
+            isFirstMessagesLoadRef.current = false;
+
+            const announcementsPayload = JSON.stringify(
+              data.announcements ?? [],
+            );
+            const messagesPayload = JSON.stringify(incomingMessages);
+            const nextPayload = `${announcementsPayload}|${messagesPayload}`;
+
+            if (lastPayloadRef.current !== nextPayload) {
+              lastPayloadRef.current = nextPayload;
+
+              setAnnouncements(data.announcements ?? []);
+              setMessages(incomingMessages);
+            }
+
+            const announcementKeys = (data.newAnnouncements ?? []).map(
+              (item) => `announcement:${item.id}`,
+            );
+
+            notifyRef.current([...announcementKeys, ...newMessageKeys]);
+          } catch {
+            // Игнорируем некорректный payload
+          }
+        });
+
+        source.onerror = () => {
+          source.close();
+          sourceRef.current = null;
+
+          if (closed) return;
+
+          if (reconnectRef.current) {
+            window.clearTimeout(reconnectRef.current);
+          }
+          reconnectRef.current = window.setTimeout(connect, 3000);
+        };
       };
-    };
 
-    connect();
+      connect();
 
-    return () => {
-      source?.close();
+      return () => {
+        closed = true;
 
-      if (reconnectTimeout) {
-        window.clearTimeout(reconnectTimeout);
-      }
-    };
-  }, [notifyNewItems]);
+        if (sourceRef.current) {
+          sourceRef.current.close();
+          sourceRef.current = null;
+        }
+
+        if (reconnectRef.current) {
+          window.clearTimeout(reconnectRef.current);
+          reconnectRef.current = undefined;
+        }
+      };
+    }
+  }, []);
 
   useEffect(() => {
     if (!open) return;

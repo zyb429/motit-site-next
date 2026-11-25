@@ -27,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     typeof window === "undefined" ? undefined : { type: "application/json" };
 
   return (
-    <SessionProvider>
+    <SessionProvider refetchOnWindowFocus={false} refetchInterval={0}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider
           attribute="class"
