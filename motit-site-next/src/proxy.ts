@@ -10,8 +10,14 @@ export default auth((req) => {
 
   // /login для залогиненных → в /cabinet (или в from)
   if (pathname === "/login" && isAuthed) {
-    const from = req.nextUrl.searchParams.get("from");
-    if (from) return NextResponse.redirect(new URL(from, req.url));
+    const from =
+      req.nextUrl.searchParams.get("next") ??
+      req.nextUrl.searchParams.get("from");
+
+    if (from && from.startsWith("/") && !from.startsWith("//")) {
+      return NextResponse.redirect(new URL(from, req.url));
+    }
+
     return NextResponse.redirect(new URL("/cabinet", req.url));
   }
 
@@ -31,7 +37,7 @@ export default auth((req) => {
   if (pathname.startsWith("/cabinet")) {
     if (!isAuthed) {
       const url = new URL("/login", req.url);
-      url.searchParams.set("from", pathname);
+      url.searchParams.set("next", pathname);
       return NextResponse.redirect(url);
     }
     // admin / worker / client / statistics — все пускаются
