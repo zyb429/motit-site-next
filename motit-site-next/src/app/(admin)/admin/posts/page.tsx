@@ -29,7 +29,6 @@ async function getPosts(
   const user = await getCurrentUser();
   if (!user) return [];
 
-
   const isAdmin = user.isAdmin;
 
   const orderBy: Prisma.postsOrderByWithRelationInput[] =
@@ -55,48 +54,77 @@ async function getPosts(
                 { updated_at: "desc" },
               ];
 
-
   const rows = await prisma.posts.findMany({
-    where: isAdmin ? {} : { author_id: user.id },
+    where: isAdmin
+      ? {}
+      : {
+          OR: [
+            { author_id: user.id },
+            {
+              collaborators: {
+                some: {
+                  user_id: user.id,
+                },
+              },
+            },
+          ],
+        },
     orderBy,
     take: 100,
     include: {
       author: { include: { avatar: true } },
       posts_categories_links: { include: { categories: true } },
       featured_image: true,
+      collaborators: {
+        where: {
+          user_id: user.id,
+        },
+        select: {
+          role: true,
+        },
+      },
     },
   });
 
-  return rows.map((p) => ({
-    id: p.id,
-    documentId: p.document_id ?? null,
-    title: p.title ?? "",
-    slug: p.slug ?? null,
-    excerpt: p.excerpt ?? null,
-    post_status: p.post_status ?? null,
-    publishedAt: p.published_at?.toISOString() ?? null,
-    createdAt: p.created_at?.toISOString() ?? null,
-    updatedAt: p.updated_at?.toISOString() ?? null,
-    featuredImage: p.featured_image
-      ? {
-          id: p.featured_image.id,
-          url: p.featured_image.url ?? null,
-          name: p.featured_image.name ?? null,
-        }
-      : null,
-    author: p.author
-      ? {
-          username: p.author.username ?? "",
-          full_name: p.author.full_name ?? null,
-          avatar_url: p.author.avatar?.url ?? null,
-        }
-      : null,
-    categories:
-      p.posts_categories_links
-        ?.map((l) => l.categories)
-        .filter((c): c is NonNullable<typeof c> => Boolean(c))
-        .map((c) => ({ name: c.name ?? "", slug: c.slug ?? null })) ?? [],
-  }));
+  return rows.map((p) => {
+    const isOwner = isAdmin || p.author_id === user.id;
+    const collaboratorRole = p.collaborators[0]?.role;
+    const canEdit = isOwner || collaboratorRole === "editor";
+    const canManage = isOwner;
+
+    return {
+      id: p.id,
+      documentId: p.document_id ?? null,
+      title: p.title ?? "",
+      slug: p.slug ?? null,
+      excerpt: p.excerpt ?? null,
+      post_status: p.post_status ?? null,
+      publishedAt: p.published_at?.toISOString() ?? null,
+      createdAt: p.created_at?.toISOString() ?? null,
+      updatedAt: p.updated_at?.toISOString() ?? null,
+      canEdit,
+      canManage,
+      featuredImage: p.featured_image
+        ? {
+            id: p.featured_image.id,
+            url: p.featured_image.url ?? null,
+            name: p.featured_image.name ?? null,
+          }
+        : null,
+      author: p.author
+        ? {
+            username: p.author.username ?? "",
+            full_name: p.author.full_name ?? null,
+            avatar_url: p.author.avatar?.url ?? null,
+          }
+        : null,
+      categories:
+        p.posts_categories_links
+          ?.map((l) => l.categories)
+          .filter((c): c is NonNullable<typeof c> => Boolean(c))
+          .map((c) => ({ name: c.name ?? "", slug: c.slug ?? null })) ?? [],
+    };
+  });
 }
 
 type PostAuthor = {
@@ -552,17 +580,25 @@ export default async function AdminPostsPage({
                       </div>
 
                       {/* Действия — крупные кнопки */}
-                      <div className="flex flex-wrap items-center justify-end gap-1.5 pt-2 border-t border-(--border)">
-                        <EditPostButton postId={postId} />
-                        <StatusToggleButton
-                          postId={postId}
-                          currentStatus={status}
-                        />
-                        <DeletePostButton
-                          postId={postId}
-                          postTitle={post.title}
-                        />
-                      </div>
+                      {(post.canEdit || post.canManage) && (
+                        <div className="flex flex-wrap items-center justify-end gap-1.5 pt-2 border-t border-(--border)">
+                          {post.canEdit && <EditPostButton postId={postId} />}
+
+                          {post.canManage && (
+                            <StatusToggleButton
+                              postId={postId}
+                              currentStatus={status}
+                            />
+                          )}
+
+                          {post.canManage && (
+                            <DeletePostButton
+                              postId={postId}
+                              postTitle={post.title}
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -805,15 +841,21 @@ export default async function AdminPostsPage({
 
                           <td className="px-3 py-3 align-middle">
                             <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                              <EditPostButton postId={postId} />
-                              <StatusToggleButton
-                                postId={postId}
-                                currentStatus={status}
-                              />
-                              <DeletePostButton
-                                postId={postId}
-                                postTitle={post.title}
-                              />
+                              {post.canEdit && <EditPostButton postId={postId} />}
+
+                              {post.canManage && (
+                                <StatusToggleButton
+                                  postId={postId}
+                                  currentStatus={status}
+                                />
+                              )}
+
+                              {post.canManage && (
+                                <DeletePostButton
+                                  postId={postId}
+                                  postTitle={post.title}
+                                />
+                              )}
                             </div>
                           </td>
                         </tr>

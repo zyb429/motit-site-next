@@ -1,9 +1,9 @@
-// src/components/blog/BlogPosts.tsx
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { BlogCard } from "./BlogCard";
 import { ViewModeToggle, type ViewMode } from "./ViewModeToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PostListItem } from "@/lib/db/posts";
 import type { LanguageCode } from "@/lib/i18n";
 
@@ -23,18 +23,26 @@ export function BlogPosts({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isMobile = useIsMobile();
 
   const raw = searchParams.get("view");
-  const viewMode: ViewMode =
-    raw === "list" || raw === "tiles" || raw === "grid" ? raw : initialViewMode;
+
+  const selectedViewMode: ViewMode =
+    raw === "list" || raw === "tiles" || raw === "grid"
+      ? raw
+      : initialViewMode;
+
+  const viewMode: ViewMode = isMobile ? "list" : selectedViewMode;
 
   const setViewMode = (next: ViewMode) => {
     const params = new URLSearchParams(searchParams.toString());
+
     if (next === "list") {
       params.delete("view");
     } else {
       params.set("view", next);
     }
+
     const qs = params.toString();
     router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
   };
@@ -89,12 +97,16 @@ export function BlogPosts({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-medium text-(--text-muted) uppercase tracking-wider">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-sm font-medium uppercase tracking-wider text-(--text-muted)">
           Статьи
         </h2>
-        <ViewModeToggle value={viewMode} onChange={setViewMode} />
+
+        {!isMobile && (
+          <ViewModeToggle value={viewMode} onChange={setViewMode} />
+        )}
       </div>
+
       {renderCards()}
     </div>
   );

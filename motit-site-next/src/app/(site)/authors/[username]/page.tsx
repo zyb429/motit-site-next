@@ -1,4 +1,3 @@
-// src/app/(site)/authors/[username]/page.tsx
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -17,17 +16,19 @@ interface AuthorPageProps {
 }
 
 async function getAuthor(username: string) {
-  const u = await prisma.users.findFirst({
+  const user = await prisma.users.findFirst({
     where: { username },
     include: { avatar: true },
   });
-  if (!u) return null;
+
+  if (!user) return null;
+
   return {
-    id: u.id,
-    username: u.username ?? "",
-    full_name: u.full_name ?? null,
-    bio: u.bio ?? null,
-    avatar_url: u.avatar?.url ?? null,
+    id: user.id,
+    username: user.username ?? "",
+    full_name: user.full_name ?? null,
+    bio: user.bio ?? null,
+    avatar_url: user.avatar?.url ?? null,
   };
 }
 
@@ -36,53 +37,114 @@ async function getPostsByAuthorPrisma(username: string) {
     where: { username },
     select: { id: true },
   });
+
   if (!user) return [];
 
   const rows = await prisma.posts.findMany({
-    where: { author_id: user.id, post_status: "published" },
+    where: {
+      post_status: "published",
+      OR: [
+        {
+          author_id: user.id,
+        },
+        {
+          collaborators: {
+            some: {
+              user_id: user.id,
+            },
+          },
+        },
+      ],
+    },
     orderBy: [{ published_at: "desc" }],
     take: 50,
     include: {
-      author: { include: { avatar: true } },
-      posts_categories_links: { include: { categories: true } },
+      author: {
+        include: {
+          avatar: true,
+        },
+      },
+      collaborators: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              full_name: true,
+              avatar_url: true,
+            },
+          },
+        },
+      },
+      posts_categories_links: {
+        include: {
+          categories: true,
+        },
+      },
       featured_image: true,
     },
   });
 
-  return rows.map((p) => ({
-    id: p.id,
-    documentId: p.document_id ?? null,
-    title: p.title ?? "",
-    slug: p.slug ?? null,
-    excerpt: p.excerpt ?? null,
-    post_status: p.post_status ?? null,
-    publishedAt: p.published_at?.toISOString() ?? null,
-    updatedAt: p.updated_at?.toISOString() ?? null,
-    author: p.author
-      ? {
-          id: p.author.id,
-          username: p.author.username ?? "",
-          full_name: p.author.full_name ?? null,
-          avatar_url: p.author.avatar?.url ?? null,
-        }
-      : null,
-    categories:
-      p.posts_categories_links
-        ?.map((l) => l.categories)
-        .filter(Boolean)
-        .map((c) => ({
-          id: c.id,
-          name: c.name ?? "",
-          slug: c.slug ?? null,
-        })) ?? [],
-    featuredImage: p.featured_image
-      ? {
-          id: p.featured_image.id,
-          url: p.featured_image.url ?? null,
-          name: p.featured_image.name ?? null,
-        }
-      : null,
-  }));
+  return rows.map((post) => {
+    const authors = [
+      ...(post.author
+        ? [
+            {
+              id: post.author.id,
+              username: post.author.username ?? "",
+              full_name: post.author.full_name ?? null,
+              avatar_url: post.author.avatar?.url ?? null,
+              role: "author" as const,
+            },
+          ]
+        : []),
+      ...(post.collaborators ?? []).map((collaborator) => ({
+        id: collaborator.user.id,
+        username: collaborator.user.username ?? "",
+        full_name: collaborator.user.full_name ?? null,
+        avatar_url: collaborator.user.avatar_url ?? null,
+        role: (collaborator.role === "viewer"
+          ? "viewer"
+          : "editor") as "editor" | "viewer",
+      })),
+    ];
+
+    return {
+      id: post.id,
+      documentId: post.document_id ?? null,
+      title: post.title ?? "",
+      slug: post.slug ?? null,
+      excerpt: post.excerpt ?? null,
+      post_status: post.post_status ?? null,
+      publishedAt: post.published_at?.toISOString() ?? null,
+      updatedAt: post.updated_at?.toISOString() ?? null,
+      author: post.author
+        ? {
+            id: post.author.id,
+            username: post.author.username ?? "",
+            full_name: post.author.full_name ?? null,
+            avatar_url: post.author.avatar?.url ?? null,
+          }
+        : null,
+      authors,
+      categories:
+        post.posts_categories_links
+          ?.map((link) => link.categories)
+          .filter(Boolean)
+          .map((category) => ({
+            id: category.id,
+            name: category.name ?? "",
+            slug: category.slug ?? null,
+          })) ?? [],
+      featuredImage: post.featured_image
+        ? {
+            id: post.featured_image.id,
+            url: post.featured_image.url ?? null,
+            name: post.featured_image.name ?? null,
+          }
+        : null,
+    };
+  });
 }
 
 export async function generateMetadata({
@@ -90,6 +152,7 @@ export async function generateMetadata({
 }: AuthorPageProps): Promise<Metadata> {
   const { username } = await params;
   const author = await getAuthor(username);
+
   if (!author) return { title: "Автор не найден" };
 
   const name = author.full_name || author.username;
@@ -110,8 +173,8 @@ export default async function AuthorPage({
   searchParams,
 }: AuthorPageProps) {
   const { username } = await params;
-  const sp = await searchParams;
-  const initialView = parseView(sp?.view);
+  const queryParams = await searchParams;
+  const initialView = parseView(queryParams?.view);
 
   const [author, settings] = await Promise.all([
     getAuthor(username),
@@ -122,28 +185,31 @@ export default async function AuthorPage({
 
   const posts = await getPostsByAuthorPrisma(username);
 
-  const tz = settings?.timezone ?? "Europe/Minsk";
+  const timezone = settings?.timezone ?? "Europe/Minsk";
   const locale = (settings?.siteLocale ?? "ru") as LanguageCode;
 
   const displayName = author.full_name || author.username;
   const avatarUrl = author.avatar_url;
 
-  const pluralize = (n: number) => {
-    const mod10 = n % 10;
-    const mod100 = n % 100;
+  const pluralize = (count: number) => {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+
     if (mod10 === 1 && mod100 !== 11) return "публикация";
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20))
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
       return "публикации";
+    }
+
     return "публикаций";
   };
 
   return (
     <main className="min-h-screen bg-(--bg-primary) py-8 md:py-12 transition-colors duration-300">
-      <div className="container mx-auto px-4 max-w-4xl">
+      <div className="container mx-auto max-w-4xl px-4">
         <BackButton fallback="/blog" />
 
-        <header className="bg-(--bg-card) rounded-xl p-6 md:p-8 mb-8 border border-(--border)">
-          <div className="flex flex-col md:flex-row items-start gap-6">
+        <header className="mb-8 rounded-xl border border-(--border) bg-(--bg-card) p-6 md:p-8">
+          <div className="flex flex-col items-start gap-6 md:flex-row">
             {avatarUrl ? (
               <Image
                 src={avatarUrl}
@@ -151,28 +217,31 @@ export default async function AuthorPage({
                 width={120}
                 height={120}
                 priority
-                className="rounded-full object-cover border-2 border-(--accent)/20 shrink-0"
+                className="h-30 w-30 shrink-0 rounded-full border-2 border-(--accent)/20 object-cover"
               />
             ) : (
-              <div className="w-30 h-30 rounded-full bg-(--accent-dim) flex items-center justify-center shrink-0">
-                <User className="w-12 h-12 text-(--accent)" />
+              <div className="flex h-30 w-30 shrink-0 items-center justify-center rounded-full bg-(--accent-dim)">
+                <User className="h-12 w-12 text-(--accent)" />
               </div>
             )}
 
-            <div className="flex-1 min-w-0">
-              <h1 className="text-3xl md:text-4xl font-bold text-(--text-primary) mb-2">
+            <div className="min-w-0 flex-1">
+              <h1 className="mb-2 text-3xl font-bold text-(--text-primary) md:text-4xl">
                 {displayName}
               </h1>
+
               {author.username && (
-                <p className="text-sm text-(--text-muted) mb-3">
+                <p className="mb-3 text-sm text-(--text-muted)">
                   @{author.username}
                 </p>
               )}
+
               {author.bio && (
-                <p className="text-(--text-secondary) whitespace-pre-line mb-4">
+                <p className="mb-4 whitespace-pre-line text-(--text-secondary)">
                   {author.bio}
                 </p>
               )}
+
               <div className="flex flex-wrap items-center gap-4 text-sm text-(--text-secondary)">
                 <span className="flex items-center gap-1.5">
                   <FileText size={14} className="text-(--accent)" />
@@ -186,10 +255,11 @@ export default async function AuthorPage({
         <section>
           {posts.length === 0 ? (
             <>
-              <h2 className="text-xl font-bold text-(--text-primary) mb-4">
+              <h2 className="mb-4 text-xl font-bold text-(--text-primary)">
                 Публикации
               </h2>
-              <p className="text-(--text-muted) text-center py-12">
+
+              <p className="py-12 text-center text-(--text-muted)">
                 У автора пока нет публикаций
               </p>
             </>
@@ -200,7 +270,7 @@ export default async function AuthorPage({
                   {posts.slice(0, 3).map((post) => (
                     <div
                       key={post.id}
-                      className="h-40 bg-(--bg-card) rounded-xl border border-(--border) animate-pulse"
+                      className="h-40 animate-pulse rounded-xl border border-(--border) bg-(--bg-card)"
                     />
                   ))}
                 </div>
@@ -209,7 +279,7 @@ export default async function AuthorPage({
               <AuthorPosts
                 posts={posts}
                 initialView={initialView}
-                timezone={tz}
+                timezone={timezone}
                 locale={locale}
               />
             </Suspense>

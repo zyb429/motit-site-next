@@ -350,27 +350,42 @@ export default async function BlogPostPage({
           </h1>
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-(--text-secondary)">
-            {author && (
-              <Link
-                href={`/authors/${author.username}`}
-                className="flex items-center gap-1.5 hover:text-(--accent) transition-colors"
-              >
-                {(() => {
-                  const avatarSrc = getSafeImageUrl(author.avatar_url);
-                  return avatarSrc ? (
-                    <Image
-                      src={avatarSrc}
-                      alt={author.full_name || author.username}
-                      width={20}
-                      height={20}
-                      className="w-5 h-5 rounded-full object-cover"
-                    />
-                  ) : (
-                    <User size={14} className="text-(--accent)" />
-                  );
-                })()}
-                {author.full_name || author.username}
-              </Link>
+            {post.authors.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {post.authors.map((person, index) => (
+                  <span
+                    key={`${person.id}-${person.role}`}
+                    className="flex items-center gap-1.5"
+                  >
+                    {(() => {
+                      const avatarSrc = getSafeImageUrl(person.avatar_url);
+
+                      return avatarSrc ? (
+                        <Image
+                          src={avatarSrc}
+                          alt={person.full_name || person.username}
+                          width={20}
+                          height={20}
+                          className="w-5 h-5 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User size={14} className="text-(--accent)" />
+                      );
+                    })()}
+
+                    <Link
+                      href={`/authors/${person.username}`}
+                      className="hover:text-(--accent) transition-colors"
+                    >
+                      {person.full_name || person.username}
+                    </Link>
+
+                    {index < post.authors.length - 1 && (
+                      <span className="text-[var(--text-muted)]">,</span>
+                    )}
+                  </span>
+                ))}
+              </div>
             )}
             {post.publishedAt && (
               <span className="flex items-center gap-1.5">

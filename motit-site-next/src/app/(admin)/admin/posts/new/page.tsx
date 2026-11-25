@@ -1,7 +1,8 @@
-// src/app/(admin)/admin/posts/new/page.tsx
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getPostAccess } from "@/lib/posts/access";
+import CollaboratorsSection from "./collaborators/CollaboratorsSection";
 import CreatePostClient from "./CreatePostClient";
 
 export type User = {
@@ -24,7 +25,10 @@ export type Category = {
 };
 
 async function getCategories(): Promise<Category[]> {
-  const rows = await prisma.categories.findMany({ orderBy: { name: "asc" } });
+  const rows = await prisma.categories.findMany({
+    orderBy: { name: "asc" },
+  });
+
   return rows.map((c) => ({
     id: c.id,
     documentId: c.document_id ?? undefined,
@@ -35,9 +39,25 @@ async function getCategories(): Promise<Category[]> {
   }));
 }
 
-export default async function CreatePostPage() {
+export default async function CreatePostPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}) {
   const currentUser = await getCurrentUser();
-  if (!currentUser) redirect("/login");
+
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  const params = await searchParams;
+  const editId = params.id ?? null;
+
+  const access = editId ? await getPostAccess(editId) : null;
+
+  if (editId && (!access || !access.canView)) {
+    redirect("/admin/posts");
+  }
 
   const user: User = {
     id: currentUser.id,
@@ -51,5 +71,25 @@ export default async function CreatePostPage() {
 
   const categories = await getCategories();
 
-  return <CreatePostClient initialUser={user} initialCategories={categories} />;
+  return (
+    <CreatePostClient
+      initialUser={user}
+      initialCategories={categories}
+      canEdit={access ? access.canEdit : true}
+      postAuthor={access?.author ?? null}
+    >
+      {editId && access?.canView ? (
+        <CollaboratorsSection postId={editId as string} />
+      ) : (
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+            Соавторы
+          </h2>
+          <p className="text-xs text-[var(--text-muted)]">
+            Соавторов можно добавить после первого сохранения поста.
+          </p>
+        </div>
+      )}
+    </CreatePostClient>
+  );
 }

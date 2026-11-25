@@ -48,6 +48,13 @@ type User = {
   full_name?: string;
 };
 
+type PostAuthor = {
+  id: number;
+  username: string;
+  full_name: string | null;
+  avatar_url: string | null;
+};
+
 const postSchema = z.object({
   title: z
     .string()
@@ -65,6 +72,9 @@ type PostFormData = z.output<typeof postSchema>;
 type CreatePostProps = {
   initialUser: User | null;
   initialCategories: Category[];
+  canEdit?: boolean;
+  postAuthor?: PostAuthor | null;
+  children?: React.ReactNode;
 };
 
 const inputClass =
@@ -73,6 +83,9 @@ const inputClass =
 export default memo(function CreatePostClient({
   initialUser,
   initialCategories,
+  canEdit = true,
+  postAuthor = null,
+  children,
 }: CreatePostProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -514,32 +527,34 @@ export default memo(function CreatePostClient({
           </button>
 
           {/* Сохранить — иконка + текст на мобилке только иконка */}
-          <button
-            type="submit"
-            form="post-form"
-            disabled={isDisabled}
-            aria-label={
-              postStatusValue === "draft"
-                ? "Сохранить черновик"
-                : "Опубликовать"
-            }
-            className="ml-0.5 sm:ml-2 px-2.5 sm:px-5 py-2 bg-[var(--accent)] text-[var(--bg-primary)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1 sm:gap-2 shadow-sm font-medium text-sm"
-          >
-            {isPending || isSubmitting || isUploadingImage ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                {postStatusValue === "draft" ? (
-                  <Save className="w-4 h-4" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                <span className="hidden sm:inline">
-                  {postStatusValue === "draft" ? "Черновик" : "Опубликовать"}
-                </span>
-              </>
-            )}
-          </button>
+          {canEdit && (
+            <button
+              type="submit"
+              form="post-form"
+              disabled={isDisabled}
+              aria-label={
+                postStatusValue === "draft"
+                  ? "Сохранить черновик"
+                  : "Опубликовать"
+              }
+              className="ml-0.5 sm:ml-2 px-2.5 sm:px-5 py-2 bg-[var(--accent)] text-[var(--bg-primary)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1 sm:gap-2 shadow-sm font-medium text-sm"
+            >
+              {isPending || isSubmitting || isUploadingImage ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  {postStatusValue === "draft" ? (
+                    <Save className="w-4 h-4" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {postStatusValue === "draft" ? "Черновик" : "Опубликовать"}
+                  </span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </header>
 
@@ -629,8 +644,51 @@ export default memo(function CreatePostClient({
               />
             </div>
 
-            <div className="shrink-0 p-5 border-t border-[var(--border)] text-xs text-[var(--text-muted)] text-center bg-[var(--bg-card)]">
-              Автор: {user.full_name || user.firstname || user.username}
+            {children && (
+              <div className="shrink-0 border-t border-[var(--border)] bg-[var(--bg-card)] p-5">
+                {children}
+              </div>
+            )}
+
+            <div className="shrink-0 p-5 border-t border-[var(--border)] bg-[var(--bg-card)]">
+              <p className="mb-2 text-xs font-medium text-[var(--text-muted)]">
+                Автор поста
+              </p>
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--bg-secondary)] text-xs font-semibold text-[var(--text-primary)]">
+                  {postAuthor?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={postAuthor.avatar_url}
+                      alt={postAuthor.username}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    (
+                      postAuthor?.full_name ||
+                      postAuthor?.username ||
+                      user.full_name ||
+                      user.username
+                    )
+                      .slice(0, 2)
+                      .toUpperCase()
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">
+                    {postAuthor?.full_name ||
+                      postAuthor?.username ||
+                      user.full_name ||
+                      user.username}
+                  </p>
+
+                  <p className="truncate text-xs text-[var(--text-muted)]">
+                    {postAuthor?.username ? `@${postAuthor.username}` : ""}
+                  </p>
+                </div>
+              </div>
             </div>
           </aside>
         </form>
