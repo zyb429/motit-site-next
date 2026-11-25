@@ -320,29 +320,40 @@ export function NotificationBell() {
     };
   }, [open]);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!open || !buttonRef.current) return;
 
     const updatePosition = () => {
-      const rect = buttonRef.current?.getBoundingClientRect();
+        const rect = buttonRef.current?.getBoundingClientRect();
 
-      if (!rect) return;
+        if (!rect) return;
 
-      const panelWidth = 380;
-      const margin = 12;
+        const margin = 12;
+        const isMobile = window.innerWidth < 640;
 
-      let left = rect.right + 10;
+        if (isMobile) {
+        setPosition({
+            left: margin,
+            top: rect.bottom + 8,
+        });
 
-      if (left + panelWidth > window.innerWidth - margin) {
+        return;
+        }
+
+        const panelWidth = 380;
+
+        let left = rect.right + 10;
+
+        if (left + panelWidth > window.innerWidth - margin) {
         left = Math.max(margin, window.innerWidth - panelWidth - margin);
-      }
+        }
 
-      const top = Math.min(
+        const top = Math.min(
         rect.bottom + 10,
         Math.max(margin, window.innerHeight - 160),
-      );
+        );
 
-      setPosition({ left, top });
+        setPosition({ left, top });
     };
 
     updatePosition();
@@ -350,18 +361,18 @@ export function NotificationBell() {
     const resizeObserver = new ResizeObserver(updatePosition);
 
     if (panelRef.current) {
-      resizeObserver.observe(panelRef.current);
+        resizeObserver.observe(panelRef.current);
     }
 
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
 
     return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
+        resizeObserver.disconnect();
+        window.removeEventListener("resize", updatePosition);
+        window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [open]);
+    }, [open]);
 
   const unreadAnnouncements = useMemo(
     () => announcements.filter((item) => !readIds.includes(item.id)),
@@ -416,15 +427,15 @@ export function NotificationBell() {
       {open &&
         mounted &&
         createPortal(
-          <div
-            ref={panelRef}
-            style={{
-              left: `${position.left}px`,
-              top: `${position.top}px`,
-              width: "380px",
-            }}
-            className="fixed z-[9999] max-h-[min(70vh,560px)] overflow-hidden rounded-xl border border-(--border) bg-(--bg-card) shadow-2xl"
-          >
+            <div
+                ref={panelRef}
+                style={{
+                    left: `${position.left}px`,
+                    top: `${position.top}px`,
+                    width: "min(380px, calc(100vw - 24px))",
+                }}
+                className="fixed z-[9999] max-h-[min(70vh,560px)] overflow-hidden rounded-xl border border-(--border) bg-(--bg-card) shadow-2xl"
+            >
             <div className="flex items-center justify-between border-b border-(--border) px-4 py-3">
               <div className="flex items-center gap-2">
                 <Bell size={16} className="text-(--accent)" />
