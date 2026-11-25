@@ -380,9 +380,7 @@ export function TicketThread({
                 </div>
 
                 {/* Текст сообщения */}
-                <div
-                  className={`text-sm leading-relaxed whitespace-pre-wrap ${isInternalMsg ? "text-amber-100/90" : "text-(--text-secondary)"}`}
-                >
+                <div className="text-sm leading-relaxed whitespace-pre-wrap text-(--text-primary)">
                   {c.content}
                 </div>
 
