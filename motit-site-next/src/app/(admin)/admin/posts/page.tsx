@@ -1,4 +1,4 @@
-// src/app/(admin)/admin/posts/page.tsx
+﻿// src/app/(admin)/admin/posts/page.tsx
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -13,6 +13,7 @@ import {
   User,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@generated/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getSiteSettings } from "@/lib/db/site-settings";
 import { formatDate } from "@/lib/format-date";
@@ -20,15 +21,43 @@ import { DeletePostButton } from "./DeletePostButton";
 import { StatusToggleButton } from "./StatusToggleButton";
 import { EditPostButton } from "./EditPostButton";
 
-async function getPosts() {
+async function getPosts(
+  sortKey: PostsSortKey,
+  sortDirection: PostsSortDirection,
+) {
   const user = await getCurrentUser();
   if (!user) return [];
 
+
   const isAdmin = user.isAdmin;
+
+  const orderBy: Prisma.postsOrderByWithRelationInput[] =
+    sortKey === "title"
+      ? [{ title: sortDirection }, { updated_at: "desc" }]
+      : sortKey === "slug"
+        ? [{ slug: sortDirection }, { updated_at: "desc" }]
+        : sortKey === "author"
+          ? [
+              { author: { full_name: sortDirection } },
+              { author: { username: sortDirection } },
+              { updated_at: "desc" },
+            ]
+          : sortKey === "status"
+            ? [
+                { post_status: sortDirection },
+                { published_at: "desc" },
+                { updated_at: "desc" },
+              ]
+            : [
+                { published_at: sortDirection },
+                { created_at: sortDirection },
+                { updated_at: "desc" },
+              ];
+
 
   const rows = await prisma.posts.findMany({
     where: isAdmin ? {} : { author_id: user.id },
-    orderBy: [{ published_at: "desc" }, { updated_at: "desc" }],
+    orderBy,
     take: 100,
     include: {
       author: { include: { avatar: true } },
@@ -96,14 +125,52 @@ function getAuthorInfo(post: PostWithAuthor): {
   };
 }
 
+type PostsSortKey = "title" | "author" | "date" | "slug" | "status";
+type PostsSortDirection = "asc" | "desc";
+
+
+const SORT_KEYS: PostsSortKey[] = [
+  "title",
+  "author",
+  "date",
+  "slug",
+  "status",
+];
+
+function normalizeSort(
+  sortValue: string | undefined,
+  directionValue: string | undefined,
+): { key: PostsSortKey; direction: PostsSortDirection } {
+  const key = SORT_KEYS.includes(sortValue as PostsSortKey)
+    ? (sortValue as PostsSortKey)
+    : "date";
+
+
+  const defaultDirection: PostsSortDirection =
+    key === "date" ? "desc" : "asc";
+
+  const direction: PostsSortDirection =
+    directionValue === "asc" || directionValue === "desc"
+      ? directionValue
+      : defaultDirection;
+
+  return { key, direction };
+}
+
 export default async function AdminPostsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    status?: string;
+    sort?: string;
+    dir?: string;
+  }>;
 }) {
   const params = (await searchParams) || {};
   const query = (params.q || "").toLowerCase().trim();
   const statusFilter = params.status || "all";
+  const sort = normalizeSort(params.sort, params.dir);
 
   const settings = await getSiteSettings();
   const tz = settings?.timezone ?? "Europe/Minsk";
@@ -114,7 +181,7 @@ export default async function AdminPostsPage({
     year: "numeric" as const,
   };
 
-  const allPosts = await getPosts();
+  const allPosts = await getPosts(sort.key, sort.direction);
 
   const totalCount = allPosts.length;
   const publishedCount = allPosts.filter(
@@ -138,6 +205,18 @@ export default async function AdminPostsPage({
       return status === statusFilter;
     });
   }
+
+  const buildSortHref = (key: PostsSortKey) => {
+    const nextDirection: PostsSortDirection =
+      sort.key === key && sort.direction === "asc" ? "desc" : "asc";
+
+    return `/admin/posts?${new URLSearchParams({
+      ...(query ? { q: params.q! } : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      sort: key,
+      dir: nextDirection,
+    }).toString()}`;
+  };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-(--bg-primary)">
@@ -168,7 +247,7 @@ export default async function AdminPostsPage({
 
             <Link
               href="/admin/posts/new"
-              className="px-3 sm:px-6 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) flex items-center gap-1.5 sm:gap-2 shadow-sm hover:shadow transition-all font-medium text-sm shrink-0"
+              className="px-3 sm:px-5 py-2 bg-(--accent) text-(--bg-primary) rounded-lg hover:bg-(--accent-hover) flex items-center gap-1.5 sm:gap-2 shadow-sm hover:shadow transition-all font-medium text-xs sm:text-sm shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span>Создать</span>
@@ -232,7 +311,7 @@ export default async function AdminPostsPage({
 
           {/* Фильтры и поиск */}
           <div className="bg-(--bg-card) rounded-xl border border-(--border) p-3 sm:p-4 shadow-sm mb-4 sm:mb-6">
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
+            <div className="flex flex-col lg:flex-row gap-2 sm:gap-3 items-stretch lg:items-center">
               <form
                 className="flex-1 min-w-0 relative"
                 action="/admin/posts"
@@ -251,7 +330,7 @@ export default async function AdminPostsPage({
                 )}
               </form>
 
-              <div className="flex items-center gap-1 bg-(--bg-secondary) rounded-lg p-1 overflow-x-auto no-scrollbar shrink-0">
+              <div className="flex items-center gap-1 bg-(--bg-secondary) rounded-lg p-1 overflow-x-auto no-scrollbar w-full lg:w-auto shrink-0">
                 {[
                   { key: "all", label: "Все", count: totalCount },
                   {
@@ -320,8 +399,8 @@ export default async function AdminPostsPage({
             </div>
           ) : (
             <>
-              {/* Карточки — < lg */}
-              <div className="lg:hidden space-y-2.5">
+              {/* Карточки — < md */}
+              <div className="md:hidden space-y-2.5">
                 {posts.map((post) => {
                   const postId = post.documentId || String(post.id);
                   const slug = post.slug || postId;
@@ -442,7 +521,7 @@ export default async function AdminPostsPage({
                       </div>
 
                       {/* Действия — крупные кнопки */}
-                      <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-(--border)">
+                      <div className="flex flex-wrap items-center justify-end gap-1.5 pt-2 border-t border-(--border)">
                         <EditPostButton postId={postId} />
                         <StatusToggleButton
                           postId={postId}
@@ -458,9 +537,10 @@ export default async function AdminPostsPage({
                 })}
               </div>
 
-              {/* Таблица — ≥ lg (без изменений) */}
-              <div className="hidden lg:block bg-(--bg-card) rounded-xl shadow-sm border border-(--border) overflow-hidden">
-                <table className="w-full table-fixed">
+              {/* Таблица — ≥ md */}
+              <div className="hidden md:block bg-(--bg-card) rounded-xl shadow-sm border border-(--border) overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[960px] table-fixed">
                   <colgroup>
                     <col style={{ width: "7%" }} />
                     <col />
@@ -476,23 +556,53 @@ export default async function AdminPostsPage({
                       <th className="text-center px-2 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
                         Превью
                       </th>
-                      <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
-                        Заголовок
+                      <th className="text-left px-3 py-3">
+                        <Link
+                          href={buildSortHref("title")}
+                          className="text-xs font-medium text-(--text-muted) uppercase tracking-wider transition-colors hover:text-(--accent)"
+                        >
+                          Заголовок
+                          {sort.key === "title" && (sort.direction === "asc" ? " ↑" : " ↓")}
+                        </Link>
                       </th>
-                      <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
-                        Slug
+                      <th className="text-left px-3 py-3">
+                        <Link
+                          href={buildSortHref("slug")}
+                          className="text-xs font-medium text-(--text-muted) uppercase tracking-wider transition-colors hover:text-(--accent)"
+                        >
+                          Slug
+                          {sort.key === "slug" && (sort.direction === "asc" ? " ↑" : " ↓")}
+                        </Link>
                       </th>
                       <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
                         Категории
                       </th>
-                      <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
-                        Дата
+                      <th className="text-left px-3 py-3">
+                        <Link
+                          href={buildSortHref("date")}
+                          className="text-xs font-medium text-(--text-muted) uppercase tracking-wider transition-colors hover:text-(--accent)"
+                        >
+                          Дата
+                          {sort.key === "date" && (sort.direction === "asc" ? " ↑" : " ↓")}
+                        </Link>
                       </th>
-                      <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
-                        Автор
+                      <th className="text-left px-3 py-3">
+                        <Link
+                          href={buildSortHref("author")}
+                          className="text-xs font-medium text-(--text-muted) uppercase tracking-wider transition-colors hover:text-(--accent)"
+                        >
+                          Автор
+                          {sort.key === "author" && (sort.direction === "asc" ? " ↑" : " ↓")}
+                        </Link>
                       </th>
-                      <th className="text-left px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
-                        Статус
+                      <th className="text-left px-3 py-3">
+                        <Link
+                          href={buildSortHref("status")}
+                          className="text-xs font-medium text-(--text-muted) uppercase tracking-wider transition-colors hover:text-(--accent)"
+                        >
+                          Статус
+                          {sort.key === "status" && (sort.direction === "asc" ? " ↑" : " ↓")}
+                        </Link>
                       </th>
                       <th className="text-right px-3 py-3 text-xs font-medium text-(--text-muted) uppercase tracking-wider">
                         Действия
@@ -678,8 +788,9 @@ export default async function AdminPostsPage({
                         </tr>
                       );
                     })}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </>
           )}
