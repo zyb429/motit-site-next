@@ -131,7 +131,6 @@ export async function PUT(
     const data: Record<string, unknown> = { updated_at: now };
 
     if (title !== undefined) data.title = title;
-    if (slug !== undefined) data.slug = slug;
     if (content !== undefined) data.content = content;
     if (excerpt !== undefined) data.excerpt = excerpt;
     if (meta_title !== undefined) data.meta_title = meta_title;
@@ -166,6 +165,37 @@ export async function PUT(
           });
           data.author_id = found?.id ?? null;
         }
+      }
+    }
+
+    const currentPost = await prisma.posts.findUnique({
+      where: { id: postId },
+      select: {
+        slug: true,
+      },
+    });
+
+    if (
+      typeof slug === "string" &&
+      slug.trim().length > 0 &&
+      slug.trim() !== currentPost?.slug
+    ) {
+      const requestedSlug = slug.trim();
+
+      const slugExists = await prisma.posts.findFirst({
+        where: {
+          slug: requestedSlug,
+          id: {
+            not: postId,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!slugExists) {
+        data.slug = requestedSlug;
       }
     }
 

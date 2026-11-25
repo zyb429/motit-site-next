@@ -28,6 +28,7 @@ export type PostListItem = {
     full_name: string | null;
     avatar_url: string | null;
   } | null;
+  authors: PostPerson[];
   categories: { id: number; name: string; slug: string | null }[];
   featuredImage: PostFeaturedImage;
 };
@@ -36,10 +37,30 @@ export type PostDetail = PostListItem & {
   content: unknown;
 };
 
+export type PostPerson = {
+  id: number;
+  username: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: "author" | "editor" | "viewer";
+};
+
 const POST_INCLUDE = {
   author: {
     include: {
       avatar: true,
+    },
+  },
+  collaborators: {
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          full_name: true,
+          avatar_url: true,
+        },
+      },
     },
   },
   posts_categories_links: { include: { categories: true } },
@@ -76,6 +97,28 @@ function mapPost(
           avatar_url: p.author.avatar?.url ?? null,
         }
       : null,
+    authors: [
+      ...(p.author
+        ? [
+            {
+              id: p.author.id,
+              username: p.author.username ?? "",
+              full_name: p.author.full_name ?? null,
+              avatar_url: p.author.avatar?.url ?? null,
+              role: "author" as const,
+            },
+          ]
+        : []),
+      ...(p.collaborators ?? []).map((collaborator) => ({
+        id: collaborator.user.id,
+        username: collaborator.user.username ?? "",
+        full_name: collaborator.user.full_name ?? null,
+        avatar_url: collaborator.user.avatar_url ?? null,
+        role: (collaborator.role === "viewer"
+          ? "viewer"
+          : "editor") as "editor" | "viewer",
+      })),
+    ],
     categories:
       p.posts_categories_links
         ?.map((l) => l.categories)
