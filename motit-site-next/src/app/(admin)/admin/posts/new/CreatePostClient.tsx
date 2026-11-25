@@ -1,4 +1,3 @@
-// src/app/(admin)/admin/posts/new/CreatePostClient.tsx
 "use client";
 
 import {
@@ -24,6 +23,7 @@ import {
   Settings2,
   History,
   Send,
+  Users,
 } from "lucide-react";
 
 import type { CustomElement } from "@/types/slate";
@@ -91,6 +91,7 @@ export default memo(function CreatePostClient({
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
   const isEditMode = Boolean(editId);
+
   const [slugStatus, setSlugStatus] = useState<
     "idle" | "checking" | "available" | "taken"
   >("idle");
@@ -110,6 +111,7 @@ export default memo(function CreatePostClient({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [collaboratorsOpen, setCollaboratorsOpen] = useState(false);
 
   const {
     register,
@@ -131,7 +133,6 @@ export default memo(function CreatePostClient({
   const excerptValue = watch("excerpt") || "";
   const postStatusValue = watch("post_status");
   const categoryValue = watch("categoryId");
-
   const titleValue = watch("title") || "";
   const slugValue = useMemo(() => generateSlug(titleValue), [titleValue]);
 
@@ -181,14 +182,18 @@ export default memo(function CreatePostClient({
     const fetchData = async () => {
       if (!initialUser) {
         setIsLoading(true);
+
         try {
           const userRes = await fetch("/api/auth/me");
+
           if (userRes.ok) {
             const userData = await userRes.json();
             setUser(userData.user || userData.data || null);
           }
+
           if (initialCategories.length === 0) {
             const catRes = await fetch("/api/categories");
+
             if (catRes.ok) {
               const catData = await catRes.json();
               setCategories(catData.data || catData || []);
@@ -201,6 +206,7 @@ export default memo(function CreatePostClient({
         }
       }
     };
+
     fetchData();
   }, [initialUser, initialCategories]);
 
@@ -216,6 +222,7 @@ export default memo(function CreatePostClient({
         const res = await fetch(
           `/api/posts/${editId}?populate[]=categories&populate[]=featured_image`,
         );
+
         if (!res.ok) throw new Error("Не удалось загрузить пост");
 
         const json = await res.json();
@@ -235,6 +242,7 @@ export default memo(function CreatePostClient({
               typeof post.content === "string"
                 ? JSON.parse(post.content)
                 : post.content;
+
             if (
               raw &&
               typeof raw === "object" &&
@@ -263,41 +271,55 @@ export default memo(function CreatePostClient({
         setIsLoadingPost(false);
       }
     };
+
     loadPost();
   }, [isEditMode, editId, setValue]);
 
   const handleImageSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
+
     if (!file.type.startsWith("image/")) {
       alert("Пожалуйста, выберите изображение");
       return;
     }
+
     if (file.size > 5 * 1024 * 1024) {
       alert("Файл слишком большой (максимум 5MB)");
       return;
     }
+
     setFeaturedImage(file);
+
     const reader = new FileReader();
+
     reader.onloadend = () => {
       setFeaturedImagePreview(reader.result as string);
     };
+
     reader.readAsDataURL(file);
   };
 
   const handleRemoveImage = () => {
     setFeaturedImage(null);
     setFeaturedImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleEditCover = async () => {
     if (!featuredImagePreview || isEditingCover) return;
+
     try {
       setIsEditingCover(true);
 
       const res = await fetch(featuredImagePreview);
+
       if (!res.ok) throw new Error("Не удалось загрузить изображение");
+
       const blob = await res.blob();
       const file = new File([blob], "cover.jpg", {
         type: blob.type || "image/jpeg",
@@ -319,6 +341,7 @@ export default memo(function CreatePostClient({
       if (!result?.file) return;
 
       const newPreviewUrl = URL.createObjectURL(result.file);
+
       setFeaturedImagePreview(newPreviewUrl);
       setFeaturedImage(result.file);
     } catch (err) {
@@ -331,17 +354,23 @@ export default memo(function CreatePostClient({
 
   const uploadImage = useCallback(async (): Promise<number | null> => {
     if (!featuredImage) return null;
+
     try {
       setIsUploadingImage(true);
+
       const formData = new FormData();
       formData.append("files", featuredImage);
+
       const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
+
       if (!response.ok) throw new Error("Failed to upload image");
+
       const data = await response.json();
       const file = Array.isArray(data) ? data[0] : data?.data?.[0];
+
       return file?.id ?? null;
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -361,6 +390,7 @@ export default memo(function CreatePostClient({
       startTransition(async () => {
         try {
           let featuredImageId: number | null = null;
+
           if (featuredImage) {
             featuredImageId = await uploadImage();
           }
@@ -368,18 +398,27 @@ export default memo(function CreatePostClient({
           const categoryId = Number.isFinite(data.categoryId)
             ? data.categoryId
             : null;
+
           const categoryDocId = categoryId
             ? categories.find((c) => c.id === categoryId)?.documentId
             : null;
+
           const generatedSlug = generateSlug(data.title);
           const slug = generatedSlug || `post-${Date.now()}`;
 
           const safeContent = (() => {
-            const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
+            const emptyDoc = {
+              type: "doc",
+              content: [{ type: "paragraph" }],
+            };
+
             if (!data.content || data.content.trim() === "") return emptyDoc;
+
             try {
               const parsed = JSON.parse(data.content);
+
               if (Array.isArray(parsed)) return emptyDoc;
+
               return parsed;
             } catch {
               return emptyDoc;
@@ -398,6 +437,7 @@ export default memo(function CreatePostClient({
           if (featuredImageId) payload.featured_image = featuredImageId;
 
           let response: Response;
+
           if (isEditMode && editId) {
             response = await fetch(`/api/posts/${editId}`, {
               method: "PUT",
@@ -414,6 +454,7 @@ export default memo(function CreatePostClient({
 
           if (!response.ok) {
             const error = await response.json().catch(() => ({}));
+
             throw new Error(
               error.error?.message ||
                 error.error ||
@@ -450,10 +491,10 @@ export default memo(function CreatePostClient({
 
   if (!user) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center bg-[var(--bg-primary)] p-4">
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-6 py-4 rounded-lg max-w-md">
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-[var(--bg-primary)] p-4">
+        <div className="max-w-md rounded-lg border border-red-500/20 bg-red-500/10 px-6 py-4 text-red-400">
           <p className="font-medium">Доступ запрещен</p>
-          <p className="text-sm mt-1">
+          <p className="mt-1 text-sm">
             Пожалуйста,{" "}
             <Link href="/login" className="underline hover:text-red-300">
               войдите
@@ -466,67 +507,76 @@ export default memo(function CreatePostClient({
   }
 
   return (
-    <div className="flex flex-col h-dvh bg-[var(--bg-primary)] overflow-hidden font-sans">
-      {/* ==================== ХЕДЕР ==================== */}
-      <header className="shrink-0 flex items-center justify-between gap-1.5 sm:gap-3 px-2 sm:px-6 py-1.5 sm:py-3 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 backdrop-blur-md z-20">
-        <div className="flex items-center gap-1.5 sm:gap-4 min-w-0">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg-primary)] font-sans">
+      <header className="z-20 flex shrink-0 items-center justify-between gap-1.5 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 px-2 py-1.5 backdrop-blur-md sm:gap-3 sm:px-6 sm:py-3">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-4">
           <Link
             href="/admin/posts"
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1.5 sm:p-2 rounded-full hover:bg-[var(--bg-secondary)] shrink-0"
+            className="shrink-0 rounded-full p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] sm:p-2"
             aria-label="Назад к постам"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="h-5 w-5" />
           </Link>
+
           <div className="min-w-0">
-            <h1 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] truncate">
+            <h1 className="truncate text-sm font-semibold text-[var(--text-primary)] sm:text-base">
               {isEditMode ? "Редактирование" : "Новый пост"}
             </h1>
-            <p className="text-[10px] sm:text-xs text-[var(--text-muted)] truncate">
+
+            <p className="truncate text-[10px] text-[var(--text-muted)] sm:text-xs">
               {postStatusValue === "draft" ? "Черновик" : "Публикация"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
-          {/* Настройки — только иконка на мобилке */}
+        <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
+          {isEditMode && editId && (
+            <button
+              type="button"
+              onClick={() => setCollaboratorsOpen(true)}
+              className="rounded-md p-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] lg:hidden"
+              aria-label="Соавторы"
+              title="Соавторы"
+            >
+              <Users className="h-5 w-5" />
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
             disabled={isDisabled}
-            className="lg:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+            className="rounded-md p-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] lg:hidden"
             aria-label="Настройки поста"
             title="Настройки"
           >
-            <Settings2 className="w-5 h-5" />
+            <Settings2 className="h-5 w-5" />
           </button>
 
-          {/* История — только иконка на мобилке, если editMode */}
           {isEditMode && editId && (
             <button
               type="button"
               onClick={() => setVersionsOpen(true)}
               disabled={isDisabled}
-              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+              className="rounded-md p-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
               aria-label="История версий"
               title="История"
             >
-              <History className="w-5 h-5" />
+              <History className="h-5 w-5" />
             </button>
           )}
 
-          {/* Отмена — только иконка на мобилке */}
           <button
             type="button"
             onClick={() => router.back()}
             disabled={isDisabled}
-            className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+            className="rounded-md p-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
             aria-label="Отмена"
             title="Отмена"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
 
-          {/* Сохранить — иконка + текст на мобилке только иконка */}
           {canEdit && (
             <button
               type="submit"
@@ -537,17 +587,18 @@ export default memo(function CreatePostClient({
                   ? "Сохранить черновик"
                   : "Опубликовать"
               }
-              className="ml-0.5 sm:ml-2 px-2.5 sm:px-5 py-2 bg-[var(--accent)] text-[var(--bg-primary)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1 sm:gap-2 shadow-sm font-medium text-sm"
+              className="ml-0.5 flex items-center gap-1 rounded-md bg-[var(--accent)] px-2.5 py-2 text-sm font-medium text-[var(--bg-primary)] shadow-sm transition-all hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 sm:ml-2 sm:gap-2 sm:px-5"
             >
               {isPending || isSubmitting || isUploadingImage ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
                   {postStatusValue === "draft" ? (
-                    <Save className="w-4 h-4" />
+                    <Save className="h-4 w-4" />
                   ) : (
-                    <Send className="w-4 h-4" />
+                    <Send className="h-4 w-4" />
                   )}
+
                   <span className="hidden sm:inline">
                     {postStatusValue === "draft" ? "Черновик" : "Опубликовать"}
                   </span>
@@ -558,27 +609,25 @@ export default memo(function CreatePostClient({
         </div>
       </header>
 
-      {/* ==================== ОСНОВНАЯ ОБЛАСТЬ ==================== */}
-      <main className="flex-1 flex overflow-hidden min-h-0">
+      <main className="flex min-h-0 flex-1 overflow-hidden">
         <form
           id="post-form"
           onSubmit={handleSubmit(onSubmit)}
-          className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row"
         >
-          {/* ЛЕВАЯ КОЛОНКА: РЕДАКТОР — занимает всё пространство */}
-          <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-[var(--bg-primary)]">
-            <div className="flex-1 flex flex-col min-h-0 px-2 sm:px-8 py-2 sm:py-10 gap-2 sm:gap-6">
-              {/* Заголовок */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--bg-primary)]">
+            <div className="flex min-h-0 flex-1 flex-col gap-2 px-2 py-2 sm:gap-6 sm:px-8 sm:py-10">
               <input
                 id="title"
                 type="text"
                 {...register("title")}
                 disabled={isDisabled}
                 placeholder="Заголовок поста..."
-                className="w-full bg-[#0b1f26] text-lg sm:text-2xl md:text-4xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 outline-none border border-[#1b3a44] rounded-xl px-3 sm:px-6 py-2 sm:py-4 focus:border-[var(--accent)] transition-colors"
+                className="w-full rounded-xl border border-[#1b3a44] bg-[#0b1f26] px-3 py-2 text-lg font-bold text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)]/50 focus:border-[var(--accent)] sm:px-6 sm:py-4 sm:text-2xl md:text-4xl"
               />
+
               {errors.title && (
-                <p className="text-red-400 text-xs sm:text-sm -mt-1 sm:-mt-4">
+                <p className="-mt-1 text-xs text-red-400 sm:-mt-4 sm:text-sm">
                   {errors.title.message}
                 </p>
               )}
@@ -602,8 +651,7 @@ export default memo(function CreatePostClient({
                 </p>
               )}
 
-              {/* Редактор — flex-1, чтобы заполнить оставшееся пространство */}
-              <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden rounded-xl border border-[var(--border)] transition-colors focus-within:border-[var(--accent)] bg-[var(--bg-primary)]">
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] transition-colors focus-within:border-[var(--accent)]">
                 <SimpleEditor
                   initialContent={content}
                   onChange={(json) => setValue("content", JSON.stringify(json))}
@@ -612,15 +660,16 @@ export default memo(function CreatePostClient({
               </div>
 
               {errors.content && (
-                <p className="text-red-400 text-sm">{errors.content.message}</p>
+                <p className="text-sm text-red-400">
+                  {errors.content.message}
+                </p>
               )}
             </div>
           </div>
 
-          {/* ==================== ДЕСКТОПНАЯ ПАНЕЛЬ ==================== */}
-          <aside className="hidden lg:flex w-80 shrink-0 border-l border-[var(--border)] bg-[var(--bg-card)] flex-col relative z-10">
-            <div className="p-5 border-b border-[var(--border)] flex items-center gap-2 text-[var(--text-primary)] font-medium shrink-0">
-              <Settings2 className="w-4 h-4" />
+          <aside className="relative z-10 hidden w-80 shrink-0 flex-col border-l border-[var(--border)] bg-[var(--bg-card)] lg:flex">
+            <div className="flex shrink-0 items-center gap-2 border-b border-[var(--border)] p-5 font-medium text-[var(--text-primary)]">
+              <Settings2 className="h-4 w-4" />
               <span>Настройки поста</span>
             </div>
 
@@ -650,7 +699,7 @@ export default memo(function CreatePostClient({
               </div>
             )}
 
-            <div className="shrink-0 p-5 border-t border-[var(--border)] bg-[var(--bg-card)]">
+            <div className="shrink-0 border-t border-[var(--border)] bg-[var(--bg-card)] p-5">
               <p className="mb-2 text-xs font-medium text-[var(--text-muted)]">
                 Автор поста
               </p>
@@ -694,38 +743,35 @@ export default memo(function CreatePostClient({
         </form>
       </main>
 
-      {/* ==================== МОБИЛЬНАЯ МОДАЛКА «НАСТРОЙКИ ПОСТА» ==================== */}
       {settingsOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-[60] bg-black/50 flex items-end justify-center"
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 lg:hidden"
           onClick={() => setSettingsOpen(false)}
         >
           <div
-            className="bg-[var(--bg-card)] rounded-t-2xl border border-[var(--border)] border-b-0 w-full max-h-[90vh] flex flex-col pb-[env(safe-area-inset-bottom)]"
-            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[90vh] w-full flex-col rounded-t-2xl border-b-0 border-[var(--border)] bg-[var(--bg-card)] pb-[env(safe-area-inset-bottom)]"
+            onClick={(event) => event.stopPropagation()}
           >
-            {/* Индикатор-«ручка» для свайпа */}
-            <div className="flex justify-center pt-2 pb-1 shrink-0">
-              <div className="w-10 h-1 rounded-full bg-[var(--border)]" />
+            <div className="flex shrink-0 justify-center pb-1 pt-2">
+              <div className="h-1 w-10 rounded-full bg-[var(--border)]" />
             </div>
 
-            {/* Хедер модалки */}
-            <div className="flex items-center justify-between px-4 pb-3 border-b border-[var(--border)] shrink-0">
-              <h2 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                <Settings2 className="w-4 h-4" />
+            <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-4 pb-3">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-[var(--text-primary)]">
+                <Settings2 className="h-4 w-4" />
                 Настройки поста
               </h2>
+
               <button
                 type="button"
                 onClick={() => setSettingsOpen(false)}
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-2 -mr-2 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
+                className="-mr-2 rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                 aria-label="Закрыть"
               >
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Контент модалки — скролл */}
             <div className="flex-1 overflow-y-auto overscroll-contain">
               <PostSettingsFields
                 categories={categories}
@@ -746,12 +792,11 @@ export default memo(function CreatePostClient({
               />
             </div>
 
-            {/* Кнопка «Готово» — крупная */}
-            <div className="shrink-0 p-3 border-t border-[var(--border)]">
+            <div className="shrink-0 border-t border-[var(--border)] p-3">
               <button
                 type="button"
                 onClick={() => setSettingsOpen(false)}
-                className="w-full px-4 py-3 rounded-lg bg-[var(--accent)] text-[var(--bg-primary)] font-semibold hover:bg-[var(--accent-hover)] transition-colors text-base"
+                className="w-full rounded-lg bg-[var(--accent)] px-4 py-3 text-base font-semibold text-[var(--bg-primary)] transition-colors hover:bg-[var(--accent-hover)]"
               >
                 Готово
               </button>
@@ -760,7 +805,52 @@ export default memo(function CreatePostClient({
         </div>
       )}
 
-      {/* ==================== МОДАЛКА ИСТОРИИ ==================== */}
+      {collaboratorsOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 lg:hidden"
+          onClick={() => setCollaboratorsOpen(false)}
+        >
+          <div
+            className="flex max-h-[90vh] w-full flex-col rounded-t-2xl border-b-0 border-[var(--border)] bg-[var(--bg-card)] pb-[env(safe-area-inset-bottom)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex shrink-0 justify-center pb-1 pt-2">
+              <div className="h-1 w-10 rounded-full bg-[var(--border)]" />
+            </div>
+
+            <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-4 pb-3">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-[var(--text-primary)]">
+                <Users className="h-4 w-4" />
+                Соавторы
+              </h2>
+
+              <button
+                type="button"
+                onClick={() => setCollaboratorsOpen(false)}
+                className="-mr-2 rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+                aria-label="Закрыть"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4">
+              {children}
+            </div>
+
+            <div className="shrink-0 border-t border-[var(--border)] p-3">
+              <button
+                type="button"
+                onClick={() => setCollaboratorsOpen(false)}
+                className="w-full rounded-lg bg-[var(--accent)] px-4 py-3 text-base font-semibold text-[var(--bg-primary)] transition-colors hover:bg-[var(--accent-hover)]"
+              >
+                Готово
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isEditMode && editId && (
         <PostVersionsModal
           postId={editId}
@@ -768,7 +858,10 @@ export default memo(function CreatePostClient({
           onClose={() => setVersionsOpen(false)}
           onRollback={() => {
             router.refresh();
-            if (typeof window !== "undefined") window.location.reload();
+
+            if (typeof window !== "undefined") {
+              window.location.reload();
+            }
           }}
         />
       )}
