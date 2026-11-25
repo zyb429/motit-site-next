@@ -11,6 +11,7 @@ import {
   Tag,
   ArrowLeft,
   User,
+  X,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@generated/prisma";
@@ -191,6 +192,12 @@ export default async function AdminPostsPage({
   ).length;
   const draftCount = totalCount - publishedCount;
 
+  const archivedCount = allPosts.filter(
+    (p) =>
+      (p.post_status || (p.publishedAt ? "published" : "draft")) ===
+      "archived",
+  ).length;
+
   let posts = allPosts;
   if (query) {
     posts = posts.filter((p) => {
@@ -323,8 +330,25 @@ export default async function AdminPostsPage({
                   name="q"
                   defaultValue={params.q || ""}
                   placeholder="Поиск по заголовку или slug..."
-                  className="w-full pl-10 pr-4 py-2 bg-(--bg-secondary) border border-(--border) rounded-lg text-(--text-primary) focus:border-(--accent) focus:outline-none transition-colors text-sm"
+                  className={`w-full py-2 pl-10 bg-(--bg-secondary) border border-(--border) rounded-lg text-(--text-primary) focus:border-(--accent) focus:outline-none transition-colors text-sm ${
+                    query ? "pr-10" : "pr-4"
+                  }`}
                 />
+
+                {query && (
+                  <Link
+                    href={`/admin/posts?${new URLSearchParams({
+                      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+                      sort: sort.key,
+                      dir: sort.direction,
+                    }).toString()}`}
+                    aria-label="Очистить поиск"
+                    title="Очистить поиск"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-(--text-muted) hover:text-(--text-primary) hover:bg-(--bg-card) transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </Link>
+                )}
                 {statusFilter !== "all" && (
                   <input type="hidden" name="status" value={statusFilter} />
                 )}
@@ -339,11 +363,18 @@ export default async function AdminPostsPage({
                     count: publishedCount,
                   },
                   { key: "draft", label: "Черновики", count: draftCount },
+                  {
+                    key: "archived",
+                    label: "Архив",
+                    count: archivedCount,
+                  },
                 ].map((tab) => {
                   const isActive = statusFilter === tab.key;
                   const href = `/admin/posts?${new URLSearchParams({
                     ...(query ? { q: params.q! } : {}),
                     ...(tab.key !== "all" ? { status: tab.key } : {}),
+                    sort: sort.key,
+                    dir: sort.direction,
                   }).toString()}`;
                   return (
                     <Link
