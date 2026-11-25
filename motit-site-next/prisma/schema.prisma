@@ -898,6 +898,7 @@ model announcements {
   uuid          String   @unique @default(uuid()) @db.Char(36)
   title         String
   message       String   @db.Text
+  link_url      String?  @db.Text
   audience      String   @default("all")
   is_active     Boolean  @default(true)
   created_by_id Int?     @db.UnsignedInt
