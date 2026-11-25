@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { Bell, BellRing, CheckCheck, MessageCircle, X } from "lucide-react";
 
 type Announcement = {
@@ -10,6 +11,7 @@ type Announcement = {
   message: string;
   audience: string;
   created_at: string;
+  link_url?: string | null;
   created_by?: {
     username?: string | null;
     full_name?: string | null;
@@ -53,7 +55,6 @@ export function NotificationBell() {
   const isPlayingSoundRef = useRef(false);
   const lastPayloadRef = useRef<string>("");
 
-  // SSE — стабильные рефы
   const sourceRef = useRef<EventSource | null>(null);
   const reconnectRef = useRef<number | undefined>(undefined);
   const notifyRef = useRef<(keys: string[]) => void>(() => {});
@@ -62,6 +63,7 @@ export function NotificationBell() {
   useEffect(() => {
     setMounted(true);
     mountedRef.current = true;
+
     return () => {
       mountedRef.current = false;
     };
@@ -78,8 +80,9 @@ export function NotificationBell() {
     try {
       const AudioContextClass =
         window.AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
+        (window as unknown as {
+          webkitAudioContext?: typeof AudioContext;
+        }).webkitAudioContext;
 
       if (!AudioContextClass) {
         isPlayingSoundRef.current = false;
@@ -156,7 +159,6 @@ export function NotificationBell() {
     [playNotificationSound],
   );
 
-  // Держим актуальную notifyNewItems в рефе, чтобы SSE-эффект не зависел от неё
   useEffect(() => {
     notifyRef.current = notifyNewItems;
   }, [notifyNewItems]);
@@ -176,18 +178,15 @@ export function NotificationBell() {
     loadReadIds();
   }, [loadReadIds]);
 
-  // SSE-подключение — ОДИН раз за жизнь компонента
   useEffect(() => {
-    // В StrictMode эффект вызывается дважды; монтируем только когда mountedRef уже true
     if (!mountedRef.current) {
-      // На первом проходе mountedRef ещё false (порядок эффектов):
-      // mounted-эффект выше идёт раньше, но на всякий случай подстрахуемся.
-      // Если mountedRef всё ещё false — дождёмся следующего тика.
-      const t = window.setTimeout(() => {
+      const timeout = window.setTimeout(() => {
         if (mountedRef.current) start();
       }, 0);
-      return () => window.clearTimeout(t);
+
+      return () => window.clearTimeout(timeout);
     }
+
     return start();
 
     function start() {
@@ -195,6 +194,7 @@ export function NotificationBell() {
 
       const connect = () => {
         if (closed) return;
+
         if (sourceRef.current) {
           sourceRef.current.close();
           sourceRef.current = null;
@@ -268,6 +268,7 @@ export function NotificationBell() {
           if (reconnectRef.current) {
             window.clearTimeout(reconnectRef.current);
           }
+
           reconnectRef.current = window.setTimeout(connect, 3000);
         };
       };
@@ -427,6 +428,7 @@ export function NotificationBell() {
             <div className="flex items-center justify-between border-b border-(--border) px-4 py-3">
               <div className="flex items-center gap-2">
                 <Bell size={16} className="text-(--accent)" />
+
                 <span className="text-sm font-semibold text-(--text-primary)">
                   Оповещения
                 </span>
@@ -479,9 +481,10 @@ export function NotificationBell() {
               )}
 
               {messages.map((message) => (
-                <div
+                <Link
                   key={message.id}
-                  className="border-b border-(--border) bg-blue-500/5 px-4 py-3 transition-colors last:border-b-0"
+                  href={`/cabinet/chat?chat=${message.chat.uuid}`}
+                  className="block border-b border-(--border) bg-blue-500/5 px-4 py-3 transition-colors last:border-b-0 hover:bg-blue-500/10"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -520,27 +523,24 @@ export function NotificationBell() {
                       </div>
                     </div>
 
-                    <a
-                      href="/cabinet/chat"
-                      className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-(--text-secondary) hover:bg-(--accent-dim) hover:text-(--accent)"
-                    >
+                    <span className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-(--text-secondary)">
                       <MessageCircle size={14} />
                       Открыть
-                    </a>
+                    </span>
                   </div>
-                </div>
+                </Link>
               ))}
 
               {announcements.map((item) => {
                 const isUnread = !readIds.includes(item.id);
                 const createdAt = new Date(item.created_at);
+                const href = item.link_url || null;
 
-                return (
+                const content = (
                   <div
-                    key={item.id}
                     className={`border-b border-(--border) px-4 py-3 transition-colors last:border-b-0 ${
                       isUnread ? "bg-(--accent-dim)/50" : ""
-                    }`}
+                    } ${href ? "hover:bg-(--bg-secondary)" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -585,7 +585,11 @@ export function NotificationBell() {
                       {isUnread && (
                         <button
                           type="button"
-                          onClick={() => markRead(item.id)}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            markRead(item.id);
+                          }}
                           title="Отметить прочитанным"
                           className="shrink-0 rounded-md p-1.5 text-(--text-muted) hover:bg-(--accent-dim) hover:text-(--accent)"
                         >
@@ -594,6 +598,19 @@ export function NotificationBell() {
                       )}
                     </div>
                   </div>
+                );
+
+                return href ? (
+                  <Link
+                    key={item.id}
+                    href={href}
+                    onClick={() => markRead(item.id)}
+                    className="block"
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div key={item.id}>{content}</div>
                 );
               })}
             </div>
