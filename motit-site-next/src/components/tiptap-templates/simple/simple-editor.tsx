@@ -20,7 +20,6 @@ import { Highlight } from "@tiptap/extension-highlight";
 import { Subscript } from "@tiptap/extension-subscript";
 import { Superscript } from "@tiptap/extension-superscript";
 import { FindAndReplace } from "@tiptap/extension-find-and-replace";
-import { Selection } from "@tiptap/extensions";
 import { TableKit } from "@tiptap/extension-table";
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
 import { lowlight } from "@/lib/lowlight";
@@ -410,7 +409,6 @@ export function SimpleEditor({
       }),
       Superscript,
       Subscript,
-      Selection,
       FindAndReplace.configure({
         searchDebounceMs: 500,
         injectCSS: false,

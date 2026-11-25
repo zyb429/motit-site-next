@@ -507,8 +507,8 @@ export default memo(function CreatePostClient({
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--bg-primary)] font-sans">
-      <header className="z-20 flex shrink-0 items-center justify-between gap-1.5 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 px-2 py-1.5 backdrop-blur-md sm:gap-3 sm:px-6 sm:py-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--bg-primary)] font-sans">
+      <header className="flex shrink-0 items-center justify-between gap-1.5 border-b border-[var(--border)] bg-[var(--bg-primary)]/95 px-2 py-1.5 backdrop-blur-md sm:gap-3 sm:px-6 sm:py-3">
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-4">
           <Link
             href="/admin/posts"
