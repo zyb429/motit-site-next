@@ -265,17 +265,14 @@ export function BlogCard({
   const AuthorsBlock = () => {
     if (!authors.length) return null;
 
-    const visibleAuthors = authors.slice(0, 3);
-    const hiddenCount = authors.length - visibleAuthors.length;
-
     return (
       <button
         type="button"
         onClick={handleAuthorsClick}
-        className="flex min-w-0 items-center gap-2 text-left transition-colors hover:text-(--accent)"
+        className="flex min-w-0 flex-1 items-center gap-2 text-left transition-colors hover:text-(--accent)"
       >
-        <span className="flex shrink-0 items-center -space-x-1.5">
-          {visibleAuthors.map((person) => (
+        <span className="flex shrink-0 items-center -space-x-1.5 max-w-[96px] overflow-hidden">
+          {authors.map((person) => (
             <span
               key={`${person.id}-${person.role}`}
               title={person.full_name || person.username}
@@ -283,12 +280,6 @@ export function BlogCard({
               <AuthorAvatar person={person} />
             </span>
           ))}
-
-          {hiddenCount > 0 && (
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[10px] font-medium text-[var(--text-secondary)] ring-2 ring-[var(--bg-card)]">
-              +{hiddenCount}
-            </span>
-          )}
         </span>
 
         <span className="min-w-0 truncate text-xs text-(--text-secondary) transition-colors group-hover:text-(--accent)">
@@ -360,17 +351,17 @@ export function BlogCard({
   );
 
   const CardFooter = () => (
-    <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-(--border) pt-3">
+    <div className="mt-auto flex items-center justify-between gap-2 border-t border-(--border) pt-3">
       <AuthorsBlock />
 
-      <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-(--text-muted)">
-        <span className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-2 text-[11px] text-(--text-muted)">
+        <span className="flex items-center gap-1 whitespace-nowrap">
           <Clock size={12} className="text-(--accent)" />
           {getReadingTime()} мин
         </span>
 
         {publishedAt && (
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             <Calendar size={12} className="text-(--accent)" />
             {formatPublished(publishedAt)}
           </span>
